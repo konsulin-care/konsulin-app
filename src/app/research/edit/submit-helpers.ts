@@ -143,7 +143,7 @@ export function buildPlanEntries(
         request: { method: 'POST' as const, url: 'PlanDefinition' }
       }
     ];
-  });
+  }) satisfies BuildPlanEntriesResult['entries'];
   return { entries, newPlanTempIds };
 }
 
