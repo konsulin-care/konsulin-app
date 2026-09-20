@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchForm from '../research-form';
@@ -147,5 +148,52 @@ describe('Questionnaire persistence - dual state bug', () => {
     // Selections should still be present after remount
     // This fails with old code because selectedIds is reset to []
     expect(screen.getByText('Selected (1)')).toBeInTheDocument();
+  });
+
+  it('clicking items updates selection immediately (multi-select append)', async () => {
+    const user = userEvent.setup();
+
+    // Pre-populate localStorage with a title to bypass deep link guard
+    localStorage.setItem(
+      'research-form-test-practitioner-id',
+      JSON.stringify({
+        ...VALID_FORM_DATA,
+        title: 'Test Study',
+        batches: [{ ...VALID_FORM_DATA.batches[0], questionnaireIds: [] }],
+        page: 'questionnaire'
+      })
+    );
+
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams('page=questionnaire') as unknown as ReturnType<
+        typeof useSearchParams
+      >
+    );
+
+    renderWithQuery(<ResearchForm />);
+
+    // Wait for library questionnaires to load
+    await waitFor(() => {
+      expect(
+        screen.getByText('Upload Custom Questionnaire')
+      ).toBeInTheDocument();
+    });
+
+    // Open the combobox popover by clicking the trigger button
+    const trigger = screen.getByRole('combobox');
+    await user.click(trigger);
+
+    // Wait for popover items to appear and click PHQ-9
+    await waitFor(() => {
+      expect(screen.getByText('PHQ-9')).toBeInTheDocument();
+    });
+    const phq9Item = screen.getAllByText('PHQ-9').at(-1)!;
+    await user.click(phq9Item);
+
+    // Selection count should update IMMEDIATELY to 1
+    // Before fix: useMemo doesn't recompute because formValues.batches reference is stable
+    await waitFor(() => {
+      expect(screen.getByText('Selected (1)')).toBeInTheDocument();
+    });
   });
 });

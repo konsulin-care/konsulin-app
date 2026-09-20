@@ -4,6 +4,7 @@ import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import EditResearchForm from '../research-form';
+import { submitEditStudy } from '../submit-helpers';
 
 const mockPush = vi.fn();
 const mockReplace = vi.fn();
@@ -107,5 +108,43 @@ describe('Edit form - questionnaire persistence', () => {
     expect(screen.getByText('Selected (2)')).toBeInTheDocument();
     expect(screen.getAllByText('PHQ-9').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('GAD-7').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('invalidates researcher-dashboard cache after successful submission', async () => {
+    const mockInvalidateQueries = vi.fn().mockResolvedValue(undefined);
+    const mockQueryClient = {
+      invalidateQueries: mockInvalidateQueries
+    } as unknown as import('@tanstack/react-query').QueryClient;
+
+    const mockFormData = {
+      title: 'Updated Study',
+      description: 'Updated description',
+      batches: [
+        {
+          startDate: '2026-01-01',
+          endDate: '2026-12-31',
+          questionnaireIds: ['phq9', 'gad7']
+        }
+      ]
+    };
+
+    await submitEditStudy({
+      study: mockStudy,
+      planIds: ['plan-1'],
+      lockedBatchIndices: [],
+      planDefinitions: mockPlanDefinitions,
+      data: mockFormData,
+      router: { push: mockPush, replace: mockReplace } as unknown as ReturnType<
+        typeof import('next/navigation').useRouter
+      >,
+      queryClient: mockQueryClient
+    });
+
+    // Verify cache was invalidated
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ['researcher-dashboard']
+    });
+    // Verify navigation happened
+    expect(mockPush).toHaveBeenCalledWith('/research');
   });
 });

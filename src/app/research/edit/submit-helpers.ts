@@ -1,5 +1,6 @@
 import { getAPI } from '@/services/api';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
+import type { QueryClient } from '@tanstack/react-query';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
 
@@ -158,6 +159,7 @@ interface SubmitEditStudyParams {
   planDefinitions: PlanDefinition[];
   data: FormData;
   router: ReturnType<typeof useRouter>;
+  queryClient: QueryClient;
 }
 
 /** Submits the edit form as a FHIR transaction bundle. */
@@ -167,7 +169,8 @@ export async function submitEditStudy({
   lockedBatchIndices,
   planDefinitions,
   data,
-  router
+  router,
+  queryClient
 }: SubmitEditStudyParams) {
   try {
     const API = await getAPI();
@@ -185,6 +188,7 @@ export async function submitEditStudy({
       entry: entries
     });
     toast.success('Study updated successfully');
+    await queryClient.invalidateQueries({ queryKey: ['researcher-dashboard'] });
     router.push('/research');
   } catch {
     toast.error('Failed to update study. Please try again.');

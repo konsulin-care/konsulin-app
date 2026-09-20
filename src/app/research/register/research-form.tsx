@@ -201,14 +201,13 @@ export default function ResearchForm() {
     [libraryOptions, customQuestionnaires]
   );
 
-  // Derive selectedIds from form state (single source of truth)
-  const selectedIds = useMemo(
-    () => formValues.batches.flatMap(b => b.questionnaireIds),
-    [formValues.batches]
+  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
+    formValues.batches.flatMap(b => b.questionnaireIds)
   );
 
   const handleSelectLibrary = useCallback(
     (ids: string[]) => {
+      setSelectedIds(ids);
       for (const [index] of fields.entries()) {
         setValue(`batches.${index}.questionnaireIds`, ids);
       }

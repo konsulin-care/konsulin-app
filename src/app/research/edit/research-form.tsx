@@ -4,7 +4,7 @@ import QuestionnaireUploadDrawer from '@/components/shared/questionnaire-upload-
 import { useAuth } from '@/context/auth/authContext';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PlanDefinition, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -171,14 +171,13 @@ export default function EditResearchForm({
     [libraryOptions, customQuestionnaires]
   );
 
-  // Derive selectedIds from form state (single source of truth)
-  const selectedIds = useMemo(
-    () => formValues.batches.flatMap(b => b.questionnaireIds),
-    [formValues.batches]
+  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
+    formValues.batches.flatMap(b => b.questionnaireIds)
   );
 
   const handleSelectLibrary = useCallback(
     (ids: string[]) => {
+      setSelectedIds(ids);
       for (const [index] of fields.entries()) {
         if (!lockedBatchIndices.includes(index)) {
           setValue(`batches.${index}.questionnaireIds`, ids);
@@ -202,6 +201,8 @@ export default function EditResearchForm({
     [handleSelectLibrary, selectedIds]
   );
 
+  const queryClient = useQueryClient();
+
   const onSubmitForm = useCallback(
     (data: FormData) => {
       void submitEditStudy({
@@ -210,10 +211,11 @@ export default function EditResearchForm({
         lockedBatchIndices,
         planDefinitions,
         data,
-        router
+        router,
+        queryClient
       });
     },
-    [study, planIds, lockedBatchIndices, planDefinitions, router]
+    [study, planIds, lockedBatchIndices, planDefinitions, router, queryClient]
   );
 
   const handleOpenUploadDrawer = useCallback(
