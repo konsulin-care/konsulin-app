@@ -191,6 +191,7 @@ export default function ResearchPage() {
             titleMap={titleMap}
             titlesPending={titlesPending}
             fhirId={fhirId}
+            practitionerId={practitionerId}
             onSlideChange={handleSlideChange}
             onResearcherStudyClick={handleResearcherStudyClick}
             onStudyClick={handleStudyClick}

@@ -5,6 +5,7 @@ import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import type { StudyProgress } from '@/utils/fhir/research';
 import ResearchSkeleton from './research-skeleton';
 import ResearcherCarousel from './researcher-carousel';
+import ResearcherImpactDashboard from './researcher-impact-dashboard';
 
 export interface ResearcherContentProps {
   isLoading: boolean;
@@ -12,6 +13,8 @@ export interface ResearcherContentProps {
   activeId: string;
   onSlideChange: (studyId: string) => void;
   onStudyClick: (studyId: string) => void;
+  practitionerId?: string;
+  activeStudyId: string;
 }
 
 /** Maps researcher study data to the StudyProgress format expected by StudyDetailView. */
@@ -39,7 +42,9 @@ export default function ResearcherContent({
   studies,
   activeId,
   onSlideChange,
-  onStudyClick
+  onStudyClick,
+  practitionerId,
+  activeStudyId
 }: Readonly<ResearcherContentProps>) {
   if (isLoading) {
     return <ResearchSkeleton />;
@@ -56,11 +61,18 @@ export default function ResearcherContent({
   }
 
   return (
-    <ResearcherCarousel
-      studies={studies}
-      activeId={activeId}
-      onSlideChange={onSlideChange}
-      onStudyClick={onStudyClick}
-    />
+    <>
+      <ResearcherCarousel
+        studies={studies}
+        activeId={activeId}
+        onSlideChange={onSlideChange}
+        onStudyClick={onStudyClick}
+      />
+      <ResearcherImpactDashboard
+        studies={studies}
+        activeStudyId={activeStudyId}
+        practitionerId={practitionerId}
+      />
+    </>
   );
 }

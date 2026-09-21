@@ -22,6 +22,7 @@ export interface ResearchContentProps {
   titleMap: ReadonlyMap<string, QuestionnaireInfo>;
   titlesPending: boolean;
   fhirId?: string;
+  practitionerId?: string;
   onSlideChange: (studyId: string) => void;
   onResearcherStudyClick: (studyId: string) => void;
   onStudyClick: (studyId: string) => void;
@@ -41,6 +42,7 @@ export default function ResearchContent({
   titleMap,
   titlesPending,
   fhirId,
+  practitionerId,
   onSlideChange,
   onResearcherStudyClick,
   onStudyClick,
@@ -54,6 +56,8 @@ export default function ResearchContent({
         activeId={activeStudyId}
         onSlideChange={onSlideChange}
         onStudyClick={onResearcherStudyClick}
+        practitionerId={practitionerId}
+        activeStudyId={activeStudyId}
       />
     );
   }
