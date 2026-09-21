@@ -121,6 +121,7 @@ export default function ResearchPage() {
   const { isConsented, handleAgree } = useConsent({
     isPatient,
     studies,
+    consentedStudyIds: progress?.consentedStudyIds ?? [],
     pendingConsent,
     setPendingConsent,
     router

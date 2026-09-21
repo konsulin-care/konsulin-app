@@ -210,7 +210,8 @@ describe('fetch event routing', () => {
     expect(event.respondWith).toHaveBeenCalled();
     // networkFirst attempts fetch(request) first
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'http://konsulin.care/page' })
+      expect.objectContaining({ url: 'http://konsulin.care/page' }),
+      { cache: 'no-store' }
     );
   });
 
@@ -248,7 +249,8 @@ describe('fetch event routing', () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
         url: 'http://konsulin.care/_next/static/chunk.js'
-      })
+      }),
+      { cache: 'no-store' }
     );
   });
 
@@ -262,7 +264,8 @@ describe('fetch event routing', () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
         url: 'http://konsulin.care/proxy/fhir/Patient'
-      })
+      }),
+      { cache: 'no-store' }
     );
     expect(mockCaches.open).not.toHaveBeenCalled();
   });
@@ -278,7 +281,8 @@ describe('fetch event routing', () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
         url: 'http://konsulin.care/proxy/fhir/Questionnaire?_id=abc'
-      })
+      }),
+      { cache: 'no-store' }
     );
     expect(mockCaches.open).toHaveBeenCalledWith('konsulin-nav-v2');
   });
@@ -312,7 +316,8 @@ describe('fetch event routing', () => {
     expect(mockFetch).toHaveBeenCalledWith(
       expect.objectContaining({
         url: 'http://konsulin.care/proxy/fhir/QuestionnaireResponse'
-      })
+      }),
+      { cache: 'no-store' }
     );
     expect(mockCaches.open).not.toHaveBeenCalled();
   });
@@ -325,7 +330,9 @@ describe('fetch event routing', () => {
     const event = fireFetch(mockSelf, { url, method: 'GET' });
 
     expect(event.respondWith).toHaveBeenCalled();
-    expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ url }));
+    expect(mockFetch).toHaveBeenCalledWith(expect.objectContaining({ url }), {
+      cache: 'no-store'
+    });
     expect(mockCaches.open).not.toHaveBeenCalled();
   });
 
@@ -346,7 +353,8 @@ describe('fetch event routing', () => {
 
     expect(event.respondWith).toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.objectContaining({ url: 'http://konsulin.care/api/data' })
+      expect.objectContaining({ url: 'http://konsulin.care/api/data' }),
+      { cache: 'no-store' }
     );
   });
 

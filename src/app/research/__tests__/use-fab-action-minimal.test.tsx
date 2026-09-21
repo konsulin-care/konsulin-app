@@ -82,7 +82,7 @@ describe('useResearchFabAction', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     });
 
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('true');

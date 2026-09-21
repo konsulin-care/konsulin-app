@@ -14,6 +14,7 @@ interface PendingConsent {
 interface UseConsentParams {
   isPatient: boolean;
   studies: StudyProgress[];
+  consentedStudyIds: string[];
   pendingConsent: PendingConsent | null;
   setPendingConsent: (consent: PendingConsent | null) => void;
   router: { push: (url: string) => void };
@@ -23,12 +24,13 @@ interface UseConsentParams {
 export function useConsent({
   isPatient,
   studies,
+  consentedStudyIds: serverConsentedStudyIds,
   pendingConsent,
   setPendingConsent,
   router
 }: UseConsentParams) {
   const consentedStudyIds = useMemo(() => {
-    if (isPatient) return new Set<string>();
+    if (isPatient) return new Set(serverConsentedStudyIds);
     // For non-patients, read from localStorage
     const ids = new Set<string>();
     for (const study of studies) {
@@ -37,7 +39,7 @@ export function useConsent({
       }
     }
     return ids;
-  }, [isPatient, studies]);
+  }, [isPatient, serverConsentedStudyIds, studies]);
 
   const isConsented = useCallback(
     (studyId: string) =>
