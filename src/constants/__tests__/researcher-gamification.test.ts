@@ -169,8 +169,7 @@ describe('getImpactInLevel', () => {
 describe('buildResearcherMission', () => {
   const baseOpts = {
     impactPoints: 0,
-    studies: [],
-    activeStudyParticipants: 0
+    totalParticipants: 0
   };
 
   it('returns mission for zero participants', () => {
@@ -179,29 +178,51 @@ describe('buildResearcherMission', () => {
     expect(mission.length).toBeGreaterThan(0);
   });
 
-  it('mentions next milestone when participants are below first threshold', () => {
+  it('returns simplified CTA with gap to next milestone', () => {
     const mission = buildResearcherMission({
       ...baseOpts,
-      activeStudyParticipants: 5
+      totalParticipants: 4
     });
-    expect(mission).toContain('10');
+    expect(mission).toBe('Enroll 6 participants to hit the next milestone.');
   });
 
-  it('mentions next level when milestones are completed', () => {
+  it('shows correct gap at first milestone boundary', () => {
     const mission = buildResearcherMission({
-      impactPoints: 40,
-      studies: [{ participantCount: 100, batchCompleted: true }],
-      activeStudyParticipants: 100
+      ...baseOpts,
+      totalParticipants: 10
     });
-    expect(typeof mission).toBe('string');
+    expect(mission).toBe('Enroll 40 participants to hit the next milestone.');
   });
 
-  it('returns completion message at max level', () => {
+  it('shows correct gap between first and second milestone', () => {
     const mission = buildResearcherMission({
-      impactPoints: 600,
-      studies: [{ participantCount: 100, batchCompleted: true }],
-      activeStudyParticipants: 100
+      ...baseOpts,
+      totalParticipants: 25
     });
-    expect(typeof mission).toBe('string');
+    expect(mission).toBe('Enroll 25 participants to hit the next milestone.');
+  });
+
+  it('shows correct gap at second milestone boundary', () => {
+    const mission = buildResearcherMission({
+      ...baseOpts,
+      totalParticipants: 50
+    });
+    expect(mission).toBe('Enroll 50 participants to hit the next milestone.');
+  });
+
+  it('shows correct gap between second and third milestone', () => {
+    const mission = buildResearcherMission({
+      ...baseOpts,
+      totalParticipants: 75
+    });
+    expect(mission).toBe('Enroll 25 participants to hit the next milestone.');
+  });
+
+  it('returns completion message when all milestones are hit', () => {
+    const mission = buildResearcherMission({
+      ...baseOpts,
+      totalParticipants: 100
+    });
+    expect(mission).toBe('Enroll 0 participants to hit the next milestone.');
   });
 });

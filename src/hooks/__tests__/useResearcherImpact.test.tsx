@@ -66,10 +66,11 @@ function makeStudy(
 
 describe('useResearcherImpact', () => {
   it('returns only referral points with no studies', () => {
-    const { result } = renderHook(() => useResearcherImpact([], 'study-1'), {
-      wrapper: createWrapper()
-    });
-    // No studies, but referrals still count: 3 * 10 = 30
+    const { result } = renderHook(
+      () => useResearcherImpact([], 'study-1', 'practitioner-1', 0),
+      { wrapper: createWrapper() }
+    );
+    // No studies, no participants, but referrals still count: 3 * 10 = 30
     expect(result.current.totalImpact).toBe(30);
     expect(result.current.perStudy).toHaveLength(0);
   });
@@ -77,7 +78,7 @@ describe('useResearcherImpact', () => {
   it('computes per-study impact from participant count', () => {
     const studies = [makeStudy('study-1')];
     const { result } = renderHook(
-      () => useResearcherImpact(studies, 'study-1'),
+      () => useResearcherImpact(studies, 'study-1', 'practitioner-1', 25),
       { wrapper: createWrapper() }
     );
     // study-1 has 25 participants * 10 points = 250
@@ -85,14 +86,14 @@ describe('useResearcherImpact', () => {
     // perStudy impactPoints = 250 + 25 = 275
     expect(result.current.perStudy[0].impactPoints).toBe(275);
     expect(result.current.perStudy[0].milestonesHit).toBe(1);
-    // totalImpact includes referral points: 275 + (3 * 10) = 305
+    // totalImpact uses totalParticipants: 25 * 10 = 250 + 25 milestone + 30 referral = 305
     expect(result.current.totalImpact).toBe(305);
   });
 
   it('computes batch completion bonus when all batches done', () => {
     const studies = [makeStudy('study-2', { currentBatch: false })];
     const { result } = renderHook(
-      () => useResearcherImpact(studies, 'study-2'),
+      () => useResearcherImpact(studies, 'study-2', 'practitioner-1', 5),
       { wrapper: createWrapper() }
     );
     // study-2 has 5 participants * 10 = 50, plus 1 batch * 15 = 15
@@ -102,7 +103,7 @@ describe('useResearcherImpact', () => {
   it('computes milestone bonuses', () => {
     const studies = [makeStudy('study-3')];
     const { result } = renderHook(
-      () => useResearcherImpact(studies, 'study-3'),
+      () => useResearcherImpact(studies, 'study-3', 'practitioner-1', 100),
       { wrapper: createWrapper() }
     );
     // study-3 has 100 participants * 10 = 1000
@@ -110,14 +111,14 @@ describe('useResearcherImpact', () => {
     expect(result.current.perStudy[0].milestonesHit).toBe(3);
     // perStudy impactPoints = 1000 + 75 = 1075
     expect(result.current.perStudy[0].impactPoints).toBe(1075);
-    // totalImpact includes referral points: 1075 + (3 * 10) = 1105
+    // totalImpact uses totalParticipants: 100 * 10 = 1000 + 75 milestone + 30 referral = 1105
     expect(result.current.totalImpact).toBe(1105);
   });
 
   it('includes referral points in totalImpact', () => {
     const studies = [makeStudy('study-2')];
     const { result } = renderHook(
-      () => useResearcherImpact(studies, 'study-2'),
+      () => useResearcherImpact(studies, 'study-2', 'practitioner-1', 5),
       { wrapper: createWrapper() }
     );
     // study-2: 5 participants * 10 = 50 (no milestone bonus, 5 < 10)
@@ -130,10 +131,10 @@ describe('useResearcherImpact', () => {
   it('derives level from totalImpact', () => {
     const studies = [makeStudy('study-1')];
     const { result } = renderHook(
-      () => useResearcherImpact(studies, 'study-1'),
+      () => useResearcherImpact(studies, 'study-1', 'practitioner-1', 25),
       { wrapper: createWrapper() }
     );
-    // totalImpact = 275 (study-1 with milestone) + 30 (referrals) = 305
+    // totalImpact = 250 (participants) + 25 (milestone) + 30 (referrals) = 305
     // 305 is in Vanguard range (300-499)
     expect(result.current.level.label).toBe('Vanguard');
   });
@@ -142,7 +143,7 @@ describe('useResearcherImpact', () => {
     // This test verifies the loading state structure exists
     const studies = [makeStudy('study-1')];
     const { result } = renderHook(
-      () => useResearcherImpact(studies, 'study-1'),
+      () => useResearcherImpact(studies, 'study-1', 'practitioner-1', 25),
       { wrapper: createWrapper() }
     );
     expect(typeof result.current.isLoading).toBe('boolean');
@@ -151,10 +152,49 @@ describe('useResearcherImpact', () => {
   it('builds a mission string', () => {
     const studies = [makeStudy('study-1')];
     const { result } = renderHook(
-      () => useResearcherImpact(studies, 'study-1'),
+      () => useResearcherImpact(studies, 'study-1', 'practitioner-1'),
       { wrapper: createWrapper() }
     );
     expect(typeof result.current.mission).toBe('string');
     expect(result.current.mission.length).toBeGreaterThan(0);
+  });
+
+  it('uses totalParticipants for totalImpact calculation', () => {
+    const studies = [makeStudy('study-1'), makeStudy('study-2')];
+    const { result } = renderHook(
+      () => useResearcherImpact(studies, 'study-1', 'practitioner-1', 30),
+      { wrapper: createWrapper() }
+    );
+    // totalParticipants = 30, participant points = 30 * 10 = 300
+    // No batch points (both studies have currentBatch set, not completed)
+    // Milestones: 30 >= 10 (+25) = 25 milestone points
+    // Referrals: 3 * 10 = 30
+    // Total: 300 + 0 + 25 + 30 = 355
+    expect(result.current.totalImpact).toBe(355);
+  });
+
+  it('totalImpact does not change when activeStudyId changes', () => {
+    const studies = [makeStudy('study-1'), makeStudy('study-2')];
+    const { result: result1 } = renderHook(
+      () => useResearcherImpact(studies, 'study-1', 'practitioner-1', 30),
+      { wrapper: createWrapper() }
+    );
+    const { result: result2 } = renderHook(
+      () => useResearcherImpact(studies, 'study-2', 'practitioner-1', 30),
+      { wrapper: createWrapper() }
+    );
+    expect(result1.current.totalImpact).toBe(result2.current.totalImpact);
+  });
+
+  it('builds mission using totalParticipants', () => {
+    const studies = [makeStudy('study-1')];
+    const { result } = renderHook(
+      () => useResearcherImpact(studies, 'study-1', 'practitioner-1', 4),
+      { wrapper: createWrapper() }
+    );
+    // totalParticipants = 4, gap to 10 = 6
+    expect(result.current.mission).toBe(
+      'Enroll 6 participants to hit the next milestone.'
+    );
   });
 });

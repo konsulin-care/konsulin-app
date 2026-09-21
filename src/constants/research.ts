@@ -413,34 +413,27 @@ export function getImpactInLevel(impactPoints: number): number {
 }
 
 /**
- * Builds the mission line for a researcher: the nearest milestone or level to
- * unlock.
+ * Builds the mission line for a researcher: the nearest participant milestone.
  *
- * @param opts - Impact points, per-study stats, and active study participants.
+ * @param opts - Impact points and total participants across all studies.
  * @returns The mission text.
  */
 export function buildResearcherMission(opts: {
   impactPoints: number;
-  studies: Array<{ participantCount: number; batchCompleted: boolean }>;
-  activeStudyParticipants: number;
+  totalParticipants: number;
 }): string {
-  const { impactPoints, activeStudyParticipants } = opts;
-  const next = RESEARCHER_LEVELS.find(l => impactPoints < l.threshold);
+  const { totalParticipants } = opts;
 
-  if (!next) {
-    return 'You reached Pioneer, the highest title. Keep growing your impact!';
-  }
-
-  // Find nearest unhit milestone for the active study
+  // Find nearest unhit milestone using total participants
   const nearestMilestone = RESEARCHER_MILESTONES.find(
-    m => activeStudyParticipants < m.participantCount
+    m => totalParticipants < m.participantCount
   );
 
   if (nearestMilestone) {
-    const gap = nearestMilestone.participantCount - activeStudyParticipants;
-    return `Enroll ${gap} more participant${gap === 1 ? '' : 's'} to hit ${nearestMilestone.participantCount} and earn ${nearestMilestone.threshold} points`;
+    const gap = nearestMilestone.participantCount - totalParticipants;
+    return `Enroll ${gap} participant${gap === 1 ? '' : 's'} to hit the next milestone.`;
   }
 
-  const pointsToNext = next.threshold - impactPoints;
-  return `Earn ${pointsToNext} more impact point${pointsToNext === 1 ? '' : 's'} to reach ${next.label}`;
+  // All milestones hit — show zero gap
+  return 'Enroll 0 participants to hit the next milestone.';
 }

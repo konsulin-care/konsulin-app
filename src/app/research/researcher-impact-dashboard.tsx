@@ -94,12 +94,15 @@ export default function ResearcherImpactDashboard({
   const { data: dashboardData } = useResearcherDashboard(practitionerId);
   const totalParticipants = dashboardData?.totalParticipants ?? 0;
 
-  const { totalImpact, level, levelNumber, impactInLevel, perStudy, mission } =
-    useResearcherImpact(studies, activeStudyId, practitionerId);
+  const { totalImpact, level, levelNumber, impactInLevel, mission } =
+    useResearcherImpact(
+      studies,
+      activeStudyId,
+      practitionerId,
+      totalParticipants
+    );
 
   const focusedStudy = studies.find(s => s.study.id === activeStudyId);
-  const focusedStudyImpact = perStudy.find(s => s.studyId === activeStudyId);
-  const focusedStudyParticipants = focusedStudyImpact?.participantCount;
 
   return (
     <section
@@ -126,29 +129,25 @@ export default function ResearcherImpactDashboard({
       {/* Row 2: Mission line */}
       <Mission text={mission} />
 
-      {/* Row 3: Milestones for focused study */}
-      {focusedStudy && (
-        <div className='mt-3 flex flex-col gap-1'>
-          <p className='text-[11px] font-bold text-black'>
-            Milestones — {focusedStudy.study.title}
-          </p>
-          {[10, 50, 100].map(count => {
-            const hit = (focusedStudyParticipants ?? 0) >= count;
-            return (
-              <div key={count} className='flex items-center gap-2 text-[11px]'>
-                {hit ? (
-                  <CheckCircle2 className='h-3.5 w-3.5 text-[#13c2c2]' />
-                ) : (
-                  <Circle className='h-3.5 w-3.5 text-gray-300' />
-                )}
-                <span className={hit ? 'text-black' : 'text-gray-400'}>
-                  {count} participants
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Row 3: Milestones based on total participants */}
+      <div className='mt-3 flex flex-col gap-1'>
+        <p className='text-[11px] font-bold text-black'>Next Milestones</p>
+        {[10, 50, 100].map(count => {
+          const hit = totalParticipants >= count;
+          return (
+            <div key={count} className='flex items-center gap-2 text-[11px]'>
+              {hit ? (
+                <CheckCircle2 className='h-3.5 w-3.5 text-[#13c2c2]' />
+              ) : (
+                <Circle className='h-3.5 w-3.5 text-gray-300' />
+              )}
+              <span className={hit ? 'text-black' : 'text-gray-400'}>
+                {count} participants
+              </span>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Row 4: Share button for focused study */}
       {focusedStudy && (
@@ -158,7 +157,7 @@ export default function ResearcherImpactDashboard({
           fhirId={practitionerId}
           studyId={activeStudyId}
           label='Share this study to grow your impact'
-          className='mt-3 flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2 text-[11px] text-black'
+          className='pointer-events-auto mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-2 text-[10px] text-black'
         />
       )}
     </section>

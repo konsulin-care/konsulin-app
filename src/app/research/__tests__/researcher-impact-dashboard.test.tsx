@@ -35,7 +35,7 @@ vi.mock('@/hooks/useResearcherImpact', () => ({
         milestonesHit: 1
       }
     ],
-    mission: 'Earn 150 more impact points to reach Vanguard',
+    mission: 'Enroll 6 participants to hit the next milestone.',
     isLoading: false
   })
 }));
@@ -173,7 +173,7 @@ describe('ResearcherImpactDashboard', () => {
     );
   });
 
-  it('renders the mission line', () => {
+  it('renders the mission line with simplified CTA', () => {
     render(
       <ResearcherImpactDashboard
         studies={[makeStudy('study-1')]}
@@ -183,7 +183,7 @@ describe('ResearcherImpactDashboard', () => {
       { wrapper: createWrapper() }
     );
     expect(screen.getByTestId('dashboard-mission')).toHaveTextContent(
-      'Earn 150 more impact points to reach Vanguard'
+      'Enroll 6 participants to hit the next milestone.'
     );
   });
 
@@ -199,7 +199,7 @@ describe('ResearcherImpactDashboard', () => {
     expect(screen.getByTestId('share-research-footer')).toBeInTheDocument();
   });
 
-  it('renders milestones for the active study', () => {
+  it('renders milestones with Next Milestones heading', () => {
     render(
       <ResearcherImpactDashboard
         studies={[makeStudy('study-1')]}
@@ -208,9 +208,24 @@ describe('ResearcherImpactDashboard', () => {
       />,
       { wrapper: createWrapper() }
     );
-    expect(screen.getByText('Milestones — Study study-1')).toBeInTheDocument();
+    expect(screen.getByText('Next Milestones')).toBeInTheDocument();
     expect(screen.getByText('10 participants')).toBeInTheDocument();
     expect(screen.getByText('50 participants')).toBeInTheDocument();
     expect(screen.getByText('100 participants')).toBeInTheDocument();
+  });
+
+  it('share button has patient card footer styling', () => {
+    render(
+      <ResearcherImpactDashboard
+        studies={[makeStudy('study-1')]}
+        activeStudyId='study-1'
+        practitionerId='practitioner-1'
+      />,
+      { wrapper: createWrapper() }
+    );
+    const shareButton = screen.getByTestId('share-research-footer');
+    expect(shareButton).toHaveClass('border-t', 'border-gray-100', 'pt-2');
+    expect(shareButton).toHaveClass('text-[10px]');
+    expect(shareButton).toHaveClass('mt-auto');
   });
 });

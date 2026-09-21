@@ -36,20 +36,22 @@ export interface ResearcherImpactResult {
 
 /**
  * Computes the researcher's impact points, level, and mission across all
- * studies. Participant counts are fetched only for the active study to
- * minimize API calls.
+ * studies. Uses the total participant count from useResearcherDashboard
+ * for consistent calculations regardless of which study is focused.
  *
  * @param studies - The researcher's studies from useResearcherDashboard.
  * @param activeStudyId - Currently focused study from the carousel.
  * @param practitionerId - FHIR Practitioner id for referral stats.
+ * @param totalParticipants - Total participants across all studies.
  * @returns Impact points, level info, per-study breakdown, and mission text.
  */
 export function useResearcherImpact(
   studies: ResearchStudyWithBatches[],
   activeStudyId: string,
-  practitionerId?: string
+  practitionerId?: string,
+  totalParticipants = 0
 ): ResearcherImpactResult {
-  // Only fetch participant count for the active study
+  // Only fetch participant count for the active study (for per-study display)
   const { data: activeParticipantCount, isLoading: activeLoading } =
     useStudyParticipantCount(studies.length > 0 ? activeStudyId : undefined);
 
@@ -62,7 +64,7 @@ export function useResearcherImpact(
       const isActive = study.study.id === activeStudyId;
       const participantCount = isActive ? activeParticipantCount : undefined;
 
-      // Points from participants
+      // Points from participants (per-study, for display only)
       const participantPoints =
         (participantCount ?? 0) * RESEARCHER_IMPACT_PER_PARTICIPANT;
 
@@ -73,7 +75,7 @@ export function useResearcherImpact(
         ? study.batches.length * RESEARCHER_IMPACT_PER_BATCH
         : 0;
 
-      // Milestone bonuses
+      // Milestone bonuses (per-study, for display only)
       let milestonePoints = 0;
       let milestonesHit = 0;
       if (participantCount !== undefined) {
@@ -94,30 +96,39 @@ export function useResearcherImpact(
     });
   }, [studies, activeStudyId, activeParticipantCount]);
 
-  const perStudyPoints = useMemo(
-    () => perStudy.reduce((sum, s) => sum + s.impactPoints, 0),
-    [perStudy]
-  );
+  // Batch points are consistent across all studies (don't depend on participant counts)
+  let batchPoints = 0;
+  for (const study of studies) {
+    const allBatchesDone =
+      study.currentBatch === null && study.batches.length > 0;
+    if (allBatchesDone) {
+      batchPoints += study.batches.length * RESEARCHER_IMPACT_PER_BATCH;
+    }
+  }
+
+  // Participant points use totalParticipants for consistency
+  const participantPoints =
+    totalParticipants * RESEARCHER_IMPACT_PER_PARTICIPANT;
+
+  // Milestone points use totalParticipants for consistency
+  let milestonePoints = 0;
+  for (const milestone of RESEARCHER_MILESTONES) {
+    if (totalParticipants >= milestone.participantCount) {
+      milestonePoints += milestone.threshold;
+    }
+  }
 
   const referralPoints = referralCount * RESEARCHER_IMPACT_PER_PARTICIPANT;
-  const totalImpact = perStudyPoints + referralPoints;
+  const totalImpact =
+    participantPoints + batchPoints + milestonePoints + referralPoints;
 
   const level = getResearcherLevel(totalImpact);
   const levelNumber = getResearcherLevelNumber(totalImpact);
   const impactInLevel = getImpactInLevel(totalImpact);
 
-  const activeStudyParticipants = useMemo(() => {
-    const entry = perStudy.find(s => s.studyId === activeStudyId);
-    return entry?.participantCount ?? 0;
-  }, [perStudy, activeStudyId]);
-
   const mission = buildResearcherMission({
     impactPoints: totalImpact,
-    studies: studies.map((s, i) => ({
-      participantCount: perStudy[i]?.participantCount ?? 0,
-      batchCompleted: s.currentBatch === null && s.batches.length > 0
-    })),
-    activeStudyParticipants
+    totalParticipants
   });
 
   return {
