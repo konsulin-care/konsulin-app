@@ -157,7 +157,7 @@ export default function ResearcherImpactDashboard({
           fhirId={practitionerId}
           studyId={activeStudyId}
           label='Share this study to grow your impact'
-          className='pointer-events-auto mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-2 text-[10px] text-black'
+          className='pointer-events-auto -mx-4 mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 px-4 pt-2 text-[10px] text-black'
         />
       )}
     </section>

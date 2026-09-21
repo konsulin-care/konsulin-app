@@ -8,7 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PlanDefinition, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { canAdvanceOnTitlePage } from '../can-advance';
 import { schema } from '../register/research-form';
@@ -136,6 +136,7 @@ export default function EditResearchForm({
     setValue,
     trigger,
     handleSubmit,
+    getValues,
     formState: { errors }
   } = form;
   const { fields, append, remove } = useFieldArray<FormData>({
@@ -143,10 +144,12 @@ export default function EditResearchForm({
     name: 'batches'
   });
 
-  const formValues = form.watch();
+  const title = useWatch({ control, name: 'title' });
+  const description = useWatch({ control, name: 'description' });
+  const batches = useWatch({ control, name: 'batches' });
 
   // Deep link guard
-  const shouldRedirect = page !== 'title' && !formValues.title;
+  const shouldRedirect = page !== 'title' && !title;
   useEffect(() => {
     if (shouldRedirect) router.replace(buildEditUrl(searchParams, 'title'));
   }, [shouldRedirect, router, searchParams]);
@@ -172,7 +175,7 @@ export default function EditResearchForm({
   );
 
   const [selectedIds, setSelectedIds] = useState<string[]>(() =>
-    formValues.batches.flatMap(b => b.questionnaireIds)
+    getValues('batches').flatMap(b => b.questionnaireIds)
   );
 
   const handleSelectLibrary = useCallback(
@@ -231,7 +234,7 @@ export default function EditResearchForm({
     () => ({
       canAdvance:
         effectivePage === 'title'
-          ? canAdvanceOnTitlePage(formValues.title, formValues.description)
+          ? canAdvanceOnTitlePage(title, description)
           : selectedIds.length > 0,
       onAdvance: () => {
         if (effectivePage === 'title') {
@@ -247,8 +250,8 @@ export default function EditResearchForm({
     }),
     [
       effectivePage,
-      formValues.title,
-      formValues.description,
+      title,
+      description,
       selectedIds.length,
       trigger,
       router,
@@ -273,7 +276,7 @@ export default function EditResearchForm({
         handleSelectLibrary,
         handleOpenUploadDrawer,
         fields,
-        formValues,
+        batches,
         setValue,
         append,
         remove,

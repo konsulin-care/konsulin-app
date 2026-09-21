@@ -22,7 +22,7 @@ export function RenderStep(props: {
   handleSelectLibrary: (ids: string[]) => void;
   handleOpenUploadDrawer: () => void;
   fields: UseFieldArrayReturn<FormData, 'batches'>['fields'];
-  formValues: FormData;
+  batches: FormData['batches'];
   setValue: UseFormReturn<FormData>['setValue'];
   append: UseFieldArrayReturn<FormData, 'batches'>['append'];
   remove: UseFieldArrayReturn<FormData, 'batches'>['remove'];
@@ -38,7 +38,7 @@ export function RenderStep(props: {
     handleSelectLibrary,
     handleOpenUploadDrawer,
     fields,
-    formValues,
+    batches,
     setValue,
     append,
     remove,
@@ -63,7 +63,7 @@ export function RenderStep(props: {
         <Step3
           fields={fields}
           errors={errors}
-          batches={formValues.batches}
+          batches={batches}
           setValue={setValue}
           onAddBatch={() =>
             append({ startDate: '', endDate: '', questionnaireIds: [] })
