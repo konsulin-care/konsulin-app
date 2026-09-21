@@ -241,5 +241,3 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
 }
-
-
