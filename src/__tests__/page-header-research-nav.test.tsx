@@ -40,12 +40,6 @@ vi.mock('@/components/general/avatar', () => ({
   default: () => <div>Avatar</div>
 }));
 
-function clickBack() {
-  const target = document.querySelector('[aria-label="Go back"]');
-  if (target) fireEvent.click(target);
-  return target !== null;
-}
-
 describe('PageHeader - research form page navigation', () => {
   let queryClient: QueryClient;
 

@@ -52,14 +52,6 @@ function makeStudiesBundle(
   };
 }
 
-function makeCountBundle(total: number): Bundle {
-  return {
-    resourceType: 'Bundle',
-    type: 'searchset',
-    total
-  };
-}
-
 describe('parseResearcherDashboardBundle', () => {
   it('returns empty array when no studies in bundle', () => {
     const bundle = makeStudiesBundle([], []);
