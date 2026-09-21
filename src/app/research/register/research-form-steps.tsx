@@ -125,7 +125,9 @@ export function Step2({
                   name={option?.name ?? id}
                   duration={option?.duration}
                   category={option?.category}
-                  onRemove={() => handleRemove(id)}
+                  onRemove={() => {
+                    handleRemove(id);
+                  }}
                 />
               );
             })}
@@ -191,7 +193,7 @@ export function Step3({
           key={field.id}
           index={index}
           errors={errors}
-          batchValues={batches[index]}
+          batchValues={batches[index]} // skipcq: JS-0075 - safe numeric field-array index
           setValue={setValue}
           onRemoveBatch={onRemoveBatch}
           isLocked={lockedBatchIndices.includes(index)}

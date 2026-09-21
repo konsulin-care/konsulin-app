@@ -33,7 +33,9 @@ export default function ResearcherStudySlide({
       <button
         type='button'
         aria-label={`Open study ${studyResource.title}`}
-        onClick={() => onClick(studyResource.id)}
+        onClick={() => {
+          onClick(studyResource.id);
+        }}
         className='absolute inset-0 z-0 cursor-pointer'
       />
       <div className='pointer-events-none relative z-10 flex flex-col gap-2'>

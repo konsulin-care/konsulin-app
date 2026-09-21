@@ -229,10 +229,9 @@ export default function ResearchForm() {
     [handleSelectLibrary, selectedIds]
   );
 
-  const handleOpenUploadDrawer = useCallback(
-    () => setIsUploadDrawerOpen(true),
-    []
-  );
+  const handleOpenUploadDrawer = useCallback(() => {
+    setIsUploadDrawerOpen(true);
+  }, []);
 
   // Don't render wrong page while redirecting
   const effectivePage = shouldRedirect ? 'title' : page;
@@ -266,7 +265,9 @@ export default function ResearchForm() {
           router.push('/research/register?page=batch');
         }
       },
-      onSubmit: () => void handleSubmit(onSubmitForm)()
+      onSubmit: () => {
+        void handleSubmit(onSubmitForm)();
+      }
     }),
     [
       effectivePage,
@@ -302,7 +303,9 @@ export default function ResearchForm() {
       })}
       <QuestionnaireUploadDrawer
         open={isUploadDrawerOpen}
-        onClose={() => setIsUploadDrawerOpen(false)}
+        onClose={() => {
+          setIsUploadDrawerOpen(false);
+        }}
         onUploaded={handleUploaded}
         showFee={false}
         showImage={false}

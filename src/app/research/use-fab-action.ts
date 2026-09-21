@@ -80,17 +80,15 @@ export function useResearchFabAction({
         return () => dispatch({ type: 'SET_ACTION', config: null });
       }
 
-      if (page === 'batch') {
-        dispatch({
-          type: 'SET_ACTION',
-          config: {
-            label: 'Submit',
-            icon: Check,
-            onAction: onSubmit
-          }
-        });
-        return () => dispatch({ type: 'SET_ACTION', config: null });
-      }
+      dispatch({
+        type: 'SET_ACTION',
+        config: {
+          label: 'Submit',
+          icon: Check,
+          onAction: onSubmit
+        }
+      });
+      return () => dispatch({ type: 'SET_ACTION', config: null });
     }
 
     // Research list page: show role-based action
@@ -100,8 +98,9 @@ export function useResearchFabAction({
         config: {
           label: 'Register Survey',
           icon: FlaskConical,
-          onAction: () =>
-            routerRef.current.push('/research/register?page=title')
+          onAction: () => {
+            routerRef.current.push('/research/register?page=title');
+          }
         }
       });
       return () => dispatch({ type: 'SET_ACTION', config: null });
@@ -115,7 +114,9 @@ export function useResearchFabAction({
         config: {
           label: 'Participate',
           icon: FlaskConical,
-          onAction: () => participate(activeStudy)
+          onAction: () => {
+            participate(activeStudy);
+          }
         }
       });
     } else {

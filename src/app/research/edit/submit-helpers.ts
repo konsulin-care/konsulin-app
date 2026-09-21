@@ -25,7 +25,7 @@ export function buildStudyEntry(
 
   const protocol = data.batches
     .map((_, i) => {
-      const existingId = planIds[i];
+      const existingId = planIds[i]; // skipcq: JS-0075 - safe numeric array index
       if (existingId) {
         return { reference: `PlanDefinition/${existingId}` };
       }
@@ -104,7 +104,7 @@ export function buildPlanEntries(
   type PlanEntry = BuildPlanEntriesResult['entries'][number];
   const entries = data.batches.flatMap<PlanEntry>((batch, i) => {
     if (lockedBatchIndices.includes(i)) return [];
-    const planId = planIds[i];
+    const planId = planIds[i]; // skipcq: JS-0075 - safe numeric array index
 
     if (planId) {
       if (!isBatchModified(batch, planId, planDefinitions)) return [];
@@ -163,6 +163,7 @@ interface SubmitEditStudyParams {
 }
 
 /** Submits the edit form as a FHIR transaction bundle. */
+// skipcq: JS-0075 - errors handled internally via try/catch + toast
 export async function submitEditStudy({
   study,
   planIds,

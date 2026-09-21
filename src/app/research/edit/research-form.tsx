@@ -221,10 +221,9 @@ export default function EditResearchForm({
     [study, planIds, lockedBatchIndices, planDefinitions, router, queryClient]
   );
 
-  const handleOpenUploadDrawer = useCallback(
-    () => setIsUploadDrawerOpen(true),
-    []
-  );
+  const handleOpenUploadDrawer = useCallback(() => {
+    setIsUploadDrawerOpen(true);
+  }, []);
 
   // Don't render wrong page while redirecting
   const effectivePage = shouldRedirect ? 'title' : page;
@@ -284,7 +283,9 @@ export default function EditResearchForm({
       })}
       <QuestionnaireUploadDrawer
         open={isUploadDrawerOpen}
-        onClose={() => setIsUploadDrawerOpen(false)}
+        onClose={() => {
+          setIsUploadDrawerOpen(false);
+        }}
         onUploaded={handleUploaded}
         showFee={false}
         showImage={false}

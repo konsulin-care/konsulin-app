@@ -222,7 +222,9 @@ export default function QuestionnaireUploadDrawer({
           <Label>Upload Questionnaire</Label>
           <QuestionnaireUploader
             value={form.questionnaire}
-            onChange={q => setForm(prev => ({ ...prev, questionnaire: q }))}
+            onChange={q => {
+              setForm(prev => ({ ...prev, questionnaire: q }));
+            }}
           />
         </div>
 
@@ -233,9 +235,9 @@ export default function QuestionnaireUploadDrawer({
               id='upload-image'
               type='url'
               value={form.imageUrl}
-              onChange={e =>
-                setForm(prev => ({ ...prev, imageUrl: e.target.value }))
-              }
+              onChange={e => {
+                setForm(prev => ({ ...prev, imageUrl: e.target.value }));
+              }}
               placeholder='https://example.com/image.webp'
               className='bg-white'
               aria-label='Image URL (optional)'
@@ -250,9 +252,9 @@ export default function QuestionnaireUploadDrawer({
             type='number'
             min='1'
             value={form.duration}
-            onChange={e =>
-              setForm(prev => ({ ...prev, duration: e.target.value }))
-            }
+            onChange={e => {
+              setForm(prev => ({ ...prev, duration: e.target.value }));
+            }}
             placeholder='10'
             className='bg-white'
             aria-label='Estimated Duration (minutes)'
@@ -265,7 +267,9 @@ export default function QuestionnaireUploadDrawer({
             <FeeInput
               id='upload-fee'
               value={form.fee}
-              onChange={fee => setForm(prev => ({ ...prev, fee }))}
+              onChange={fee => {
+                setForm(prev => ({ ...prev, fee }));
+              }}
               placeholder='0'
               className='bg-white'
               aria-label='Fee'
@@ -278,9 +282,9 @@ export default function QuestionnaireUploadDrawer({
           <select
             id='upload-category'
             value={form.category}
-            onChange={e =>
-              setForm(prev => ({ ...prev, category: e.target.value }))
-            }
+            onChange={e => {
+              setForm(prev => ({ ...prev, category: e.target.value }));
+            }}
             className='focus:ring-primary block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:outline-none'
             aria-label='Category'
           >

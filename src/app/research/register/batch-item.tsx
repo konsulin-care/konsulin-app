@@ -52,6 +52,7 @@ export function BatchDateField({
   isLocked: boolean;
 }) {
   const label = field === 'startDate' ? 'Start Date' : 'End Date';
+  // skipcq: JS-0075 - safe numeric array index
   const error = errors.batches?.[index]?.[field];
 
   const dateValue = currentValue ? new Date(currentValue) : undefined;
@@ -121,7 +122,9 @@ export function BatchItem({
             type='button'
             variant='ghost'
             size='sm'
-            onClick={() => onRemoveBatch(index)}
+            onClick={() => {
+              onRemoveBatch(index);
+            }}
           >
             Remove
           </Button>
