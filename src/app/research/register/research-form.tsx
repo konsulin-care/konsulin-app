@@ -261,10 +261,11 @@ export default function ResearchForm() {
           : selectedIds.length > 0,
       onAdvance: () => {
         if (effectivePage === 'title') {
+          /* eslint-disable promise/always-return */
           void trigger(['title', 'description']).then(valid => {
             if (valid) router.push('/research/register?page=questionnaire');
-            return valid;
           });
+          /* eslint-enable promise/always-return */
         } else if (effectivePage === 'questionnaire') {
           router.push('/research/register?page=batch');
         }

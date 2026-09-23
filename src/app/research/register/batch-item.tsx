@@ -29,8 +29,7 @@ export function BatchDateField({
   isLocked: boolean;
 }>) {
   const label = field === 'startDate' ? 'Start Date' : 'End Date';
-  // skipcq: JS-0075 - safe numeric array index
-  const error = errors.batches?.[index]?.[field];
+  const error = errors.batches?.[index]?.[field]; // skipcq: JS-0075 - safe numeric field-array index
 
   const dateValue = currentValue ? new Date(currentValue) : undefined;
 

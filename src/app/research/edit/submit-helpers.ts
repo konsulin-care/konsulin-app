@@ -163,7 +163,7 @@ interface SubmitEditStudyParams {
 }
 
 /** Submits the edit form as a FHIR transaction bundle. */
-// skipcq: JS-0075 - errors handled internally via try/catch + toast
+// skipcq: JS-0100 - errors handled internally via try/catch + toast
 export async function submitEditStudy({
   study,
   planIds,
