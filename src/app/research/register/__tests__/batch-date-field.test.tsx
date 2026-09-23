@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -19,12 +20,6 @@ vi.mock('@/context/auth/authContext', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
 
 function renderWithQuery(ui: React.ReactElement) {
   return render(
@@ -74,7 +69,6 @@ describe('BatchDateField - date picker button', () => {
       />
     );
 
-    // Native date inputs render as spinbuttons in jsdom
     const dateInputs = screen.queryAllByRole('spinbutton');
     expect(dateInputs).toHaveLength(0);
   });

@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,12 +44,6 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn()
 }));
 
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
-
 function renderWithQuery(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
@@ -62,10 +57,6 @@ describe('Batch step - availableQuestionnaires filtered by selectedIds', () => {
   });
 
   it('does not render questionnaire combobox when no questionnaires were selected', async () => {
-    // Navigate directly to batch page with no prior selections.
-    // selectedIds is [] in the register form (not persisted to localStorage).
-    // After the fix: availableQuestionnaires is filtered by selectedIds → empty → no combobox.
-    // Before the fix: availableQuestionnaires contains ALL library questionnaires → combobox appears.
     localStorage.setItem(
       'research-form-test-practitioner-id',
       JSON.stringify({
@@ -83,17 +74,12 @@ describe('Batch step - availableQuestionnaires filtered by selectedIds', () => {
 
     renderWithQuery(<ResearchForm />);
 
-    // Wait for batch page to render
     await waitFor(() => {
       expect(screen.getByText(/batch configuration/i)).toBeInTheDocument();
     });
 
-    // Wait for library query to load (the page needs to settle)
-    // We use a small delay to let the query complete
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    // After fix: no combobox (empty filtered list).
-    // Before fix: combobox is present (all library items unfiltered).
     const comboboxes = screen.queryAllByRole('combobox');
     expect(comboboxes).toHaveLength(0);
   });

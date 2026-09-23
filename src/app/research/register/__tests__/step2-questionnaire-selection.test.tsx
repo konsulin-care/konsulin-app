@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Step2 } from '../research-form-steps';
@@ -18,12 +19,6 @@ vi.mock('@/context/auth/authContext', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
 
 function renderWithQuery(ui: React.ReactElement) {
   return render(
@@ -166,10 +161,8 @@ describe('Step2 - Questionnaire Selection', () => {
 
     fireEvent.click(screen.getByRole('combobox'));
 
-    // Wait for popover to open and check metadata is rendered
     const popover = await vi.waitFor(() => screen.getByRole('listbox'));
 
-    // Check that metadata is rendered in the dropdown
     expect(
       within(popover).getByText('5 min · Mental Health')
     ).toBeInTheDocument();
@@ -192,7 +185,6 @@ describe('Step2 - Questionnaire Selection', () => {
     });
     const selectedHeading = screen.getByText('Selected (1)');
 
-    // Check DOM order: combobox < upload button < selected heading
     expect(
       combobox.compareDocumentPosition(uploadButton) &
         Node.DOCUMENT_POSITION_FOLLOWING

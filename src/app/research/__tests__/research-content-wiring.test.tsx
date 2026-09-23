@@ -1,6 +1,7 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { createElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearchContent from '../research-content';
 
@@ -44,15 +45,12 @@ vi.mock('./research-skeleton', () => ({
   default: () => <div data-testid='research-skeleton' />
 }));
 
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
+function wrapper({ children }: { children: ReactNode }) {
+  return createElement(
+    QueryClientProvider,
+    { client: createQueryClient() },
+    children
+  );
 }
 
 describe('ResearchContent wiring', () => {
@@ -75,7 +73,7 @@ describe('ResearchContent wiring', () => {
         onStudyClick={vi.fn()}
         onQuestionnaireClick={vi.fn()}
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     const researcherContent = screen.getByTestId('researcher-content');
     expect(researcherContent).toHaveAttribute(
@@ -104,7 +102,7 @@ describe('ResearchContent wiring', () => {
         onStudyClick={vi.fn()}
         onQuestionnaireClick={vi.fn()}
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     const researcherContent = screen.getByTestId('researcher-content');
     expect(researcherContent).toHaveAttribute('data-active', '');

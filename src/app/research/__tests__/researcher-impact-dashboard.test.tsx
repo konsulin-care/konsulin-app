@@ -1,9 +1,10 @@
-import type { ResearchStudyWithBatches } from '@/services/api/researcher';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { createElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearcherImpactDashboard from '../researcher-impact-dashboard';
+import { makeStudyWithBatches } from './research-fixtures';
 
 // Mock useAuth
 vi.mock('@/context/auth/authContext', () => ({
@@ -66,52 +67,23 @@ vi.mock('@/utils/helper', () => ({
   })
 }));
 
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-}
-
-function makeStudy(id: string): ResearchStudyWithBatches {
-  return {
-    study: {
-      resourceType: 'ResearchStudy' as const,
-      id,
-      title: `Study ${id}`,
-      status: 'active' as const
-    },
-    batches: [
-      {
-        id: `${id}-batch-0`,
-        start: '2026-01-01',
-        end: '2026-12-31',
-        questionnaireIds: ['q-1']
-      }
-    ],
-    currentBatch: {
-      id: `${id}-batch-0`,
-      start: '2026-01-01',
-      end: '2026-12-31',
-      questionnaireIds: ['q-1']
-    },
-    daysRemaining: 30
-  };
+function wrapper({ children }: { children: ReactNode }) {
+  return createElement(
+    QueryClientProvider,
+    { client: createQueryClient() },
+    children
+  );
 }
 
 describe('ResearcherImpactDashboard', () => {
   it('renders the dashboard section', () => {
     render(
       <ResearcherImpactDashboard
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeStudyId='study-1'
         practitionerId='practitioner-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(
       screen.getByTestId('researcher-impact-dashboard')
@@ -121,11 +93,11 @@ describe('ResearcherImpactDashboard', () => {
   it('renders the level halo', () => {
     render(
       <ResearcherImpactDashboard
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeStudyId='study-1'
         practitionerId='practitioner-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(screen.getByTestId('researcher-halo-ring')).toBeInTheDocument();
     expect(screen.getByTestId('researcher-level')).toHaveTextContent('Lv 2');
@@ -134,11 +106,11 @@ describe('ResearcherImpactDashboard', () => {
   it('renders the level title', () => {
     render(
       <ResearcherImpactDashboard
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeStudyId='study-1'
         practitionerId='practitioner-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(screen.getByTestId('dashboard-title')).toHaveTextContent(
       'Torchbearer'
@@ -148,11 +120,11 @@ describe('ResearcherImpactDashboard', () => {
   it('renders total participants stat', () => {
     render(
       <ResearcherImpactDashboard
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeStudyId='study-1'
         practitionerId='practitioner-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(screen.getByTestId('dashboard-participants')).toHaveTextContent(
       '25 total participants'
@@ -162,11 +134,11 @@ describe('ResearcherImpactDashboard', () => {
   it('renders total impact points stat', () => {
     render(
       <ResearcherImpactDashboard
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeStudyId='study-1'
         practitionerId='practitioner-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(screen.getByTestId('dashboard-impact')).toHaveTextContent(
       '150 impact points'
@@ -176,11 +148,11 @@ describe('ResearcherImpactDashboard', () => {
   it('renders the mission line with simplified CTA', () => {
     render(
       <ResearcherImpactDashboard
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeStudyId='study-1'
         practitionerId='practitioner-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(screen.getByTestId('dashboard-mission')).toHaveTextContent(
       'Enroll 6 participants to hit the next milestone.'
@@ -190,11 +162,11 @@ describe('ResearcherImpactDashboard', () => {
   it('renders the share button', () => {
     render(
       <ResearcherImpactDashboard
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeStudyId='study-1'
         practitionerId='practitioner-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(screen.getByTestId('share-research-footer')).toBeInTheDocument();
   });
@@ -202,11 +174,11 @@ describe('ResearcherImpactDashboard', () => {
   it('renders milestones with Next Milestones heading', () => {
     render(
       <ResearcherImpactDashboard
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeStudyId='study-1'
         practitionerId='practitioner-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(screen.getByText('Next Milestones')).toBeInTheDocument();
     expect(screen.getByText('10 participants')).toBeInTheDocument();
@@ -217,11 +189,11 @@ describe('ResearcherImpactDashboard', () => {
   it('share button has patient card footer styling', () => {
     render(
       <ResearcherImpactDashboard
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeStudyId='study-1'
         practitionerId='practitioner-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     const shareButton = screen.getByTestId('share-research-footer');
     expect(shareButton).toHaveClass('border-t', 'border-gray-100', 'pt-2');

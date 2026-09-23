@@ -71,152 +71,45 @@ describe('PageHeader - research form page navigation', () => {
     return router;
   }
 
-  it('navigates from ?page=batch to ?page=questionnaire via anchor href', () => {
-    setupMockRouter();
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('page=batch') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toHaveAttribute(
-      'href',
+  it.each([
+    [
+      '/research/register',
+      'page=batch',
       '/research/register?page=questionnaire'
-    );
-  });
-
-  it('navigates from ?page=questionnaire to ?page=title via anchor href', () => {
-    setupMockRouter();
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('page=questionnaire') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toHaveAttribute('href', '/research/register?page=title');
-  });
-
-  it('navigates from ?page=title to /research via anchor href', () => {
-    setupMockRouter();
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('page=title') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toHaveAttribute('href', '/research');
-  });
-
-  it('preserves id param in edit form via anchor href', () => {
-    setupMockRouter();
-    vi.mocked(usePathname).mockReturnValue('/research/edit');
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=study-123&page=batch') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toHaveAttribute(
-      'href',
+    ],
+    [
+      '/research/register',
+      'page=questionnaire',
+      '/research/register?page=title'
+    ],
+    ['/research/register', 'page=title', '/research'],
+    [
+      '/research/edit',
+      'id=study-123&page=batch',
       '/research/edit?id=study-123&page=questionnaire'
-    );
-  });
-
-  // --- Semantic navigation tests ---
-
-  it('renders an anchor with href for resolved backAction', () => {
-    setupMockRouter();
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('page=title') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).not.toBeNull();
-    expect(link).toHaveAttribute('href', '/research');
-  });
-
-  it('renders anchor targeting questionnaire when batch', () => {
-    setupMockRouter();
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('page=batch') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toHaveAttribute(
-      'href',
-      '/research/register?page=questionnaire'
-    );
-  });
-
-  it('renders anchor targeting title when questionnaire', () => {
-    setupMockRouter();
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('page=questionnaire') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toHaveAttribute('href', '/research/register?page=title');
-  });
-
-  it('renders anchor preserving id for edit batch step', () => {
-    setupMockRouter();
-    vi.mocked(usePathname).mockReturnValue('/research/edit');
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=study-123&page=batch') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toHaveAttribute(
-      'href',
-      '/research/edit?id=study-123&page=questionnaire'
-    );
-  });
-
-  it('renders anchor preserving id for edit questionnaire step', () => {
-    setupMockRouter();
-    vi.mocked(usePathname).mockReturnValue('/research/edit');
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams(
-        'id=study-456&page=questionnaire'
-      ) as unknown as ReturnType<typeof useSearchParams>
-    );
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toHaveAttribute(
-      'href',
+    ],
+    [
+      '/research/edit',
+      'id=study-456&page=questionnaire',
       '/research/edit?id=study-456&page=title'
-    );
-  });
+    ]
+  ])(
+    'navigates from %s?%s to %s via anchor href',
+    (pathname, search, expectedHref) => {
+      setupMockRouter();
+      vi.mocked(usePathname).mockReturnValue(pathname);
+      vi.mocked(useSearchParams).mockReturnValue(
+        new URLSearchParams(search) as unknown as ReturnType<
+          typeof useSearchParams
+        >
+      );
+
+      render(<PageHeader />, { wrapper });
+
+      const link = document.querySelector('a[aria-label="Go back"]');
+      expect(link).toHaveAttribute('href', expectedHref);
+    }
+  );
 
   it('falls back to router.back button for unknown routes', () => {
     const router = setupMockRouter();
@@ -224,11 +117,9 @@ describe('PageHeader - research form page navigation', () => {
 
     render(<PageHeader />, { wrapper });
 
-    // No anchor should exist for unknown routes
     const link = document.querySelector('a[aria-label="Go back"]');
     expect(link).toBeNull();
 
-    // Button should exist and call router.back
     const button = document.querySelector('button[aria-label="Go back"]');
     expect(button).not.toBeNull();
     fireEvent.click(button!);

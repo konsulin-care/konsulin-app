@@ -5,39 +5,16 @@ import QuestionnaireChip from '@/components/shared/questionnaire-chip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { ReactNode } from 'react';
+
 import type {
   FieldErrors,
   UseFieldArrayReturn,
   UseFormReturn
 } from 'react-hook-form';
 import type { QuestionnaireOption } from '../shared';
+import { renderOptionWithMetadata } from '../shared-components';
 import { BatchItem } from './batch-item';
 import type { FormData } from './research-form';
-
-/** Renders option name with optional metadata line (duration, category). */
-function renderOptionWithMetadata(option: {
-  name: string;
-  duration?: number | null;
-  category?: string | null;
-}): ReactNode {
-  const hasMetadata = option.duration != null || option.category != null;
-  return (
-    <div className='flex flex-col'>
-      <span>{option.name}</span>
-      {hasMetadata && (
-        <span className='text-muted-foreground text-xs'>
-          {[
-            option.duration == null ? null : `${option.duration} min`,
-            option.category
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </span>
-      )}
-    </div>
-  );
-}
 
 /**
  * Step 1: Title & Description
@@ -87,12 +64,12 @@ export function Step2({
   selectedIds,
   onSelect,
   onOpenUploadDrawer
-}: {
+}: Readonly<{
   libraryOptions: QuestionnaireOption[];
   selectedIds: string[];
   onSelect: (ids: string[]) => void;
   onOpenUploadDrawer: () => void;
-}) {
+}>) {
   const handleRemove = (code: string) => {
     onSelect(selectedIds.filter(id => id !== code));
   };
@@ -153,7 +130,7 @@ export function Step3({
   lockedBatchIndices = [],
   availableQuestionnaires = [],
   selectedQuestionnaireIds = []
-}: {
+}: Readonly<{
   fields: UseFieldArrayReturn<FormData, 'batches'>['fields'];
   errors: FieldErrors<FormData>;
   batches: FormData['batches'];
@@ -163,7 +140,7 @@ export function Step3({
   lockedBatchIndices?: number[];
   availableQuestionnaires?: QuestionnaireOption[];
   selectedQuestionnaireIds?: string[];
-}) {
+}>) {
   const hasQuestionnaires = availableQuestionnaires.length > 0;
 
   const handleSelectAll = () => {

@@ -22,10 +22,10 @@ const ResearchFormActionsContext = createContext<ResearchFormActions | null>(
 export function ResearchFormActionsProvider({
   children,
   value
-}: {
+}: Readonly<{
   children: ReactNode;
   value: ResearchFormActions;
-}) {
+}>) {
   return (
     <ResearchFormActionsContext.Provider value={value}>
       {children}

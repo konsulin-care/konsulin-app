@@ -76,8 +76,7 @@ export default function ResearcherStudySlide({
         {/* Stats row */}
         <div className='flex items-center gap-3 text-[11px] text-gray-600'>
           <span>
-            {participantCount === undefined ? '—' : participantCount}{' '}
-            participant
+            {participantCount ?? '—'} participant
             {participantCount === 1 ? '' : 's'}
           </span>
           <span>&middot;</span>

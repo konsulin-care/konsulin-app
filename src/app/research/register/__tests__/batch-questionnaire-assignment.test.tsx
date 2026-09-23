@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { QuestionnaireOption } from '../../shared';
@@ -19,12 +20,6 @@ vi.mock('@/context/auth/authContext', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
 
 function renderWithQuery(ui: React.ReactElement) {
   return render(
@@ -59,7 +54,6 @@ describe('Step3 - Questionnaire per batch assignment', () => {
       />
     );
 
-    // Each batch should have a combobox for questionnaire selection
     const comboboxes = screen.getAllByRole('combobox');
     expect(comboboxes.length).toBeGreaterThanOrEqual(1);
   });
@@ -97,7 +91,6 @@ describe('Step3 - Questionnaire per batch assignment', () => {
       />
     );
 
-    // No comboboxes for questionnaire selection
     const comboboxes = screen.queryAllByRole('combobox');
     expect(comboboxes).toHaveLength(0);
   });
@@ -123,9 +116,7 @@ describe('Step3 - Questionnaire per batch assignment', () => {
       />
     );
 
-    // Locked batch should show questionnaires as text, not combobox
     expect(screen.getByText('PHQ-2')).toBeInTheDocument();
-    // No editable combobox for locked batch
     const comboboxes = screen.queryAllByRole('combobox');
     expect(comboboxes).toHaveLength(0);
   });

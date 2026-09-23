@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { useSearchParams } from 'next/navigation';
@@ -41,12 +42,6 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/research/edit',
   useSearchParams: vi.fn()
 }));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
 
 function renderWithQuery(ui: React.ReactElement) {
   return render(
@@ -97,14 +92,10 @@ describe('Edit form - questionnaire persistence', () => {
       />
     );
 
-    // Wait for component to render
     await waitFor(() => {
-      // PHQ-9 appears in both combobox and chip
       expect(screen.getAllByText('PHQ-9').length).toBeGreaterThanOrEqual(1);
     });
 
-    // The selected items from existing plan should be visible
-    // This would fail with old code if selectedIds wasn't derived from form state
     expect(screen.getByText('Selected (2)')).toBeInTheDocument();
     expect(screen.getAllByText('PHQ-9').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('GAD-7').length).toBeGreaterThanOrEqual(1);
@@ -140,11 +131,9 @@ describe('Edit form - questionnaire persistence', () => {
       queryClient: mockQueryClient
     });
 
-    // Verify cache was invalidated
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: ['researcher-dashboard']
     });
-    // Verify navigation happened
     expect(mockPush).toHaveBeenCalledWith('/research');
   });
 });

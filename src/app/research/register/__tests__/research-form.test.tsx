@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Step1, Step2, Step3 } from '../research-form-steps';
@@ -23,12 +24,6 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
 
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
-
 function renderWithQuery(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
@@ -37,8 +32,6 @@ function renderWithQuery(ui: React.ReactElement) {
 
 /** Minimal mock for UseFormRegister — returns an empty handler object. */
 function mockRegister() {
-  // register('fieldName') returns { onChange, onBlur, ref, name }
-  // Using type assertion to bypass strict generic matching in tests
   return vi.fn((name: string) => ({
     onChange: vi.fn(),
     onBlur: vi.fn(),

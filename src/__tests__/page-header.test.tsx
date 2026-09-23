@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../components/page-header';
@@ -46,12 +47,10 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 const mockAxiosInstance: { get: ReturnType<typeof vi.fn> } = { get: vi.fn() };
 
 describe('PageHeader - admin clinic card', () => {
-  let queryClient: QueryClient;
+  let queryClient: ReturnType<typeof createQueryClient>;
 
   beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } }
-    });
+    queryClient = createQueryClient();
     vi.clearAllMocks();
     // Re-establish default mock implementations after clearAllMocks
     vi.mocked(dbGet).mockResolvedValue(null);
@@ -173,12 +172,10 @@ describe('PageHeader - admin clinic card', () => {
 });
 
 describe('PageHeader - back navigation', () => {
-  let queryClient: QueryClient;
+  let queryClient: ReturnType<typeof createQueryClient>;
 
   beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } }
-    });
+    queryClient = createQueryClient();
     vi.clearAllMocks();
     vi.mocked(usePathname).mockReturnValue('/clinic');
     vi.mocked(useSearchParams).mockReturnValue(

@@ -19,7 +19,7 @@ import {
   libraryOptionsFromQuery,
   type QuestionnaireOption
 } from '../shared';
-import { RenderStep } from './render-step';
+import { RenderStep } from '../shared-components';
 
 export const schema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -286,6 +286,7 @@ export default function ResearchForm() {
       <ResearchFormFabBridge />
       {RenderStep({
         effectivePage,
+        title: 'Register New Research',
         register,
         errors,
         libraryOptions,
@@ -296,7 +297,7 @@ export default function ResearchForm() {
         handleSelectLibrary,
         handleOpenUploadDrawer,
         fields,
-        formValues,
+        batches: formValues.batches,
         setValue,
         append,
         remove

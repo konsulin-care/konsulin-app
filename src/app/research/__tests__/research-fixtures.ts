@@ -1,4 +1,5 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
+import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement, type ReactElement, type ReactNode } from 'react';
@@ -78,6 +79,33 @@ export function makeProgress(
     completedQuestionnaireIds: ['phq2'],
     consentedStudyIds: [],
     ...overrides
+  };
+}
+
+/** ResearchStudyWithBatches fixture for researcher dashboard tests. */
+export function makeStudyWithBatches(id: string): ResearchStudyWithBatches {
+  return {
+    study: {
+      resourceType: 'ResearchStudy' as const,
+      id,
+      title: `Study ${id}`,
+      status: 'active' as const
+    },
+    batches: [
+      {
+        id: `${id}-batch-0`,
+        start: '2026-01-01',
+        end: '2026-12-31',
+        questionnaireIds: ['q-1']
+      }
+    ],
+    currentBatch: {
+      id: `${id}-batch-0`,
+      start: '2026-01-01',
+      end: '2026-12-31',
+      questionnaireIds: ['q-1']
+    },
+    daysRemaining: 30
   };
 }
 

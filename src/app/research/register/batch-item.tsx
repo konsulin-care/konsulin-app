@@ -4,34 +4,11 @@ import Combobox from '@/components/shared/combobox';
 import DatePickerButton from '@/components/shared/date-picker-button';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import type { ReactNode } from 'react';
+
 import type { FieldErrors, UseFormReturn } from 'react-hook-form';
 import type { QuestionnaireOption } from '../shared';
+import { renderOptionWithMetadata } from '../shared-components';
 import type { FormData } from './research-form';
-
-/** Renders option name with optional metadata line (duration, category). */
-function renderOptionWithMetadata(option: {
-  name: string;
-  duration?: number | null;
-  category?: string | null;
-}): ReactNode {
-  const hasMetadata = option.duration != null || option.category != null;
-  return (
-    <div className='flex flex-col'>
-      <span>{option.name}</span>
-      {hasMetadata && (
-        <span className='text-muted-foreground text-xs'>
-          {[
-            option.duration == null ? null : `${option.duration} min`,
-            option.category
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </span>
-      )}
-    </div>
-  );
-}
 
 /**
  * Date field for batch start/end dates.
@@ -43,14 +20,14 @@ export function BatchDateField({
   currentValue,
   setValue,
   isLocked
-}: {
+}: Readonly<{
   index: number;
   field: 'startDate' | 'endDate';
   errors: FieldErrors<FormData>;
   currentValue: string;
   setValue: UseFormReturn<FormData>['setValue'];
   isLocked: boolean;
-}) {
+}>) {
   const label = field === 'startDate' ? 'Start Date' : 'End Date';
   // skipcq: JS-0075 - safe numeric array index
   const error = errors.batches?.[index]?.[field];
@@ -90,7 +67,7 @@ export function BatchItem({
   onRemoveBatch,
   isLocked,
   availableQuestionnaires = []
-}: {
+}: Readonly<{
   index: number;
   errors: FieldErrors<FormData>;
   batchValues: FormData['batches'][number];
@@ -98,7 +75,7 @@ export function BatchItem({
   onRemoveBatch: (index: number) => void;
   isLocked: boolean;
   availableQuestionnaires?: QuestionnaireOption[];
-}) {
+}>) {
   const hasQuestionnaires = availableQuestionnaires.length > 0;
 
   const handleQuestionnaireSelect = (ids: string[]) => {

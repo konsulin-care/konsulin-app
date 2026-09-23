@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { useSearchParams } from 'next/navigation';
@@ -39,12 +40,6 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/research/edit',
   useSearchParams: vi.fn()
 }));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
 
 function renderWithQuery(ui: React.ReactElement) {
   return render(
@@ -155,7 +150,6 @@ describe('EditResearchForm - URL param navigation', () => {
   });
 
   it('pre-selects questionnaires from existing batches', () => {
-    // Render on questionnaire page
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('page=questionnaire') as unknown as ReturnType<
         typeof useSearchParams
@@ -165,7 +159,6 @@ describe('EditResearchForm - URL param navigation', () => {
       <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
     );
 
-    // Should show questionnaire selection with pre-selected count
     expect(screen.getByText('Selected (2)')).toBeInTheDocument();
   });
 
@@ -176,7 +169,6 @@ describe('EditResearchForm - URL param navigation', () => {
       >
     );
 
-    // Study with no title
     const emptyStudy: ResearchStudy = {
       ...mockStudy,
       title: ''

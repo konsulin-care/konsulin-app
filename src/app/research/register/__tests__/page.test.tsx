@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import RegisterPage from '../page';
@@ -38,20 +39,9 @@ vi.mock('../research-form', () => ({
   default: () => <div data-testid='research-form'>ResearchForm</div>
 }));
 
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false
-      }
-    }
-  });
-}
-
 function renderWithQuery(ui: React.ReactElement) {
-  const queryClient = createQueryClient();
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
   );
 }
 
@@ -66,8 +56,6 @@ describe('Register Page', () => {
   it('does not call useResearchFabAction at page level (moved to form)', () => {
     renderWithQuery(<RegisterPage />);
 
-    // FAB ownership moved to form via ResearchFormFabBridge
-    // Page should only render PageHeader and ResearchForm
     expect(screen.getByTestId('page-header')).toBeInTheDocument();
     expect(screen.getByTestId('research-form')).toBeInTheDocument();
   });

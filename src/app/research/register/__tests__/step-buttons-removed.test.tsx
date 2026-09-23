@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,12 +38,6 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/research/register',
   useSearchParams: vi.fn()
 }));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
 
 function renderWithQuery(ui: React.ReactElement) {
   return render(
@@ -84,7 +79,6 @@ describe('Step buttons removed', () => {
   });
 
   it('Step2 has no Back or Next buttons', () => {
-    // Render with ?page=questionnaire and valid title in localStorage
     localStorage.setItem(
       'research-form-test-practitioner-id',
       JSON.stringify({
@@ -124,7 +118,6 @@ describe('Step buttons removed', () => {
       >
     );
     renderWithQuery(<ResearchForm />);
-    // Should NOT call router.replace when page is already a valid page
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
@@ -150,7 +143,6 @@ describe('Step buttons removed', () => {
       >
     );
     renderWithQuery(<ResearchForm />);
-    // Should NOT call router.replace when page is already a valid page
     expect(mockReplace).not.toHaveBeenCalled();
   });
 });

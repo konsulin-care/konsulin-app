@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSearchParams } from 'next/navigation';
@@ -41,12 +42,6 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn()
 }));
 
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
-
 function renderWithQuery(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
@@ -72,7 +67,6 @@ describe('Questionnaire persistence - dual state bug', () => {
   });
 
   it('selectedIds derives from batches[].questionnaireIds on initial load', async () => {
-    // Pre-populate localStorage with form data that has selected questionnaires
     localStorage.setItem(
       'research-form-test-practitioner-id',
       JSON.stringify({
@@ -92,21 +86,16 @@ describe('Questionnaire persistence - dual state bug', () => {
 
     renderWithQuery(<ResearchForm />);
 
-    // Wait for library questionnaires to load and component to render
     await waitFor(() => {
       expect(screen.getByText('PHQ-9')).toBeInTheDocument();
     });
 
-    // The selected items should be visible
-    // This fails with old code because selectedIds is initialized as []
-    // instead of being derived from batches[0].questionnaireIds
     expect(screen.getByText('Selected (2)')).toBeInTheDocument();
     expect(screen.getByText('PHQ-9')).toBeInTheDocument();
     expect(screen.getByText('GAD-7')).toBeInTheDocument();
   });
 
   it('selections persist across component remount (navigation simulation)', async () => {
-    // First visit: populate localStorage with selections
     localStorage.setItem(
       'research-form-test-practitioner-id',
       JSON.stringify({
@@ -127,33 +116,25 @@ describe('Questionnaire persistence - dual state bug', () => {
     const { unmount } = renderWithQuery(<ResearchForm />);
 
     await waitFor(() => {
-      // PHQ-9 appears in both combobox and chip
       expect(screen.getAllByText('PHQ-9').length).toBeGreaterThanOrEqual(1);
     });
 
-    // Verify selection is present
     expect(screen.getByText('Selected (1)')).toBeInTheDocument();
 
-    // Simulate navigation: unmount and remount (same component, same localStorage)
     unmount();
 
-    // Second visit: same localStorage data
     renderWithQuery(<ResearchForm />);
 
     await waitFor(() => {
-      // PHQ-9 appears in both combobox and chip
       expect(screen.getAllByText('PHQ-9').length).toBeGreaterThanOrEqual(1);
     });
 
-    // Selections should still be present after remount
-    // This fails with old code because selectedIds is reset to []
     expect(screen.getByText('Selected (1)')).toBeInTheDocument();
   });
 
   it('clicking items updates selection immediately (multi-select append)', async () => {
     const user = userEvent.setup();
 
-    // Pre-populate localStorage with a title to bypass deep link guard
     localStorage.setItem(
       'research-form-test-practitioner-id',
       JSON.stringify({
@@ -172,26 +153,21 @@ describe('Questionnaire persistence - dual state bug', () => {
 
     renderWithQuery(<ResearchForm />);
 
-    // Wait for library questionnaires to load
     await waitFor(() => {
       expect(
         screen.getByText('Upload Custom Questionnaire')
       ).toBeInTheDocument();
     });
 
-    // Open the combobox popover by clicking the trigger button
     const trigger = screen.getByRole('combobox');
     await user.click(trigger);
 
-    // Wait for popover items to appear and click PHQ-9
     await waitFor(() => {
       expect(screen.getByText('PHQ-9')).toBeInTheDocument();
     });
     const phq9Item = screen.getAllByText('PHQ-9').at(-1)!;
     await user.click(phq9Item);
 
-    // Selection count should update IMMEDIATELY to 1
-    // Before fix: useMemo doesn't recompute because formValues.batches reference is stable
     await waitFor(() => {
       expect(screen.getByText('Selected (1)')).toBeInTheDocument();
     });

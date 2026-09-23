@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Step3 } from '../research-form-steps';
@@ -18,12 +19,6 @@ vi.mock('@/context/auth/authContext', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
 
 function renderWithQuery(ui: React.ReactElement) {
   return render(
@@ -95,15 +90,12 @@ describe('Step3 - Batch Configuration', () => {
       />
     );
 
-    // Open the combobox
     const combobox = screen.getByRole('combobox');
     combobox.click();
 
-    // Wait for popover to open
     const { waitFor } = await import('@testing-library/react');
     const popover = await waitFor(() => screen.getByRole('listbox'));
 
-    // Check that metadata is rendered in the dropdown
     expect(screen.getByText('5 min · Mental Health')).toBeInTheDocument();
     expect(screen.getByText('3 min · Anxiety')).toBeInTheDocument();
   });
@@ -122,7 +114,6 @@ describe('Step3 - Batch Configuration', () => {
       />
     );
 
-    // No CircleX buttons (QuestionnaireChip remove buttons)
     const removeButtons = screen.queryAllByRole('button', { name: /remove/i });
     expect(removeButtons).toHaveLength(0);
   });
@@ -148,9 +139,7 @@ describe('Step3 - Batch Configuration', () => {
       />
     );
 
-    // Locked batch should show questionnaires as text, not combobox
     expect(screen.getByText('PHQ-9')).toBeInTheDocument();
-    // No editable combobox for locked batch
     const comboboxes = screen.queryAllByRole('combobox');
     expect(comboboxes).toHaveLength(0);
   });

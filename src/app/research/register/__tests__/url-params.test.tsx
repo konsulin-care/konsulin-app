@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -39,12 +40,6 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn()
 }));
 
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
-
 function renderWithQuery(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
@@ -55,7 +50,6 @@ describe('ResearchForm - URL param navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    // Default: no search params (empty)
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
     );
@@ -115,7 +109,6 @@ describe('ResearchForm - URL param navigation', () => {
     );
     renderWithQuery(<ResearchForm />);
 
-    // Should redirect to title page
     expect(mockReplace).toHaveBeenCalledWith('/research/register?page=title');
   });
 
@@ -185,8 +178,6 @@ describe('ResearchForm - URL param navigation', () => {
     );
     renderWithQuery(<ResearchForm />);
 
-    // After fix: no combobox when no questionnaires were selected
-    // Before fix: combobox appears with all library questionnaires
     await new Promise(resolve => setTimeout(resolve, 100));
     const comboboxes = screen.queryAllByRole('combobox');
     expect(comboboxes).toHaveLength(0);
@@ -200,10 +191,7 @@ describe('ResearchForm - URL param navigation', () => {
     );
     renderWithQuery(<ResearchForm />);
 
-    // Library query should be enabled (not blocked by page check)
-    // We verify by checking that the query client has the query
     await waitFor(() => {
-      // The query should be fetched regardless of current page
       expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
     });
   });

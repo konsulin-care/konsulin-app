@@ -1,13 +1,14 @@
-import type { ResearchStudyWithBatches } from '@/services/api/researcher';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { createElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearcherContent from '../researcher-content';
+import { makeStudyWithBatches } from './research-fixtures';
 
 // Mock ResearcherCarousel
 vi.mock('../researcher-carousel', () => ({
-  default: ({ studies }: { studies: ResearchStudyWithBatches[] }) => (
+  default: ({ studies }: { studies: { study: { id: string } }[] }) => (
     <div data-testid='researcher-carousel'>
       {studies.map(s => (
         <div key={s.study.id} data-testid={`mock-slide-${s.study.id}`} />
@@ -23,7 +24,7 @@ vi.mock('../researcher-impact-dashboard', () => ({
     activeStudyId,
     practitionerId
   }: {
-    studies: ResearchStudyWithBatches[];
+    studies: unknown[];
     activeStudyId: string;
     practitionerId?: string;
   }) => (
@@ -48,41 +49,12 @@ vi.mock('./research-skeleton', () => ({
   default: () => <div data-testid='research-skeleton' />
 }));
 
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-}
-
-function makeStudy(id: string): ResearchStudyWithBatches {
-  return {
-    study: {
-      resourceType: 'ResearchStudy' as const,
-      id,
-      title: `Study ${id}`,
-      status: 'active' as const
-    },
-    batches: [
-      {
-        id: `${id}-batch-0`,
-        start: '2026-01-01',
-        end: '2026-12-31',
-        questionnaireIds: ['q-1']
-      }
-    ],
-    currentBatch: {
-      id: `${id}-batch-0`,
-      start: '2026-01-01',
-      end: '2026-12-31',
-      questionnaireIds: ['q-1']
-    },
-    daysRemaining: 30
-  };
+function wrapper({ children }: { children: ReactNode }) {
+  return createElement(
+    QueryClientProvider,
+    { client: createQueryClient() },
+    children
+  );
 }
 
 describe('ResearcherContent wiring', () => {
@@ -90,14 +62,14 @@ describe('ResearcherContent wiring', () => {
     render(
       <ResearcherContent
         isLoading={false}
-        studies={[makeStudy('study-1')]}
+        studies={[makeStudyWithBatches('study-1')]}
         activeId='study-1'
         onSlideChange={vi.fn()}
         onStudyClick={vi.fn()}
         practitionerId='practitioner-1'
         activeStudyId='study-1'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(
       screen.getByTestId('researcher-impact-dashboard')
@@ -108,14 +80,17 @@ describe('ResearcherContent wiring', () => {
     render(
       <ResearcherContent
         isLoading={false}
-        studies={[makeStudy('study-1'), makeStudy('study-2')]}
+        studies={[
+          makeStudyWithBatches('study-1'),
+          makeStudyWithBatches('study-2')
+        ]}
         activeId='study-2'
         onSlideChange={vi.fn()}
         onStudyClick={vi.fn()}
         practitionerId='practitioner-1'
         activeStudyId='study-2'
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     const dashboard = screen.getByTestId('researcher-impact-dashboard');
     expect(dashboard).toHaveAttribute('data-studies', '2');
@@ -134,7 +109,7 @@ describe('ResearcherContent wiring', () => {
         practitionerId='practitioner-1'
         activeStudyId=''
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(screen.getByTestId('research-skeleton')).toBeInTheDocument();
     expect(
@@ -153,7 +128,7 @@ describe('ResearcherContent wiring', () => {
         practitionerId='practitioner-1'
         activeStudyId=''
       />,
-      { wrapper: createWrapper() }
+      { wrapper }
     );
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
     expect(

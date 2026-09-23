@@ -19,8 +19,8 @@ import {
   libraryOptionsFromQuery,
   type QuestionnaireOption
 } from '../shared';
+import { RenderStep } from '../shared-components';
 import { buildEditUrl } from './build-edit-url';
-import { RenderStep } from './render-step';
 import { submitEditStudy } from './submit-helpers';
 
 export type FormData = z.infer<typeof schema>;
@@ -265,6 +265,7 @@ export default function EditResearchForm({
       <ResearchFormFabBridge />
       {RenderStep({
         effectivePage,
+        title: 'Edit Research',
         register,
         errors,
         libraryOptions,

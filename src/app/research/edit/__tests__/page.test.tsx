@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import EditPage from '../page';
@@ -54,20 +55,9 @@ vi.mock('@/services/api', () => ({
     })
 }));
 
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false
-      }
-    }
-  });
-}
-
 function renderWithQuery(ui: React.ReactElement) {
-  const queryClient = createQueryClient();
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
   );
 }
 
@@ -77,8 +67,6 @@ describe('Edit Page', () => {
 
     await screen.findByTestId('edit-research-form');
 
-    // FAB ownership moved to form via ResearchFormFabBridge
-    // Page should only render PageHeader and EditResearchForm
     expect(screen.getByTestId('page-header')).toBeInTheDocument();
     expect(screen.getByTestId('edit-research-form')).toBeInTheDocument();
   });

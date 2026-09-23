@@ -10,38 +10,20 @@ describe('Checkbox', () => {
     expect(checkbox).toHaveAttribute('data-state', 'unchecked');
   });
 
-  it('renders checked when checked prop is true', () => {
-    render(<Checkbox checked />);
-    const checkbox = screen.getByRole('checkbox');
-    expect(checkbox).toHaveAttribute('data-state', 'checked');
-  });
-
-  it('applies teal background when checked (secondary color)', () => {
-    render(<Checkbox checked />);
-    const checkbox = screen.getByRole('checkbox');
-    // bg-secondary maps to var(--secondary) which is #13c2c2
-    expect(checkbox.className).toContain('bg-secondary');
-  });
-
-  it('does not apply teal background when unchecked', () => {
-    render(<Checkbox />);
-    const checkbox = screen.getByRole('checkbox');
-    // The class data-[state=checked]:bg-secondary is present in the string
-    // but only applies visually when data-state=checked; verify unchecked state
-    expect(checkbox).toHaveAttribute('data-state', 'unchecked');
-  });
-
-  it('applies white text when checked', () => {
-    render(<Checkbox checked />);
-    const checkbox = screen.getByRole('checkbox');
-    expect(checkbox.className).toContain('text-white');
-  });
-
-  it('applies secondary border when checked', () => {
-    render(<Checkbox checked />);
-    const checkbox = screen.getByRole('checkbox');
-    expect(checkbox.className).toContain('border-secondary');
-  });
+  it.each([
+    [true, 'checked', ['bg-secondary', 'text-white', 'border-secondary']],
+    [false, 'unchecked', []]
+  ])(
+    'applies correct state and classes when checked=%s',
+    (checked, expectedState, expectedClasses) => {
+      render(<Checkbox checked={checked} />);
+      const checkbox = screen.getByRole('checkbox');
+      expect(checkbox).toHaveAttribute('data-state', expectedState);
+      for (const cls of expectedClasses) {
+        expect(checkbox.className).toContain(cls);
+      }
+    }
+  );
 
   it('toggles on click', async () => {
     const user = userEvent.setup();
