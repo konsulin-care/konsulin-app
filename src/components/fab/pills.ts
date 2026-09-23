@@ -11,6 +11,23 @@ import {
 } from 'lucide-react';
 import type { Pill } from './types';
 
+/** Speed-dial pills for researcher role. */
+export const researcherPills: Pill[] = [
+  {
+    label: 'Register Survey',
+    icon: FlaskConical,
+    delay: 0,
+    action: 'register-research'
+  },
+  {
+    label: 'My Survey',
+    href: '/research',
+    icon: BookText,
+    delay: 50,
+    action: 'navigate'
+  }
+];
+
 /** Speed-dial pills for patient role. */
 export const patientPills: Pill[] = [
   {
