@@ -34,12 +34,14 @@ interface EditResearchFormProps {
   planDefinitions: PlanDefinition[];
 }
 
+/** Extract the last path segment from a FHIR reference string. */
 const extractIdFromReference = (ref?: string): string | null => {
   if (!ref) return null;
   const parts = ref.split('/').filter(Boolean);
   return parts.at(-1) ?? null;
 };
 
+/** Convert a ResearchStudy into form-ready defaults. */
 const mapToFormData = (
   study: ResearchStudy,
   planDefinitions: PlanDefinition[]
@@ -61,6 +63,7 @@ const mapToFormData = (
     }))
 });
 
+/** Map study protocol references to matching plan definition IDs. */
 const mapToPlanIds = (
   study: ResearchStudy,
   planDefinitions: PlanDefinition[]
@@ -71,6 +74,7 @@ const mapToPlanIds = (
     .filter((id): id is string => id !== null && planIdMap.has(id));
 };
 
+/** Return indices of batches whose start date is in the past. */
 const computeLockedBatchIndices = (batches: FormData['batches']): number[] => {
   const today = new Date().toISOString().slice(0, 10);
   return batches

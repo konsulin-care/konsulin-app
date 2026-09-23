@@ -94,7 +94,7 @@ describe('Step3 - Batch Configuration', () => {
     combobox.click();
 
     const { waitFor } = await import('@testing-library/react');
-    const popover = await waitFor(() => screen.getByRole('listbox'));
+    await waitFor(() => screen.getByRole('listbox'));
 
     expect(screen.getByText('5 min · Mental Health')).toBeInTheDocument();
     expect(screen.getByText('3 min · Anxiety')).toBeInTheDocument();

@@ -66,8 +66,8 @@ export default function AddAssessmentDrawer({ open, onClose }: Props) {
       open={open}
       onClose={onClose}
       onUploaded={handleUploaded}
-      showFee={true}
-      showImage={true}
+      showFee
+      showImage
       context='assessment'
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
       resolvePublisher={handleResolvePublisher}

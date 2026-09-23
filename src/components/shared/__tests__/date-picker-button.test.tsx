@@ -6,12 +6,10 @@ vi.mock('@/components/ui/app-drawer', () => ({
   default: ({
     children,
     open,
-    onClose,
     title
   }: {
     children: React.ReactNode;
     open: boolean;
-    onClose: () => void;
     title?: string;
   }) => (
     <div data-testid='drawer-root' data-open={open}>

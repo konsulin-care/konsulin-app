@@ -34,6 +34,7 @@ export function BatchDateField({
 
   const dateValue = currentValue ? new Date(currentValue) : undefined;
 
+  /** Persist a date selection into the form field. */
   const handleChange = (date: Date) => {
     const yyyyMMdd = date.toISOString().slice(0, 10);
     // skipcq: JS-0098 - fire-and-forget validation

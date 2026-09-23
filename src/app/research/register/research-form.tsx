@@ -43,9 +43,11 @@ type Page = 'title' | 'questionnaire' | 'batch';
 
 const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
 
+/** Build a localStorage key scoped to the current user. */
 const getStorageKey = (userId: string | undefined) =>
   `research-form-${userId ?? 'anonymous'}`;
 
+/** Hydrate partial form data from localStorage. */
 const loadFromStorage = (
   key: string
 ): (Partial<FormData> & { page?: string }) | null => {
@@ -59,11 +61,13 @@ const loadFromStorage = (
   return null;
 };
 
+/** Create a default batch entry with the given start date. */
 const createBatch = (date = ''): FormData['batches'][number] => ({
   startDate: date,
   endDate: date,
   questionnaireIds: []
 });
+/** POST a new research study to the API. */
 const submitStudy = async (
   API: Awaited<ReturnType<typeof getAPI>>,
   data: FormData,

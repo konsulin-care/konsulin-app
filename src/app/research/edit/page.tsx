@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import EditResearchForm from './research-form';
 
+/** Extract the last path segment from a FHIR reference string. */
 const extractIdFromReference = (ref?: string): string | null => {
   if (!ref) return null;
   const parts = ref.split('/').filter(Boolean);

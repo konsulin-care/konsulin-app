@@ -58,6 +58,7 @@ export function useConsent({
     const study = studies.find(entry => entry.study.id === studyId);
     const target =
       questionnaireId ?? study?.firstUncompletedQuestionnaireId ?? null;
+    /** Clear pending consent and navigate to the target questionnaire. */
     const finish = () => {
       setPendingConsent(null);
       if (target) router.push(`/assessments?id=${target}&study=${studyId}`);

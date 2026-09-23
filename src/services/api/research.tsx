@@ -162,6 +162,7 @@ function useResearchIdentity() {
   return { identity, identityFailed, isEligible };
 }
 
+/** Fetch participant responses and compute study progress. */
 async function fetchResearchProgress(
   identity: ResearchIdentity,
   skipResponseSearch: boolean

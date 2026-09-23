@@ -165,7 +165,7 @@ describe('Questionnaire persistence - dual state bug', () => {
     await waitFor(() => {
       expect(screen.getByText('PHQ-9')).toBeInTheDocument();
     });
-    const phq9Item = screen.getAllByText('PHQ-9').at(-1)!;
+    const phq9Item = screen.getAllByText('PHQ-9').at(-1) as HTMLElement;
     await user.click(phq9Item);
 
     await waitFor(() => {

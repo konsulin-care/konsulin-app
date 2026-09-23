@@ -35,6 +35,7 @@ export default function DatePickerButton({
 
   const displayText = value ? format(value, 'dd MMM yyyy') : placeholder;
 
+  /** Apply the selected date and close the picker. */
   const handleSelect = (date: Date | undefined) => {
     if (!date) return;
     onChange(date);

@@ -134,6 +134,7 @@ interface QuestionnaireRowProps {
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
 }
 
+/** Render a single questionnaire row with completion status. */
 function QuestionnaireRow({
   id,
   studyId,

@@ -70,6 +70,7 @@ export function Step2({
   onSelect: (ids: string[]) => void;
   onOpenUploadDrawer: () => void;
 }>) {
+  /** Deselect a questionnaire by its code. */
   const handleRemove = (code: string) => {
     onSelect(selectedIds.filter(id => id !== code));
   };
@@ -143,6 +144,7 @@ export function Step3({
 }>) {
   const hasQuestionnaires = availableQuestionnaires.length > 0;
 
+  /** Toggle all unlocked batches to selected. */
   const handleSelectAll = () => {
     for (const [index] of fields.entries()) {
       if (!lockedBatchIndices.includes(index)) {

@@ -25,13 +25,7 @@ function FabStateReader() {
   );
 }
 
-function HookCaller({
-  canAdvance,
-  push
-}: {
-  canAdvance: boolean;
-  push: { push: (url: string) => void };
-}) {
+function HookCaller({ push }: { push: { push: (url: string) => void } }) {
   const router = useMemo(() => push, [push]);
   const participate = useMemo(() => () => {}, []);
 
@@ -77,7 +71,7 @@ describe('useResearchFabAction', () => {
 
     render(
       <Wrapper canAdvance={false}>
-        <HookCaller canAdvance={false} push={{ push }} />
+        <HookCaller push={{ push }} />
       </Wrapper>
     );
 

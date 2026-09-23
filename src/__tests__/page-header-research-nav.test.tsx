@@ -122,7 +122,7 @@ describe('PageHeader - research form page navigation', () => {
 
     const button = document.querySelector('button[aria-label="Go back"]');
     expect(button).not.toBeNull();
-    fireEvent.click(button!);
+    fireEvent.click(button as HTMLElement);
     expect(router.back).toHaveBeenCalledTimes(1);
   });
 

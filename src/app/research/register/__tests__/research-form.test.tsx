@@ -93,7 +93,7 @@ describe('Step2 - Questionnaire Selection', () => {
     ).toBeInTheDocument();
   });
 
-  it('calls onOpenUploadDrawer when button is clicked', async () => {
+  it('calls onOpenUploadDrawer when button is clicked', () => {
     const onOpenUploadDrawer = vi.fn();
     renderWithQuery(
       <Step2

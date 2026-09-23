@@ -209,12 +209,6 @@ describe('PageHeader - back navigation', () => {
     return router;
   }
 
-  function clickChevron() {
-    const chevron = document.querySelector('.lucide-chevron-left');
-    if (chevron) fireEvent.click(chevron);
-    return chevron !== null;
-  }
-
   it('renders anchor with correct href for cross-route back (/clinic → /)', () => {
     setupMockRouter();
 
@@ -250,7 +244,7 @@ describe('PageHeader - back navigation', () => {
     // Button calls router.back
     const button = document.querySelector('button[aria-label="Go back"]');
     expect(button).not.toBeNull();
-    fireEvent.click(button!);
+    fireEvent.click(button as HTMLElement);
     expect(router.back).toHaveBeenCalledTimes(1);
     expect(router.push).not.toHaveBeenCalled();
   });
