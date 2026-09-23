@@ -94,42 +94,19 @@ describe('EditResearchForm - URL param navigation', () => {
     expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
   });
 
-  it('canonicalizes missing ?page to ?page=title preserving id', () => {
+  it.each([
+    { label: 'missing ?page', search: 'id=study-1' },
+    { label: 'invalid ?page', search: 'id=study-1&page=garbage' },
+    { label: 'valid ?page=title', search: 'id=study-1&page=title' }
+  ])('canonicalizes URL params for %s', ({ search }) => {
     vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=study-1') as unknown as ReturnType<
+      new URLSearchParams(search) as unknown as ReturnType<
         typeof useSearchParams
       >
     );
     renderWithQuery(
       <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
     );
-
-    expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
-  });
-
-  it('canonicalizes invalid ?page value preserving id', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=study-1&page=garbage') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-    renderWithQuery(
-      <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
-    );
-
-    expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
-  });
-
-  it('does not canonicalize when ?page=title is present', () => {
-    vi.mocked(useSearchParams).mockReturnValue(
-      new URLSearchParams('id=study-1&page=title') as unknown as ReturnType<
-        typeof useSearchParams
-      >
-    );
-    renderWithQuery(
-      <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
-    );
-
     expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
   });
 

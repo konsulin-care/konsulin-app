@@ -22,10 +22,10 @@ import type { FormData } from './research-form';
 export function Step1({
   register,
   errors
-}: {
+}: Readonly<{
   register: UseFormReturn<FormData>['register'];
   errors: FieldErrors<FormData>;
-}) {
+}>) {
   return (
     <div className='space-y-4'>
       <div className='space-y-2'>
