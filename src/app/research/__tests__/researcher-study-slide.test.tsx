@@ -37,11 +37,7 @@ const mockStudy: ResearchStudyWithBatches = {
 describe('ResearcherStudySlide', () => {
   it('renders study title and status badge', () => {
     render(
-      <ResearcherStudySlide
-        study={mockStudy}
-        isActive={true}
-        onClick={vi.fn()}
-      />
+      <ResearcherStudySlide study={mockStudy} isActive onClick={vi.fn()} />
     );
 
     expect(screen.getByText('Mental Health Survey')).toBeInTheDocument();
@@ -50,11 +46,7 @@ describe('ResearcherStudySlide', () => {
 
   it('renders truncated description', () => {
     render(
-      <ResearcherStudySlide
-        study={mockStudy}
-        isActive={true}
-        onClick={vi.fn()}
-      />
+      <ResearcherStudySlide study={mockStudy} isActive onClick={vi.fn()} />
     );
 
     expect(
@@ -64,11 +56,7 @@ describe('ResearcherStudySlide', () => {
 
   it('renders batch count and days remaining', () => {
     render(
-      <ResearcherStudySlide
-        study={mockStudy}
-        isActive={true}
-        onClick={vi.fn()}
-      />
+      <ResearcherStudySlide study={mockStudy} isActive onClick={vi.fn()} />
     );
 
     expect(screen.getByText(/2 batches/)).toBeInTheDocument();
@@ -77,11 +65,7 @@ describe('ResearcherStudySlide', () => {
 
   it('renders questionnaire count', () => {
     render(
-      <ResearcherStudySlide
-        study={mockStudy}
-        isActive={true}
-        onClick={vi.fn()}
-      />
+      <ResearcherStudySlide study={mockStudy} isActive onClick={vi.fn()} />
     );
 
     expect(screen.getByText('3 questionnaires')).toBeInTheDocument();
@@ -89,11 +73,7 @@ describe('ResearcherStudySlide', () => {
 
   it('applies active/inactive opacity based on isActive prop', () => {
     const { rerender } = render(
-      <ResearcherStudySlide
-        study={mockStudy}
-        isActive={true}
-        onClick={vi.fn()}
-      />
+      <ResearcherStudySlide study={mockStudy} isActive onClick={vi.fn()} />
     );
 
     const card = screen.getByTestId('researcher-slide-study-1');
@@ -113,11 +93,7 @@ describe('ResearcherStudySlide', () => {
   it('calls onClick with study id when card is clicked', () => {
     const onClick = vi.fn();
     render(
-      <ResearcherStudySlide
-        study={mockStudy}
-        isActive={true}
-        onClick={onClick}
-      />
+      <ResearcherStudySlide study={mockStudy} isActive onClick={onClick} />
     );
 
     const button = screen.getByRole('button', {
@@ -132,7 +108,7 @@ describe('ResearcherStudySlide', () => {
     render(
       <ResearcherStudySlide
         study={mockStudy}
-        isActive={true}
+        isActive
         onClick={vi.fn()}
         participantCount={7}
       />
@@ -144,13 +120,9 @@ describe('ResearcherStudySlide', () => {
 
   it('shows dash when participantCount is undefined', () => {
     render(
-      <ResearcherStudySlide
-        study={mockStudy}
-        isActive={true}
-        onClick={vi.fn()}
-      />
+      <ResearcherStudySlide study={mockStudy} isActive onClick={vi.fn()} />
     );
 
-    expect(screen.getByText(/— participants/)).toBeInTheDocument();
+    expect(screen.getByText(/— participants/u)).toBeInTheDocument();
   });
 });

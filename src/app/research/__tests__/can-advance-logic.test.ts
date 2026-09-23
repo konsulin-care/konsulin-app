@@ -30,7 +30,7 @@ describe('canAdvanceOnTitlePage', () => {
     expect(canAdvanceOnTitlePage('   ', '   ')).toBe(false);
   });
 
-  it('returns true when description is undefined (optional field)', () => {
+  it('returns false when description is undefined (optional field)', () => {
     expect(canAdvanceOnTitlePage('My Study', undefined)).toBe(false);
   });
 });

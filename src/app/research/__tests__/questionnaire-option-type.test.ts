@@ -1,39 +1,40 @@
+import type { Questionnaire } from 'fhir/r4';
 import { describe, expect, it } from 'vitest';
 import { libraryOptionsFromQuery, type QuestionnaireOption } from '../shared';
 
 describe('QuestionnaireOption type compatibility', () => {
   it('libraryOptionsFromQuery returns QuestionnaireOption[]', () => {
-    const result: QuestionnaireOption[] = libraryOptionsFromQuery([
-      {
-        id: 'phq9',
-        title: 'PHQ-9',
-        status: 'active',
-        extension: [
-          {
-            url: 'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration',
-            valueDuration: { value: 5 }
+    const fixture: Questionnaire = {
+      resourceType: 'Questionnaire',
+      id: 'phq9',
+      title: 'PHQ-9',
+      status: 'active',
+      extension: [
+        {
+          url: 'http://konsulin.care/fhir/StructureDefinition/questionnaireEstimatedDuration',
+          valueDuration: { value: 5 }
+        }
+      ],
+      useContext: [
+        {
+          code: {
+            system: 'http://terminology.hl7.org/CodeSystem/usage-context',
+            code: 'focus'
+          },
+          valueCodeableConcept: {
+            coding: [
+              {
+                system:
+                  'http://konsulin.care/fhir/CodeSystem/assessment-domain',
+                code: 'mental-emotional-health',
+                display: 'Mental & Emotional Health'
+              }
+            ]
           }
-        ],
-        useContext: [
-          {
-            code: {
-              system: 'http://terminology.hl7.org/CodeSystem/usage-context',
-              code: 'focus'
-            },
-            valueCodeableConcept: {
-              coding: [
-                {
-                  system:
-                    'http://konsulin.care/fhir/CodeSystem/assessment-domain',
-                  code: 'mental-emotional-health',
-                  display: 'Mental & Emotional Health'
-                }
-              ]
-            }
-          }
-        ]
-      } as any
-    ]);
+        }
+      ]
+    };
+    const result: QuestionnaireOption[] = libraryOptionsFromQuery([fixture]);
 
     expect(result).toHaveLength(1);
     expect(result[0].code).toBe('phq9');

@@ -71,12 +71,12 @@ describe('StudyDetailView - Role Prop', () => {
       <StudyDetailView
         progress={mockProgress}
         overlapMap={new Map()}
-        open={true}
+        open
         onClose={vi.fn()}
         onParticipate={vi.fn()}
         onSeeReport={vi.fn()}
         onQuestionnaireClick={vi.fn()}
-        isPatient={true}
+        isPatient
       />
     );
     expect(screen.getByTestId('drawer')).toBeInTheDocument();
@@ -87,7 +87,7 @@ describe('StudyDetailView - Role Prop', () => {
       <StudyDetailView
         progress={mockProgress}
         overlapMap={new Map()}
-        open={true}
+        open
         onClose={vi.fn()}
         onParticipate={vi.fn()}
         onSeeReport={vi.fn()}
@@ -104,7 +104,7 @@ describe('StudyDetailView - Role Prop', () => {
       <StudyDetailView
         progress={mockProgress}
         overlapMap={new Map()}
-        open={true}
+        open
         onClose={vi.fn()}
         onParticipate={vi.fn()}
         onSeeReport={vi.fn()}
@@ -121,12 +121,12 @@ describe('StudyDetailView - Role Prop', () => {
       <StudyDetailView
         progress={mockProgress}
         overlapMap={new Map()}
-        open={true}
+        open
         onClose={vi.fn()}
         onParticipate={vi.fn()}
         onSeeReport={vi.fn()}
         onQuestionnaireClick={vi.fn()}
-        isPatient={true}
+        isPatient
       />
     );
     expect(screen.getByText('See Report')).toBeInTheDocument();
@@ -137,7 +137,7 @@ describe('StudyDetailView - Role Prop', () => {
       <StudyDetailView
         progress={mockProgress}
         overlapMap={new Map()}
-        open={true}
+        open
         onClose={vi.fn()}
         onParticipate={vi.fn()}
         onSeeReport={vi.fn()}
@@ -157,7 +157,7 @@ describe('StudyDetailView - Role Prop', () => {
       <StudyDetailView
         progress={mockProgress}
         overlapMap={new Map()}
-        open={true}
+        open
         onClose={vi.fn()}
         onParticipate={vi.fn()}
         onSeeReport={vi.fn()}
@@ -175,7 +175,7 @@ describe('StudyDetailView - Role Prop', () => {
       <StudyDetailView
         progress={mockProgress}
         overlapMap={new Map()}
-        open={true}
+        open
         onClose={vi.fn()}
         onParticipate={vi.fn()}
         onSeeReport={vi.fn()}
@@ -194,7 +194,7 @@ describe('StudyDetailView - Role Prop', () => {
       <StudyDetailView
         progress={mockProgress}
         overlapMap={new Map()}
-        open={true}
+        open
         onClose={vi.fn()}
         onParticipate={vi.fn()}
         onSeeReport={vi.fn()}

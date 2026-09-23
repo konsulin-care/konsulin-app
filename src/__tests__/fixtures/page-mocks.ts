@@ -4,9 +4,11 @@
  * Provides reusable mock data and setup helpers.
  */
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createElement } from 'react';
+
 /** Create a QueryClient for tests. */
 export function createTestQueryClient() {
-  const { QueryClient } = require('@tanstack/react-query');
   return new QueryClient({
     defaultOptions: { queries: { retry: false } }
   });
@@ -14,8 +16,6 @@ export function createTestQueryClient() {
 
 /** Create a wrapper function with QueryClientProvider. */
 export function createTestWrapper() {
-  const { createElement } = require('react');
-  const { QueryClientProvider } = require('@tanstack/react-query');
   const queryClient = createTestQueryClient();
 
   return function Wrapper({ children }: { children: React.ReactNode }) {

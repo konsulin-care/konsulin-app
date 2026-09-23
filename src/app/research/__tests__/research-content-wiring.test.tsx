@@ -47,7 +47,7 @@ describe('ResearchContent wiring', () => {
   it('passes practitionerId and activeStudyId to ResearcherContent', () => {
     render(
       <ResearchContent
-        isResearcher={true}
+        isResearcher
         researcherLoading={false}
         researcherStudies={[]}
         isLoading={false}
@@ -76,7 +76,7 @@ describe('ResearchContent wiring', () => {
   it('passes empty string for activeStudyId when not provided', () => {
     render(
       <ResearchContent
-        isResearcher={true}
+        isResearcher
         researcherLoading={false}
         researcherStudies={[]}
         isLoading={false}

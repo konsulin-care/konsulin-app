@@ -13,7 +13,7 @@ export function makeResearcherStudy(
     study: {
       resourceType: 'ResearchStudy',
       id,
-      title: `Mental Health Survey`,
+      title: 'Mental Health Survey',
       status: 'active',
       description: 'A study about mental health'
     },

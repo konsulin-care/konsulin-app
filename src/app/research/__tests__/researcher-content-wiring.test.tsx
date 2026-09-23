@@ -91,7 +91,7 @@ describe('ResearcherContent wiring', () => {
   it('does not render dashboard when loading', () => {
     render(
       <ResearcherContent
-        isLoading={true}
+        isLoading
         studies={[]}
         activeId=''
         onSlideChange={vi.fn()}

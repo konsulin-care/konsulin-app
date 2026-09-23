@@ -28,7 +28,7 @@ describe('QuestionnaireUploadDrawer', () => {
   it('renders upload field and duration input', () => {
     renderWithQuery(
       <QuestionnaireUploadDrawer
-        open={true}
+        open
         onClose={vi.fn()}
         onUploaded={vi.fn()}
         resolvePublisher={vi.fn().mockResolvedValue('Test Publisher')}
@@ -45,10 +45,10 @@ describe('QuestionnaireUploadDrawer', () => {
   it('shows fee field when showFee is true', () => {
     renderWithQuery(
       <QuestionnaireUploadDrawer
-        open={true}
+        open
         onClose={vi.fn()}
         onUploaded={vi.fn()}
-        showFee={true}
+        showFee
         resolvePublisher={vi.fn().mockResolvedValue('Test Publisher')}
       />
     );
@@ -59,7 +59,7 @@ describe('QuestionnaireUploadDrawer', () => {
   it('hides fee field when showFee is false', () => {
     renderWithQuery(
       <QuestionnaireUploadDrawer
-        open={true}
+        open
         onClose={vi.fn()}
         onUploaded={vi.fn()}
         showFee={false}
@@ -73,10 +73,10 @@ describe('QuestionnaireUploadDrawer', () => {
   it('shows image field when showImage is true', () => {
     renderWithQuery(
       <QuestionnaireUploadDrawer
-        open={true}
+        open
         onClose={vi.fn()}
         onUploaded={vi.fn()}
-        showImage={true}
+        showImage
         resolvePublisher={vi.fn().mockResolvedValue('Test Publisher')}
       />
     );
@@ -87,7 +87,7 @@ describe('QuestionnaireUploadDrawer', () => {
   it('hides image field when showImage is false', () => {
     renderWithQuery(
       <QuestionnaireUploadDrawer
-        open={true}
+        open
         onClose={vi.fn()}
         onUploaded={vi.fn()}
         showImage={false}
@@ -101,7 +101,7 @@ describe('QuestionnaireUploadDrawer', () => {
   it('renders category selector', () => {
     renderWithQuery(
       <QuestionnaireUploadDrawer
-        open={true}
+        open
         onClose={vi.fn()}
         onUploaded={vi.fn()}
         resolvePublisher={vi.fn().mockResolvedValue('Test Publisher')}

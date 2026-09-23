@@ -41,6 +41,7 @@ export default function EditPage() {
   useEffect(() => {
     if (!studyId || !isResearcher) return;
 
+    /** Fetch the current study and its linked PlanDefinitions from the FHIR API. */
     const fetchStudy = async () => {
       setIsFetching(true);
       try {
