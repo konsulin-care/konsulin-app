@@ -186,7 +186,9 @@ export default function ResearchForm() {
     const id = setTimeout(() => {
       localStorage.setItem(storageKey, JSON.stringify({ ...formValues, page }));
     }, 500);
-    return () => clearTimeout(id);
+    return () => {
+      clearTimeout(id);
+    };
   }, [formValues, page, storageKey]);
 
   const { data: libraryQs = [] } = useQuery({

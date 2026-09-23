@@ -191,7 +191,8 @@ export async function submitEditStudy({
     toast.success('Study updated successfully');
     await queryClient.invalidateQueries({ queryKey: ['researcher-dashboard'] });
     router.push('/research');
-  } catch {
+  } catch (error) {
+    console.error('Failed to update study:', error);
     toast.error('Failed to update study. Please try again.');
   }
 }
