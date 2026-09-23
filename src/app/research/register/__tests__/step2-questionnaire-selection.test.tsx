@@ -1,6 +1,5 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { renderWithQuery } from '@/app/research/__tests__/research-test-utils';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Step2 } from '../research-form-steps';
 
@@ -17,14 +16,8 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() })
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
 
 const libraryOptions = [
   { code: 'phq9', name: 'PHQ-9', duration: 5, category: 'Mental Health' },

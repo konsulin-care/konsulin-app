@@ -1,12 +1,8 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { renderWithQuery } from '@/app/research/__tests__/research-test-utils';
+import { screen, waitFor } from '@testing-library/react';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchForm from '../research-form';
-
-const mockPush = vi.fn();
-const mockReplace = vi.fn();
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
@@ -39,16 +35,10 @@ vi.mock('@/services/api', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   usePathname: () => '/research/register',
   useSearchParams: vi.fn()
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
 
 describe('Batch step - availableQuestionnaires filtered by selectedIds', () => {
   beforeEach(() => {

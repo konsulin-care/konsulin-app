@@ -1,6 +1,9 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import {
+  MOCK_BATCH,
+  MOCK_FIELD,
+  renderWithQuery
+} from '@/app/research/__tests__/research-test-utils';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { QuestionnaireOption } from '../../shared';
 import { Step3 } from '../research-form-steps';
@@ -18,21 +21,8 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() })
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
-
-const mockBatch = { startDate: '', endDate: '', questionnaireIds: [] };
-const mockField = {
-  id: '1',
-  name: 'batches.0' as const,
-  ...mockBatch
-};
 
 const availableQuestionnaires: QuestionnaireOption[] = [
   { code: 'phq2', name: 'PHQ-2', duration: null, category: null },
@@ -43,9 +33,9 @@ describe('Step3 - Questionnaire per batch assignment', () => {
   it('renders combobox for questionnaire selection in each batch', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
@@ -61,9 +51,9 @@ describe('Step3 - Questionnaire per batch assignment', () => {
   it('renders "Select all" button when availableQuestionnaires is provided', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
@@ -80,9 +70,9 @@ describe('Step3 - Questionnaire per batch assignment', () => {
   it('does not render combobox for questionnaire when availableQuestionnaires is empty', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
@@ -98,7 +88,7 @@ describe('Step3 - Questionnaire per batch assignment', () => {
   it('shows read-only questionnaires for locked batches', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
         batches={[
           {

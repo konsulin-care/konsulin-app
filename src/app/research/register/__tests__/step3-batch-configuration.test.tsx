@@ -1,6 +1,10 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import {
+  MOCK_BATCH,
+  MOCK_FIELD,
+  MOCK_QUESTIONNAIRES,
+  renderWithQuery
+} from '@/app/research/__tests__/research-test-utils';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Step3 } from '../research-form-steps';
 
@@ -17,38 +21,20 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() })
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
-
-const mockBatch = { startDate: '', endDate: '', questionnaireIds: [] };
-const mockField = {
-  id: '1',
-  name: 'batches.0' as const,
-  ...mockBatch
-};
-
-const availableQuestionnaires = [
-  { code: 'phq9', name: 'PHQ-9', duration: 5, category: 'Mental Health' },
-  { code: 'gad7', name: 'GAD-7', duration: 3, category: 'Anxiety' }
-];
 
 describe('Step3 - Batch Configuration', () => {
   it('renders one combobox per batch with multi-select', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
-        availableQuestionnaires={availableQuestionnaires}
+        availableQuestionnaires={MOCK_QUESTIONNAIRES}
         selectedQuestionnaireIds={['phq9', 'gad7']}
       />
     );
@@ -60,13 +46,13 @@ describe('Step3 - Batch Configuration', () => {
   it('renders select all button', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
-        availableQuestionnaires={availableQuestionnaires}
+        availableQuestionnaires={MOCK_QUESTIONNAIRES}
         selectedQuestionnaireIds={['phq9', 'gad7']}
       />
     );
@@ -79,13 +65,13 @@ describe('Step3 - Batch Configuration', () => {
   it('renders metadata in combobox dropdown via renderOptionLabel', async () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
-        availableQuestionnaires={availableQuestionnaires}
+        availableQuestionnaires={MOCK_QUESTIONNAIRES}
         selectedQuestionnaireIds={['phq9', 'gad7']}
       />
     );
@@ -103,13 +89,13 @@ describe('Step3 - Batch Configuration', () => {
   it('does not render QuestionnaireChip in batch view', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
-        availableQuestionnaires={availableQuestionnaires}
+        availableQuestionnaires={MOCK_QUESTIONNAIRES}
         selectedQuestionnaireIds={['phq9', 'gad7']}
       />
     );
@@ -121,7 +107,7 @@ describe('Step3 - Batch Configuration', () => {
   it('renders locked batches with disabled combobox', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
         batches={[
           {
@@ -133,7 +119,7 @@ describe('Step3 - Batch Configuration', () => {
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
-        availableQuestionnaires={availableQuestionnaires}
+        availableQuestionnaires={MOCK_QUESTIONNAIRES}
         selectedQuestionnaireIds={['phq9', 'gad7']}
         lockedBatchIndices={[0]}
       />
@@ -153,13 +139,13 @@ describe('Step3 - Batch Configuration', () => {
     };
     renderWithQuery(
       <Step3
-        fields={[mockField, mockField2]}
+        fields={[MOCK_FIELD, mockField2]}
         errors={{}}
-        batches={[mockBatch, mockBatch]}
+        batches={[MOCK_BATCH, MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
-        availableQuestionnaires={availableQuestionnaires}
+        availableQuestionnaires={MOCK_QUESTIONNAIRES}
         selectedQuestionnaireIds={['phq9', 'gad7']}
       />
     );

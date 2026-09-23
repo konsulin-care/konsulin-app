@@ -1,7 +1,5 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { wrapper } from '@/app/research/__tests__/research-test-utils';
 import { render, screen } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearchContent from '../research-content';
 
@@ -44,14 +42,6 @@ vi.mock('@/components/general/empty-state', () => ({
 vi.mock('./research-skeleton', () => ({
   default: () => <div data-testid='research-skeleton' />
 }));
-
-function wrapper({ children }: { children: ReactNode }) {
-  return createElement(
-    QueryClientProvider,
-    { client: createQueryClient() },
-    children
-  );
-}
 
 describe('ResearchContent wiring', () => {
   it('passes practitionerId and activeStudyId to ResearcherContent', () => {

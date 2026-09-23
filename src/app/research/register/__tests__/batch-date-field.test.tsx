@@ -1,6 +1,9 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import {
+  MOCK_BATCH,
+  MOCK_FIELD,
+  renderWithQuery
+} from '@/app/research/__tests__/research-test-utils';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Step3 } from '../research-form-steps';
@@ -18,29 +21,16 @@ vi.mock('@/context/auth/authContext', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() })
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
-
-const mockBatch = { startDate: '', endDate: '', questionnaireIds: [] };
-const mockField = {
-  id: '1',
-  name: 'batches.0' as const,
-  ...mockBatch
-};
 
 describe('BatchDateField - date picker button', () => {
   it('renders date picker buttons instead of native date inputs', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
@@ -60,9 +50,9 @@ describe('BatchDateField - date picker button', () => {
   it('does not render native date inputs', () => {
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}
@@ -77,9 +67,9 @@ describe('BatchDateField - date picker button', () => {
     const user = userEvent.setup();
     renderWithQuery(
       <Step3
-        fields={[mockField]}
+        fields={[MOCK_FIELD]}
         errors={{}}
-        batches={[mockBatch]}
+        batches={[MOCK_BATCH]}
         setValue={vi.fn()}
         onAddBatch={vi.fn()}
         onRemoveBatch={vi.fn()}

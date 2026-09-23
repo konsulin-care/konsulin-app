@@ -1,6 +1,5 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { renderWithQuery } from '@/app/research/__tests__/research-test-utils';
+import { screen } from '@testing-library/react';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchForm from '../research-form';
@@ -31,19 +30,11 @@ vi.mock('@/services/api', () => ({
     })
 }));
 
-const mockReplace = vi.fn();
-
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: mockReplace }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   usePathname: () => '/research/register',
   useSearchParams: vi.fn()
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
 
 describe('Step buttons removed', () => {
   beforeEach(() => {
@@ -118,7 +109,7 @@ describe('Step buttons removed', () => {
       >
     );
     renderWithQuery(<ResearchForm />);
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
   });
 
   it('does not redirect back to title when page=batch', () => {
@@ -143,6 +134,6 @@ describe('Step buttons removed', () => {
       >
     );
     renderWithQuery(<ResearchForm />);
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
   });
 });

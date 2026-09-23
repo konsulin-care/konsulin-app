@@ -1,7 +1,5 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { wrapper } from '@/app/research/__tests__/research-test-utils';
 import { render, screen } from '@testing-library/react';
-import { createElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearcherImpactDashboard from '../researcher-impact-dashboard';
 import { makeStudyWithBatches } from './research-fixtures';
@@ -66,14 +64,6 @@ vi.mock('@/utils/helper', () => ({
     seed: 'user-1'
   })
 }));
-
-function wrapper({ children }: { children: ReactNode }) {
-  return createElement(
-    QueryClientProvider,
-    { client: createQueryClient() },
-    children
-  );
-}
 
 describe('ResearcherImpactDashboard', () => {
   it('renders the dashboard section', () => {

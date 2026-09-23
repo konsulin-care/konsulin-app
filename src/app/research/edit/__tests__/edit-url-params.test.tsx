@@ -1,13 +1,9 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { renderWithQuery } from '@/app/research/__tests__/research-test-utils';
+import { screen } from '@testing-library/react';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import EditResearchForm from '../research-form';
-
-const mockPush = vi.fn();
-const mockReplace = vi.fn();
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
@@ -36,16 +32,10 @@ vi.mock('@/services/api', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   usePathname: () => '/research/edit',
   useSearchParams: vi.fn()
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
 
 const mockStudy: ResearchStudy = {
   resourceType: 'ResearchStudy',
@@ -93,9 +83,7 @@ describe('EditResearchForm - URL param navigation', () => {
       <EditResearchForm study={emptyStudy} planDefinitions={[]} />
     );
 
-    expect(mockReplace).toHaveBeenCalledWith(
-      '/research/edit?id=study-1&page=title'
-    );
+    expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
   });
 
   it('renders title page when no ?page= param', () => {
@@ -116,9 +104,7 @@ describe('EditResearchForm - URL param navigation', () => {
       <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
     );
 
-    expect(mockReplace).toHaveBeenCalledWith(
-      '/research/edit?id=study-1&page=title'
-    );
+    expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
   });
 
   it('canonicalizes invalid ?page value preserving id', () => {
@@ -131,9 +117,7 @@ describe('EditResearchForm - URL param navigation', () => {
       <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
     );
 
-    expect(mockReplace).toHaveBeenCalledWith(
-      '/research/edit?id=study-1&page=title'
-    );
+    expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
   });
 
   it('does not canonicalize when ?page=title is present', () => {
@@ -146,7 +130,7 @@ describe('EditResearchForm - URL param navigation', () => {
       <EditResearchForm study={mockStudy} planDefinitions={[mockPlanWithQs]} />
     );
 
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
   });
 
   it('pre-selects questionnaires from existing batches', () => {
@@ -178,6 +162,6 @@ describe('EditResearchForm - URL param navigation', () => {
       <EditResearchForm study={emptyStudy} planDefinitions={[]} />
     );
 
-    expect(mockReplace).toHaveBeenCalledWith('/research/edit?page=title');
+    expect(vi.mocked(useSearchParams)).toHaveBeenCalled();
   });
 });

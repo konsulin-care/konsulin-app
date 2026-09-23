@@ -1,6 +1,5 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { renderWithQuery } from '@/app/research/__tests__/research-test-utils';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import EditPage from '../page';
 
@@ -54,12 +53,6 @@ vi.mock('@/services/api', () => ({
       })
     })
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
 
 describe('Edit Page', () => {
   it('renders page header and edit form for researcher', async () => {

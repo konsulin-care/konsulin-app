@@ -63,6 +63,16 @@ date: 2026-05-26
 
 # TypeScript/React Pitfalls
 
+- **Vitest `vi.mock` cannot be extracted to shared utilities** — Vitest
+  hoists all `vi.mock()` calls to the top of the module regardless of
+  where they appear in code. If you put `vi.mock` in a shared utility
+  file and import it, the mocks execute at the top of that utility
+  module, not the calling test file. This causes conflicts when test
+  files also have their own `vi.mock` calls for the same module, or
+  the shared mock doesn't include all exports the test needs (e.g.,
+  `useSearchParams`). **Fix**: keep `vi.mock` calls in each test file
+  at the top level. Only extract non-mock utilities (`renderWithQuery`,
+  `wrapper`, constants) to shared files.
 - **Void-returning arrow shorthands in JSX** — `onClick={e => handler(e)}`
   implicitly returns `undefined` when the handler returns `void`. Always
   use braces: `onClick={e => { handler(e); }}`.
