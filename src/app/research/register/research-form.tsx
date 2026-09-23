@@ -259,13 +259,12 @@ export default function ResearchForm() {
         effectivePage === 'title'
           ? canAdvanceOnTitlePage(formValues.title, formValues.description)
           : selectedIds.length > 0,
-      onAdvance: () => {
+      onAdvance: async () => {
         if (effectivePage === 'title') {
-          /* eslint-disable promise/always-return */
-          void trigger(['title', 'description']).then(valid => {
-            if (valid) router.push('/research/register?page=questionnaire');
-          });
-          /* eslint-enable promise/always-return */
+          const valid = await trigger(['title', 'description']);
+          if (valid) {
+            router.push('/research/register?page=questionnaire');
+          }
         } else if (effectivePage === 'questionnaire') {
           router.push('/research/register?page=batch');
         }
