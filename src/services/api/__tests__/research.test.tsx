@@ -1,8 +1,13 @@
+import {
+  EMPTY_BATCH_RESPONSE,
+  makeQRSearchSet,
+  makeStudiesBatchResponse
+} from '@/__tests__/fixtures/research-api-mocks';
 import { createQueryClient } from '@/__tests__/react-test-utils';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosInstance } from 'axios';
-import type { Bundle, PlanDefinition, ResearchStudy } from 'fhir/r4';
+import type { Bundle } from 'fhir/r4';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../../api';
 import { useResearchProgress } from '../research';
@@ -41,67 +46,19 @@ function createWrapper() {
   };
 }
 
-const EMPTY_BATCH_RESPONSE: Bundle = {
-  resourceType: 'Bundle',
-  type: 'batch-response',
-  entry: []
-};
-
-const researchStudy = (id: string, periodStart: string): ResearchStudy => ({
-  resourceType: 'ResearchStudy',
-  id,
-  status: 'active',
-  period: { start: periodStart, end: '2027-07-31' },
-  protocol: [{ reference: 'PlanDefinition/batch-1' }]
-});
-
-const batchPlan = (id: string): PlanDefinition => ({
-  resourceType: 'PlanDefinition',
-  id,
-  status: 'active',
-  effectivePeriod: { start: '2026-09-01', end: '2026-09-30' },
-  action: [
-    { definitionCanonical: 'Questionnaire/phq2' },
-    { definitionCanonical: 'Questionnaire/big-five-inventory' }
-  ]
-});
-
 /** Batch-response for the studies bundle: study + batch plan in a searchset. */
-const STUDIES_BATCH_RESPONSE: Bundle = {
-  resourceType: 'Bundle',
-  type: 'batch-response',
-  entry: [
-    {
-      resource: {
-        resourceType: 'Bundle',
-        type: 'searchset',
-        entry: [
-          { resource: researchStudy('study-a', '2026-06-01') },
-          { resource: batchPlan('batch-1') }
-        ]
-      },
-      response: { status: '200' }
-    }
-  ]
-};
+const STUDIES_BATCH_RESPONSE = makeStudiesBatchResponse([
+  { id: 'study-a', periodStart: '2026-06-01' }
+]);
 
 /** Plain searchset returned by the QuestionnaireResponse GET. */
-const QR_SEARCHSET: Bundle = {
-  resourceType: 'Bundle',
-  type: 'searchset',
-  total: 1,
-  entry: [
-    {
-      resource: {
-        resourceType: 'QuestionnaireResponse',
-        id: 'QR-1',
-        questionnaire: 'Questionnaire/phq2',
-        status: 'completed',
-        authored: '2026-09-10T00:00:00Z'
-      }
-    }
-  ]
-};
+const QR_SEARCHSET = makeQRSearchSet([
+  {
+    id: 'QR-1',
+    questionnaire: 'Questionnaire/phq2',
+    authored: '2026-09-10T00:00:00Z'
+  }
+]);
 
 const PATIENT_STATE = {
   isLoading: false,
