@@ -2,7 +2,7 @@ import {
   MOCK_BATCH,
   MOCK_FIELD,
   renderWithQuery
-} from '@/app/research/__tests__/research-test-utils';
+} from '@/__tests__/react-test-utils';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';

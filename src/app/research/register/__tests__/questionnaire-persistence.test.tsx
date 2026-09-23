@@ -1,6 +1,5 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -41,12 +40,6 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/research/register',
   useSearchParams: vi.fn()
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
 
 const VALID_FORM_DATA = {
   title: 'Test Study',

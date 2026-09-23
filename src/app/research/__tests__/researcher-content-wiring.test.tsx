@@ -1,4 +1,4 @@
-import { wrapper } from '@/app/research/__tests__/research-test-utils';
+import { wrapper } from '@/__tests__/react-test-utils';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearcherContent from '../researcher-content';

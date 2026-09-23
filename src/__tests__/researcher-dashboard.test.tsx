@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearcherDashboard from '../app/researcher-dashboard';
 
@@ -53,23 +53,6 @@ vi.mock('@/context/auth/authContext', () => ({
 vi.mock('@/services/api/researcher', () => ({
   useResearcherDashboard: () => mockReturnValue
 }));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false
-      }
-    }
-  });
-}
-
-function renderWithQuery(ui: React.ReactElement) {
-  const queryClient = createQueryClient();
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
-  );
-}
 
 describe('ResearcherDashboard', () => {
   it('renders stat cards with correct counts', () => {

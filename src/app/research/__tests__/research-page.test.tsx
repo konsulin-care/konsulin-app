@@ -1,15 +1,27 @@
 /* eslint-disable max-lines */
+import { createQueryClient } from '@/__tests__/react-test-utils';
 import type { FabAction } from '@/context/fabContext';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 import {
-  createResearchWrapper as createWrapper,
   makeProgress,
   makeStudyB,
   makeStudyProgress,
   TITLE_MAP
 } from './research-fixtures';
+
+function createWrapper() {
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return createElement(
+      QueryClientProvider,
+      { client: createQueryClient() },
+      children
+    );
+  };
+}
 
 /** Auth hook state shape consumed by the research page. */
 interface AuthState {

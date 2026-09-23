@@ -1,4 +1,4 @@
-import { renderWithQuery } from '@/app/research/__tests__/research-test-utils';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
 import { screen, waitFor } from '@testing-library/react';
 import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

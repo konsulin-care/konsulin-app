@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createQueryClient } from '@/__tests__/react-test-utils';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosInstance } from 'axios';
 import type { Bundle, PlanDefinition, ResearchStudy } from 'fhir/r4';
@@ -32,9 +33,7 @@ vi.mock('../../api', () => ({
 }));
 
 function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
+  const queryClient = createQueryClient();
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

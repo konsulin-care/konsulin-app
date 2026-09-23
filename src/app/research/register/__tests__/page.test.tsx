@@ -1,4 +1,4 @@
-import { renderWithQuery } from '@/app/research/__tests__/research-test-utils';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import RegisterPage from '../page';

@@ -1,4 +1,4 @@
-import { renderWithQuery } from '@/app/research/__tests__/research-test-utils';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
 import { screen } from '@testing-library/react';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { useSearchParams } from 'next/navigation';

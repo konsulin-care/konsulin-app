@@ -3,7 +3,7 @@ import {
   MOCK_FIELD,
   MOCK_QUESTIONNAIRES,
   renderWithQuery
-} from '@/app/research/__tests__/research-test-utils';
+} from '@/__tests__/react-test-utils';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Step3 } from '../research-form-steps';

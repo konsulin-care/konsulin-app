@@ -26,7 +26,7 @@ import {
   fireSync,
   type MockCaches,
   type MockSelf
-} from '@/__tests__/test-utils';
+} from '@/__tests__/react-test-utils';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SW_PATH = resolve(__dirname, '../../../public/sw.js');

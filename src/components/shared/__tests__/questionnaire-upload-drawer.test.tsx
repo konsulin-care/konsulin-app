@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import QuestionnaireUploadDrawer from '../questionnaire-upload-drawer';
 
@@ -23,18 +23,6 @@ vi.mock('@/services/api', () => ({
       post: vi.fn().mockResolvedValue({ data: { id: 'new-q-id' } })
     })
 }));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
 
 describe('QuestionnaireUploadDrawer', () => {
   it('renders upload field and duration input', () => {

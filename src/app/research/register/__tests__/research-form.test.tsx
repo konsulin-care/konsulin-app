@@ -1,6 +1,5 @@
-import { createQueryClient } from '@/__tests__/test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
+import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Step1, Step2, Step3 } from '../research-form-steps';
 
@@ -23,12 +22,6 @@ vi.mock('@/context/auth/authContext', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
-
-function renderWithQuery(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>
-  );
-}
 
 /** Minimal mock for UseFormRegister — returns an empty handler object. */
 function mockRegister() {

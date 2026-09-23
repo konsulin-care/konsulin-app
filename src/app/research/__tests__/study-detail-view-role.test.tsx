@@ -1,6 +1,6 @@
+import { renderWithQuery } from '@/__tests__/react-test-utils';
 import type { StudyProgress } from '@/utils/fhir/research';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import StudyDetailView from '../study-detail-view';
 
@@ -64,19 +64,6 @@ const mockProgress: StudyProgress = {
   history: [],
   consecutiveBatches: 1
 };
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-}
-
-function renderWithQuery(ui: React.ReactElement) {
-  const queryClient = createQueryClient();
-  return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
-  );
-}
 
 describe('StudyDetailView - Role Prop', () => {
   it('renders without crashing with default props', () => {

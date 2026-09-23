@@ -1,8 +1,6 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createElement, type ReactElement, type ReactNode } from 'react';
 
 export const BATCH_1 = {
   id: 'batch-1',
@@ -106,24 +104,5 @@ export function makeStudyWithBatches(id: string): ResearchStudyWithBatches {
       questionnaireIds: ['q-1']
     },
     daysRemaining: 30
-  };
-}
-
-/**
- * QueryClientProvider wrapper with retries disabled for render tests.
- * Built with createElement so it can live in a plain .ts module.
- */
-export function createResearchWrapper(): (props: {
-  children: ReactNode;
-}) => ReactElement {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-  return function Wrapper({ children }: { children: ReactNode }) {
-    return createElement(
-      QueryClientProvider,
-      { client: queryClient },
-      children
-    );
   };
 }
