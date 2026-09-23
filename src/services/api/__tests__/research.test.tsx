@@ -3,8 +3,7 @@ import {
   makeQRSearchSet,
   makeStudiesBatchResponse
 } from '@/__tests__/fixtures/research-api-mocks';
-import { createQueryClient } from '@/__tests__/react-test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { wrapper } from '@/__tests__/react-test-utils';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosInstance } from 'axios';
 import type { Bundle } from 'fhir/r4';
@@ -36,15 +35,6 @@ vi.mock('../../anonymous-session', () => ({
 vi.mock('../../api', () => ({
   getAPI: vi.fn()
 }));
-
-function createWrapper() {
-  const queryClient = createQueryClient();
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-}
 
 /** Batch-response for the studies bundle: study + batch plan in a searchset. */
 const STUDIES_BATCH_RESPONSE = makeStudiesBatchResponse([
@@ -103,7 +93,7 @@ describe('useResearchProgress', () => {
     });
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -141,7 +131,7 @@ describe('useResearchProgress', () => {
     });
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -165,7 +155,7 @@ describe('useResearchProgress', () => {
     const { mockPost, mockGet } = mockApi();
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -183,7 +173,7 @@ describe('useResearchProgress', () => {
 
     const { result } = renderHook(
       () => useResearchProgress({ skipResponseSearch: true }),
-      { wrapper: createWrapper() }
+      { wrapper }
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -208,7 +198,7 @@ describe('useResearchProgress', () => {
     } as unknown as AxiosInstance);
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     expect(result.current.isFetching).toBe(false);
@@ -225,7 +215,7 @@ describe('useResearchProgress', () => {
     );
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     expect(result.current.isLoading).toBe(true);
@@ -238,7 +228,7 @@ describe('useResearchProgress', () => {
     );
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -252,7 +242,7 @@ describe('useResearchProgress', () => {
     });
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     expect(result.current.isLoading).toBe(false);
@@ -272,7 +262,7 @@ describe('useResearchProgress', () => {
     } as unknown as AxiosInstance);
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     expect(result.current.isLoading).toBe(false);
@@ -294,7 +284,7 @@ describe('useResearchProgress', () => {
     } as unknown as AxiosInstance);
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     expect(result.current.isLoading).toBe(false);

@@ -1,5 +1,8 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
-import type { ResearchStudyWithBatches } from '@/services/api/researcher';
+import type {
+  ResearcherDashboardData,
+  ResearchStudyWithBatches
+} from '@/services/api/researcher';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 
 export const BATCH_1 = {
@@ -104,5 +107,56 @@ export function makeStudyWithBatches(id: string): ResearchStudyWithBatches {
       questionnaireIds: ['q-1']
     },
     daysRemaining: 30
+  };
+}
+
+interface ResearcherDashboardOptions {
+  studyId?: string;
+  studyTitle?: string;
+  questionnaireIds?: string[];
+  totalParticipants?: number;
+  daysRemaining?: number;
+}
+
+/** ResearcherDashboardData fixture for researcher dashboard tests. */
+export function makeResearcherDashboardData(
+  options: ResearcherDashboardOptions = {}
+): ResearcherDashboardData {
+  const {
+    studyId = 'study-1',
+    studyTitle = 'Mental Health Survey',
+    questionnaireIds = ['phq2'],
+    totalParticipants = 42,
+    daysRemaining = 100
+  } = options;
+
+  return {
+    studies: [
+      {
+        study: {
+          resourceType: 'ResearchStudy' as const,
+          id: studyId,
+          title: studyTitle,
+          status: 'active' as const,
+          description: 'A study about mental health'
+        },
+        batches: [
+          {
+            id: 'batch-1',
+            start: '2026-01-01',
+            end: '2026-12-31',
+            questionnaireIds
+          }
+        ],
+        currentBatch: {
+          id: 'batch-1',
+          start: '2026-01-01',
+          end: '2026-12-31',
+          questionnaireIds
+        },
+        daysRemaining
+      }
+    ],
+    totalParticipants
   };
 }
