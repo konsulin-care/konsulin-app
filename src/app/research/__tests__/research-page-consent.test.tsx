@@ -1,21 +1,34 @@
 /* eslint-disable max-lines */
+import { createQueryClient } from '@/__tests__/test-utils';
 import type { FabAction } from '@/context/fabContext';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 import {
-  createResearchWrapper as createWrapper,
   makeProgress,
   makeStudyB,
   makeStudyProgress,
   TITLE_MAP
 } from './research-fixtures';
 
+function createWrapper() {
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return createElement(
+      QueryClientProvider,
+      { client: createQueryClient() },
+      children
+    );
+  };
+}
+
 const {
   mockUseAuth,
   mockUseResearchProgress,
   mockUseConsentToStudy,
   mockUseQuestionnaireTitles,
+  mockUsePerQuestionnaireCounts,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -34,6 +47,7 @@ const {
     mockUseResearchProgress: vi.fn(),
     mockUseConsentToStudy: vi.fn(),
     mockUseQuestionnaireTitles: vi.fn(),
+    mockUsePerQuestionnaireCounts: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -73,6 +87,11 @@ vi.mock('react-toastify', () => ({
   toast: { error: vi.fn(), success: vi.fn() }
 }));
 
+vi.mock('@/services/api/research-counts', () => ({
+  usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
+  COMPLETION_COUNT_FLOOR: 5
+}));
+
 /** Mutation mock whose mutate resolves with the given outcome. */
 function consentMutationMock(
   opts: {
@@ -107,6 +126,8 @@ beforeEach(() => {
     data: TITLE_MAP,
     isPending: false
   });
+  mockUsePerQuestionnaireCounts.mockReset();
+  mockUsePerQuestionnaireCounts.mockReturnValue({ data: new Map() });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();

@@ -1,6 +1,6 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   BatchProgress,
   buildOverlapMap,
@@ -14,6 +14,10 @@ function makeUpcomingBatch(id: string, start: string, end: string) {
   return { id, start, end, questionnaireIds: ['phq2'] };
 }
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 const TITLE_MAP: ReadonlyMap<string, QuestionnaireInfo> = new Map([
   ['phq2', { title: 'PHQ-2', durationMinutes: 8 }],
   ['big-five-inventory', { title: 'Big Five Inventory', durationMinutes: 15 }]
@@ -25,6 +29,8 @@ function renderList(
     titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
     isTitlesLoading?: boolean;
     showOverlapHints?: boolean;
+    roleName?: string;
+    completionCounts?: Map<string, number>;
   } = {}
 ) {
   const progress = makeStudyProgress();
@@ -61,6 +67,64 @@ describe('BatchProgress', () => {
 
     expect(screen.getByText('Batch 1')).toBeTruthy();
     expect(screen.queryByText(/completed/)).toBeNull();
+  });
+
+  it('shows time-based progress in batch', () => {
+    // Batch is 2026-08-01 to 2026-08-31 (30 days total)
+    // Mock today to be 2026-08-11 (10 days elapsed = 33.3%)
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-11'));
+
+    render(<BatchProgress progress={makeStudyProgress()} />);
+
+    // Progress bar should reflect time elapsed (10/30 = 33.3%)
+    const progressBar = screen.getByTestId('batch-progress-bar');
+    expect(progressBar).toHaveStyle({ width: '33.33333333333333%' });
+
+    vi.useRealTimers();
+  });
+
+  it('shows Total participants with max count from completionCounts', () => {
+    const completionCounts = new Map([
+      ['phq2', 12],
+      ['big-five-inventory', 8]
+    ]);
+    render(
+      <BatchProgress
+        progress={makeStudyProgress()}
+        completionCounts={completionCounts}
+      />
+    );
+
+    expect(screen.getByText('Total participants: 12')).toBeTruthy();
+  });
+
+  it('shows Total participants: 0 when completionCounts is empty', () => {
+    render(
+      <BatchProgress
+        progress={makeStudyProgress()}
+        completionCounts={new Map()}
+      />
+    );
+
+    expect(screen.getByText('Total participants: 0')).toBeTruthy();
+  });
+
+  it('shows Total participants: 0 when completionCounts is undefined', () => {
+    render(<BatchProgress progress={makeStudyProgress()} />);
+
+    expect(screen.getByText('Total participants: 0')).toBeTruthy();
+  });
+
+  it('does not show X/Y questionnaires text', () => {
+    render(
+      <BatchProgress
+        progress={makeStudyProgress()}
+        completionCounts={new Map([['phq2', 10]])}
+      />
+    );
+
+    expect(screen.queryByText(/questionnaires/)).toBeNull();
   });
 });
 
@@ -157,28 +221,10 @@ describe('QuestionnaireList', () => {
     );
   });
 
-  it('shows the XP value next to questionnaires with a known duration', () => {
+  it('does not show XP value', () => {
     renderList({ titleMap: TITLE_MAP });
 
-    expect(screen.getAllByText('+40 XP').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('+75 XP').length).toBeGreaterThan(0);
-  });
-
-  it('renders the XP value beside the title on the same row', () => {
-    renderList({ titleMap: TITLE_MAP });
-
-    const title = screen.getByRole('button', { name: 'PHQ-2' });
-    const xp = screen.getByText('+40 XP');
-    expect(title.parentElement).toBe(xp.parentElement);
-  });
-
-  it('omits the XP value when the duration is unknown', () => {
-    renderList({
-      titleMap: new Map([['phq2', { title: 'PHQ-2', durationMinutes: null }]])
-    });
-
-    expect(screen.queryByText('+40 XP')).toBeNull();
-    expect(screen.queryByText('+75 XP')).toBeNull();
+    expect(screen.queryByText(/XP/)).toBeNull();
   });
 
   it('hides overlap hints in the standard view', () => {
@@ -193,5 +239,19 @@ describe('QuestionnaireList', () => {
     expect(
       screen.getAllByText(/Also counts toward Sleep Quality Study/).length
     ).toBeGreaterThan(0);
+  });
+
+  it('does not show completion counts', () => {
+    const completionCounts = new Map([
+      ['phq2', 12],
+      ['big-five-inventory', 3]
+    ]);
+    renderList({
+      titleMap: TITLE_MAP,
+      completionCounts
+    });
+
+    expect(screen.queryByText('12 completions')).toBeNull();
+    expect(screen.queryByText('< 5 completions')).toBeNull();
   });
 });
