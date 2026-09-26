@@ -101,7 +101,7 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4.1.12",
-    "typescript": "^5",
+    "typescript": "^7",
     "vitest": "^4.1.11"
   },
   "engines": {
