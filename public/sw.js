@@ -128,12 +128,14 @@ function isAuthApi (pathname) {
 /** Network-first strategy: tries network, falls back to cache, then to offline fallback URL. */
 async function networkFirst (request, cacheName, fallbackUrl) {
   try {
-    if (!isValidHttpUrl(request.url)) {
-      throw new Error('Invalid URL: only http/https URLs are allowed')
+    const url = parseUrl(request.url)
+    if (!url || !isValidHttpUrl(request.url) || !isSameOrigin(url)) {
+      throw new Error(
+        'Invalid URL: only same-origin http/https URLs are allowed'
+      )
     }
 
-    // skipcq: JS-0376 - NOSONAR - URL validated by isValidHttpUrl() guard above
-    const response = await fetch(request)
+    const response = await fetch(request, { cache: 'no-store' })
     if (response.ok && request.method === 'GET') {
       const navCache = await caches.open(cacheName)
       await navCache.put(request, response.clone())
@@ -170,12 +172,16 @@ self.addEventListener('fetch', function (event) {
     (async function () {
       try {
         const request = event.request
+        // Bypass the HTTP cache for all SW-initiated fetches. Without this,
+        // the browser may serve stale responses even when the upstream adds
+        // Cache-Control: no-store (a known browser quirk for SW fetch).
+        const noStore = { cache: 'no-store' }
 
         // Non-GET requests bypass caching entirely.
-        if (request.method !== 'GET') return fetch(request)
+        if (request.method !== 'GET') return fetch(request, noStore)
 
         // Auth/config endpoints carry identity data — never cached.
-        if (isAuthApi(url.pathname)) return fetch(request)
+        if (isAuthApi(url.pathname)) return fetch(request, noStore)
 
         if (isProxyApi(url.pathname)) {
           // Only Questionnaire reads are cached (network-first); all other
@@ -183,7 +189,7 @@ self.addEventListener('fetch', function (event) {
           if (isCachedProxyApi(url.pathname)) {
             return await networkFirst(request, NAV_CACHE)
           }
-          return fetch(request)
+          return fetch(request, noStore)
         }
 
         if (request.mode === 'navigate') {

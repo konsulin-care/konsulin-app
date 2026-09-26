@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 
 export interface ActionConfig {
-  label: string;
+  label?: string;
   onAction: () => void | Promise<void>;
   icon?: ComponentType<{ className?: string }>;
   disabled?: boolean;
@@ -39,7 +39,8 @@ export type PillAction =
   | 'get-recommendation'
   | 'register-practitioner'
   | 'add-location'
-  | 'add-assessment';
+  | 'add-assessment'
+  | 'register-research';
 
 export type FabVariant = 'primary' | 'danger' | 'secondary' | 'ghost';
 

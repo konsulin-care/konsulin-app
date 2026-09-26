@@ -1,0 +1,113 @@
+import {
+  MOCK_BATCH,
+  MOCK_FIELD,
+  renderWithQuery
+} from '@/__tests__/react-test-utils';
+import { screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import type { QuestionnaireOption } from '../../shared';
+import { Step3 } from '../research-form-steps';
+
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: () => ({
+    state: {
+      userInfo: {
+        fhirId: 'test-practitioner-id',
+        role_name: 'Researcher'
+      }
+    },
+    isLoading: false
+  })
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
+}));
+
+const availableQuestionnaires: QuestionnaireOption[] = [
+  { code: 'phq2', name: 'PHQ-2', duration: null, category: null },
+  { code: 'gad7', name: 'GAD-7', duration: null, category: null }
+];
+
+describe('Step3 - Questionnaire per batch assignment', () => {
+  it('renders combobox for questionnaire selection in each batch', () => {
+    renderWithQuery(
+      <Step3
+        fields={[MOCK_FIELD]}
+        errors={{}}
+        batches={[MOCK_BATCH]}
+        setValue={vi.fn()}
+        onAddBatch={vi.fn()}
+        onRemoveBatch={vi.fn()}
+        availableQuestionnaires={availableQuestionnaires}
+        selectedQuestionnaireIds={['phq2', 'gad7']}
+      />
+    );
+
+    const comboboxes = screen.getAllByRole('combobox');
+    expect(comboboxes.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders "Select all" button when availableQuestionnaires is provided', () => {
+    renderWithQuery(
+      <Step3
+        fields={[MOCK_FIELD]}
+        errors={{}}
+        batches={[MOCK_BATCH]}
+        setValue={vi.fn()}
+        onAddBatch={vi.fn()}
+        onRemoveBatch={vi.fn()}
+        availableQuestionnaires={availableQuestionnaires}
+        selectedQuestionnaireIds={['phq2', 'gad7']}
+      />
+    );
+
+    expect(
+      screen.getByRole('button', { name: /select all/i })
+    ).toBeInTheDocument();
+  });
+
+  it('does not render combobox for questionnaire when availableQuestionnaires is empty', () => {
+    renderWithQuery(
+      <Step3
+        fields={[MOCK_FIELD]}
+        errors={{}}
+        batches={[MOCK_BATCH]}
+        setValue={vi.fn()}
+        onAddBatch={vi.fn()}
+        onRemoveBatch={vi.fn()}
+        availableQuestionnaires={[]}
+        selectedQuestionnaireIds={[]}
+      />
+    );
+
+    const comboboxes = screen.queryAllByRole('combobox');
+    expect(comboboxes).toHaveLength(0);
+  });
+
+  it('shows read-only questionnaires for locked batches', () => {
+    renderWithQuery(
+      <Step3
+        fields={[MOCK_FIELD]}
+        errors={{}}
+        batches={[
+          {
+            startDate: '2026-01-01',
+            endDate: '2026-12-31',
+            questionnaireIds: ['phq2']
+          }
+        ]}
+        setValue={vi.fn()}
+        onAddBatch={vi.fn()}
+        onRemoveBatch={vi.fn()}
+        availableQuestionnaires={availableQuestionnaires}
+        selectedQuestionnaireIds={['phq2', 'gad7']}
+        lockedBatchIndices={[0]}
+      />
+    );
+
+    expect(screen.getByText('PHQ-2')).toBeInTheDocument();
+    const comboboxes = screen.queryAllByRole('combobox');
+    expect(comboboxes).toHaveLength(0);
+  });
+});

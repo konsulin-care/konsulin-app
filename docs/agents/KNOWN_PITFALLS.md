@@ -63,6 +63,16 @@ date: 2026-05-26
 
 # TypeScript/React Pitfalls
 
+- **Vitest `vi.mock` cannot be extracted to shared utilities** — Vitest
+  hoists all `vi.mock()` calls to the top of the module regardless of
+  where they appear in code. If you put `vi.mock` in a shared utility
+  file and import it, the mocks execute at the top of that utility
+  module, not the calling test file. This causes conflicts when test
+  files also have their own `vi.mock` calls for the same module, or
+  the shared mock doesn't include all exports the test needs (e.g.,
+  `useSearchParams`). **Fix**: keep `vi.mock` calls in each test file
+  at the top level. Only extract non-mock utilities (`renderWithQuery`,
+  `wrapper`, constants) to shared files.
 - **Void-returning arrow shorthands in JSX** — `onClick={e => handler(e)}`
   implicitly returns `undefined` when the handler returns `void`. Always
   use braces: `onClick={e => { handler(e); }}`.
@@ -81,3 +91,36 @@ date: 2026-05-26
   cleanup/observer callbacks, re-checking a condition already guarded
   at effect scope is redundant. Remove the redundant check or accept
   the lint warning explicitly with a comment.
+
+# Test Duplication Pitfalls
+
+- **Codacy flags `vi.mock` blocks as duplication** — this is expected
+  and acceptable. Vitest hoists `vi.mock()` calls to module top level,
+  so they cannot be extracted to shared utilities. Each test file must
+  declare its own mocks inline. Trying to extract them breaks hoisting
+  and causes mock execution in the wrong module scope.
+- **What CAN be extracted** — shared test data factories, constants,
+  and render helpers. Put these in `src/__tests__/fixtures/`:
+  - FHIR resource builders: `makeResearchStudy()`, `makeBatchPlan()`
+  - Bundle builders: `makeStudiesBatchResponse()`, `makeQRSearchSet()`
+  - Constants: `EMPTY_BATCH_RESPONSE`, `RESEARCHER_AUTH_STATE`
+  - Render wrappers: `renderWithQuery()`, `wrapper()`
+- **What CANNOT be extracted** — `vi.mock()` factory functions, mock
+  module definitions, test-specific assertions. Keep these inline.
+- **Pattern for shared factories**:
+
+  ```typescript
+  // src/__tests__/fixtures/research-api-mocks.ts
+  export function makeResearchStudy(id: string, periodStart: string) {
+    return { resourceType: 'ResearchStudy' as const, id, status: 'active' as const, ... };
+  }
+
+  // In test file:
+  import { makeResearchStudy } from '@/__tests__/fixtures/research-api-mocks';
+  const study = makeResearchStudy('study-1', '2026-01-01');
+  ```
+
+- **Duplication priority** — focus extraction on:
+  1. Mock data factories (highest impact)
+  2. `beforeEach` setup patterns (medium impact)
+  3. `vi.mock` blocks (do NOT extract, accept duplication)

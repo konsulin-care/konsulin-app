@@ -79,6 +79,25 @@ function getDefaultBackRoute(
   searchParams: URLSearchParams
 ): string | undefined {
   if (pathname === '/') return undefined;
+
+  // Research form pages: navigate between pages
+  if (pathname === '/research/register' || pathname === '/research/edit') {
+    const page = searchParams.get('page');
+    if (page === 'batch') {
+      // Preserve id param for edit
+      const params = new URLSearchParams(searchParams);
+      params.set('page', 'questionnaire');
+      return `${pathname}?${params.toString()}`;
+    }
+    if (page === 'questionnaire') {
+      const params = new URLSearchParams(searchParams);
+      params.set('page', 'title');
+      return `${pathname}?${params.toString()}`;
+    }
+    // ?page=title or no param → /research
+    return '/research';
+  }
+
   if (MAIN_ROUTES.has(pathname)) {
     if (searchParams.toString()) return pathname;
     return '/';
@@ -214,26 +233,28 @@ export default function PageHeader({
   const backAction =
     overrideBackRoute ?? getDefaultBackRoute(pathname, searchParams);
 
-  /** Navigates back using the backAction or browser history. */
-  const handleBack = () => {
-    if (backAction) {
-      router.push(backAction);
-    } else {
-      router.back();
-    }
-  };
-
   return (
     <div className='bg-[#efefef] px-4 pt-4 pb-8'>
       <div className='relative flex items-center justify-end'>
-        {showBack && (
-          <ChevronLeftIcon
-            size={24}
-            color='#2c2f35'
-            className='absolute left-0 cursor-pointer'
-            onClick={handleBack}
-          />
-        )}
+        {showBack &&
+          (backAction ? (
+            <a
+              href={backAction}
+              aria-label='Go back'
+              className='absolute left-0 flex h-10 w-10 items-center justify-center'
+            >
+              <ChevronLeftIcon size={24} color='#2c2f35' aria-hidden='true' />
+            </a>
+          ) : (
+            <button
+              type='button'
+              aria-label='Go back'
+              onClick={() => router.back()}
+              className='absolute left-0 flex h-10 w-10 items-center justify-center'
+            >
+              <ChevronLeftIcon size={24} color='#2c2f35' aria-hidden='true' />
+            </button>
+          ))}
         <AuthArea
           isLoading={isLoadingAuth}
           isAuthenticated={authState.isAuthenticated}

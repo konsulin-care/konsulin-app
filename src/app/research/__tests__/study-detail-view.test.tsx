@@ -68,7 +68,7 @@ describe('StudyDetailView', () => {
 
     expect(screen.getByText('Konsulin Mental Health Survey')).toBeTruthy();
     expect(screen.getByText(LONG_DESCRIPTION)).toBeTruthy();
-    expect(screen.getByText(/1\/2 questionnaires/)).toBeTruthy();
+    expect(screen.getByText('Total participants: 0')).toBeTruthy();
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'PHQ-2' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();

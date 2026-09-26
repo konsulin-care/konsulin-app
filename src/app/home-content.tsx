@@ -4,9 +4,10 @@ import ContentWraper from '@/components/general/content-wraper';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import HomeContentAdmin from './home-content-admin';
-import PractitionerDashboard from './practitioner-dashboard';
 import HomeContentGuest from './home-content-guest';
 import HomeContentPatient from './home-content-patient';
+import PractitionerDashboard from './practitioner-dashboard';
+import ResearcherDashboard from './researcher-dashboard';
 
 /**
  *
@@ -29,6 +30,9 @@ export default function HomeContent() {
       )}
       {authState.userInfo.role_name === Roles.ClinicAdmin && (
         <HomeContentAdmin />
+      )}
+      {authState.userInfo.role_name === Roles.Researcher && (
+        <ResearcherDashboard />
       )}
       {authState.userInfo.role_name &&
         !(Object.values(Roles) as string[]).includes(
