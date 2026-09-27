@@ -2,16 +2,17 @@
 const sonarjs = require('eslint-plugin-sonarjs')
 const jsdoc = require('eslint-plugin-jsdoc')
 const unicorn = require('eslint-plugin-unicorn').default
-const tsParser = require('@typescript-eslint/parser')
+
 const importPlugin = require('eslint-plugin-import')
 const securityPlugin = require('eslint-plugin-security')
 const promisePlugin = require('eslint-plugin-promise')
 const reactHooks = require('eslint-plugin-react-hooks')
-const tsPlugin = require('@typescript-eslint/eslint-plugin')
+const ts = require('typescript-eslint')
+
 
 /** Rules from strict-type-checked + stylistic-type-checked configs */
-const tsStrictRules = tsPlugin.configs['strict-type-checked'].rules
-const tsStylisticRules = tsPlugin.configs['stylistic-type-checked'].rules
+const tsStrictRules = ts.configs.strictTypeChecked.rules
+const tsStylisticRules = ts.configs.stylisticTypeChecked.rules
 
 module.exports = [
   {
@@ -46,7 +47,7 @@ module.exports = [
   ...require('eslint-config-next/core-web-vitals').slice(1),
 
   // --- TS base recommended ---
-  ...require('typescript-eslint').configs.recommended,
+  ...ts.configs.recommended,
 
   // --- React hooks recommended ---
   {
@@ -154,7 +155,7 @@ module.exports = [
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     languageOptions: {
-      parser: tsParser,
+      parser: ts.parser,
       parserOptions: {
         project: './tsconfig.json',
         tsconfigRootDir: __dirname
