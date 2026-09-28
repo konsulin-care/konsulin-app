@@ -9,7 +9,6 @@ const promisePlugin = require('eslint-plugin-promise')
 const reactHooks = require('eslint-plugin-react-hooks')
 const ts = require('typescript-eslint')
 
-
 /** Rules from strict-type-checked + stylistic-type-checked configs */
 const tsStrictRules = ts.configs.strictTypeChecked.rules
 const tsStylisticRules = ts.configs.stylisticTypeChecked.rules
