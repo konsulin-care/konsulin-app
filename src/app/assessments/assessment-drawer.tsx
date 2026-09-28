@@ -5,6 +5,7 @@
 import AppDrawer from '@/components/ui/app-drawer';
 import { Badge } from '@/components/ui/badge';
 import { DrawerDescription } from '@/components/ui/drawer';
+import { useTranslations } from '@/i18n';
 import type { ResearchProgress } from '@/utils/fhir/research';
 import { customMarkdownComponents } from '@/utils/helper';
 import { Questionnaire, ResearchStudy } from 'fhir/r4';
@@ -54,10 +55,13 @@ export function deriveResearchNavigation(
 }
 
 /** Description card with brief text rendered as markdown. */
-function DescriptionCard({ text }: Readonly<{ text: string }>) {
+function DescriptionCard({
+  text,
+  t
+}: Readonly<{ text: string; t: (key: string) => string }>) {
   return (
     <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='font-bold'>Brief</div>
+      <div className='font-bold'>{t('brief')}</div>
       <hr className='my-4 border-black opacity-10' />
       <div className='flex flex-wrap gap-[10px] text-sm'>
         <DrawerDescription>
@@ -83,6 +87,7 @@ export default function AssessmentDrawerContent({
   startTransition,
   router
 }: Readonly<AssessmentDrawerContentProps>) {
+  const t = useTranslations('assessment');
   const showBadge =
     selectedAssessment?.resourceType === 'ResearchStudy' &&
     (selectedAssessment.note?.length ?? 0) > 0;
@@ -116,11 +121,11 @@ export default function AssessmentDrawerContent({
       !researchComplete);
 
   const buttonText = (() => {
-    if (isPractitioner) return 'Isi assessment untuk Pasien';
+    if (isPractitioner) return t('fill_assessment_patient');
     if (selectedAssessment?.resourceType === 'ResearchStudy') {
-      return researchComplete ? 'View Research' : 'Mulai';
+      return researchComplete ? t('view_research') : t('start');
     }
-    return 'Start Test';
+    return t('start_test');
   })();
 
   const renderBadge = showBadge && (
@@ -173,6 +178,7 @@ export default function AssessmentDrawerContent({
                 ? selectedAssessment.description
                 : ''
             }
+            t={t}
           />
 
           {selectedAssessment?.resourceType === 'ResearchStudy' && (

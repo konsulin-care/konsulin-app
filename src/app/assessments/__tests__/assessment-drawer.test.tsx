@@ -6,6 +6,20 @@ import AssessmentDrawerContent, {
   deriveResearchNavigation
 } from '../assessment-drawer';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      brief: 'Brief',
+      researcher: 'Researcher',
+      start_test: 'Start Test',
+      fill_assessment_patient: 'Fill in assessment for Patient',
+      start: 'Mulai',
+      view_research: 'View Research'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('react-markdown', () => ({
   default: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>

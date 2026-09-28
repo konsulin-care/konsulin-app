@@ -8,6 +8,7 @@ import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
+import { useTranslations } from '@/i18n';
 import { lazyComponent } from '@/lib/lazy-component';
 import { useQuestionnaire } from '@/services/api/assessment';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
@@ -37,6 +38,7 @@ export function resolveDetailPageTitle(
 
 /** Assessment detail page: loads and renders a FHIR Questionnaire via AEHRC forms. */
 export default function AssessmentsDetail() {
+  const t = useTranslations('assessment');
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
   const { state: authState, isLoading: isAuthLoading } = useAuth();
@@ -82,11 +84,7 @@ export default function AssessmentsDetail() {
     }
     if (!questionnaire || questionnaire.length === 0) {
       return (
-        <EmptyState
-          className='py-16'
-          title='Questionnaire not found'
-          subtitle=''
-        />
+        <EmptyState className='py-16' title={t('not_found')} subtitle='' />
       );
     }
     return (
@@ -95,7 +93,7 @@ export default function AssessmentsDetail() {
           <Participant
             list={patientsListToday}
             value={participantId}
-            placeholder='Select patient'
+            placeholder={t('select_patient')}
             onSelect={value => setParticipantId(value.patientId)}
           />
         )}

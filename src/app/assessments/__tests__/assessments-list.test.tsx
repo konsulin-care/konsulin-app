@@ -20,9 +20,31 @@ vi.mock('@/services/api/research', () => ({
 }));
 
 vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(
-    (namespace: string) => (key: string) => `${namespace}.${key}`
-  )
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      search: 'Search Assessment',
+      clear_all: 'Clear all',
+      results_n: 'Results ({n})',
+      all_instruments_n: 'All Instruments ({n})',
+      no_instruments: 'No instruments found',
+      no_instruments_filter: 'No instruments match the selected filters.',
+      try_different: 'Try a different search term or clear filters.',
+      loading: 'Loading...',
+      editors_picks: "Editor's Picks",
+      filter: 'Filter',
+      apply: 'Apply',
+      category: 'Category',
+      sort: 'Sort',
+      'category.physical-health': 'Physical Health',
+      'category.mental-emotional-health': 'Mental & Emotional Health',
+      'category.social-health-relationships': 'Social Health & Relationships',
+      'category.functional-capacity': 'Functional Capacity',
+      'category.meaning-purpose-fulfilment': 'Meaning, Purpose & Fulfilment',
+      'category.health-behaviours-lifestyle': 'Health Behaviours & Lifestyle',
+      'category.environmental-contextual': 'Environmental & Contextual'
+    };
+    return translations[key] ?? key;
+  })
 }));
 
 vi.mock('@/context/auth/authContext', () => ({

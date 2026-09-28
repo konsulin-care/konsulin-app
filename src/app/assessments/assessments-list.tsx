@@ -5,6 +5,7 @@ import EmptyState from '@/components/general/empty-state';
 import PageHeader from '@/components/page-header';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { lazyComponent } from '@/lib/lazy-component';
 import {
   useCuratedAssessments,
@@ -60,29 +61,33 @@ function InstrumentsGrid({
   isLoading,
   instruments,
   searchTerm,
-  onAssessmentClick
+  onAssessmentClick,
+  t,
+  tCommon
 }: Readonly<{
   isLoading: boolean;
   instruments: Questionnaire[];
   searchTerm: string;
   onAssessmentClick: (q: Questionnaire) => void;
+  t: (key: string, params?: Record<string, string>) => string;
+  tCommon: (key: string) => string;
 }>) {
   if (isLoading) {
     return (
       <div className='flex items-center justify-center py-16 text-sm text-gray-400'>
-        Loading...
+        {tCommon('loading')}
       </div>
     );
   }
 
   if (instruments.length === 0) {
     const subtitle = searchTerm
-      ? 'Try a different search term or clear filters.'
-      : 'No instruments match the selected filters.';
+      ? t('try_different')
+      : t('no_instruments_filter');
     return (
       <EmptyState
         className='py-16'
-        title='No instruments found'
+        title={t('no_instruments')}
         subtitle={subtitle}
       />
     );
@@ -104,6 +109,8 @@ function InstrumentsGrid({
 
 /** Full assessments hub page. */
 export default function AssessmentsList() {
+  const t = useTranslations('assessment');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -277,6 +284,8 @@ export default function AssessmentsList() {
             instruments={filtered}
             searchTerm={searchTerm}
             onAssessmentClick={handleAssessmentClick}
+            t={t}
+            tCommon={tCommon}
           />
         </div>
       </ContentWraper>

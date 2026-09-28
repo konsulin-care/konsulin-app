@@ -1,6 +1,7 @@
 'use client';
 
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useTranslations } from '@/i18n';
 import type { Questionnaire } from 'fhir/r4';
 import AssessmentCard from './assessment-card';
 
@@ -19,12 +20,13 @@ export default function FeaturedRail({
   questionnaires,
   onAssessmentClick
 }: FeaturedRailProps) {
+  const t = useTranslations('assessment');
   if (questionnaires.length === 0) return null;
 
   return (
     <div className='px-4'>
       <h2 className='mb-2 text-sm font-bold text-gray-700'>
-        Editor&apos;s Picks
+        {t('editors_picks')}
       </h2>
 
       <ScrollArea className='w-full whitespace-nowrap'>
