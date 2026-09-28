@@ -1,0 +1,9 @@
+{
+  "profile_updated": "Profile updated",
+  "profile_update_failed": "Failed updating profile",
+  "photo_updated": "Profile photo updated",
+  "photo_update_failed": "Failed updating the profile picture",
+  "missing_practitioner": "Missing practitioner or patient information",
+  "missing_patient": "Missing patient information",
+  "submit_error": "An error occurred while submitting the questionnaire"
+}

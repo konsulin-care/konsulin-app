@@ -1,0 +1,22 @@
+{
+  "mid_batch_1.title": "Great progress!",
+  "mid_batch_1.body": "You've completed {completed} of {total} assessments in this batch. Every response counts toward the research, so keep going.",
+  "mid_batch_2.title": "You're on a roll!",
+  "mid_batch_2.body": "{completed} of {total} done. Each assessment brings us closer to better mental health support.",
+  "mid_batch_3.title": "Nice momentum!",
+  "mid_batch_3.body": "{completed} of {total} assessments complete. Your participation is making a real difference.",
+  "mid_batch_4.title": "Keep it up!",
+  "mid_batch_4.body": "{completed} of {total} done in this batch. Every answer helps shape better care for everyone.",
+  "mid_batch_5.title": "One step closer!",
+  "mid_batch_5.body": "{completed} of {total} complete. Thank you for sticking with the research, so we're nearly there.",
+  "almost_there": "Almost there!",
+  "almost_there_body": "Just one assessment left in this batch. You've got this!",
+  "mid_batch_fallback.title": "You're doing great!",
+  "mid_batch_fallback.body": "Every response counts toward the research, so keep going.",
+  "batch_complete": "You've completed this batch!",
+  "batch_complete_body": "That's every assessment in this batch. Thank you for participating, your responses help improve mental health care for everyone.",
+  "standalone": "You've completed the test!",
+  "standalone_body": "Your results will give you valuable insight into your mental health.",
+  "standalone_research": "Thank you for completing this assessment!",
+  "standalone_research_body": "Your response helps improve mental health care for everyone."
+}

@@ -1,0 +1,9 @@
+{
+  "profile_updated": "Profil diperbarui",
+  "profile_update_failed": "Gagal memperbarui profil",
+  "photo_updated": "Foto profil diperbarui",
+  "photo_update_failed": "Gagal memperbarui foto profil",
+  "missing_practitioner": "Informasi praktisi atau pasien tidak lengkap",
+  "missing_patient": "Informasi pasien tidak lengkap",
+  "submit_error": "Terjadi kesalahan saat mengirim kuesioner"
+}
