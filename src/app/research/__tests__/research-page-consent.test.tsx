@@ -1,4 +1,9 @@
 /* eslint-disable max-lines */
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => key)
+}));
+
 import { createQueryClient } from '@/__tests__/test-utils';
 import type { FabAction } from '@/context/fabContext';
 import { QueryClientProvider } from '@tanstack/react-query';

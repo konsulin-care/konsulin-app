@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { usePatientRecords } from '@/hooks/usePatientRecords';
 import { useSavedRecommendation } from '@/hooks/useSavedRecommendation';
+import { useTranslations } from '@/i18n';
 import { useRecommendations } from '@/services/recommendations';
 import type { IRecord } from '@/types/record';
 import { buildRecommendationParams } from '@/utils/recommendation-interview';
@@ -18,8 +19,9 @@ import { useRouter } from 'next/navigation';
 
 /** Diamonds empty-state prompting the patient to start the interview. */
 function EmptyRecommendationState({
-  onStart
-}: Readonly<{ onStart: () => void }>) {
+  onStart,
+  t
+}: Readonly<{ onStart: () => void; t: (key: string) => string }>) {
   return (
     <div className='px-4 pt-4'>
       <div className='rounded-2xl border border-dashed border-gray-300 bg-[#F9F9F9] p-6 text-center'>
@@ -28,18 +30,17 @@ function EmptyRecommendationState({
           aria-hidden='true'
         />
         <p className='mb-1 text-[14px] font-bold text-gray-800'>
-          Get matched to the right care
+          {t('get_matched')}
         </p>
         <p className='mb-4 text-[12px] text-gray-500'>
-          Answer a few quick questions and we&apos;ll recommend practitioners
-          for your concern.
+          {t('start_assessment')}
         </p>
         <Button
           variant='default'
           onClick={onStart}
           className='bg-[var(--secondary)] text-white'
         >
-          Start Assessment
+          {t('start_assessment')}
         </Button>
       </div>
     </div>
@@ -48,6 +49,8 @@ function EmptyRecommendationState({
 
 /** Patient home page with live recommendations, clinic link, and records. */
 export default function HomeContentPatient() {
+  const t = useTranslations('home');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const patientId = authState?.userInfo?.fhirId;
@@ -91,7 +94,7 @@ export default function HomeContentPatient() {
   /** Renders the live recommendation stack, loading, or empty variants. */
   const renderRecommendations = () => {
     if (!savedResult) {
-      return <EmptyRecommendationState onStart={openDrawer} />;
+      return <EmptyRecommendationState onStart={openDrawer} t={t} />;
     }
     if (isRecLoading) {
       return (
@@ -108,9 +111,7 @@ export default function HomeContentPatient() {
         <div className='px-4 pt-4'>
           <div className='rounded-2xl border border-dashed border-gray-300 bg-[#F9F9F9] p-6 text-center'>
             <p className='text-[12px] text-gray-500'>
-              {isRecError
-                ? 'Could not load recommendations right now.'
-                : 'No practitioners found for this concern yet.'}
+              {isRecError ? t('no_recommendations') : t('no_practitioners')}
             </p>
           </div>
         </div>
@@ -139,13 +140,13 @@ export default function HomeContentPatient() {
     if (error) {
       return (
         <div className='rounded-lg bg-red-50 p-4 text-center'>
-          <p className='text-[12px] text-red-600'>Failed to load records.</p>
+          <p className='text-[12px] text-red-600'>{t('failed_records')}</p>
           <button
             type='button'
             onClick={() => window.location.reload()}
             className='mt-2 text-[12px] text-red-700 underline'
           >
-            Tap to retry
+            {t('tap_retry')}
           </button>
         </div>
       );
@@ -165,7 +166,7 @@ export default function HomeContentPatient() {
     }
     return (
       <div className='rounded-lg bg-[#F9F9F9] p-4 text-center text-[12px] text-gray-500'>
-        No records yet. Complete an assessment to see it here.
+        {t('no_records')}
       </div>
     );
   };
@@ -186,8 +187,8 @@ export default function HomeContentPatient() {
       <div className='px-4 py-4'>
         <ActionCard
           icon={<Building2 className='h-5 w-5 text-gray-600' />}
-          title='Show All Clinics'
-          description='Find practitioners near you'
+          title={t('show_clinics')}
+          description={t('find_practitioners')}
           href='/clinic'
         />
       </div>
@@ -195,9 +196,11 @@ export default function HomeContentPatient() {
       {/* BELOW FOLD: Previous Records */}
       <div className='p-4'>
         <div className='text-muted flex justify-between'>
-          <span className='mb-2 text-[14px] font-bold'>Previous Records</span>
+          <span className='mb-2 text-[14px] font-bold'>
+            {t('previous_records')}
+          </span>
           <Link className='text-[12px]' href='/record'>
-            See All
+            {tCommon('see_all')}
           </Link>
         </div>
 

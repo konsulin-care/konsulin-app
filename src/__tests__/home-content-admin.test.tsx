@@ -4,6 +4,24 @@ import { type AxiosInstance } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HomeContentAdmin from '../app/home-content-admin';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      active_practitioners: 'Active Practitioners',
+      booked_today: 'Booked Appointments Today',
+      pending_approvals: 'Pending Approvals',
+      service_management: 'Service Management',
+      clinic_details: 'Clinic Details',
+      clinic_details_desc: 'Configure clinic information and services',
+      reports: 'Reports',
+      reports_desc: 'Generate operational and clinical reports',
+      load_practitioner_fail: 'Failed to load practitioner data. Tap to retry.',
+      unable_load_role: 'Unable to load content for this role.'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));

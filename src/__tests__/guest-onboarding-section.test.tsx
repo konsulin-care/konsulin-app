@@ -1,6 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      start_wellness: 'Start Your Wellness Journey',
+      mental_health: 'Mental Health Checkups',
+      mental_health_desc:
+        'Take quick, private assessments to understand your well-being',
+      journal: 'Personal Journal',
+      journal_desc: 'Track your thoughts and progress over time',
+      sessions: 'Expert Sessions',
+      sessions_desc: 'Book appointments with licensed professionals'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 import GuestOnboardingSection from '../components/general/home/guest-onboarding-section';
 
 afterEach(() => {

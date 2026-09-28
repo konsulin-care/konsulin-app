@@ -4,6 +4,10 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---- Mocks ----
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => key)
+}));
+
 vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(),
   usePathname: vi.fn(() => '/record'),

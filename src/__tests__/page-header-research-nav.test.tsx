@@ -4,6 +4,20 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../components/page-header';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      dashboard: 'Welcome to Konsulin',
+      book_session: 'Schedule a Session',
+      assessment_center: 'Assessment Center',
+      user_profile: 'User Profile',
+      recommended: 'Recommendations for You',
+      research: 'Research'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn().mockReturnValue('/'),
   useSearchParams: vi.fn().mockReturnValue(new URLSearchParams()),

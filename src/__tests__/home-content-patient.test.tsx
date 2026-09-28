@@ -9,6 +9,25 @@ import { searchChiefComplaints } from '@/utils/recommendation-interview';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      get_matched: 'Get matched to the right care',
+      start_assessment: 'Start Assessment',
+      no_recommendations: 'Could not load recommendations right now.',
+      no_practitioners: 'No practitioners found for this concern yet.',
+      show_clinics: 'Show All Clinics',
+      find_practitioners: 'Find practitioners near you',
+      failed_records: 'Failed to load records.',
+      tap_retry: 'Tap to retry',
+      no_records: 'No records yet. Complete an assessment to see it here.',
+      previous_records: 'Previous Records',
+      see_all: 'See All'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 import HomeContentPatient from '../app/home-content-patient';
 
 const queryClient = new QueryClient();

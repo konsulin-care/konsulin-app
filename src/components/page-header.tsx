@@ -16,6 +16,7 @@ import {
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
+import { useTranslations } from '@/i18n';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { generateGuestSeed } from '@/utils/guest-seed';
@@ -45,27 +46,28 @@ const MAIN_ROUTES = new Set([
 /** Returns the page title based on current route. */
 function getPageIndicator(
   pathname: string,
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
+  t: (key: string) => string
 ): string | null {
   switch (pathname) {
     case '/': {
-      return 'Welcome to Your Dashboard';
+      return t('dashboard');
     }
     case '/clinic': {
       if (searchParams.has('id')) return null;
-      return 'Book a Session';
+      return t('book_session');
     }
     case '/assessments': {
-      return 'Assessment Center';
+      return t('assessment_center');
     }
     case '/profile': {
-      return 'User Profile';
+      return t('user_profile');
     }
     case '/recommendation': {
-      return 'Recommended for You';
+      return t('recommended');
     }
     case '/research': {
-      return 'Research';
+      return t('research');
     }
     default: {
       return '';
@@ -134,8 +136,9 @@ export default function PageHeader({
   const { state: authState, isLoading: isLoadingAuth } = useAuth();
   const { appointmentData, sessionData } = useUpcomingEvents();
 
+  const t = useTranslations('page-header');
   const indicator =
-    overrideIndicator ?? getPageIndicator(pathname, searchParams) ?? '';
+    overrideIndicator ?? getPageIndicator(pathname, searchParams, t) ?? '';
 
   const role = authState.userInfo.role_name;
   const isPatient = role === Roles.Patient;

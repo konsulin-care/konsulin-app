@@ -10,6 +10,28 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      get_matched: 'Get matched to the right care',
+      start_assessment: 'Start Assessment',
+      no_recommendations: 'Could not load recommendations right now.',
+      no_practitioners: 'No practitioners found for this concern yet.',
+      show_clinics: 'Show All Clinics',
+      login_browse: 'Login to browse clinics',
+      start_wellness: 'Start Your Wellness Journey',
+      mental_health: 'Health Checkups',
+      mental_health_desc:
+        'Take quick, private assessments to understand your well-being',
+      journal: 'Personal Journal',
+      journal_desc: 'Track your thoughts and progress over time',
+      sessions: 'Expert Sessions',
+      sessions_desc: 'Book appointments with licensed professionals'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 import HomeContentGuest from '../app/home-content-guest';
 
 const queryClient = new QueryClient();
