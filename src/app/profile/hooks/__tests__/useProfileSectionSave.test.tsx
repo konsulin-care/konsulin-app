@@ -343,7 +343,7 @@ describe('useProfileSectionSave', () => {
     ]);
   });
 
-  it('applies mergeOtherRoles to other roles (language stays on the active role)', async () => {
+  it('applies the same merge to all roles (language is synced)', async () => {
     setupAuth({
       role_name: 'Patient',
       roles: ['Patient', 'Practitioner'],
@@ -386,8 +386,7 @@ describe('useProfileSectionSave', () => {
               }
             ]
           };
-        },
-        mergeOtherRoles: latest => ({ ...latest, gender: 'female' as const })
+        }
       });
     });
 
@@ -396,7 +395,7 @@ describe('useProfileSectionSave', () => {
     const patient = bundle.entry?.[0]?.resource as Patient;
     const practitioner = bundle.entry?.[1]?.resource as Practitioner;
     expect(patient.communication).toHaveLength(1);
-    expect(practitioner.communication).toBeUndefined();
+    expect(practitioner.communication).toHaveLength(1);
     // Practitioner qualifications are never overwritten by the sync
     expect(practitioner.qualification).toEqual(
       practitionerFixture.qualification

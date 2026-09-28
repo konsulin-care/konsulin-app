@@ -12,6 +12,11 @@ vi.mock('@/services/api/cities', () => ({
   useGetDistricts: vi.fn()
 }));
 
+const mockSetLocale = vi.fn();
+vi.mock('@/lib/locale', () => ({
+  setLocale: (...args: unknown[]) => mockSetLocale(...args)
+}));
+
 import {
   useGetCities,
   useGetDistricts,
@@ -115,7 +120,7 @@ describe('PersonalInfoEditDrawer', () => {
     ]);
   });
 
-  it('passes a mergeOtherRoles variant that keeps language per role', () => {
+  it('does not pass mergeOtherRoles (language is synced via the main merge)', () => {
     render(
       <PersonalInfoEditDrawer
         open
@@ -139,11 +144,30 @@ describe('PersonalInfoEditDrawer', () => {
     const params = mockSaveSection.mock.calls[0][0] as {
       mergeOtherRoles?: (latest: Patient) => Patient;
     };
-    expect(params.mergeOtherRoles).toBeTypeOf('function');
-    const merged = params.mergeOtherRoles?.(patientFixture);
-    expect(merged?.gender).toBe('female');
-    expect(merged?.birthDate).toBe('1990-03-12');
-    expect('communication' in (merged ?? {})).toBe(false);
+    expect(params.mergeOtherRoles).toBeUndefined();
+  });
+
+  it('writes the locale cookie after a successful save', async () => {
+    render(
+      <PersonalInfoEditDrawer
+        open
+        onClose={onClose}
+        fhirId='pat-1'
+        resourceType='Patient'
+        gender='male'
+        birthDate='1990-03-12'
+        languageCode='en'
+        supportsLanguage
+      />
+    );
+    fireEvent.change(screen.getByTestId('language-select'), {
+      target: { value: 'en' }
+    });
+    fireEvent.click(screen.getByText('Save'));
+
+    await waitFor(() => {
+      expect(mockSetLocale).toHaveBeenCalledWith('en');
+    });
   });
 
   it('does not save without gender and DOB', () => {

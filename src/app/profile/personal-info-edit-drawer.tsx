@@ -3,10 +3,11 @@
 import DobInput from '@/components/profile/dob-input';
 import AppDrawer from '@/components/ui/app-drawer';
 import { genderList, languageOptions } from '@/constants/profile';
+import { setLocale, type Locale } from '@/lib/locale';
 import type { FhirResourceType } from '@/utils/role-fhir';
 import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useProfileSectionSave } from './hooks/useProfileSectionSave';
-import { mergePersonalInfo, mergePersonalInfoSync } from './section-merge';
+import { mergePersonalInfo } from './section-merge';
 
 type Props = {
   /** Whether the drawer is open. */
@@ -117,13 +118,12 @@ export default function PersonalInfoEditDrawer({
               }
             : {})
         }),
-      // Language stays per role: other roles receive gender/DOB only.
-      mergeOtherRoles: latest =>
-        mergePersonalInfoSync(latest, {
-          gender: genderValue,
-          birthDate: dobValue
-        }),
-      onSuccess: onClose
+      onSuccess: () => {
+        if (supportsLanguage && languageValue) {
+          setLocale(languageValue as Locale);
+        }
+        onClose();
+      }
     });
   };
 
