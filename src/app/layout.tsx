@@ -58,16 +58,28 @@ export const viewport: Viewport = {
  * a minimal admin shell for /admin — SuperTokens session bootstrap never runs
  * inside the superadmin console.
  */
+/**
+ * Root layout. The route gate chooses between the full app provider stack and
+ * a minimal admin shell for /admin — SuperTokens session bootstrap never runs
+ * inside the superadmin console.
+ */
 export default function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en'>
+    <html lang='id'>
       <body className={inter.className} suppressHydrationWarning>
         <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
         <Script src='/js/sw-register.js' strategy='beforeInteractive' />
+        <Script
+          id='locale-sync'
+          strategy='beforeInteractive'
+          dangerouslySetInnerHTML={{
+            __html: `try{var m=document.cookie.match(/NEXT_LOCALE=(en|id)/);if(m)document.documentElement.lang=m[1];}catch(e){}`
+          }}
+        />
         <RouteGate>{children}</RouteGate>
       </body>
     </html>

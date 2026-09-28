@@ -107,7 +107,6 @@ import RootLayout from '../layout';
 describe('RootLayout', () => {
   it('renders html and body wrappers', () => {
     render(<RootLayout>test content</RootLayout>);
-    // React 19 renders <html>/<body> into the document, not inside the container div
     expect(document.querySelector('html')).toBeInTheDocument();
     expect(document.querySelector('body')).toBeInTheDocument();
   });
@@ -124,7 +123,6 @@ describe('RootLayout', () => {
 
   it('renders font class on body', () => {
     render(<RootLayout>test</RootLayout>);
-    // React 19 renders <html>/<body> into the document, not inside the container div
     expect(document.querySelector('body.mock-font')).toBeInTheDocument();
   });
 
