@@ -16,15 +16,15 @@ describe('settingMenus', () => {
   });
 
   it('does not contain Settings', () => {
-    const names = settingMenus.map(m => m.name);
-    expect(names).not.toContain('Settings');
+    const nameKeys = settingMenus.map(m => m.nameKey);
+    expect(nameKeys).not.toContain('settings');
   });
 
   it.each([
-    { name: 'Delete Account', link: '/remove-account', icon: 'trash2' },
-    { name: 'Log out', link: '/logout', icon: 'logout' }
-  ])('$name has link $link and icon $icon', item => {
-    const found = settingMenus.find(m => m.name === item.name);
+    { nameKey: 'delete_account', link: '/remove-account', icon: 'trash2' },
+    { nameKey: 'log_out', link: '/logout', icon: 'logout' }
+  ])('$nameKey has link $link and icon $icon', item => {
+    const found = settingMenus.find(m => m.nameKey === item.nameKey);
     expect(found?.link).toBe(item.link);
     expect(found?.icon).toBe(item.icon);
   });

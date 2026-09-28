@@ -1,6 +1,7 @@
 'use client';
 
 import AppDrawer from '@/components/ui/app-drawer';
+import { useTranslations } from '@/i18n';
 import { buildHumanName } from '@/utils/fhir/human-name';
 import type { FhirResourceType } from '@/utils/role-fhir';
 import { Plus, Trash2 } from 'lucide-react';
@@ -37,6 +38,8 @@ export default function NameEditDrawer({
   given,
   family
 }: Readonly<Props>) {
+  const t = useTranslations('profile');
+  const tCommon = useTranslations('common');
   const [rows, setRows] = useState<NameRow[]>([{ id: 0, value: '' }]);
   const nextRowId = useRef(1);
   const [familyName, setFamilyName] = useState('');
@@ -92,16 +95,18 @@ export default function NameEditDrawer({
     <AppDrawer
       open={open}
       onClose={onClose}
-      title='Edit Name'
-      description='Given names can include middle names.'
-      ctaLabel='Save'
+      title={t('edit_name')}
+      description={t('name_desc')}
+      ctaLabel={tCommon('save')}
       ctaDisabled={isSaving || !hasNameParts}
       ctaLoading={isSaving}
       onCtaClick={handleSave}
     >
       <div className='space-y-5'>
         <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>Given names</p>
+          <p className='text-xs font-semibold text-[#2C2F35]'>
+            {t('given_names')}
+          </p>
           {rows.map(row => (
             <div key={row.id} className='flex items-center gap-2'>
               <input
@@ -110,7 +115,7 @@ export default function NameEditDrawer({
                   handleGivenChange(row.id, event.target.value);
                 }}
                 data-testid={`given-${row.id}`}
-                placeholder={`Given name ${row.id + 1}`}
+                placeholder={t('given_name_n', { n: String(row.id + 1) })}
                 className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
               />
               {rows.length > 1 && (
@@ -135,18 +140,21 @@ export default function NameEditDrawer({
             className='text-secondary flex cursor-pointer items-center gap-1 text-xs font-semibold'
           >
             <Plus className='h-4 w-4' />
-            Add given name
+            {t('add_given')}
+            {t('add_given')}
           </button>
         </div>
         <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>Family name</p>
+          <p className='text-xs font-semibold text-[#2C2F35]'>
+            {t('family_name')}
+          </p>
           <input
             value={familyName}
             onChange={event => {
               setFamilyName(event.target.value);
             }}
             data-testid='family-input'
-            placeholder='Family name'
+            placeholder={t('family_name')}
             className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
           />
         </div>

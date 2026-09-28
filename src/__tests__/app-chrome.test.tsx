@@ -3,6 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => key)
+}));
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));

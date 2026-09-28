@@ -3,6 +3,7 @@
 import InformationDetail, {
   type DetailRow
 } from '@/components/profile/information-detail';
+import { useTranslations } from '@/i18n';
 import type { Patient, Person, Practitioner } from 'fhir/r4';
 
 type Props = {
@@ -11,7 +12,10 @@ type Props = {
 };
 
 /** Build qualification rows (specialty, license, issuer) for a Practitioner. */
-function buildQualificationRows(profile: Practitioner): DetailRow[] {
+function buildQualificationRows(
+  profile: Practitioner,
+  t: (key: string) => string
+): DetailRow[] {
   if (!profile.qualification?.length) return [];
   return profile.qualification.flatMap((qualification, index) => {
     const rows: DetailRow[] = [];
@@ -20,7 +24,7 @@ function buildQualificationRows(profile: Practitioner): DetailRow[] {
     if (code) {
       rows.push({
         id: `qual-code-${index}`,
-        key: 'Specialty',
+        key: t('specialty'),
         value: code
       });
     }
@@ -28,20 +32,27 @@ function buildQualificationRows(profile: Practitioner): DetailRow[] {
     if (licenseNumber) {
       rows.push({
         id: `qual-license-${index}`,
-        key: 'License Number',
+        key: t('license_number'),
         value: licenseNumber
       });
     }
     const issuer = qualification.issuer?.display;
     if (issuer) {
-      rows.push({ id: `qual-issuer-${index}`, key: 'Issuer', value: issuer });
+      rows.push({
+        id: `qual-issuer-${index}`,
+        key: t('issuer'),
+        value: issuer
+      });
     }
     return rows;
   });
 }
 
 /** Build the marital-status row for a Patient when present. */
-function buildMaritalRows(profile: Patient): DetailRow[] {
+function buildMaritalRows(
+  profile: Patient,
+  t: (key: string) => string
+): DetailRow[] {
   const status = profile.maritalStatus;
   if (!status) return [];
   const value =
@@ -49,7 +60,7 @@ function buildMaritalRows(profile: Patient): DetailRow[] {
     status.coding?.[0]?.display ??
     status.coding?.[0]?.code ??
     '-';
-  return [{ id: 'marital', key: 'Marital Status', value }];
+  return [{ id: 'marital', key: t('marital_status'), value }];
 }
 
 /**
@@ -57,16 +68,17 @@ function buildMaritalRows(profile: Patient): DetailRow[] {
  * Patient marital status. Renders nothing when the role has no extra data.
  */
 export default function ExtensionCard({ profile }: Readonly<Props>) {
+  const t = useTranslations('profile');
   if (!profile) return null;
 
   let title = '';
   let rows: DetailRow[] = [];
   if (profile.resourceType === 'Practitioner') {
-    title = 'Professional';
-    rows = buildQualificationRows(profile);
+    title = t('professional');
+    rows = buildQualificationRows(profile, t);
   } else if (profile.resourceType === 'Patient') {
-    title = 'Additional';
-    rows = buildMaritalRows(profile);
+    title = t('additional');
+    rows = buildMaritalRows(profile, t);
   }
 
   if (rows.length === 0) return null;

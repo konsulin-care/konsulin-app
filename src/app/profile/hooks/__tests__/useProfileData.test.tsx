@@ -2,6 +2,27 @@ import { renderHook } from '@testing-library/react';
 import type { Patient, Practitioner } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      personal_info: 'Personal Information',
+      contact: 'Contact',
+      address: 'Address',
+      gender: 'Gender',
+      birth_date: 'Date of Birth',
+      language: 'Language',
+      email: 'Email',
+      phone: 'Phone',
+      line: 'Line',
+      district: 'District',
+      city: 'City',
+      province: 'Province',
+      postal_code: 'Postal Code'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));
@@ -9,7 +30,26 @@ vi.mock('@/context/auth/authContext', () => ({
 import { useAuth } from '@/context/auth/authContext';
 import type { IStateUserInfo } from '@/context/auth/authTypes';
 import type { ProfileResource } from '@/services/role-profiles';
-import { useProfileData } from '../useProfileData';
+import { useProfileData, type ProfileTranslationFn } from '../useProfileData';
+
+const mockT: ProfileTranslationFn = (key: string) => {
+  const translations: Record<string, string> = {
+    personal_info: 'Personal Information',
+    contact: 'Contact',
+    address: 'Address',
+    gender: 'Gender',
+    birth_date: 'Date of Birth',
+    language: 'Language',
+    email: 'Email',
+    phone: 'Phone',
+    line: 'Line',
+    district: 'District',
+    city: 'City',
+    province: 'Province',
+    postal_code: 'Postal Code'
+  };
+  return translations[key] ?? key;
+};
 
 const patientFixture: Patient = {
   resourceType: 'Patient',
@@ -111,7 +151,7 @@ describe('useProfileData', () => {
     });
 
     const { result } = renderHook(() =>
-      useProfileData('u1', ['Patient', 'Practitioner'], 'Patient')
+      useProfileData('u1', ['Patient', 'Practitioner'], 'Patient', mockT)
     );
 
     expect(result.current.resourceType).toBe('Patient');
@@ -126,7 +166,7 @@ describe('useProfileData', () => {
     });
 
     const { result } = renderHook(() =>
-      useProfileData('u1', ['Patient'], 'Patient')
+      useProfileData('u1', ['Patient'], 'Patient', mockT)
     );
 
     expect(result.current.identity.displayName).toBe('John Magnificent Doe');
@@ -145,7 +185,7 @@ describe('useProfileData', () => {
     });
 
     const { result } = renderHook(() =>
-      useProfileData('u1', ['Patient'], 'Patient')
+      useProfileData('u1', ['Patient'], 'Patient', mockT)
     );
 
     const ids = result.current.sections.map(s => s.id);
@@ -174,7 +214,7 @@ describe('useProfileData', () => {
     });
 
     const { result: practitionerResult } = renderHook(() =>
-      useProfileData('u1', ['Practitioner'], 'Practitioner')
+      useProfileData('u1', ['Practitioner'], 'Practitioner', mockT)
     );
     expect(
       practitionerResult.current.sections[0].rows.find(r => r.id === 'language')
@@ -193,7 +233,7 @@ describe('useProfileData', () => {
     });
 
     const { result: adminResult } = renderHook(() =>
-      useProfileData('u1', ['Clinic Admin'], 'Clinic Admin')
+      useProfileData('u1', ['Clinic Admin'], 'Clinic Admin', mockT)
     );
     expect(adminResult.current.resourceType).toBe('Practitioner');
     expect(
@@ -214,7 +254,7 @@ describe('useProfileData', () => {
     });
 
     const { result } = renderHook(() =>
-      useProfileData('u1', ['Patient', 'Practitioner'], 'Patient')
+      useProfileData('u1', ['Patient', 'Practitioner'], 'Patient', mockT)
     );
 
     expect(result.current.roleProfiles?.Patient?.resource).toEqual(
@@ -247,7 +287,7 @@ describe('useProfileData', () => {
     });
 
     const { result } = renderHook(() =>
-      useProfileData('u1', ['Patient', 'Clinic Admin'], 'Clinic Admin')
+      useProfileData('u1', ['Patient', 'Clinic Admin'], 'Clinic Admin', mockT)
     );
 
     expect(result.current.profileData).toEqual(unnamedPractitioner);
@@ -269,7 +309,7 @@ describe('useProfileData', () => {
     });
 
     const { result } = renderHook(() =>
-      useProfileData('u1', ['Patient'], 'Patient')
+      useProfileData('u1', ['Patient'], 'Patient', mockT)
     );
 
     expect(result.current.profileData).toEqual(patientFixture);
@@ -283,7 +323,7 @@ describe('useProfileData', () => {
       }
     });
 
-    renderHook(() => useProfileData('u1', ['Patient'], 'Patient'));
+    renderHook(() => useProfileData('u1', ['Patient'], 'Patient', mockT));
 
     expect(mockRefresh).toHaveBeenCalledTimes(1);
   });
@@ -295,7 +335,7 @@ describe('useProfileData', () => {
       }
     });
 
-    renderHook(() => useProfileData('u1', ['Patient'], 'Patient'));
+    renderHook(() => useProfileData('u1', ['Patient'], 'Patient', mockT));
 
     expect(mockRefresh).toHaveBeenCalledTimes(1);
   });
@@ -307,7 +347,7 @@ describe('useProfileData', () => {
       }
     });
 
-    renderHook(() => useProfileData('u1', ['Patient'], 'Patient'));
+    renderHook(() => useProfileData('u1', ['Patient'], 'Patient', mockT));
 
     expect(mockRefresh).not.toHaveBeenCalled();
   });

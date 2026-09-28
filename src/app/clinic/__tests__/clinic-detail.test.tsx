@@ -10,6 +10,12 @@ import ClinicDetail from '../clinic-detail';
 // Mocks
 // ---------------------------------------------------------------------------
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(
+    (namespace: string) => (key: string) => `${namespace}.${key}`
+  )
+}));
+
 vi.mock('@/components/page-header', () => ({
   default: () => <div data-testid='mock-page-header' />
 }));

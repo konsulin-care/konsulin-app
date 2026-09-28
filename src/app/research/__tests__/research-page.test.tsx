@@ -1,4 +1,11 @@
 /* eslint-disable max-lines */
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(
+    (namespace: string) => (key: string) => `${namespace}.${key}`
+  )
+}));
+
 import { wrapper } from '@/__tests__/react-test-utils';
 import type { FabAction } from '@/context/fabContext';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';

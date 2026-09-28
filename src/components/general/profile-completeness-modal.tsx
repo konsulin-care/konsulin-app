@@ -2,6 +2,7 @@
 /* eslint-disable sonarjs/no-redundant-jump, consistent-return */
 
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -10,6 +11,7 @@ const MODAL_DELAY_MS = 3000;
 
 /** Modal prompting user to complete their profile. */
 const ProfileCompletenessModal = () => {
+  const t = useTranslations('profile');
   const { isLoading, state: authState } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -80,13 +82,13 @@ const ProfileCompletenessModal = () => {
           id='profile-completeness-title'
           className='mb-2 text-lg font-semibold'
         >
-          Your profile is incomplete
+          {t('incomplete_modal_title')}
         </h2>
         <p
           id='profile-completeness-description'
           className='mb-4 text-sm text-gray-600'
         >
-          Fill out your details to fully utilize Konsulin features.
+          {t('incomplete_modal_desc')}
         </p>
         <button
           type='button'
@@ -96,7 +98,7 @@ const ProfileCompletenessModal = () => {
             router.push('/profile');
           }}
         >
-          Complete profile
+          {t('complete_profile')}
         </button>
       </div>
     </div>

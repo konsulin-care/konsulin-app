@@ -1,6 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      update_photo: 'Update Photo',
+      profile_photo: 'Profile photo'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('next/image', async () => {
   const { createNextImageMock } = await import('@/__tests__/mocks/next-image');
   return createNextImageMock();

@@ -6,6 +6,21 @@ vi.mock('../hooks/useProfileSectionSave', () => ({
   useProfileSectionSave: vi.fn()
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      save: 'Save',
+      edit_name: 'Edit Name',
+      name_desc: 'Given names can include middle names.',
+      given_names: 'Given names',
+      family_name: 'Family name',
+      add_given: 'Add given name',
+      given_name_n: 'Given name {n}'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 import { useProfileSectionSave } from '../hooks/useProfileSectionSave';
 import NameEditDrawer from '../name-edit-drawer';
 

@@ -8,6 +8,7 @@ import ProfileActions from '@/components/profile/ProfileActions';
 import { settingMenus } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
+import { useTranslations } from '@/i18n';
 import type { RoleProfile } from '@/services/role-profiles';
 import type { Address, Patient, Practitioner } from 'fhir/r4';
 import { useState } from 'react';
@@ -172,8 +173,9 @@ export default function ProfileDisplay() {
   const roles = resolveRoles(authState.userInfo);
   const isEmailBased = Boolean(authState.userInfo?.email);
 
+  const t = useTranslations('profile');
   const { profileData, roleProfiles, identity, sections, resourceType } =
-    useProfileData(userId, roles, roleName);
+    useProfileData(userId, roles, roleName, t);
   const { showBanner } = useProfileCompleteness(profileData);
   const { isUploading, handleFileSelected } = useProfilePhotoSave({
     fhirId,

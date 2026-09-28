@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { LogOut, Trash2, type LucideIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -10,21 +11,6 @@ export const ICON_MAP: Record<IconKey, LucideIcon> = {
   logout: LogOut,
   trash2: Trash2
 };
-
-const ACTION_CONFIG = {
-  '/logout': {
-    title: 'Apakah Anda Yakin Untuk Keluar Akun',
-    subTitle:
-      'Note that you need to login again in the\nfuture and the notification will not appears if you log out',
-    confirmText: 'Yes, log me out'
-  },
-  '/remove-account': {
-    title: 'Apakah Anda Yakin Untuk Hapus Akun',
-    subTitle:
-      'Note that you cannot retrieve any data from\nthis account in the app if you delete your account.',
-    confirmText: 'Yes, delete my account'
-  }
-} as const;
 
 type DrawerState = {
   title: string;
@@ -42,6 +28,7 @@ type DrawerState = {
  * @returns Drawer state, confirm button text, and action handlers.
  */
 export function useAccountAction() {
+  const t = useTranslations('profile');
   const router = useRouter();
   const [pendingLink, setPendingLink] = useState<string | null>(null);
   const [drawerState, setDrawerState] = useState<DrawerState>({
@@ -50,9 +37,25 @@ export function useAccountAction() {
     show: false
   });
 
+  const actionConfig: Record<
+    string,
+    { title: string; subTitle: string; confirmText: string }
+  > = {
+    '/logout': {
+      title: t('logout_title'),
+      subTitle: t('logout_desc'),
+      confirmText: t('logout_confirm')
+    },
+    '/remove-account': {
+      title: t('delete_title'),
+      subTitle: t('delete_desc'),
+      confirmText: t('delete_confirm')
+    }
+  };
+
   /** Open drawer for matching config paths; otherwise navigate directly. */
   function handleMenuClick(path: string) {
-    const config = ACTION_CONFIG[path as keyof typeof ACTION_CONFIG];
+    const config = actionConfig[path];
     if (config) {
       setPendingLink(path);
       setDrawerState({
@@ -78,8 +81,7 @@ export function useAccountAction() {
   }
 
   const confirmText = pendingLink
-    ? (ACTION_CONFIG[pendingLink as keyof typeof ACTION_CONFIG]?.confirmText ??
-      '')
+    ? (actionConfig[pendingLink]?.confirmText ?? '')
     : '';
 
   return {

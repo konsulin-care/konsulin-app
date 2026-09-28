@@ -1,6 +1,13 @@
+import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { IStateBooking } from '@/context/booking/bookingTypes';
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(
+    (namespace: string) => (key: string) => `${namespace}.${key}`
+  )
+}));
+
 import TimeSlotsSection from '../time-slots-section';
 
 const defaultBookingState: IStateBooking = {
@@ -49,7 +56,9 @@ describe('TimeSlotsSection', () => {
   it('renders loading spinner when isLoading', () => {
     render(<TimeSlotsSection {...defaultProps} isLoading />);
 
-    expect(screen.queryByRole('button', { name: '10:00' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: '10:00' })
+    ).not.toBeInTheDocument();
     // Loading spinner should be visible — it's an SVG with animate-spin class
     const spinner = document.querySelector('.animate-spin');
     expect(spinner).toBeInTheDocument();
@@ -64,7 +73,9 @@ describe('TimeSlotsSection', () => {
   it('renders error state when isError is true', () => {
     render(<TimeSlotsSection {...defaultProps} isError />);
 
-    expect(screen.getByText(/unable to load available slots/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/unable to load available slots/i)
+    ).toBeInTheDocument();
   });
 
   it('highlights selected slot', () => {
@@ -80,7 +91,13 @@ describe('TimeSlotsSection', () => {
   });
 
   it('renders disabled slot pills as disabled', () => {
-    const disabledPill = { ...freeSlotPill, disabled: true, id: 'busy-1', displayLabel: '11:00', value: '11:00' };
+    const disabledPill = {
+      ...freeSlotPill,
+      disabled: true,
+      id: 'busy-1',
+      displayLabel: '11:00',
+      value: '11:00'
+    };
     render(
       <TimeSlotsSection
         {...defaultProps}

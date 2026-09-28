@@ -1,6 +1,21 @@
 import { render, screen } from '@testing-library/react';
 import type { Patient, Practitioner } from 'fhir/r4';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      professional: 'Professional',
+      additional: 'Additional',
+      specialty: 'Specialty',
+      license_number: 'License Number',
+      issuer: 'Issuer',
+      marital_status: 'Marital Status'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 import ExtensionCard from '../extension-card';
 
 describe('ExtensionCard', () => {

@@ -2,6 +2,7 @@
 
 import LocationCombobox from '@/components/shared/location-combobox';
 import AppDrawer from '@/components/ui/app-drawer';
+import { useTranslations } from '@/i18n';
 import {
   useGetCities,
   useGetDistricts,
@@ -55,16 +56,18 @@ function StreetLinesField({
   lines,
   onLineChange,
   onAddLine,
-  onRemoveLine
+  onRemoveLine,
+  t
 }: Readonly<{
   lines: LineRow[];
   onLineChange: (id: number, value: string) => void;
   onAddLine: () => void;
   onRemoveLine: (id: number) => void;
+  t: (key: string) => string;
 }>) {
   return (
     <div className='space-y-2'>
-      <p className='text-xs font-semibold text-[#2C2F35]'>Street</p>
+      <p className='text-xs font-semibold text-[#2C2F35]'>{t('street')}</p>
       {lines.map(row => (
         <div key={row.id} className='flex items-center gap-2'>
           <input
@@ -73,7 +76,7 @@ function StreetLinesField({
               onLineChange(row.id, event.target.value);
             }}
             data-testid={`line-${row.id}`}
-            placeholder='Street address'
+            placeholder={t('street_placeholder')}
             className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
           />
           {lines.length > 1 && (
@@ -98,7 +101,7 @@ function StreetLinesField({
         className='text-secondary flex cursor-pointer items-center gap-1 text-xs font-semibold'
       >
         <Plus className='h-4 w-4' />
-        Add address line
+        {t('add_address_line')}
       </button>
     </div>
   );
@@ -128,6 +131,8 @@ export default function AddressEditDrawer({
   const [postalValue, setPostalValue] = useState('');
   const [provinceCode, setProvinceCode] = useState('');
   const [cityCode, setCityCode] = useState('');
+  const t = useTranslations('profile');
+  const tCommon = useTranslations('common');
   const { isSaving, saveSection } = useProfileSectionSave();
 
   const { data: listProvinces } = useGetProvinces();
@@ -226,9 +231,9 @@ export default function AddressEditDrawer({
     <AppDrawer
       open={open}
       onClose={onClose}
-      title='Address'
-      description='Street, district, city and province.'
-      ctaLabel='Save'
+      title={t('address')}
+      description={t('address_desc')}
+      ctaLabel={tCommon('save')}
       ctaDisabled={isSaving}
       ctaLoading={isSaving}
       onCtaClick={handleSave}
@@ -239,13 +244,14 @@ export default function AddressEditDrawer({
           onLineChange={handleLineChange}
           onAddLine={handleAddLine}
           onRemoveLine={handleRemoveLine}
+          t={t}
         />
 
         <LocationCombobox
           options={listProvinces ?? []}
           value={provinceCode}
           onSelect={handleProvinceSelect}
-          placeholder='Select province'
+          placeholder={t('select_province')}
         />
 
         {provinceCode && (
@@ -253,7 +259,7 @@ export default function AddressEditDrawer({
             options={listCities ?? []}
             value={cityCode}
             onSelect={handleCitySelect}
-            placeholder='Select city'
+            placeholder={t('select_city')}
           />
         )}
 
@@ -265,18 +271,18 @@ export default function AddressEditDrawer({
               setDistrictCode(option.code);
               setDistrictValue(option.name);
             }}
-            placeholder='Select district'
+            placeholder={t('select_district')}
           />
         )}
 
-        <Field label='Postal Code'>
+        <Field label={t('postal_code')}>
           <input
             value={postalValue}
             onChange={event => {
               setPostalValue(event.target.value);
             }}
             data-testid='postal-input'
-            placeholder='Postal code'
+            placeholder={t('postal_code_placeholder')}
             className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
           />
         </Field>

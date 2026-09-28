@@ -6,6 +6,43 @@ vi.mock('../hooks/useProfileSectionSave', () => ({
   useProfileSectionSave: vi.fn()
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      save: 'Save',
+      personal_info: 'Personal Information',
+      personal_info_desc: 'Gender, date of birth and preferred language.',
+      gender: 'Gender',
+      birth_date: 'Date of Birth',
+      language: 'Language',
+      select_gender: 'Select gender',
+      select_language: 'Select language',
+      edit_name: 'Edit Name',
+      name_desc: 'Given names can include middle names.',
+      given_names: 'Given names',
+      family_name: 'Family name',
+      add_given: 'Add given name',
+      contact: 'Contact',
+      contact_desc: 'Email and phone used for communication.',
+      email: 'Email',
+      phone: 'Phone',
+      email_placeholder: 'Email address',
+      phone_placeholder: 'Phone number',
+      address: 'Address',
+      address_desc: 'Street, district, city and province.',
+      street: 'Street',
+      street_placeholder: 'Street address',
+      add_address_line: 'Add address line',
+      postal_code: 'Postal Code',
+      postal_code_placeholder: 'Postal code',
+      select_province: 'Select province',
+      select_city: 'Select city',
+      select_district: 'Select district'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('@/services/api/cities', () => ({
   useGetProvinces: vi.fn(),
   useGetCities: vi.fn(),

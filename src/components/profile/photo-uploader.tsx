@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { Upload } from 'lucide-react';
 import Image from 'next/image';
 import { useRef } from 'react';
@@ -32,6 +33,7 @@ export default function PhotoUploader({
   isUploading,
   onFileSelected
 }: Readonly<Props>) {
+  const t = useTranslations('profile');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /** Open the hidden file input. */
@@ -53,13 +55,13 @@ export default function PhotoUploader({
         data-testid='photo-trigger'
         onClick={handleButtonClick}
         disabled={isUploading}
-        aria-label='Update Photo'
+        aria-label={t('update_photo')}
         className='relative block h-[96px] w-[96px] cursor-pointer overflow-hidden rounded-full border-2 border-white shadow-md'
       >
         {photoUrl ? (
           <Image
             src={photoUrl}
-            alt='Profile photo'
+            alt={t('profile_photo')}
             fill
             className='object-cover'
             sizes='96px'
@@ -78,7 +80,7 @@ export default function PhotoUploader({
                 data-testid='upload-icon'
               />
               <span className='text-[10px] font-semibold text-white'>
-                Update Photo
+                {t('update_photo')}
               </span>
             </div>
           </>

@@ -7,6 +7,37 @@ import { mockAuth } from '@/__tests__/react-test-utils';
 // Mocks
 // ---------------------------------------------------------------------------
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      personal_info: 'Personal Information',
+      contact: 'Contact',
+      address: 'Address',
+      gender: 'Gender',
+      birth_date: 'Date of Birth',
+      language: 'Language',
+      email: 'Email',
+      phone: 'Phone',
+      line: 'Line',
+      district: 'District',
+      city: 'City',
+      province: 'Province',
+      postal_code: 'Postal Code',
+      incomplete: 'Your profile is incomplete.',
+      incomplete_desc:
+        'Please update your information to complete registration.',
+      dismiss: 'Dismiss',
+      update_photo: 'Update Photo',
+      profile_photo: 'Profile photo',
+      professional: 'Professional',
+      additional: 'Additional',
+      delete_account: 'Delete Account',
+      log_out: 'Log out'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));

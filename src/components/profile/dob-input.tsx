@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { getDaysInMonth } from 'date-fns';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -7,23 +8,24 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 // Constants
 // ---------------------------------------------------------------------------
 
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
+/** English month names for internal value mapping. */
+const MONTH_KEYS = [
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december'
 ] as const;
 
 /** Map full month name to 0-indexed month number. */
-const MONTH_INDEX = new Map<string, number>(MONTHS.map((m, i) => [m, i]));
+const MONTH_INDEX = new Map<string, number>(MONTH_KEYS.map((m, i) => [m, i]));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -75,6 +77,8 @@ interface DobInputProps {
  * invalid dates (e.g., Jan 31 -> Feb -> 28/29 depending on leap year).
  */
 export default function DobInput({ value, onChange }: DobInputProps) {
+  const t = useTranslations('common');
+  const months = useMemo(() => MONTH_KEYS.map(key => t(`months.${key}`)), [t]);
   const parsed = useMemo(() => parseDob(value), [value]);
 
   const [day, setDay] = useState(parsed?.day ?? 0);
@@ -132,6 +136,9 @@ export default function DobInput({ value, onChange }: DobInputProps) {
     if (next >= 0 && year > 0) emit(day, next, year);
   };
 
+  /** Get the English month key from its index for the select value. */
+  const getMonthKey = (index: number) => MONTH_KEYS[index] ?? '';
+
   /** Emit the date when the year select changes. */
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const next = Number(e.target.value);
@@ -147,7 +154,7 @@ export default function DobInput({ value, onChange }: DobInputProps) {
         aria-label='Day'
         className={`${SELECT_CLASS} w-[72px]`}
       >
-        <option value=''>DD</option>
+        <option value=''>{t('day')}</option>
         {dayItems.map(d => (
           <option key={d} value={String(d)}>
             {d}
@@ -156,15 +163,15 @@ export default function DobInput({ value, onChange }: DobInputProps) {
       </select>
 
       <select
-        value={month >= 0 ? MONTHS[month] : ''}
+        value={month >= 0 ? getMonthKey(month) : ''}
         onChange={handleMonthChange}
         aria-label='Month'
         className={`${SELECT_CLASS} w-[120px]`}
       >
-        <option value=''>Month</option>
-        {MONTHS.map(m => (
-          <option key={m} value={m}>
-            {m}
+        <option value=''>{t('month')}</option>
+        {MONTH_KEYS.map((key, index) => (
+          <option key={key} value={key}>
+            {months[index]}
           </option>
         ))}
       </select>
@@ -175,7 +182,7 @@ export default function DobInput({ value, onChange }: DobInputProps) {
         aria-label='Year'
         className={`${SELECT_CLASS} w-[100px]`}
       >
-        <option value=''>YYYY</option>
+        <option value=''>{t('year')}</option>
         {yearItems.map(y => (
           <option key={y} value={String(y)}>
             {y}

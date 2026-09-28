@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useTranslations } from '@/i18n';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -7,14 +8,16 @@ import Link from 'next/link';
  *
  */
 export default function MedalCollection({ medals, isDisabled = false }) {
+  const t = useTranslations('profile');
+  const tCommon = useTranslations('common');
   return (
     <div
       className={`transition duration-300 ${isDisabled ? 'pointer-events-none opacity-50 blur-sm filter' : ''}`}
     >
       <div className='text-muted flex justify-between py-4'>
-        <span className='text-[14px] font-bold'> Medal Collection</span>
+        <span className='text-[14px] font-bold'> {t('medal_collection')}</span>
         <Link className='text-[12px]' href={'/'}>
-          See All
+          {tCommon('see_all')}
         </Link>
       </div>
       <ScrollArea className='w-full pb-4 whitespace-nowrap'>

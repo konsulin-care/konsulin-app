@@ -1,6 +1,7 @@
 'use client';
 
 import AppDrawer from '@/components/ui/app-drawer';
+import { useTranslations } from '@/i18n';
 import type { FhirResourceType } from '@/utils/role-fhir';
 import { useEffect, useState } from 'react';
 import { useProfileSectionSave } from './hooks/useProfileSectionSave';
@@ -36,6 +37,8 @@ export default function ContactEditDrawer({
   phone,
   isEmailBased
 }: Readonly<Props>) {
+  const t = useTranslations('profile');
+  const tCommon = useTranslations('common');
   const [emailValue, setEmailValue] = useState(email);
   const [phoneValue, setPhoneValue] = useState(phone);
   const { isSaving, saveSection } = useProfileSectionSave();
@@ -64,16 +67,16 @@ export default function ContactEditDrawer({
     <AppDrawer
       open={open}
       onClose={onClose}
-      title='Contact'
-      description='Email and phone used for communication.'
-      ctaLabel='Save'
+      title={t('contact')}
+      description={t('contact_desc')}
+      ctaLabel={tCommon('save')}
       ctaDisabled={isSaving}
       ctaLoading={isSaving}
       onCtaClick={handleSave}
     >
       <div className='space-y-5'>
         <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>Email</p>
+          <p className='text-xs font-semibold text-[#2C2F35]'>{t('email')}</p>
           <input
             value={emailValue}
             onChange={event => {
@@ -82,12 +85,12 @@ export default function ContactEditDrawer({
             readOnly={isEmailBased}
             data-testid='email-input'
             type='email'
-            placeholder='Email address'
+            placeholder={t('email_placeholder')}
             className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
           />
         </div>
         <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>Phone</p>
+          <p className='text-xs font-semibold text-[#2C2F35]'>{t('phone')}</p>
           <input
             value={phoneValue}
             onChange={event => {
@@ -95,7 +98,7 @@ export default function ContactEditDrawer({
             }}
             data-testid='phone-input'
             type='tel'
-            placeholder='Phone number'
+            placeholder={t('phone_placeholder')}
             className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
           />
         </div>
