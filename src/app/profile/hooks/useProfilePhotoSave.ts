@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/context/auth/authContext';
 import type { IActionAuth, IStateUserInfo } from '@/context/auth/authTypes';
+import { useTranslations } from '@/i18n';
 import { dbSet, STORES } from '@/lib/indexeddb';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import {
@@ -94,6 +95,7 @@ export function useProfilePhotoSave({
   fallbackEmail,
   fallbackPhone
 }: Params): Result {
+  const t = useTranslations('toast');
   const { mutateAsync: updateProfile } = useUpdateProfile();
   const { state: authState, dispatch: dispatchAuth } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -170,15 +172,15 @@ export function useProfilePhotoSave({
           dispatchAuth
         );
 
-        toast.success('Profile photo updated');
+        toast.success(t('photo_updated'));
       } catch (error) {
         console.error('[avatar] profile photo update failed', error);
-        toast.error('Failed updating the profile picture');
+        toast.error(t('photo_update_failed'));
       } finally {
         setIsUploading(false);
       }
     },
-    [ensureChatwootId, updateProfile, authState, dispatchAuth]
+    [ensureChatwootId, updateProfile, authState, dispatchAuth, t]
   );
 
   return { isUploading, handleFileSelected };

@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { dbSet, STORES } from '@/lib/indexeddb';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 import { useUpdateProfile } from '@/services/profile';
@@ -54,6 +55,7 @@ type Result = {
  * merged resources are recached into the auth state + IndexedDB.
  */
 export function useProfileSectionSave(): Result {
+  const t = useTranslations('toast');
   const { mutateAsync: updateProfile } = useUpdateProfile();
   const { state: authState, dispatch: dispatchAuth } = useAuth();
   const { syncIdentity } = useIdentitySync();
@@ -126,16 +128,16 @@ export function useProfileSectionSave(): Result {
           await dbSet(STORES.userProfile, payload);
         }
 
-        toast.success('Profile updated');
+        toast.success(t('profile_updated'));
         params.onSuccess?.();
       } catch (error) {
         console.error('[profile-section-save] failed', error);
-        toast.error('Failed updating profile');
+        toast.error(t('profile_update_failed'));
       } finally {
         setIsSaving(false);
       }
     },
-    [authState.userInfo, updateProfile, dispatchAuth, syncIdentity]
+    [authState.userInfo, updateProfile, dispatchAuth, syncIdentity, t]
   );
 
   return { isSaving, saveSection };

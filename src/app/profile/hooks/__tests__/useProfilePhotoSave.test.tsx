@@ -4,6 +4,16 @@ import type { Bundle, Patient, Practitioner } from 'fhir/r4';
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      photo_updated: 'Profile photo updated',
+      photo_update_failed: 'Failed updating the profile picture'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('@/services/profile', () => ({
   getProfileById: vi.fn(),
   modifyProfile: vi.fn(),

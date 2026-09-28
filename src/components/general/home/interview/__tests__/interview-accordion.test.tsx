@@ -4,6 +4,18 @@ import {
 } from '@/utils/recommendation-interview';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      chief_concern: 'Chief Concern',
+      specific_focus: 'Specific Focus',
+      which_describes: 'Which best describes your concern?'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 import { InterviewAccordion } from '../interview-accordion';
 
 const ALL_COMPLAINTS = getAllChiefComplaints();

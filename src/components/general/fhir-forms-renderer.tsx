@@ -16,6 +16,7 @@ import { Roles } from '@/constants/roles';
 import { useFab } from '@/context/fabContext';
 import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
+import { useTranslations } from '@/i18n';
 import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import { useResearchProgress } from '@/services/api/research';
@@ -95,6 +96,7 @@ async function triggerInterpretWebhook(opts: {
  *
  */
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
+  const t = useTranslations('toast');
   const {
     questionnaire,
     isAuthenticated,
@@ -309,7 +311,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       // Authenticated
       if (role === Roles.Practitioner) {
         if (!practitionerId || !patientId) {
-          toast.error('Missing practitioner or patient information');
+          toast.error(t('missing_practitioner'));
           setIsSubmitting(false);
           return;
         }
@@ -317,7 +319,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         subject = { reference: `Practitioner/${practitionerId}` };
       } else {
         if (!patientId) {
-          toast.error('Missing patient information');
+          toast.error(t('missing_patient'));
           setIsSubmitting(false);
           return;
         }
@@ -373,7 +375,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       handleNavigate(buttonLabel, submitResult.id);
     } catch (error) {
       console.error('Error message :', error);
-      toast.error('An error occurred while submitting the questionnaire');
+      toast.error(t('submit_error'));
       setIsSubmitting(false);
     }
   };

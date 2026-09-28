@@ -10,6 +10,17 @@ import {
 } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      missing_practitioner: 'Missing practitioner or patient information',
+      missing_patient: 'Missing patient information',
+      submit_error: 'An error occurred while submitting the questionnaire'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('next/navigation', () => ({
   useRouter: vi
     .fn()

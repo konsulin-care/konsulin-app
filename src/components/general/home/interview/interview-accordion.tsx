@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import type {
   ChiefComplaint,
   InterviewResult
@@ -30,6 +31,7 @@ export function InterviewAccordion({
   options,
   onComplete
 }: Readonly<InterviewAccordionProps>) {
+  const t = useTranslations('interview');
   const [complaint, setComplaint] = useState<ChiefComplaint | null>(null);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<1 | 2>(1);
@@ -76,7 +78,7 @@ export function InterviewAccordion({
             <span className='flex h-6 w-6 items-center justify-center rounded-full bg-[var(--secondary)] text-xs font-bold text-white'>
               1
             </span>
-            <span>Chief Concern</span>
+            <span>{t('chief_concern')}</span>
           </div>
           {step1Complete ? (
             <div className='flex items-center gap-2'>
@@ -112,7 +114,7 @@ export function InterviewAccordion({
             >
               2
             </span>
-            <span>Specific Focus</span>
+            <span>{t('specific_focus')}</span>
           </div>
           {!step1Complete && (
             <Lock data-testid='step-2-lock' className='h-4 w-4 text-gray-400' />
@@ -132,7 +134,7 @@ export function InterviewAccordion({
         {activeStep === 2 && step1Complete && complaint && (
           <div className='border-t border-gray-100 px-4 pt-3 pb-4'>
             <p className='mb-3 text-sm font-medium text-gray-700'>
-              Which best describes your concern?
+              {t('which_describes')}
             </p>
             <ul className='flex flex-1 flex-col gap-2 overflow-y-auto'>
               {complaint.options.map(option => (
