@@ -2,6 +2,8 @@ import { RouteGate } from '@/components/route-gate';
 import '@/styles/globals.css';
 import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
 import React from 'react';
@@ -58,16 +60,12 @@ export const viewport: Viewport = {
  * a minimal admin shell for /admin — SuperTokens session bootstrap never runs
  * inside the superadmin console.
  */
-/**
- * Root layout. The route gate chooses between the full app provider stack and
- * a minimal admin shell for /admin — SuperTokens session bootstrap never runs
- * inside the superadmin console.
- */
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const messages = await getMessages();
   return (
     <html lang='id'>
       <body className={inter.className} suppressHydrationWarning>
@@ -80,7 +78,9 @@ export default function RootLayout({
             __html: `try{var m=document.cookie.match(/NEXT_LOCALE=(en|id)/);if(m)document.documentElement.lang=m[1];}catch(e){}`
           }}
         />
-        <RouteGate>{children}</RouteGate>
+        <NextIntlClientProvider messages={messages}>
+          <RouteGate>{children}</RouteGate>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,7 +1,24 @@
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import fs from 'node:fs';
 import path from 'node:path';
+import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
+
+/** Render an async server component by resolving its Promise first. */
+async function renderAsync(
+  element: React.ReactElement
+): Promise<ReturnType<typeof render>> {
+  // Async server components return a Promise; unwrap before rendering.
+  const type = element.type as unknown as (
+    ...args: unknown[]
+  ) => Promise<React.ReactElement>;
+  const resolved = await type(element.props);
+  let result!: ReturnType<typeof render>;
+  await act(async () => {
+    result = render(resolved);
+  });
+  return result;
+}
 
 // Mock every import that layout.tsx pulls in
 vi.mock('next/font/google', () => ({
@@ -90,6 +107,15 @@ vi.mock('@/lib/pwa-install', () => ({
   setupInstallPrompt: vi.fn(() => vi.fn())
 }));
 
+vi.mock('next-intl/server', () => ({
+  getMessages: vi.fn().mockResolvedValue({})
+}));
+
+vi.mock('next-intl', () => ({
+  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) =>
+    children
+}));
+
 vi.mock('react-toastify', () => ({
   ToastContainer: () => <div data-testid='toast-container' />
 }));
@@ -105,24 +131,26 @@ vi.mock('react-international-phone/style.css', () => ({}));
 import RootLayout from '../layout';
 
 describe('RootLayout', () => {
-  it('renders html and body wrappers', () => {
-    render(<RootLayout>test content</RootLayout>);
+  it('renders html and body wrappers', async () => {
+    await renderAsync(<RootLayout>test content</RootLayout>);
     expect(document.querySelector('html')).toBeInTheDocument();
     expect(document.querySelector('body')).toBeInTheDocument();
   });
 
-  it('renders child content via the route gate', () => {
-    const { container } = render(<RootLayout>hello world</RootLayout>);
+  it('renders child content via the route gate', async () => {
+    const { container } = await renderAsync(
+      <RootLayout>hello world</RootLayout>
+    );
     expect(container.textContent).toContain('hello world');
   });
 
-  it('keeps the route gate in the tree (branching covered by its own test)', () => {
-    render(<RootLayout>test</RootLayout>);
+  it('keeps the route gate in the tree (branching covered by its own test)', async () => {
+    await renderAsync(<RootLayout>test</RootLayout>);
     expect(document.querySelector('body')).toBeInTheDocument();
   });
 
-  it('renders font class on body', () => {
-    render(<RootLayout>test</RootLayout>);
+  it('renders font class on body', async () => {
+    await renderAsync(<RootLayout>test</RootLayout>);
     expect(document.querySelector('body.mock-font')).toBeInTheDocument();
   });
 
@@ -136,5 +164,24 @@ describe('RootLayout', () => {
       'utf-8'
     );
     expect(layoutSrc).toContain('suppressHydrationWarning');
+  });
+
+  it('wraps children with NextIntlClientProvider for useTranslations support', () => {
+    const layoutSrc = fs.readFileSync(
+      path.resolve(__dirname, '../layout.tsx'),
+      'utf-8'
+    );
+    expect(layoutSrc).toContain('NextIntlClientProvider');
+    expect(layoutSrc).toContain('getMessages');
+  });
+
+  it('is an async function to support server-side getMessages()', () => {
+    const layoutSrc = fs.readFileSync(
+      path.resolve(__dirname, '../layout.tsx'),
+      'utf-8'
+    );
+    expect(layoutSrc).toMatch(
+      /export\s+default\s+async\s+function\s+RootLayout/
+    );
   });
 });

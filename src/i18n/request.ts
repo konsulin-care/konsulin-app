@@ -1,5 +1,7 @@
-import { LOCALES, type Locale } from '@/lib/locale';
 import { getRequestConfig } from 'next-intl/server';
+
+const LOCALES = ['en', 'id'] as const;
+type Locale = (typeof LOCALES)[number];
 
 const NAMESPACES = [
   'common',
@@ -15,7 +17,7 @@ const NAMESPACES = [
 
 export default getRequestConfig(async ({ locale }) => {
   // Validate locale
-  const validLocale = LOCALES.includes(locale as Locale)
+  const validLocale = (LOCALES as readonly string[]).includes(locale)
     ? (locale as Locale)
     : 'id';
 
