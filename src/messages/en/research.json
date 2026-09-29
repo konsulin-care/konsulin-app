@@ -14,9 +14,9 @@
   "mid_batch_fallback.title": "You're doing great!",
   "mid_batch_fallback.body": "Every response counts toward the research, so keep going.",
   "batch_complete": "You've completed this batch!",
-  "batch_complete_body": "That's every assessment in this batch. Thank you for participating, your responses help improve mental health care for everyone.",
+  "batch_complete_body": "That's every assessment in this batch. Thank you for participating, your responses help improve public health care.",
   "standalone": "You've completed the test!",
   "standalone_body": "Your results will give you valuable insight into your mental health.",
   "standalone_research": "Thank you for completing this assessment!",
-  "standalone_research_body": "Your response helps improve mental health care for everyone."
+  "standalone_research_body": "Your response helps improve public health care."
 }

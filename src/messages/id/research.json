@@ -1,8 +1,8 @@
 {
-  "mid_batch_1.title": "Kemajuan bagus!",
+  "mid_batch_1.title": "Langkah yang baik!",
   "mid_batch_1.body": "Anda telah menyelesaikan {completed} dari {total} asesmen dalam batch ini. Setiap respons berkontribusi untuk penelitian, jadi teruslah maju.",
-  "mid_batch_2.title": "Anda sedang bersemangat!",
-  "mid_batch_2.body": "{completed} dari {total} selesai. Setiap asesmen membawa kita lebih dekat ke dukungan kesehatan mental yang lebih baik.",
+  "mid_batch_2.title": "Ritme yang bagus!",
+  "mid_batch_2.body": "{completed} dari {total} selesai. Setiap asesmen membawa kita lebih dekat ke dukungan kesehatan publik yang lebih baik.",
   "mid_batch_3.title": "Momentum yang baik!",
   "mid_batch_3.body": "{completed} dari {total} asesmen selesai. Partisipasi Anda memberikan dampak nyata.",
   "mid_batch_4.title": "Teruslah maju!",
@@ -14,9 +14,9 @@
   "mid_batch_fallback.title": "Anda melakukannya dengan baik!",
   "mid_batch_fallback.body": "Setiap respons berkontribusi untuk penelitian, jadi teruslah maju.",
   "batch_complete": "Anda telah menyelesaikan batch ini!",
-  "batch_complete_body": "Semua asesmen dalam batch ini telah selesai. Terima kasih telah berpartisipasi, respons Anda membantu meningkatkan kesehatan mental untuk semua.",
+  "batch_complete_body": "Semua asesmen dalam batch ini telah selesai. Terima kasih telah berpartisipasi, respons Anda membantu meningkatkan kesehatan publik untuk semua.",
   "standalone": "Anda telah menyelesaikan tes!",
-  "standalone_body": "Hasil Anda akan memberikan wawasan berharga tentang kesehatan mental Anda.",
+  "standalone_body": "Hasil Anda akan memberikan wawasan berharga tentang kesehatan Anda.",
   "standalone_research": "Terima kasih telah menyelesaikan asesmen ini!",
-  "standalone_research_body": "Respons Anda membantu meningkatkan kesehatan mental untuk semua."
+  "standalone_research_body": "Respons Anda membantu meningkatkan kesehatan publik untuk semua."
 }
