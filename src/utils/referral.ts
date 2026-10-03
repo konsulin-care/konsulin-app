@@ -9,17 +9,19 @@
 /** Prefix marking a patient referral ref. */
 export const PATIENT_REF_PREFIX = 'p_';
 
+/** Prefix marking a practitioner referral ref. */
+export const PRACTITIONER_REF_PREFIX = 'pr_';
+
 /** localStorage key for the captured referral ref. */
 export const REFERRAL_STORAGE_KEY = 'konsulin_ref';
 
 /** localStorage prefix for per-batch referral-written flags. */
 export const REFERRAL_WRITTEN_PREFIX = 'konsulin_referral_written_';
 
-/** A parsed patient referral ref. */
-export type ReferralRef = {
-  kind: 'patient';
-  fhirId: string;
-};
+/** A parsed referral ref (patient or practitioner). */
+export type ReferralRef =
+  | { kind: 'patient'; fhirId: string }
+  | { kind: 'practitioner'; fhirId: string };
 
 /**
  * Builds the shareable research URL for a user.
@@ -44,23 +46,32 @@ export function buildShareUrl(opts: {
   if (opts.studyId) params.set('view', opts.studyId);
   if (opts.isPatient && opts.fhirId) {
     params.set('ref', `${PATIENT_REF_PREFIX}${opts.fhirId}`);
+  } else if (opts.fhirId) {
+    params.set('ref', `${PRACTITIONER_REF_PREFIX}${opts.fhirId}`);
   }
   const query = params.toString();
   return query ? `${base}?${query}` : base;
 }
 
 /**
- * Parses a referral ref into a patient referrer, or null.
+ * Parses a referral ref into a patient or practitioner referrer, or null.
  *
  * @param ref - The raw `?ref=` value.
  * @returns The referrer identity, or null when absent or malformed.
  */
 export function parseReferralRef(ref?: string | null): ReferralRef | null {
   if (!ref) return null;
-  if (!ref.startsWith(PATIENT_REF_PREFIX)) return null;
-  const fhirId = ref.slice(PATIENT_REF_PREFIX.length);
-  if (!fhirId) return null;
-  return { kind: 'patient', fhirId };
+  if (ref.startsWith(PRACTITIONER_REF_PREFIX)) {
+    const fhirId = ref.slice(PRACTITIONER_REF_PREFIX.length);
+    if (!fhirId) return null;
+    return { kind: 'practitioner', fhirId };
+  }
+  if (ref.startsWith(PATIENT_REF_PREFIX)) {
+    const fhirId = ref.slice(PATIENT_REF_PREFIX.length);
+    if (!fhirId) return null;
+    return { kind: 'patient', fhirId };
+  }
+  return null;
 }
 
 /**

@@ -54,6 +54,59 @@ describe('ActionFab', () => {
     );
     expect(getByText('Save Journal')).toBeInTheDocument();
   });
+
+  it('renders icon-only circle when label is absent', () => {
+    const MockIcon = () => <span data-testid='mock-icon'>Icon</span>;
+    const { getByTestId, container } = render(
+      <ActionFab
+        config={{
+          onAction: vi.fn(),
+          icon: MockIcon,
+          variant: 'primary'
+        }}
+      />
+    );
+    expect(getByTestId('mock-icon')).toBeInTheDocument();
+    // No label span should be rendered inside button
+    const button = container.querySelector('button');
+    const labelSpan = button?.querySelector('span:not([data-testid])');
+    expect(labelSpan).not.toBeInTheDocument();
+  });
+
+  it('applies circle classes when label is absent', () => {
+    const MockIcon = () => <span>Icon</span>;
+    const { container } = render(
+      <ActionFab
+        config={{
+          onAction: vi.fn(),
+          icon: MockIcon
+        }}
+      />
+    );
+    const button = container.querySelector('button');
+    expect(button?.className).toContain('w-14');
+    expect(button?.className).toContain('h-14');
+    expect(button?.className).toContain('rounded-full');
+    // Should NOT have pill padding
+    expect(button?.className).not.toContain('px-6');
+  });
+
+  it('applies pill classes when label is present', () => {
+    const MockIcon = () => <span>Icon</span>;
+    const { container, getByText } = render(
+      <ActionFab
+        config={{
+          label: 'Next',
+          onAction: vi.fn(),
+          icon: MockIcon
+        }}
+      />
+    );
+    expect(getByText('Next')).toBeInTheDocument();
+    const button = container.querySelector('button');
+    expect(button?.className).toContain('px-6');
+    expect(button?.className).toContain('gap-2');
+  });
 });
 
 describe('FabCustomMenu', () => {

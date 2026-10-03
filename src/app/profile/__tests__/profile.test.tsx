@@ -1,7 +1,7 @@
 import { fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { mockAuth } from '@/__tests__/test-utils';
+import { mockAuth } from '@/__tests__/react-test-utils';
 
 // ---------------------------------------------------------------------------
 // Mocks

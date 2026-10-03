@@ -1,11 +1,12 @@
 /* eslint-disable max-lines */
+import { wrapper } from '@/__tests__/react-test-utils';
 import type { FabAction } from '@/context/fabContext';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 import {
-  createResearchWrapper as createWrapper,
   makeProgress,
+  makeResearcherDashboardData,
   makeStudyB,
   makeStudyProgress,
   TITLE_MAP
@@ -13,7 +14,7 @@ import {
 
 /** Auth hook state shape consumed by the research page. */
 interface AuthState {
-  state: { userInfo: { fhirId?: string } };
+  state: { userInfo: { fhirId?: string; role_name?: string } };
   isLoading: boolean;
 }
 
@@ -23,6 +24,9 @@ const {
   mockUseConsentToStudy,
   mockUseQuestionnaireTitles,
   mockUseCircleStats,
+  mockUsePerQuestionnaireCounts,
+  mockUseResearcherDashboard,
+  mockUseStudyParticipantCount,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -37,6 +41,9 @@ const {
     mockUseConsentToStudy: vi.fn(),
     mockUseQuestionnaireTitles: vi.fn(),
     mockUseCircleStats: vi.fn(),
+    mockUsePerQuestionnaireCounts: vi.fn(),
+    mockUseResearcherDashboard: vi.fn(),
+    mockUseStudyParticipantCount: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -54,12 +61,22 @@ vi.mock('@/services/api/research', () => ({
   useClaimLocalConsents: vi.fn()
 }));
 
+vi.mock('@/services/api/researcher', () => ({
+  useResearcherDashboard: mockUseResearcherDashboard
+}));
+
 vi.mock('@/services/api/questionnaire-info', () => ({
   useQuestionnaireTitles: mockUseQuestionnaireTitles
 }));
 
 vi.mock('@/services/api/circle', () => ({
   useCircleStats: mockUseCircleStats
+}));
+
+vi.mock('@/services/api/research-counts', () => ({
+  usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
+  useStudyParticipantCount: mockUseStudyParticipantCount,
+  COMPLETION_COUNT_FLOOR: 5
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -92,6 +109,15 @@ beforeEach(() => {
   });
   mockUseCircleStats.mockReset();
   mockUseCircleStats.mockReturnValue({ data: { converted: 0, joined: 0 } });
+  mockUsePerQuestionnaireCounts.mockReset();
+  mockUsePerQuestionnaireCounts.mockReturnValue({ data: new Map() });
+  mockUseStudyParticipantCount.mockReset();
+  mockUseStudyParticipantCount.mockReturnValue({ data: undefined });
+  mockUseResearcherDashboard.mockReset();
+  mockUseResearcherDashboard.mockReturnValue({
+    data: undefined,
+    isLoading: true
+  });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();
@@ -110,7 +136,7 @@ describe('ResearchPage', () => {
       data: undefined,
       isLoading: true
     });
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(screen.queryByText('No ongoing research')).toBeNull();
     expect(screen.getByTestId('research-skeleton')).toBeTruthy();
@@ -126,7 +152,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(
       screen.getAllByText('Konsulin Mental Health Survey').length
@@ -146,7 +172,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(screen.getByTestId('research-slide-study-b')).toHaveAttribute(
       'data-active',
@@ -167,7 +193,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(screen.getByTestId('research-slide-research')).toHaveAttribute(
       'data-active',
@@ -184,7 +210,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(mockReplace).toHaveBeenCalledWith('/research?ref=p_ABC123');
   });
@@ -196,7 +222,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(screen.getByTestId('research-slide-study-b')).toHaveAttribute(
       'data-active',
@@ -215,7 +241,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     // id and view are mutually exclusive: view wins and subsumes focus.
     expect(mockReplace).toHaveBeenCalledWith('/research?view=study-b');
@@ -241,7 +267,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(mockReplace).toHaveBeenCalledWith('/research?ref=p_ABC123');
   });
@@ -253,7 +279,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(mockReplace).toHaveBeenCalledWith('/research');
   });
@@ -264,7 +290,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -290,7 +316,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -319,7 +345,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     const seeReport = await screen.findByRole('button', {
       name: 'See Report'
@@ -338,7 +364,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     await screen.findByRole('button', { name: 'Participate' });
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -358,7 +384,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     await screen.findByRole('button', { name: 'Participate' });
     // The open drawer makes carousel controls inert, so reach the pagination
@@ -376,6 +402,33 @@ describe('ResearchPage', () => {
     expect(document.querySelector('[data-open="true"]')).toBeNull();
   });
 
+  it('keeps the drawer open when the slide changes to the study shown in detail', async () => {
+    mockSearchParams.set('view', 'research');
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    await screen.findByRole('button', { name: 'Participate' });
+    // Click the same card that is already shown in detail (research is the
+    // active slide). handleSlideChange fires for the same studyId that is
+    // already in detailStudyId — the drawer must not close.
+    const cardButton = document.querySelector<HTMLElement>(
+      '[aria-label="Open study Konsulin Mental Health Survey"]'
+    );
+    expect(cardButton).not.toBeNull();
+    if (cardButton) {
+      fireEvent.click(cardButton);
+    }
+
+    // Drawer stays open.
+    expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
+    // URL was not rewritten to drop the view param.
+    expect(mockReplace).not.toHaveBeenCalledWith('/research?id=research');
+  });
+
   it('replaces the id param with the view param when a focused slide is tapped', async () => {
     mockSearchParams.set('id', 'research');
     mockUseResearchProgress.mockReturnValue({
@@ -383,7 +436,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -403,7 +456,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
 
@@ -418,7 +471,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     await screen.findByRole('button', { name: 'Participate' });
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -437,7 +490,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
 
@@ -452,7 +505,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(screen.getByTestId('research-slide-research')).toHaveAttribute(
       'data-active',
@@ -478,7 +531,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(screen.getByText(/Batch 1 completed/)).toBeTruthy();
     expect(screen.queryByText(/Next batch opens soon/)).toBeNull();
@@ -494,7 +547,7 @@ describe('ResearchPage', () => {
     const data = makeProgress({ studies: [] });
     mockUseResearchProgress.mockReturnValue({ data, isLoading: false });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(screen.getByText('No ongoing research')).toBeTruthy();
   });
@@ -505,7 +558,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    const { unmount } = render(<ResearchPage />, { wrapper: createWrapper() });
+    const { unmount } = render(<ResearchPage />, { wrapper });
     unmount();
 
     expect(
@@ -519,7 +572,7 @@ describe('ResearchPage', () => {
     const data = makeProgress();
     mockUseResearchProgress.mockReturnValue({ data, isLoading: false });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -536,7 +589,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(screen.getByTestId('dashboard-batch-count')).toHaveTextContent(
       '1/2 questionnaires'
@@ -555,7 +608,7 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     const dashboard = screen.getByTestId('contribution-dashboard');
     const carousel = screen.getByTestId('research-slide-research');
@@ -567,16 +620,22 @@ describe('ResearchPage', () => {
     expect(screen.queryByTestId('circle-upsell')).not.toBeInTheDocument();
   });
 
-  it('shows the XP value on carousel questionnaire rows from the info map', () => {
+  it('does not show XP value on carousel questionnaire rows', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
-    expect(screen.getAllByText('+40 XP').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('+75 XP').length).toBeGreaterThan(0);
+    // Questionnaire rows should not show XP (dashboard may still show XP)
+    const questionnaireButtons = screen.getAllByRole('button', {
+      name: /PHQ-2|Big Five Inventory/
+    });
+    for (const button of questionnaireButtons) {
+      const row = button.closest('li');
+      expect(row?.textContent).not.toMatch(/\+\d+ XP/);
+    }
   });
 
   it('hides overlap hints across studies in the carousel', () => {
@@ -597,10 +656,269 @@ describe('ResearchPage', () => {
       isLoading: false
     });
 
-    render(<ResearchPage />, { wrapper: createWrapper() });
+    render(<ResearchPage />, { wrapper });
 
     expect(screen.getAllByText('PHQ-2').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Big Five Inventory').length).toBeGreaterThan(0);
     expect(screen.queryByText(/Also counts toward/)).toBeNull();
+  });
+
+  it('passes completion counts to StudyDetailView for researcher', async () => {
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: makeResearcherDashboardData({
+        questionnaireIds: ['phq2', 'big-five-inventory']
+      }),
+      isLoading: false
+    });
+    mockUsePerQuestionnaireCounts.mockReturnValue({
+      data: new Map([
+        ['phq2', 12],
+        ['big-five-inventory', 3]
+      ])
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    // Open the detail drawer
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Mental Health Survey'
+      })
+    );
+
+    // Verify total participants is displayed (max of 12, 3 = 12)
+    expect(
+      await screen.findByText('Total participants: 12')
+    ).toBeInTheDocument();
+  });
+
+  it('does not fetch completion counts for patient role', () => {
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { fhirId: 'patient-123', role_name: 'Patient' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    // Open the detail drawer
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open study Konsulin Mental Health Survey'
+      })
+    );
+
+    // Counts should not be fetched
+    expect(mockUsePerQuestionnaireCounts).toHaveBeenCalledWith([]);
+  });
+
+  it('renders researcher carousel for researcher role', () => {
+    mockUseAuth.mockReturnValue({
+      state: {
+        userInfo: {
+          fhirId: 'practitioner-1',
+          role_name: 'Researcher'
+        }
+      },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: makeResearcherDashboardData({
+        questionnaireIds: ['phq2']
+      }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    expect(screen.getByText('Mental Health Survey')).toBeInTheDocument();
+  });
+
+  it('dispatches Register Survey FAB action for researcher', () => {
+    mockUseAuth.mockReturnValue({
+      state: {
+        userInfo: {
+          fhirId: 'practitioner-1',
+          role_name: 'Researcher'
+        }
+      },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: { studies: [], totalParticipants: 0 },
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    const registerAction = dispatchedActions.find(
+      (action): action is Extract<FabAction, { type: 'SET_ACTION' }> =>
+        action.type === 'SET_ACTION' &&
+        action.config?.label === 'Register Survey'
+    );
+    expect(registerAction).toBeDefined();
+  });
+
+  it('opens StudyDetailView when researcher card is clicked', () => {
+    mockUseAuth.mockReturnValue({
+      state: {
+        userInfo: {
+          fhirId: 'practitioner-1',
+          role_name: 'Researcher'
+        }
+      },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: makeResearcherDashboardData({
+        questionnaireIds: ['phq2']
+      }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    // Click on the study card
+    const button = screen.getByRole('button', {
+      name: /open study mental health survey/i
+    });
+    fireEvent.click(button);
+
+    // Verify URL is updated
+    expect(mockReplace).toHaveBeenCalledWith(
+      expect.stringContaining('view=study-1')
+    );
+  });
+
+  it('does not strip ?id= for a researcher study (deep-link persistence)', () => {
+    mockSearchParams.set('id', 'study-1');
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: makeResearcherDashboardData({
+        questionnaireIds: ['phq2']
+      }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    // Valid deep link: URL must NOT be stripped.
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(screen.getByText('Mental Health Survey')).toBeInTheDocument();
+  });
+
+  it('does not strip ?view= for a researcher study (deep-link persistence)', async () => {
+    mockSearchParams.set('view', 'study-1');
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: makeResearcherDashboardData({
+        questionnaireIds: ['phq2']
+      }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    // Valid deep link: URL must NOT be stripped, drawer must open.
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(
+      await screen.findByRole('button', { name: 'Manage Study' })
+    ).toBeTruthy();
+  });
+
+  it('navigates to /research/edit when Manage Study is clicked', async () => {
+    mockSearchParams.set('view', 'study-1');
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: makeResearcherDashboardData({
+        questionnaireIds: ['phq2']
+      }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    const manageButton = await screen.findByRole('button', {
+      name: 'Manage Study'
+    });
+    fireEvent.click(manageButton);
+
+    expect(mockPush).toHaveBeenCalledWith(
+      '/research/edit?id=study-1&page=title'
+    );
+  });
+
+  it('passes researcher study questionnaire IDs to useQuestionnaireTitles', async () => {
+    mockSearchParams.set('view', 'study-1');
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { role_name: 'Researcher' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: false
+    });
+    mockUseResearcherDashboard.mockReturnValue({
+      data: makeResearcherDashboardData({
+        questionnaireIds: ['phq2', 'big-five-inventory']
+      }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    await screen.findByRole('button', { name: 'Manage Study' });
+
+    // The hook must receive questionnaire IDs from researcher studies,
+    // not an empty array. An empty array means titles are never fetched.
+    const lastCall = mockUseQuestionnaireTitles.mock.calls.at(
+      -1
+    )?.[0] as string;
+    expect(lastCall).toContain('phq2');
+    expect(lastCall).toContain('big-five-inventory');
   });
 });

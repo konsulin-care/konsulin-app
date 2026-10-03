@@ -10,11 +10,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
+import { toast } from 'react-toastify';
 import AddAssessmentDrawer from './add-assessment-drawer';
 import AddLocationDrawer from './add-location-drawer';
 import { ActionFab } from './fab/action-button';
 import { FabCustomMenu } from './fab/custom-menu';
-import { adminPills, patientPills, practitionerPills } from './fab/pills';
+import {
+  adminPills,
+  patientPills,
+  practitionerPills,
+  researcherPills
+} from './fab/pills';
 import { SelectionFab } from './fab/selection-button';
 import { FabSpeedDial } from './fab/speed-dial';
 import { FabToggleShell } from './fab/toggle-shell';
@@ -27,6 +33,7 @@ import ScreeningDrawer from './screening-drawer';
 function getRolePills(roleName: string | undefined): Pill[] {
   if (roleName === Roles.ClinicAdmin) return adminPills;
   if (roleName === Roles.Practitioner) return practitionerPills;
+  if (roleName === Roles.Researcher) return researcherPills;
   return patientPills;
 }
 
@@ -94,13 +101,23 @@ export default function QuickActionFab() {
         setShowScreening(true);
         return;
       }
+      if (pill.action === 'register-research') {
+        if (!authState?.userInfo?.profile_complete) {
+          toast.warn(
+            'Please complete your profile before registering research.'
+          );
+          return;
+        }
+        router.push('/research/register?page=title');
+        return;
+      }
       if (redirectGuestIfNeeded(pill, isGuest)) {
         router.push('/auth');
         return;
       }
       if (pill.href) router.push(pill.href);
     },
-    [close, isGuest, router]
+    [authState, close, isGuest, router]
   );
 
   const handleCustomAction = useCallback(

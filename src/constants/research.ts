@@ -311,3 +311,129 @@ export function buildMission(opts: {
     ? `Complete this batch (+${batchXp} XP) — ${shortfall} more XP to ${target}`
     : `Complete this batch (+${batchXp} XP) and ${shortfall} referrals to ${target}`;
 }
+
+// ─── Researcher Gamification ────────────────────────────────────────────────
+
+/** Impact points awarded per participant enrolled via a shared link. */
+export const RESEARCHER_IMPACT_PER_PARTICIPANT = 10;
+
+/** Impact points awarded per completed batch. */
+export const RESEARCHER_IMPACT_PER_BATCH = 15;
+
+/** Per-study participant milestones: threshold points + participant count. */
+export const RESEARCHER_MILESTONES: readonly {
+  threshold: number;
+  participantCount: number;
+}[] = [
+  { threshold: 25, participantCount: 10 },
+  { threshold: 25, participantCount: 50 },
+  { threshold: 25, participantCount: 100 }
+];
+
+/** Researcher gamification level ladder. */
+export interface ResearcherLevel {
+  /** Minimum cumulative impact points to reach this level. */
+  threshold: number;
+  /** Human-friendly level title. */
+  label: string;
+  /** Icon representing the title badge. */
+  icon: LucideIcon;
+  /** Intrinsic reward unlocked at this level. */
+  reward: string;
+}
+
+export const RESEARCHER_LEVELS: readonly ResearcherLevel[] = [
+  {
+    threshold: 0,
+    label: 'Trailblazer',
+    icon: Footprints,
+    reward: 'Share studies to grow your research impact'
+  },
+  {
+    threshold: 50,
+    label: 'Pathfinder',
+    icon: Compass,
+    reward: 'Enhanced analytics for your studies'
+  },
+  {
+    threshold: 150,
+    label: 'Torchbearer',
+    icon: Flame,
+    reward: 'Early access to batch results + cohort insights'
+  },
+  {
+    threshold: 300,
+    label: 'Vanguard',
+    icon: ShieldCheck,
+    reward: 'Featured study badge + priority listing'
+  },
+  {
+    threshold: 500,
+    label: 'Pioneer',
+    icon: Crown,
+    reward: 'Co-design research questions + first access to new studies'
+  }
+];
+
+/**
+ * Returns the highest researcher level whose impact-point threshold is met.
+ *
+ * @param impactPoints - Total cumulative impact points.
+ * @returns The reached level (Trailblazer at minimum).
+ */
+export function getResearcherLevel(impactPoints: number): ResearcherLevel {
+  const safe = Math.max(0, impactPoints);
+  let reached = RESEARCHER_LEVELS[0];
+  for (const level of RESEARCHER_LEVELS) {
+    if (safe >= level.threshold) {
+      reached = level;
+    }
+  }
+  return reached;
+}
+
+/**
+ * Returns the numeric level for a total impact-point count (level 1 at 0-49).
+ *
+ * @param impactPoints - Total cumulative impact points.
+ * @returns The level number, starting at 1.
+ */
+export function getResearcherLevelNumber(impactPoints: number): number {
+  return Math.floor(Math.max(0, impactPoints) / LEVEL_XP) + 1;
+}
+
+/**
+ * Returns the impact points accumulated within the current level.
+ *
+ * @param impactPoints - Total cumulative impact points.
+ * @returns Points within the current level, in [0, LEVEL_XP).
+ */
+export function getImpactInLevel(impactPoints: number): number {
+  return Math.max(0, impactPoints) % LEVEL_XP;
+}
+
+/**
+ * Builds the mission line for a researcher: the nearest participant milestone.
+ *
+ * @param opts - Impact points and total participants across all studies.
+ * @returns The mission text.
+ */
+export function buildResearcherMission(opts: {
+  impactPoints: number;
+  totalParticipants: number;
+}): string {
+  const { totalParticipants } = opts;
+
+  // Find nearest unhit milestone using total participants
+  const nearestMilestone = RESEARCHER_MILESTONES.find(
+    m => totalParticipants < m.participantCount
+  );
+
+  if (nearestMilestone) {
+    const gap = nearestMilestone.participantCount - totalParticipants;
+    return `Enroll ${gap} participant${gap === 1 ? '' : 's'} to hit the next milestone.`;
+  }
+
+  // All milestones hit — show zero gap
+  return 'Enroll 0 participants to hit the next milestone.';
+}

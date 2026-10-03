@@ -160,6 +160,80 @@ func TestBackendProxy_omitsSuperadminKeyWithoutCookie(t *testing.T) {
 	}
 }
 
+// TestBackendProxy_stripsCacheHeaders verifies that ETag and Last-Modified are
+// not forwarded to the browser. These headers cause browsers to apply
+// heuristic caching even with Cache-Control: no-store, resulting in stale
+// FHIR resources served from disk cache on subsequent loads.
+func TestBackendProxy_stripsCacheHeaders(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("ETag", `W/"9142"`)
+		w.Header().Set("Last-Modified", "Sun, 13 Sep 2026 21:52:21 GMT")
+		w.Header().Set("X-Keep-This", "yes")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{}`))
+	}))
+	t.Cleanup(backend.Close)
+
+	proxy := NewBackendProxyHandler(BackendProxyOptions{
+		BackendBaseURL: backend.URL,
+	})
+	srv := httptest.NewServer(proxy)
+	t.Cleanup(srv.Close)
+
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/proxy/test", http.NoBody)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if v := resp.Header.Get("ETag"); v != "" {
+		t.Errorf("ETag must be stripped, got %q", v)
+	}
+	if v := resp.Header.Get("Last-Modified"); v != "" {
+		t.Errorf("Last-Modified must be stripped, got %q", v)
+	}
+	if v := resp.Header.Get("Cache-Control"); v != "no-store, private" {
+		t.Errorf("Cache-Control must be 'no-store, private', got %q", v)
+	}
+	if v := resp.Header.Get("X-Keep-This"); v != "yes" {
+		t.Errorf("non-stripped header must pass through, got %q", v)
+	}
+}
+
+// TestBackendProxy_overridesUpstreamCacheControl verifies that when the upstream
+// sends its own Cache-Control header (e.g. max-age=0 from HAPI FHIR), the
+// proxy overrides it with 'no-store, private' so the browser never caches.
+func TestBackendProxy_overridesUpstreamCacheControl(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Cache-Control", "max-age=0")
+		w.Header().Set("ETag", `W/"9143"`)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{}`))
+	}))
+	t.Cleanup(backend.Close)
+
+	proxy := NewBackendProxyHandler(BackendProxyOptions{
+		BackendBaseURL: backend.URL,
+	})
+	srv := httptest.NewServer(proxy)
+	t.Cleanup(srv.Close)
+
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/proxy/test", http.NoBody)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if v := resp.Header.Get("Cache-Control"); v != "no-store, private" {
+		t.Errorf("Cache-Control must be overridden to 'no-store, private', got %q", v)
+	}
+	if v := resp.Header.Get("Etag"); v != "" {
+		t.Errorf("ETag must be stripped, got %q", v)
+	}
+}
+
 // TestBackendProxy_frontTokenPassesThrough verifies that the front-token
 // response header is NOT stripped by the proxy. The SuperTokens frontend SDK
 // reads this header from refresh responses to update its internal session

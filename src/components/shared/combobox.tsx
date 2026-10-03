@@ -63,6 +63,8 @@ type BaseProps = {
   readonly contentTestId?: string;
   /** ARIA role of the trigger: combobox (default) or plain button. */
   readonly triggerRole?: 'combobox' | 'button';
+  /** Custom label rendered after the checkbox/checkmark. Defaults to option.name. */
+  readonly renderOptionLabel?: (option: ComboboxOption) => ReactNode;
 };
 
 type SingleSelectProps = BaseProps & {
@@ -109,6 +111,7 @@ function OptionList({
   listClassName,
   inputHeaderTestId,
   itemFilterValue,
+  renderOptionLabel,
   onSelect,
   onPick
 }: Readonly<{
@@ -122,6 +125,7 @@ function OptionList({
   listClassName?: string;
   inputHeaderTestId?: string;
   itemFilterValue: (option: ComboboxOption) => string;
+  renderOptionLabel?: (option: ComboboxOption) => ReactNode;
   onSelect: (option: ComboboxOption) => void;
   onPick: () => void;
 }>) {
@@ -210,7 +214,7 @@ function OptionList({
                     )}
                   />
                 )}
-                {option.name}
+                {renderOptionLabel ? renderOptionLabel(option) : option.name}
               </CommandItem>
             ))}
           </CommandGroup>
@@ -292,6 +296,7 @@ export default function Combobox(props: ComboboxProps) {
     itemFilterValue:
       props.itemFilterValue ??
       ((option: ComboboxOption) => option.searchText ?? option.name),
+    renderOptionLabel: props.renderOptionLabel,
     value: multiple ? multiValue : singleValue,
     placeholder: props.searchPlaceholder ?? placeholder,
     emptyMessage: props.emptyMessage ?? 'No results found.',

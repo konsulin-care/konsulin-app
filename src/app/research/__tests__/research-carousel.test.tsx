@@ -86,7 +86,7 @@ describe('ResearchCarousel', () => {
       screen.getByText(/A longitudinal survey of mental health/)
     ).toBeTruthy();
     expect(screen.getByText(/Closes in \d+ days/i)).toBeTruthy();
-    expect(screen.getAllByText('1/2 questionnaires').length).toBeGreaterThan(0);
+    expect(screen.getByText('Total participants: 0')).toBeTruthy();
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
     expect(screen.getByText('PHQ-2')).toBeTruthy();
     expect(screen.getByText('Big Five Inventory')).toBeTruthy();
@@ -299,11 +299,10 @@ describe('ResearchCarousel', () => {
     expect(screen.queryByText(/Also counts toward/)).toBeNull();
   });
 
-  it('shows the XP value next to questionnaires with a known duration', () => {
+  it('does not show XP value next to questionnaires', () => {
     renderCarousel([makeStudyProgress()], 'research');
 
-    expect(screen.getAllByText('+40 XP').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('+75 XP').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/XP/)).toBeNull();
   });
 
   it('shows a skeleton for unresolved titles while loading', () => {

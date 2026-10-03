@@ -1,7 +1,12 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  EMPTY_BATCH_RESPONSE,
+  makeQRSearchSet,
+  makeStudiesBatchResponse
+} from '@/__tests__/fixtures/research-api-mocks';
+import { wrapper } from '@/__tests__/react-test-utils';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosInstance } from 'axios';
-import type { Bundle, PlanDefinition, ResearchStudy } from 'fhir/r4';
+import type { Bundle } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../../api';
 import { useResearchProgress } from '../research';
@@ -31,78 +36,19 @@ vi.mock('../../api', () => ({
   getAPI: vi.fn()
 }));
 
-function createWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } }
-  });
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-  };
-}
-
-const EMPTY_BATCH_RESPONSE: Bundle = {
-  resourceType: 'Bundle',
-  type: 'batch-response',
-  entry: []
-};
-
-const researchStudy = (id: string, periodStart: string): ResearchStudy => ({
-  resourceType: 'ResearchStudy',
-  id,
-  status: 'active',
-  period: { start: periodStart, end: '2027-07-31' },
-  protocol: [{ reference: 'PlanDefinition/batch-1' }]
-});
-
-const batchPlan = (id: string): PlanDefinition => ({
-  resourceType: 'PlanDefinition',
-  id,
-  status: 'active',
-  effectivePeriod: { start: '2026-08-01', end: '2026-08-31' },
-  action: [
-    { definitionCanonical: 'Questionnaire/phq2' },
-    { definitionCanonical: 'Questionnaire/big-five-inventory' }
-  ]
-});
-
 /** Batch-response for the studies bundle: study + batch plan in a searchset. */
-const STUDIES_BATCH_RESPONSE: Bundle = {
-  resourceType: 'Bundle',
-  type: 'batch-response',
-  entry: [
-    {
-      resource: {
-        resourceType: 'Bundle',
-        type: 'searchset',
-        entry: [
-          { resource: researchStudy('study-a', '2026-06-01') },
-          { resource: batchPlan('batch-1') }
-        ]
-      },
-      response: { status: '200' }
-    }
-  ]
-};
+const STUDIES_BATCH_RESPONSE = makeStudiesBatchResponse([
+  { id: 'study-a', periodStart: '2026-06-01' }
+]);
 
 /** Plain searchset returned by the QuestionnaireResponse GET. */
-const QR_SEARCHSET: Bundle = {
-  resourceType: 'Bundle',
-  type: 'searchset',
-  total: 1,
-  entry: [
-    {
-      resource: {
-        resourceType: 'QuestionnaireResponse',
-        id: 'QR-1',
-        questionnaire: 'Questionnaire/phq2',
-        status: 'completed',
-        authored: '2026-08-10T00:00:00Z'
-      }
-    }
-  ]
-};
+const QR_SEARCHSET = makeQRSearchSet([
+  {
+    id: 'QR-1',
+    questionnaire: 'Questionnaire/phq2',
+    authored: '2026-09-10T00:00:00Z'
+  }
+]);
 
 const PATIENT_STATE = {
   isLoading: false,
@@ -135,13 +81,13 @@ function mockApi(
   return { mockPost, mockGet };
 }
 
-// The fixtures below pin a batch window of 2026-08-01..2026-08-31, and
+// The fixtures below pin a batch window of 2026-09-01..2026-09-30, and
 // computeStudyProgress() resolves currentBatch against the real clock. Freeze
 // the date inside that window so these assertions do not depend on when the
 // suite runs. Only Date is faked — timers stay real so waitFor() still polls.
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-08-15T00:00:00Z'));
+  vi.setSystemTime(new Date('2026-09-15T00:00:00Z'));
 });
 
 afterEach(() => {
@@ -157,7 +103,7 @@ describe('useResearchProgress', () => {
     });
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -195,7 +141,7 @@ describe('useResearchProgress', () => {
     });
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -219,7 +165,7 @@ describe('useResearchProgress', () => {
     const { mockPost, mockGet } = mockApi();
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -237,7 +183,7 @@ describe('useResearchProgress', () => {
 
     const { result } = renderHook(
       () => useResearchProgress({ skipResponseSearch: true }),
-      { wrapper: createWrapper() }
+      { wrapper }
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -262,7 +208,7 @@ describe('useResearchProgress', () => {
     } as unknown as AxiosInstance);
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     expect(result.current.isFetching).toBe(false);
@@ -279,7 +225,7 @@ describe('useResearchProgress', () => {
     );
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     expect(result.current.isLoading).toBe(true);
@@ -292,7 +238,7 @@ describe('useResearchProgress', () => {
     );
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -306,9 +252,53 @@ describe('useResearchProgress', () => {
     });
 
     const { result } = renderHook(() => useResearchProgress(), {
-      wrapper: createWrapper()
+      wrapper
     });
 
     expect(result.current.isLoading).toBe(false);
+  });
+
+  it('returns no data and no loading for a researcher with a fhir id', () => {
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { fhirId: 'PRAC-1', role_name: 'Researcher' }
+      }
+    });
+    const mockPost = vi.fn();
+    vi.mocked(getAPI).mockResolvedValue({
+      post: mockPost
+    } as unknown as AxiosInstance);
+
+    const { result } = renderHook(() => useResearchProgress(), {
+      wrapper
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.data).toBeUndefined();
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it('returns no data and no loading for a clinic admin with a fhir id', () => {
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { fhirId: 'ADMIN-1', role_name: 'Clinic Admin' }
+      }
+    });
+    const mockPost = vi.fn();
+    vi.mocked(getAPI).mockResolvedValue({
+      post: mockPost
+    } as unknown as AxiosInstance);
+
+    const { result } = renderHook(() => useResearchProgress(), {
+      wrapper
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.data).toBeUndefined();
+    expect(mockPost).not.toHaveBeenCalled();
   });
 });

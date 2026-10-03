@@ -17,6 +17,9 @@ vi.mock('@/app/practitioner-dashboard', () => ({
 vi.mock('@/app/home-content-admin', () => ({
   default: () => <div data-testid='admin-content'>Admin</div>
 }));
+vi.mock('@/app/researcher-dashboard', () => ({
+  default: () => <div data-testid='researcher-content'>Researcher</div>
+}));
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
@@ -100,5 +103,19 @@ describe('HomeContent dispatcher', () => {
 
     render(<HomeContent />, { wrapper });
     expect(screen.getByTestId('admin-content')).toBeDefined();
+  });
+
+  it('renders researcher content for researcher role', () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: Roles.Researcher }
+      },
+      dispatch: vi.fn()
+    });
+
+    render(<HomeContent />, { wrapper });
+    expect(screen.getByTestId('researcher-content')).toBeDefined();
   });
 });

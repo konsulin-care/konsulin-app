@@ -19,18 +19,19 @@ function buildUsageContextEntry(
  * Set the assessment domain category on a Questionnaire.
  *
  * Replaces any existing assessment-domain useContext coding and adds the
- * "regular" assessment-context entry (used by the curated /assessments
- * listing) when absent. Preserves all unrelated useContext entries.
+ * assessment-context entry when absent. Preserves all unrelated useContext entries.
  *
  * @param questionnaire - The Questionnaire resource to modify
  * @param code - Assessment domain code (e.g. "physical-health")
  * @param label - Display label for the domain
+ * @param context - Assessment context: 'regular' for clinic assessments, 'research' for research questionnaires
  * @returns A new Questionnaire object with the category context set
  */
 export function setQuestionnaireCategory(
   questionnaire: Questionnaire,
   code: string,
-  label: string
+  label: string,
+  context: 'regular' | 'research' = 'regular'
 ): Questionnaire {
   const useContext = questionnaire.useContext ?? [];
 
@@ -68,15 +69,15 @@ export function setQuestionnaireCategory(
         buildUsageContextEntry(FhirSystems.assessmentDomain, code, label)
       ];
 
-  const hasRegular = next.some(ctx =>
+  const hasContext = next.some(ctx =>
     ctx.valueCodeableConcept?.coding?.some(
-      c => c.system === FhirSystems.assessmentContext && c.code === 'regular'
+      c => c.system === FhirSystems.assessmentContext && c.code === context
     )
   );
-  if (!hasRegular) {
+  if (!hasContext) {
     next = [
       ...next,
-      buildUsageContextEntry(FhirSystems.assessmentContext, 'regular')
+      buildUsageContextEntry(FhirSystems.assessmentContext, context)
     ];
   }
 

@@ -1,9 +1,6 @@
 package handler
 
 import (
-	"encoding/base64"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -139,9 +136,6 @@ func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL, accessCoo
 		"prefix", truncated, "target", targetURL)
 }
 
-// hopByHopHeaders are headers that must be stripped per RFC 2616 §13.5.1
-// when forwarding responses.  Go's HTTP server sets its own Transfer-Encoding
-// and Content-Length, so we skip those to avoid conflicts.
 // injectSuperadminKeyFromCookie forwards the BFF-held superadmin API key as
 // the X-API-Key header when the superadmin key cookie is present. The key is
 // stored in an HttpOnly cookie (see admin_key.go) so only the BFF can read it;
@@ -177,54 +171,15 @@ var hopByHopHeaders = map[string]bool{
 // via CookieMappings instead. The front-token header is intentionally NOT
 // stripped because the SuperTokens SDK reads it from refresh responses to
 // update its internal session state.
+//
+// ETag and Last-Modified are stripped because browsers apply heuristic caching
+// when they see these headers, even with Cache-Control: no-store. This causes
+// stale FHIR resources to be served from disk cache on subsequent loads.
 var strippedHeaders = map[string]bool{
 	"St-Access-Token":  true,
 	"St-Refresh-Token": true,
-}
-
-// nolint:gosec // G101: cookie name, not a credential
-const lastAccessTokenUpdateCookie = "st-last-access-token-update"
-
-// jwtExpiry extracts the exp claim from a JWT payload.
-// JWT format: header.payload.signature, all base64url-encoded.
-func jwtExpiry(token string) (time.Time, error) {
-	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
-		return time.Time{}, errors.New("not a JWT")
-	}
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return time.Time{}, fmt.Errorf("decode JWT payload: %w", err)
-	}
-	var claims struct {
-		Exp int64 `json:"exp"`
-	}
-	if err := json.Unmarshal(payload, &claims); err != nil {
-		return time.Time{}, fmt.Errorf("parse JWT payload: %w", err)
-	}
-	if claims.Exp == 0 {
-		return time.Time{}, errors.New("JWT has no exp claim")
-	}
-	return time.Unix(claims.Exp, 0), nil
-}
-
-// mappedCookieMaxAge returns the persistence duration for a mapped token
-// cookie, derived from the token's JWT exp claim. Session-scoped cookies
-// would be dropped on browser restart and defeat the 30-day session
-// persistence used elsewhere (see sessionLifetime in auth_cookie.go).
-// Falls back to the session lifetime when the claim can't be parsed or
-// the token is already expired.
-func mappedCookieMaxAge(token string) int {
-	const minTTL = time.Minute
-	exp, err := jwtExpiry(token)
-	if err != nil {
-		return int(sessionLifetime.Seconds())
-	}
-	ttl := time.Until(exp)
-	if ttl < minTTL {
-		return int(sessionLifetime.Seconds())
-	}
-	return int(ttl.Seconds())
+	"Etag":             true,
+	"Last-Modified":    true,
 }
 
 func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappings []HeaderCookieMapping, cookieSecure bool) {
@@ -278,21 +233,11 @@ func writeProxyResponse(w http.ResponseWriter, resp *http.Response, cookieMappin
 		})
 	}
 
+	// Prevent browser from caching API responses. Without this, the browser
+	// applies heuristic caching when the upstream sends ETag/Last-Modified
+	// without Cache-Control (e.g. HAPI FHIR direct resource reads).
+	w.Header().Set("Cache-Control", "no-store, private")
+
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
-}
-
-// cookieNames extracts cookie names from a Cookie header value for debug logging.
-func cookieNames(header string) []string {
-	if header == "" {
-		return nil
-	}
-	var names []string
-	for _, part := range strings.Split(header, ";") {
-		part = strings.TrimSpace(part)
-		if idx := strings.IndexByte(part, '='); idx > 0 {
-			names = append(names, part[:idx])
-		}
-	}
-	return names
 }

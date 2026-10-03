@@ -10,9 +10,10 @@ const variantStyles: Record<string, string> = {
   ghost: 'bg-transparent text-muted hover:bg-softGray'
 };
 
-/** Labeled action button shown in action mode. */
+/** Action button shown in action mode. Renders as icon-only circle when label is absent, pill with label otherwise. */
 export function ActionFab({ config }: { readonly config: ActionConfig }) {
   const variant = config.variant ?? 'primary';
+  const hasLabel = Boolean(config.label);
   return (
     <button
       type='button'
@@ -24,7 +25,8 @@ export function ActionFab({ config }: { readonly config: ActionConfig }) {
       }}
       disabled={config.disabled}
       className={cn(
-        'flex h-14 items-center gap-2 rounded-full px-6 shadow-lg transition-all duration-300',
+        'flex items-center rounded-full shadow-lg transition-all duration-300',
+        hasLabel ? 'h-14 gap-2 px-6' : 'h-14 w-14 justify-center',
         variantStyles[variant],
         config.disabled
           ? 'cursor-not-allowed bg-gray-300 text-gray-500 hover:bg-gray-300'
@@ -32,9 +34,11 @@ export function ActionFab({ config }: { readonly config: ActionConfig }) {
       )}
     >
       {config.icon && <config.icon className='h-6 w-6 shrink-0' />}
-      <span className='text-sm font-semibold whitespace-nowrap'>
-        {config.label}
-      </span>
+      {hasLabel && (
+        <span className='text-sm font-semibold whitespace-nowrap'>
+          {config.label}
+        </span>
+      )}
       {config.isSaving && (
         <span className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
       )}

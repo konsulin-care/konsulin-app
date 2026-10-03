@@ -194,3 +194,27 @@ export function mockAuth(
     }
   });
 }
+
+// ---------------------------------------------------------------------------
+// Research Testing — constants
+// ---------------------------------------------------------------------------
+
+/** Shared batch constants for research form tests. */
+export const MOCK_BATCH = {
+  startDate: '',
+  endDate: '',
+  questionnaireIds: [] as string[]
+};
+
+/** Shared field constants for research form tests. */
+export const MOCK_FIELD = {
+  id: '1',
+  name: 'batches.0' as const,
+  ...MOCK_BATCH
+};
+
+/** Shared questionnaire fixtures for research form tests. */
+export const MOCK_QUESTIONNAIRES = [
+  { code: 'phq9', name: 'PHQ-9', duration: 5, category: 'Mental Health' },
+  { code: 'gad7', name: 'GAD-7', duration: 3, category: 'Anxiety' }
+];
