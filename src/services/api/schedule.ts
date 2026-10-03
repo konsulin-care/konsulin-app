@@ -60,13 +60,16 @@ export async function updatePractitionerRoleAvailability(
  * This ensures atomic updates across multiple PractitionerRole resources
  *
  * Each entry is a version-aware update: `request.ifMatch` carries the
- * `meta.versionId` read just before the transaction, so if any role changed in
- * between, the FHIR server rejects the whole transaction with
+ * editor snapshot version when supplied, otherwise the freshly read version.
+ * Saving uses N reads plus one atomic transaction to preserve unrelated fields.
+ * If any role changed after the selected version, the server rejects the
+ * whole transaction with
  * `412 Precondition Failed` instead of silently overwriting that change.
  */
 export async function updatePractitionerRoleAvailabilityBundle(
   updates: Array<{
     practitionerRoleId: string;
+    expectedVersionId?: string;
     availableTime: AvailableTime[];
   }>
 ): Promise<Bundle> {
@@ -80,6 +83,7 @@ export async function updatePractitionerRoleAvailabilityBundle(
     return {
       practitionerRoleId: update.practitionerRoleId,
       role: getResponse.data,
+      expectedVersionId: update.expectedVersionId,
       availableTime: update.availableTime
     };
   });
@@ -88,8 +92,13 @@ export async function updatePractitionerRoleAvailabilityBundle(
 
   // Build FHIR Bundle entries
   const bundleEntries = roles.map(
-    ({ practitionerRoleId, role, availableTime }) => {
-      const versionId = role.meta?.versionId;
+    ({ practitionerRoleId, role, availableTime, expectedVersionId }) => {
+      const versionId = expectedVersionId || role.meta?.versionId;
+      if (!versionId) {
+        console.warn(
+          `PractitionerRole/${practitionerRoleId} has no versionId; concurrency protection is unavailable.`
+        );
+      }
       return {
         request: {
           method: 'PUT' as const,
@@ -157,6 +166,7 @@ export function useUpdateAvailabilityBundle() {
     mutationFn: (
       updates: Array<{
         practitionerRoleId: string;
+        expectedVersionId?: string;
         availableTime: AvailableTime[];
       }>
     ) => {

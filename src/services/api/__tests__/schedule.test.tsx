@@ -118,7 +118,8 @@ describe('updatePractitionerRoleAvailabilityBundle', () => {
     });
   });
 
-  it('omits ifMatch when the read returned no versionId', async () => {
+  it('warns when the read returned no versionId', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockGet.mockResolvedValue({
       data: { resourceType: 'PractitionerRole', id: 'role-1' }
     });
@@ -127,10 +128,34 @@ describe('updatePractitionerRoleAvailabilityBundle', () => {
       { practitionerRoleId: 'role-1', availableTime: mondayMorning }
     ]);
 
+    expect(warning).toHaveBeenCalledWith(
+      expect.stringContaining('no versionId')
+    );
+    warning.mockRestore();
     const body = mockPost.mock.calls[0][1] as Bundle;
     expect(body.entry?.[0].request).toEqual({
       method: 'PUT',
       url: 'PractitionerRole/role-1'
     });
+  });
+  it('uses the editor version even when the pre-save read is newer', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        resourceType: 'PractitionerRole',
+        id: 'role-1',
+        meta: { versionId: '8' },
+        active: true
+      }
+    });
+    await updatePractitionerRoleAvailabilityBundle([
+      {
+        practitionerRoleId: 'role-1',
+        expectedVersionId: '3',
+        availableTime: mondayMorning
+      }
+    ]);
+    const body = mockPost.mock.calls[0][1] as Bundle;
+    expect(body.entry?.[0].request?.ifMatch).toBe('W/"3"');
+    expect(body.entry?.[0].resource).toMatchObject({ active: true });
   });
 });

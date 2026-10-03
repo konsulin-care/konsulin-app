@@ -175,7 +175,10 @@ function setupResponseInterceptor(instance: AxiosInstance) {
         });
       }
 
-      return Promise.reject(new Error(error));
+      // Preserve HTTP status and response details for callers handling conflicts.
+      return Promise.reject(
+        error instanceof Error ? error : new Error(String(error))
+      );
     }
   );
 }
