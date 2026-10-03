@@ -1,7 +1,7 @@
 import AvailabilityEditor from '@/components/availability/availability-editor';
 import DaySelectorNavigation from '@/components/availability/day-selector-navigation';
 import FloatingSaveButton from '@/components/availability/floating-save-button';
-import { useUpdateAvailability } from '@/services/api/schedule';
+import { useUpdateAvailabilityBundle } from '@/services/api/schedule';
 import {
   DayOfWeek,
   OrganizationTimeRanges,
@@ -16,6 +16,7 @@ import {
   getInitialSelectedDay,
   initializeWeeklyAvailabilityFromRoles
 } from '@/utils/availability';
+import { isAxiosError } from 'axios';
 import { PractitionerRole } from 'fhir/r4';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -32,6 +33,10 @@ type Props = {
     save: () => Promise<void>,
     saving: boolean
   ) => void;
+};
+
+type PractitionerRoleWithId = (PractitionerRole | IPractitionerRoleDetail) & {
+  id: string;
 };
 
 /**
@@ -116,50 +121,72 @@ export default function PractitionerAvailabilityEditor({
 
   // Loading state for save operation
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Mutation for updating availability
-  const { mutateAsync: updateAvailability } = useUpdateAvailability();
+  const savedVersionsRef = useRef<Map<string, string>>(new Map());
+
+  // Mutation for updating availability using FHIR Bundle transaction
+  const { mutateAsync: updateAvailabilityBundle } =
+    useUpdateAvailabilityBundle();
+
+  /** Build location updates using the latest saved or editor snapshot version. */
+  const getAvailabilityUpdates = (): Parameters<
+    typeof updateAvailabilityBundle
+  >[0] =>
+    memoizedRolesToUse
+      .filter(
+        (role): role is PractitionerRoleWithId =>
+          typeof role.id === 'string' && role.id.length > 0
+      )
+      .map(role => ({
+        practitionerRoleId: role.id,
+        expectedVersionId:
+          savedVersionsRef.current.get(role.id) ?? role.meta?.versionId,
+        availableTime: convertToFhirAvailableTimeForOrganization(
+          weeklyAvailability,
+          role.organization?.reference || role.id
+        )
+      }));
 
   /**
-   * Handle saving all availability changes
+   * Handle saving all availability changes using FHIR Bundle transaction
+   * This ensures atomic updates - all updates succeed or all fail together
    */
-  const handleSave = async () => {
-    if (memoizedRolesToUse.length === 0) {
-      console.error('At least one PractitionerRole is required');
+  const handleSave = async (): Promise<void> => {
+    setSaveError(null);
+    if (
+      memoizedRolesToUse.length === 0 ||
+      memoizedRolesToUse.some(role => !role.id)
+    ) {
+      setSaveError(
+        'No valid practice locations to save. Reload and try again.'
+      );
       return;
     }
 
     setIsSaving(true);
 
     try {
-      // Update each practitioner role with its organization-specific availability
-      for (const role of memoizedRolesToUse) {
-        // Get the organization ID for this role
-        const orgId = role.organization?.reference || role.id;
+      const updates = getAvailabilityUpdates();
+      const result = await updateAvailabilityBundle(updates);
+      updates.forEach((update, index) => {
+        const etag = result?.entry?.[index]?.response?.etag;
+        const versionId = etag?.match(/^(?:W\/)?"([^"]+)"$/)?.[1];
+        if (versionId)
+          savedVersionsRef.current.set(update.practitionerRoleId, versionId);
+      });
 
-        // Convert weekly availability to FHIR availableTime format for this specific organization
-        const availableTime = convertToFhirAvailableTimeForOrganization(
-          weeklyAvailability,
-          orgId
-        );
+      onSuccess?.();
 
-        await updateAvailability({
-          practitionerRoleId: role.id,
-          availableTime
-        });
-      }
-
-      // Call success callback if provided
-      if (onSuccess) {
-        onSuccess();
-      }
-
-      // Mark dirty as cleared and update baseline so subsequent edits
-      // are correctly detected as new unsaved changes.
       setWeeklyAvailabilityDirty(false);
       savedBaselineRef.current = structuredClone(weeklyAvailability); // skipcq: JS-0357 — accessed in async handler, not during render
     } catch (error) {
       console.error('Failed to update availability:', error);
+      setSaveError(
+        isAxiosError(error) && error.response?.status === 412
+          ? 'Availability changed elsewhere. Reload and try again.'
+          : 'Failed to save availability. Please try again.'
+      );
     } finally {
       setIsSaving(false);
     }
@@ -325,7 +352,6 @@ export default function PractitionerAvailabilityEditor({
 
   return (
     <div className='flex h-full flex-col pb-24 sm:pb-28 md:pb-32'>
-      {/* Header */}
       <div className='border-b border-gray-200 px-6 py-4'>
         <h2 className='text-xl font-bold text-gray-900'>Edit Availability</h2>
         <p className='mt-1 text-sm text-gray-600'>
@@ -333,7 +359,12 @@ export default function PractitionerAvailabilityEditor({
         </p>
       </div>
 
-      {/* Day Selector Navigation */}
+      {saveError && (
+        <p role='alert' className='px-6 py-3 text-sm text-red-600'>
+          {saveError}
+        </p>
+      )}
+
       <div className='border-b border-gray-200 px-6 py-4'>
         <DaySelectorNavigation
           selectedDay={selectedDay}
@@ -342,7 +373,6 @@ export default function PractitionerAvailabilityEditor({
         />
       </div>
 
-      {/* Availability Editor */}
       <div className='flex-1 overflow-y-auto px-6 py-4 pb-8 sm:pb-12 md:pb-16'>
         <AvailabilityEditor
           selectedDay={selectedDay}
@@ -354,7 +384,6 @@ export default function PractitionerAvailabilityEditor({
         />
       </div>
 
-      {/* Floating Save Button — hidden when parent manages its own FAB (admin shell) */}
       {!hideSaveButton && (
         <FloatingSaveButton
           onSave={() => {
@@ -362,7 +391,7 @@ export default function PractitionerAvailabilityEditor({
           }}
           onCancel={onCancel}
           isSaving={isSaving}
-          hasChanges={hasChanges}
+          hasChanges={weeklyAvailabilityDirty && hasChanges}
         />
       )}
     </div>

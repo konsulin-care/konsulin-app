@@ -7,7 +7,7 @@ import { wrapper } from '@/__tests__/react-test-utils';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosInstance } from 'axios';
 import type { Bundle } from 'fhir/r4';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../../api';
 import { useResearchProgress } from '../research';
 
@@ -81,7 +81,17 @@ function mockApi(
   return { mockPost, mockGet };
 }
 
+// The fixtures below pin a batch window of 2026-09-01..2026-09-30, and
+// computeStudyProgress() resolves currentBatch against the real clock. Freeze
+// the date inside that window so these assertions do not depend on when the
+// suite runs. Only Date is faked — timers stay real so waitFor() still polls.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-09-15T00:00:00Z'));
+});
+
 afterEach(() => {
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 
