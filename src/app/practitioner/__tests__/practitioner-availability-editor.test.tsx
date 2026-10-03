@@ -100,6 +100,13 @@ const mockRole: Partial<PractitionerRole> = {
   availableTime: []
 };
 
+/** Fail immediately if the editor has not registered its save callback. */
+function missingSaveHandler(): Promise<void> {
+  return Promise.reject(
+    new Error('The editor did not register a save handler')
+  );
+}
+
 describe('PractitionerAvailabilityEditor save behaviors', () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -314,7 +321,7 @@ describe('PractitionerAvailabilityEditor save behaviors', () => {
   ])(
     'shows save failures and keeps edits for retry: %s',
     async (error, message) => {
-      let save: () => Promise<void> = async () => {};
+      let save: () => Promise<void> = missingSaveHandler;
       const onSuccess = vi.fn();
       const onDirtyChange = vi.fn(
         (dirty: boolean, handler: () => Promise<void>) => {
@@ -357,7 +364,7 @@ describe('PractitionerAvailabilityEditor save behaviors', () => {
   );
 
   it('shows an error for roles without IDs instead of reporting success', async () => {
-    let save: () => Promise<void> = async () => {};
+    let save: () => Promise<void> = missingSaveHandler;
     const onSuccess = vi.fn();
     render(
       <PractitionerAvailabilityEditor
@@ -380,7 +387,7 @@ describe('PractitionerAvailabilityEditor save behaviors', () => {
     expect(onSuccess).not.toHaveBeenCalled();
   });
   it('uses the editor version and advances it after a successful save', async () => {
-    let save: () => Promise<void> = async () => {};
+    let save: () => Promise<void> = missingSaveHandler;
     render(
       <PractitionerAvailabilityEditor
         practitionerRole={{
