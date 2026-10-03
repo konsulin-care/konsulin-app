@@ -129,6 +129,7 @@ export default function PractitionerAvailabilityEditor({
   const { mutateAsync: updateAvailabilityBundle } =
     useUpdateAvailabilityBundle();
 
+  /** Build location updates using the latest saved or editor snapshot version. */
   const getAvailabilityUpdates = (): Parameters<
     typeof updateAvailabilityBundle
   >[0] =>

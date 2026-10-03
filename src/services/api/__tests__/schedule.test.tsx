@@ -119,7 +119,7 @@ describe('updatePractitionerRoleAvailabilityBundle', () => {
   });
 
   it('warns when the read returned no versionId', async () => {
-    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warning = vi.spyOn(console, 'warn').mockImplementation(vi.fn());
     mockGet.mockResolvedValue({
       data: { resourceType: 'PractitionerRole', id: 'role-1' }
     });

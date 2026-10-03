@@ -74,7 +74,7 @@ describe('api response interceptor — expired token redirect', () => {
     const conflict = new AxiosError('Request failed with status code 412');
     const pending = api.request({
       url: '/fhir',
-      adapter: async config => {
+      adapter: config => {
         conflict.config = config;
         conflict.response = {
           data: { resourceType: 'OperationOutcome' },
@@ -83,7 +83,7 @@ describe('api response interceptor — expired token redirect', () => {
           headers: {},
           config
         };
-        throw conflict;
+        return Promise.reject(conflict);
       }
     });
     await expect(pending).rejects.toBe(conflict);
