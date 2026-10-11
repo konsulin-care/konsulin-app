@@ -129,7 +129,11 @@ export default function PractitionerAvailabilityEditor({
   const { mutateAsync: updateAvailabilityBundle } =
     useUpdateAvailabilityBundle();
 
-  /** Build location updates using the latest saved or editor snapshot version. */
+  /**
+   * Build FHIR availability updates for practice locations with valid role IDs.
+   * Prefer the version returned by the last save over the editor snapshot version.
+   * @returns Role IDs, expected versions, and each location's weekly availability.
+   */
   const getAvailabilityUpdates = (): Parameters<
     typeof updateAvailabilityBundle
   >[0] =>
