@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { PractitionerRole } from 'fhir/r4';
+import { Bundle, PractitionerRole } from 'fhir/r4';
 import { getAPI } from '../api';
 
 interface AvailableTime {
@@ -56,6 +56,86 @@ export async function updatePractitionerRoleAvailability(
 }
 
 /**
+ * Update practitioner role availability using FHIR Bundle transaction
+ * This ensures atomic updates across multiple PractitionerRole resources
+ *
+ * Each entry is a version-aware update: `request.ifMatch` carries the
+ * editor snapshot version when supplied, otherwise the freshly read version.
+ * Saving uses N reads plus one atomic transaction to preserve unrelated fields.
+ * If any role changed after the selected version, the server rejects the
+ * whole transaction with
+ * `412 Precondition Failed` instead of silently overwriting that change.
+ */
+export async function updatePractitionerRoleAvailabilityBundle(
+  updates: Array<{
+    practitionerRoleId: string;
+    expectedVersionId?: string;
+    availableTime: AvailableTime[];
+  }>
+): Promise<Bundle> {
+  const API = await getAPI();
+
+  // Fetch all current PractitionerRole resources
+  const rolePromises = updates.map(async update => {
+    const getResponse = await API.get<PractitionerRole>(
+      `/fhir/PractitionerRole/${update.practitionerRoleId}`
+    );
+    return {
+      practitionerRoleId: update.practitionerRoleId,
+      role: getResponse.data,
+      expectedVersionId: update.expectedVersionId,
+      availableTime: update.availableTime
+    };
+  });
+
+  const roles = await Promise.all(rolePromises);
+
+  // Build FHIR Bundle entries
+  const bundleEntries = roles.map(
+    ({ practitionerRoleId, role, availableTime, expectedVersionId }) => {
+      const versionId = expectedVersionId || role.meta?.versionId;
+      if (!versionId) {
+        console.warn(
+          `PractitionerRole/${practitionerRoleId} has no versionId; concurrency protection is unavailable.`
+        );
+      }
+      return {
+        request: {
+          method: 'PUT' as const,
+          url: `PractitionerRole/${practitionerRoleId}`,
+          // Only overwrite the version that was read. Without a versionId the
+          // server has nothing to compare against, so the check is skipped.
+          ...(versionId ? { ifMatch: `W/"${versionId}"` } : {})
+        },
+        resource: {
+          ...role,
+          // Keep parity with the single-resource PUT path: stamp period.start
+          // with the browser's local timezone offset.
+          period: { ...role.period, start: getLocalTimezoneISO() },
+          availableTime
+        }
+      };
+    }
+  );
+
+  // Create FHIR Bundle transaction
+  const bundle: Bundle = {
+    resourceType: 'Bundle',
+    type: 'transaction',
+    entry: bundleEntries
+  };
+
+  // Post bundle transaction to FHIR server
+  const response = await API.post<Bundle>('/fhir', bundle, {
+    headers: {
+      'Content-Type': 'application/fhir+json'
+    }
+  });
+
+  return response.data;
+}
+
+/**
  * Hook for updating practitioner role availability
  */
 export function useUpdateAvailability() {
@@ -72,6 +152,25 @@ export function useUpdateAvailability() {
         practitionerRoleId,
         availableTime
       );
+    }
+  });
+}
+
+/**
+ * Hook for updating practitioner role availability using FHIR Bundle
+ * Provides atomic updates across multiple PractitionerRole resources
+ */
+export function useUpdateAvailabilityBundle() {
+  return useMutation({
+    mutationKey: ['update-availability-bundle'],
+    mutationFn: (
+      updates: Array<{
+        practitionerRoleId: string;
+        expectedVersionId?: string;
+        availableTime: AvailableTime[];
+      }>
+    ) => {
+      return updatePractitionerRoleAvailabilityBundle(updates);
     }
   });
 }

@@ -119,7 +119,7 @@ export async function enrichProfileData(
     patientProfile = fullProfile;
     queryClient.setQueryData(['profile-patient', patientId], fullProfile);
   } else {
-    patientProfile = await queryClient.query<Patient>({
+    patientProfile = await queryClient.fetchQuery<Patient>({
       queryKey: ['profile-patient', patientId],
       queryFn: () => getProfileById(patientId, 'Patient') as Promise<Patient>
     });

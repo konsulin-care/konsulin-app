@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { shouldRetry } = vi.hoisted(() => ({ shouldRetry: vi.fn() }));
@@ -67,5 +68,25 @@ describe('api response interceptor — expired token redirect', () => {
 
     // THEN: the page hard-navigates to the home route
     expect(replaceMock).toHaveBeenCalledWith('/');
+  });
+  it('preserves Axios conflict errors so the editor can identify HTTP 412', async () => {
+    const api = await getAPI({ proxy: true });
+    const conflict = new AxiosError('Request failed with status code 412');
+    const pending = api.request({
+      url: '/fhir',
+      adapter: config => {
+        conflict.config = config;
+        conflict.response = {
+          data: { resourceType: 'OperationOutcome' },
+          status: 412,
+          statusText: 'Precondition Failed',
+          headers: {},
+          config
+        };
+        return Promise.reject(conflict);
+      }
+    });
+    await expect(pending).rejects.toBe(conflict);
+    expect(conflict.response?.status).toBe(412);
   });
 });
