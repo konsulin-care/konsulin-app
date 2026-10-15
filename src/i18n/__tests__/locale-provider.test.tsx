@@ -1,8 +1,11 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
 import fs from 'node:fs';
 import path from 'node:path';
+import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
+
+import { setLocale } from '@/lib/locale';
 
 import { LocaleProvider } from '../locale-provider';
 
@@ -10,6 +13,22 @@ import { LocaleProvider } from '../locale-provider';
 function SaveLabel() {
   const t = useTranslations('common');
   return <span data-testid='save-label'>{t('save')}</span>;
+}
+
+/** Renders the save label plus local state to detect reloads/remounts. */
+function LocaleSwitchProbe() {
+  const t = useTranslations('common');
+  const [clicks, setClicks] = useState(0);
+
+  return (
+    <>
+      <span data-testid='save-label'>{t('save')}</span>
+      <span data-testid='state-counter'>{clicks}</span>
+      <button type='button' onClick={() => setClicks(value => value + 1)}>
+        bump
+      </button>
+    </>
+  );
 }
 
 /** Remove the locale cookie so tests start from the default locale. */
@@ -45,6 +64,42 @@ describe('LocaleProvider', () => {
     );
     expect(screen.getByTestId('save-label')).toHaveTextContent('Save');
     expect(document.documentElement.lang).toBe('en');
+  });
+
+  it('re-renders translated text and updates document lang on setLocale without a reload', () => {
+    clearLocaleCookie();
+    const hrefBefore = window.location.href;
+    const { getByTestId } = render(
+      <LocaleProvider>
+        <LocaleSwitchProbe />
+      </LocaleProvider>
+    );
+    const label = getByTestId('save-label');
+    const counter = getByTestId('state-counter');
+
+    // Same component instance throughout: no unmount/remount, no reload.
+    expect(label).toHaveTextContent('Simpan');
+    expect(document.documentElement.lang).toBe('id');
+
+    // Component-local state survives the locale switch -> no page reload.
+    fireEvent.click(screen.getByRole('button', { name: 'bump' }));
+    expect(counter).toHaveTextContent('1');
+
+    act(() => {
+      setLocale('en');
+    });
+    expect(label).toHaveTextContent('Save');
+    expect(document.documentElement.lang).toBe('en');
+    expect(counter).toHaveTextContent('1');
+    expect(window.location.href).toBe(hrefBefore);
+
+    act(() => {
+      setLocale('id');
+    });
+    expect(label).toHaveTextContent('Simpan');
+    expect(document.documentElement.lang).toBe('id');
+    expect(counter).toHaveTextContent('1');
+    expect(window.location.href).toBe(hrefBefore);
   });
 
   it('provides NextIntlClientProvider context (assertion moved from layout test)', () => {
