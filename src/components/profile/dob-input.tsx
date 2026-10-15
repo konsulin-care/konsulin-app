@@ -151,7 +151,7 @@ export default function DobInput({ value, onChange }: DobInputProps) {
       <select
         value={day > 0 ? String(day) : ''}
         onChange={handleDayChange}
-        aria-label='Day'
+        aria-label={t('day_label')}
         className={`${SELECT_CLASS} w-[72px]`}
       >
         <option value=''>{t('day')}</option>
@@ -165,7 +165,7 @@ export default function DobInput({ value, onChange }: DobInputProps) {
       <select
         value={month >= 0 ? getMonthKey(month) : ''}
         onChange={handleMonthChange}
-        aria-label='Month'
+        aria-label={t('month_label')}
         className={`${SELECT_CLASS} w-[120px]`}
       >
         <option value=''>{t('month')}</option>
@@ -179,7 +179,7 @@ export default function DobInput({ value, onChange }: DobInputProps) {
       <select
         value={year > 0 ? String(year) : ''}
         onChange={handleYearChange}
-        aria-label='Year'
+        aria-label={t('year_label')}
         className={`${SELECT_CLASS} w-[100px]`}
       >
         <option value=''>{t('year')}</option>
