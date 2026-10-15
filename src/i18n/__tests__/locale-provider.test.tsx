@@ -1,3 +1,5 @@
+import enAdmin from '@/messages/en/admin.json';
+import idAdmin from '@/messages/id/admin.json';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
 import fs from 'node:fs';
@@ -13,6 +15,12 @@ import { LocaleProvider } from '../locale-provider';
 function SaveLabel() {
   const t = useTranslations('common');
   return <span data-testid='save-label'>{t('save')}</span>;
+}
+
+/** Renders a known key from the admin namespace. */
+function AdminTitle() {
+  const t = useTranslations('admin');
+  return <span data-testid='admin-title'>{t('console_title')}</span>;
 }
 
 /** Renders the save label plus local state to detect reloads/remounts. */
@@ -100,6 +108,22 @@ describe('LocaleProvider', () => {
     expect(document.documentElement.lang).toBe('id');
     expect(counter).toHaveTextContent('1');
     expect(window.location.href).toBe(hrefBefore);
+  });
+
+  it('loads the admin namespace for id and renders its key without raw fallback', () => {
+    clearLocaleCookie();
+    render(
+      <LocaleProvider>
+        <AdminTitle />
+      </LocaleProvider>
+    );
+    const title = screen.getByTestId('admin-title');
+    // id admin.json is an identical copy of en for now.
+    expect(idAdmin).toEqual(enAdmin);
+    expect(title).toHaveTextContent(idAdmin.console_title);
+    // No raw key path leaks into the DOM.
+    expect(title.textContent).not.toContain('admin.console_title');
+    expect(document.body.textContent).not.toContain('admin.console_title');
   });
 
   it('provides NextIntlClientProvider context (assertion moved from layout test)', () => {

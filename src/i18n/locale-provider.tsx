@@ -5,6 +5,7 @@ import { useLocale } from '@/lib/locale';
 import { NextIntlClientProvider } from 'next-intl';
 import { useEffect, type ReactNode } from 'react';
 
+import enAdmin from '@/messages/en/admin.json';
 import enAssessment from '@/messages/en/assessment.json';
 import enAuth from '@/messages/en/auth.json';
 import enCommon from '@/messages/en/common.json';
@@ -14,6 +15,7 @@ import enPageHeader from '@/messages/en/page-header.json';
 import enProfile from '@/messages/en/profile.json';
 import enResearch from '@/messages/en/research.json';
 import enToast from '@/messages/en/toast.json';
+import idAdmin from '@/messages/id/admin.json';
 import idAssessment from '@/messages/id/assessment.json';
 import idAuth from '@/messages/id/auth.json';
 import idCommon from '@/messages/id/common.json';
@@ -30,6 +32,7 @@ type MessageBundle = Record<string, Record<string, unknown>>;
 /** Statically imported message bundles per locale. */
 const MESSAGES: Record<Locale, MessageBundle> = {
   en: {
+    admin: enAdmin,
     assessment: enAssessment,
     auth: enAuth,
     common: enCommon,
@@ -41,6 +44,7 @@ const MESSAGES: Record<Locale, MessageBundle> = {
     toast: enToast
   },
   id: {
+    admin: idAdmin,
     assessment: idAssessment,
     auth: idAuth,
     common: idCommon,

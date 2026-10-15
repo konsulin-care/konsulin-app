@@ -12,7 +12,8 @@ const NAMESPACES = [
   'interview',
   'research',
   'toast',
-  'page-header'
+  'page-header',
+  'admin'
 ] as const;
 
 export default getRequestConfig(async ({ locale }) => {
