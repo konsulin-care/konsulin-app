@@ -1,9 +1,8 @@
 import { RouteGate } from '@/components/route-gate';
+import { LocaleProvider } from '@/i18n/locale-provider';
 import '@/styles/globals.css';
 import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
 import React from 'react';
@@ -60,27 +59,19 @@ export const viewport: Viewport = {
  * a minimal admin shell for /admin — SuperTokens session bootstrap never runs
  * inside the superadmin console.
  */
-export default async function RootLayout({
+export default function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const messages = await getMessages();
   return (
     <html lang='id'>
       <body className={inter.className} suppressHydrationWarning>
         <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
         <Script src='/js/sw-register.js' strategy='beforeInteractive' />
-        <Script
-          id='locale-sync'
-          strategy='beforeInteractive'
-          dangerouslySetInnerHTML={{
-            __html: `try{var m=document.cookie.match(/NEXT_LOCALE=(en|id)/);if(m)document.documentElement.lang=m[1];}catch(e){}`
-          }}
-        />
-        <NextIntlClientProvider messages={messages}>
+        <LocaleProvider>
           <RouteGate>{children}</RouteGate>
-        </NextIntlClientProvider>
+        </LocaleProvider>
       </body>
     </html>
   );
