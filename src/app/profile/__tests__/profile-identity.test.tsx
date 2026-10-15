@@ -1,13 +1,25 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockLocale } = vi.hoisted(() => ({
+  mockLocale: { current: 'en' }
+}));
 
 vi.mock('@/i18n', () => ({
   useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      update_photo: 'Update Photo',
-      profile_photo: 'Profile photo'
+    const translations: Record<string, Record<string, string>> = {
+      id: {
+        update_photo: 'Perbarui Foto',
+        profile_photo: 'Foto profil',
+        edit_name: 'Ubah nama'
+      },
+      en: {
+        update_photo: 'Update Photo',
+        profile_photo: 'Profile photo',
+        edit_name: 'Edit name'
+      }
     };
-    return translations[key] ?? key;
+    return translations[mockLocale.current]?.[key] ?? key;
   })
 }));
 
@@ -32,6 +44,10 @@ const identity: Identity = {
 describe('ProfileIdentity', () => {
   const onFileSelected = vi.fn();
   const onEditName = vi.fn();
+
+  beforeEach(() => {
+    mockLocale.current = 'en';
+  });
 
   it('renders the active role badge', () => {
     render(
@@ -86,6 +102,39 @@ describe('ProfileIdentity', () => {
       />
     );
     expect(screen.getByText('Update Photo')).toBeDefined();
+  });
+
+  it('labels the edit-name control from profile.edit_name under en', () => {
+    render(
+      <ProfileIdentity
+        roleName='Patient'
+        identity={identity}
+        isUploading={false}
+        onFileSelected={onFileSelected}
+        onEditName={onEditName}
+      />
+    );
+    expect(screen.getByTestId('edit-name')).toHaveAttribute(
+      'aria-label',
+      'Edit name'
+    );
+  });
+
+  it('shows the Indonesian edit-name aria-label under id', () => {
+    mockLocale.current = 'id';
+    render(
+      <ProfileIdentity
+        roleName='Patient'
+        identity={identity}
+        isUploading={false}
+        onFileSelected={onFileSelected}
+        onEditName={onEditName}
+      />
+    );
+    expect(screen.getByTestId('edit-name')).toHaveAttribute(
+      'aria-label',
+      'Ubah nama'
+    );
   });
 
   it('forwards photo uploads to the caller', () => {

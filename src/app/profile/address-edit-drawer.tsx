@@ -86,7 +86,7 @@ function StreetLinesField({
                 onRemoveLine(row.id);
               }}
               data-testid={`remove-line-${row.id}`}
-              aria-label='Remove address line'
+              aria-label={t('remove_address_line')}
               className='text-secondary shrink-0 cursor-pointer'
             >
               <Trash2 className='h-4 w-4' />

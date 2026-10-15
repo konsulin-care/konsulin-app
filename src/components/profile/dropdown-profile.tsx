@@ -5,6 +5,7 @@ import {
   DropdownMenuItem as DropdownItem,
   DropdownMenuTrigger as DropdownTrigger
 } from '@/components/ui/dropdown-menu';
+import { useTranslations } from '@/i18n';
 import { Check, ChevronDown } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { LoadingSpinnerIcon } from '../icons';
@@ -35,6 +36,7 @@ const DropdownProfile: React.FC<DropdownProps> = ({
 }) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [triggerWidth, setTriggerWidth] = useState<number>(0);
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     if (triggerRef.current) {
@@ -63,7 +65,7 @@ const DropdownProfile: React.FC<DropdownProps> = ({
                 options?.find(option => option.code === value)?.name ||
                 (!value && labelPlaceholder) ||
                 placeholder ||
-                'Select Option'
+                tCommon('select_option')
               )}
             </span>
             <ChevronDown

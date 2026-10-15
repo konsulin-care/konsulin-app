@@ -3,6 +3,7 @@
 
 import { toast } from 'react-toastify';
 
+import { useTranslations } from '@/i18n';
 import { uploadAvatar } from '@/services/profile';
 import { dataUrlToBlob, isDataUrl } from '@/utils/helper';
 import { processImageForAvatar } from '@/utils/image-processing';
@@ -41,6 +42,8 @@ export function useAvatarUpload({
   fhirId,
   setIsUploadingPhoto
 }: UseAvatarUploadParams): UseAvatarUploadResult {
+  const tToast = useTranslations('toast');
+
   /** Upload a new avatar photo and return the URL. */
   const processAvatarUpload = async (
     photoDataUrl: string,
@@ -80,7 +83,7 @@ export function useAvatarUpload({
         status: apiError.response?.status,
         response: apiError.response?.data || error
       });
-      toast.error('Failed updating the profile picture');
+      toast.error(tToast('photo_update_failed'));
       return existingPhotoUrl;
     } finally {
       setIsUploadingPhoto(false);
