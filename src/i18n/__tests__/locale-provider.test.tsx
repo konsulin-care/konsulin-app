@@ -1,15 +1,26 @@
+import { useProfileSectionSave } from '@/app/profile/hooks/useProfileSectionSave';
+import PersonalInfoEditDrawer from '@/app/profile/personal-info-edit-drawer';
+import DropdownProfile from '@/components/profile/dropdown-profile';
 import enAdmin from '@/messages/en/admin.json';
+import enProfile from '@/messages/en/profile.json';
+import enToast from '@/messages/en/toast.json';
 import idAdmin from '@/messages/id/admin.json';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import idProfile from '@/messages/id/profile.json';
+import idToast from '@/messages/id/toast.json';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useTranslations } from 'next-intl';
 import fs from 'node:fs';
 import path from 'node:path';
 import { useState } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setLocale } from '@/lib/locale';
 
 import { LocaleProvider } from '../locale-provider';
+
+vi.mock('@/app/profile/hooks/useProfileSectionSave', () => ({
+  useProfileSectionSave: vi.fn()
+}));
 
 /** Renders a known key from the common namespace. */
 function SaveLabel() {
@@ -132,5 +143,112 @@ describe('LocaleProvider', () => {
       'utf-8'
     );
     expect(providerSrc).toContain('NextIntlClientProvider');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// End-to-end flow: the manual visual check (T9) automated against the real
+// provider, real message files and the real personal-info drawer.
+// ---------------------------------------------------------------------------
+
+describe('End-to-end locale flow (manual check automated)', () => {
+  const mockSaveSection = vi.fn();
+
+  beforeEach(() => {
+    clearLocaleCookie();
+    vi.clearAllMocks();
+    mockSaveSection.mockImplementation((params: { onSuccess?: () => void }) => {
+      params.onSuccess?.();
+    });
+    vi.mocked(useProfileSectionSave).mockReturnValue({
+      isSaving: false,
+      saveSection: mockSaveSection
+    });
+  });
+
+  it('renders Indonesian by default and switches to English on save without a reload', () => {
+    const hrefBefore = window.location.href;
+    render(
+      <LocaleProvider>
+        <PersonalInfoEditDrawer
+          open
+          onClose={vi.fn()}
+          fhirId='pat-1'
+          resourceType='Patient'
+          gender='male'
+          birthDate='1990-03-12'
+          languageCode='id'
+          supportsLanguage
+        />
+      </LocaleProvider>
+    );
+
+    // Step 1: no NEXT_LOCALE cookie -> Indonesian by default.
+    const genderSelect = screen.getByTestId('gender-select');
+    const languageSelect = screen.getByTestId('language-select');
+    expect(within(genderSelect).getByText('Laki-laki')).toBeDefined();
+    expect(within(genderSelect).getByText('Perempuan')).toBeDefined();
+    expect(within(languageSelect).getByText('Bahasa Indonesia')).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Tanggal' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Bulan' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Tahun' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Simpan' })).toBeDefined();
+    expect(document.documentElement.lang).toBe('id');
+
+    // Step 2: the user picks English as preferred language and saves.
+    fireEvent.change(languageSelect, { target: { value: 'en' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Simpan' }));
+
+    // Step 3: same DOM nodes, now English — no hard refresh.
+    expect(screen.getByTestId('gender-select')).toBe(genderSelect);
+    expect(within(genderSelect).getByText('Male')).toBeDefined();
+    expect(within(genderSelect).getByText('Female')).toBeDefined();
+    expect(within(languageSelect).getByText('English')).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Day' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Month' })).toBeDefined();
+    expect(screen.getByRole('combobox', { name: 'Year' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDefined();
+    expect(document.documentElement.lang).toBe('en');
+    expect(document.cookie).toContain('NEXT_LOCALE=en');
+    expect(window.location.href).toBe(hrefBefore);
+  });
+
+  it('follows the locale when switching back to Indonesian', () => {
+    clearLocaleCookie();
+    render(
+      <LocaleProvider>
+        <DropdownProfile
+          options={[]}
+          value=''
+          placeholder=''
+          labelPlaceholder=''
+          onSelect={vi.fn()}
+        />
+      </LocaleProvider>
+    );
+    expect(screen.getByText('Pilih opsi')).toBeDefined();
+
+    act(() => {
+      setLocale('en');
+    });
+    expect(screen.getByText('Select option')).toBeDefined();
+
+    act(() => {
+      setLocale('id');
+    });
+    expect(screen.getByText('Pilih opsi')).toBeDefined();
+    expect(document.documentElement.lang).toBe('id');
+  });
+
+  it('keeps address and avatar chrome strings aligned with both locales', () => {
+    // Address delete-line control, edit-name control and avatar failure toast
+    // are covered component-side by the profile tests; the message files pin
+    // the exact strings the manual check verifies.
+    expect(idProfile.remove_address_line).toBe('Hapus baris alamat');
+    expect(enProfile.remove_address_line).toBe('Remove address line');
+    expect(idProfile.edit_name).toBe('Ubah nama');
+    expect(enProfile.edit_name).toBe('Edit name');
+    expect(idToast.photo_update_failed).toBe('Gagal memperbarui foto profil');
+    expect(enToast.photo_update_failed).toBe('Failed to update profile photo');
   });
 });
