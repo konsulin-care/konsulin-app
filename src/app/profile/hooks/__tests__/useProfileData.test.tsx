@@ -29,8 +29,14 @@ vi.mock('@/context/auth/authContext', () => ({
 
 import { useAuth } from '@/context/auth/authContext';
 import type { IStateUserInfo } from '@/context/auth/authTypes';
+import { getLocale } from '@/lib/locale';
 import type { ProfileResource } from '@/services/role-profiles';
 import { useProfileData, type ProfileTranslationFn } from '../useProfileData';
+
+/** Reset the NEXT_LOCALE cookie so each test starts from a clean slate. */
+function clearLocaleCookie() {
+  document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+}
 
 const mockT: ProfileTranslationFn = (key: string) => {
   const translations: Record<string, string> = {
@@ -85,6 +91,24 @@ const patientFixture: Patient = {
   photo: [{ url: 'https://cdn.example.com/photo.jpg' }]
 };
 
+/** Patient fixture whose preferred language is English. */
+const englishPatientFixture: Patient = {
+  ...patientFixture,
+  communication: [
+    {
+      language: {
+        coding: [{ system: 'urn:ietf:bcp:47', code: 'en', display: 'English' }]
+      }
+    }
+  ]
+};
+
+/** Patient fixture without any communication language. */
+const noLanguagePatientFixture: Patient = {
+  ...patientFixture,
+  communication: undefined
+};
+
 const practitionerFixture: Practitioner = {
   resourceType: 'Practitioner',
   id: 'pra-1',
@@ -136,6 +160,7 @@ describe('useProfileData', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    clearLocaleCookie();
   });
 
   it('reads the active profile from the cached roleProfiles (no fetch, no query)', () => {
@@ -350,5 +375,59 @@ describe('useProfileData', () => {
     renderHook(() => useProfileData('u1', ['Patient'], 'Patient', mockT));
 
     expect(mockRefresh).not.toHaveBeenCalled();
+  });
+
+  describe('locale sync', () => {
+    it('applies the profile preferred language over the cookie on load', () => {
+      document.cookie = 'NEXT_LOCALE=id; path=/';
+      setupAuth({
+        roleProfiles: {
+          Patient: {
+            name: 'John Doe',
+            photoUrl: '',
+            resource: englishPatientFixture
+          }
+        }
+      });
+
+      renderHook(() => useProfileData('u1', ['Patient'], 'Patient', mockT));
+
+      expect(getLocale()).toBe('en');
+      expect(document.cookie).toContain('NEXT_LOCALE=en');
+    });
+
+    it('keeps the cookie when the profile has no languageCode', () => {
+      document.cookie = 'NEXT_LOCALE=en; path=/';
+      setupAuth({
+        roleProfiles: {
+          Patient: {
+            name: 'John Doe',
+            photoUrl: '',
+            resource: noLanguagePatientFixture
+          }
+        }
+      });
+
+      renderHook(() => useProfileData('u1', ['Patient'], 'Patient', mockT));
+
+      expect(getLocale()).toBe('en');
+      expect(document.cookie).toContain('NEXT_LOCALE=en');
+    });
+
+    it('defaults to id when there is no cookie and no languageCode', () => {
+      setupAuth({
+        roleProfiles: {
+          Patient: {
+            name: 'John Doe',
+            photoUrl: '',
+            resource: noLanguagePatientFixture
+          }
+        }
+      });
+
+      renderHook(() => useProfileData('u1', ['Patient'], 'Patient', mockT));
+
+      expect(getLocale()).toBe('id');
+    });
   });
 });

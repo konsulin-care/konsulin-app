@@ -2,6 +2,7 @@
 
 import { PROFILE_CACHE_STALE_MS } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
+import { getLocale, LOCALES, setLocale, type Locale } from '@/lib/locale';
 import { collapseHumanName } from '@/utils/fhir/human-name';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import { roleToFhirResource } from '@/utils/role-fhir';
@@ -84,6 +85,22 @@ function conceptDisplay(concept?: CodeableConcept): string {
   if (coding?.display) return coding.display;
   if (coding?.code) return coding.code;
   return concept.text ?? '-';
+}
+
+/**
+ * Read the raw BCP-47 language code from a FHIR profile. Patient wraps the
+ * language in `PatientCommunication.language` while Practitioner stores the
+ * CodeableConcept directly.
+ */
+function readLanguageCode(
+  profile: ProfileResource | undefined
+): string | undefined {
+  if (!profile) return undefined;
+  const concept =
+    profile.resourceType === 'Practitioner'
+      ? profile.communication?.[0]
+      : profile.communication?.[0]?.language;
+  return concept?.coding?.[0]?.code;
 }
 
 /** Build the identity block (photo, initials, collapsed name parts). */
@@ -229,6 +246,15 @@ export function useProfileData(
       void refreshProfiles?.();
     }
   }, [userId, userInfo?.cachedAt, roleProfiles, refreshProfiles]);
+
+  // The account language is the source of truth: once the profile loads,
+  // apply its preferred language over the cookie (default 'id' when the
+  // profile carries none or an unsupported code).
+  useEffect(() => {
+    const code = readLanguageCode(activeProfile);
+    if (!code || !(LOCALES as readonly string[]).includes(code)) return;
+    if (code !== getLocale()) setLocale(code as Locale);
+  }, [activeProfile]);
 
   const identity = useMemo(
     () => buildIdentity(activeProfile, activeProfile?.id ?? userId),
