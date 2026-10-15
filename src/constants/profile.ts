@@ -50,17 +50,17 @@ export const settingMenus = [
 
 export const genderList = [
   {
-    name: 'Male',
+    nameKey: 'profile.gender_male',
     code: 'male'
   },
 
   {
-    name: 'Female',
+    nameKey: 'profile.gender_female',
     code: 'female'
   }
-];
+] as const;
 
 export const languageOptions = [
-  { code: 'id', label: 'Indonesian' },
-  { code: 'en', label: 'English' }
+  { code: 'id', labelKey: 'profile.lang_id' },
+  { code: 'en', labelKey: 'profile.lang_en' }
 ] as const;

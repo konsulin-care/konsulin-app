@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { languageOptions, settingMenus } from '../profile';
+import { genderList, languageOptions, settingMenus } from '../profile';
 
 describe('languageOptions', () => {
-  it('offers exactly Indonesian and English', () => {
+  it('offers exactly Indonesian and English via translation keys', () => {
     expect(languageOptions).toEqual([
-      { code: 'id', label: 'Indonesian' },
-      { code: 'en', label: 'English' }
+      { code: 'id', labelKey: 'profile.lang_id' },
+      { code: 'en', labelKey: 'profile.lang_en' }
+    ]);
+  });
+});
+
+describe('genderList', () => {
+  it('offers male and female via translation keys, not display text', () => {
+    expect(genderList).toEqual([
+      { nameKey: 'profile.gender_male', code: 'male' },
+      { nameKey: 'profile.gender_female', code: 'female' }
     ]);
   });
 });

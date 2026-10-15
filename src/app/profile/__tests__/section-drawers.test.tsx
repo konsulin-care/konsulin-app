@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within
+} from '@testing-library/react';
 import type { Patient } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,7 +43,11 @@ vi.mock('@/i18n', () => ({
       postal_code_placeholder: 'Postal code',
       select_province: 'Select province',
       select_city: 'Select city',
-      select_district: 'Select district'
+      select_district: 'Select district',
+      'profile.gender_male': 'Male',
+      'profile.gender_female': 'Female',
+      'profile.lang_id': 'Bahasa Indonesia',
+      'profile.lang_en': 'English'
     };
     return translations[key] ?? key;
   })
@@ -101,6 +111,27 @@ describe('PersonalInfoEditDrawer', () => {
     );
     expect(screen.getByTestId('gender-select')).toBeDefined();
     expect(screen.getByTestId('language-select')).toBeDefined();
+  });
+
+  it('renders translated gender and language option labels', () => {
+    render(
+      <PersonalInfoEditDrawer
+        open
+        onClose={onClose}
+        fhirId='pat-1'
+        resourceType='Patient'
+        gender='male'
+        birthDate='1990-03-12'
+        languageCode='id'
+        supportsLanguage
+      />
+    );
+    const genderSelect = screen.getByTestId('gender-select');
+    expect(within(genderSelect).getByText('Male')).toBeDefined();
+    expect(within(genderSelect).getByText('Female')).toBeDefined();
+    const languageSelect = screen.getByTestId('language-select');
+    expect(within(languageSelect).getByText('Bahasa Indonesia')).toBeDefined();
+    expect(within(languageSelect).getByText('English')).toBeDefined();
   });
 
   it('hides the language field when supportsLanguage is false', () => {

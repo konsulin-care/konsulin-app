@@ -87,6 +87,7 @@ export default function PersonalInfoEditDrawer({
 }: Readonly<Props>) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
+  const tProfileKey = useTranslations();
   const [genderValue, setGenderValue] = useState(gender);
   const [dobValue, setDobValue] = useState(birthDate);
   const [languageValue, setLanguageValue] = useState(languageCode ?? '');
@@ -117,7 +118,7 @@ export default function PersonalInfoEditDrawer({
           ...(supportsLanguage && selected
             ? {
                 languageCode: selected.code,
-                languageLabel: selected.label
+                languageLabel: tProfileKey(selected.labelKey)
               }
             : {})
         }),
@@ -157,7 +158,7 @@ export default function PersonalInfoEditDrawer({
           </option>
           {genderList.map(option => (
             <option key={option.code} value={option.code}>
-              {option.name}
+              {tProfileKey(option.nameKey)}
             </option>
           ))}
         </SelectField>
@@ -180,7 +181,7 @@ export default function PersonalInfoEditDrawer({
             </option>
             {languageOptions.map(option => (
               <option key={option.code} value={option.code}>
-                {option.label}
+                {tProfileKey(option.labelKey)}
               </option>
             ))}
           </SelectField>
