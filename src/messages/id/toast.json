@@ -5,6 +5,7 @@
   "photo_update_failed": "Gagal memperbarui foto profil",
   "photo_update_missing_account": "Gagal memperbarui foto profil: akun profil belum tertaut",
   "missing_practitioner": "Informasi praktisi atau pasien tidak lengkap",
+  "location_image_upload_failed": "Gagal mengunggah gambar. Silakan coba lagi.",
   "missing_patient": "Informasi pasien tidak lengkap",
   "submit_error": "Terjadi kesalahan saat mengirim asesmen",
   "soap_submit_error": "SOAP gagal dikirim",

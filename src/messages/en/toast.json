@@ -5,6 +5,7 @@
   "photo_update_failed": "Failed to update profile photo",
   "photo_update_missing_account": "Failed to update profile photo: profile account is not linked yet",
   "missing_practitioner": "Missing practitioner or patient information",
+  "location_image_upload_failed": "Failed to upload image. Please try again.",
   "missing_patient": "Missing patient information",
   "submit_error": "An error occurred while submitting the questionnaire",
   "soap_submit_error": "Failed to submit SOAP note",

@@ -13,6 +13,21 @@
   "day_label": "Tanggal",
   "month_label": "Bulan",
   "year_label": "Tahun",
+  "location": {
+    "open": "Buka",
+    "close": "Tutup",
+    "name": "Nama Lokasi",
+    "name_placeholder": "Klinik Utama",
+    "address": "Alamat",
+    "longitude": "Bujur",
+    "latitude": "Lintang",
+    "select_province": "Pilih Provinsi",
+    "select_city": "Pilih Kota",
+    "select_district": "Pilih Kecamatan",
+    "add_time": "Tambah Jam",
+    "no_hours": "Belum ada jam pada hari ini",
+    "image_alt": "Pratinjau lokasi"
+  },
   "months": {
     "january": "Januari",
     "february": "Februari",

@@ -8,6 +8,29 @@ vi.mock('@/services/api/cities', () => ({
   useGetDistricts: () => ({ data: [], isLoading: false })
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      common: {
+        'location.open': 'Open',
+        'location.close': 'Close',
+        'location.name': 'Location Name',
+        'location.name_placeholder': 'Main Clinic',
+        'location.address': 'Address',
+        'location.longitude': 'Longitude',
+        'location.latitude': 'Latitude',
+        'location.select_province': 'Select Province',
+        'location.select_city': 'Select City',
+        'location.select_district': 'Select District',
+        'location.add_time': 'Add Time',
+        'location.no_hours': 'No hours set for this day',
+        'location.image_alt': 'Location preview'
+      }
+    };
+    return translations[namespace]?.[key] ?? key;
+  })
+}));
+
 import LocationFormFields from '@/components/shared/location-form-fields';
 import { DayOfWeek, TimeRange } from '@/types/availability';
 
@@ -50,8 +73,10 @@ describe('LocationFormFields image uploader', () => {
       />
     );
 
-    // The uploader preview img should exist
-    expect(screen.getByRole('img')).toBeInTheDocument();
+    // The uploader preview img should exist with a translated alt
+    const img = screen.getByRole('img');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('alt', 'Location preview');
   });
 });
 

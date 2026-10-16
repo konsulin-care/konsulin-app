@@ -13,6 +13,21 @@
   "day_label": "Day",
   "month_label": "Month",
   "year_label": "Year",
+  "location": {
+    "open": "Open",
+    "close": "Close",
+    "name": "Location Name",
+    "name_placeholder": "Main Clinic",
+    "address": "Address",
+    "longitude": "Longitude",
+    "latitude": "Latitude",
+    "select_province": "Select Province",
+    "select_city": "Select City",
+    "select_district": "Select District",
+    "add_time": "Add Time",
+    "no_hours": "No hours set for this day",
+    "image_alt": "Location preview"
+  },
   "months": {
     "january": "January",
     "february": "February",
