@@ -43,9 +43,18 @@ export function setLocale(locale: Locale): void {
   for (const listener of listeners) listener();
 }
 
-/** Client-side hook that returns the current locale and re-renders on change. */
+/**
+ * Client-side hook that returns the current locale and re-renders on change.
+ *
+ * Initializes with DEFAULT_LOCALE to match static-export HTML (avoids React
+ * hydration mismatch), then syncs the cookie value in an effect.
+ */
 export function useLocale(): Locale {
-  const [locale, setLocaleState] = useState(getLocale);
+  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+
+  useEffect(() => {
+    setLocaleState(getLocale());
+  }, []);
 
   useEffect(() => {
     const handler = () => setLocaleState(getLocale());

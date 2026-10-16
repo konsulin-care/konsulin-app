@@ -116,6 +116,23 @@ describe('useLocale', () => {
     expect(result.current).toBe(DEFAULT_LOCALE);
   });
 
+  it('renders DEFAULT_LOCALE before effects flush even when cookie differs', () => {
+    document.cookie = 'NEXT_LOCALE=en; path=/';
+    let firstRender: ReturnType<typeof useLocale> | undefined;
+    renderHook(() => {
+      const value = useLocale();
+      firstRender ??= value;
+      return value;
+    });
+    expect(firstRender).toBe(DEFAULT_LOCALE);
+  });
+
+  it('syncs to the cookie locale after effects flush', () => {
+    document.cookie = 'NEXT_LOCALE=en; path=/';
+    const { result } = renderHook(() => useLocale());
+    expect(result.current).toBe('en');
+  });
+
   it('updates when setLocale is called', () => {
     const { result } = renderHook(() => useLocale());
     expect(result.current).toBe(DEFAULT_LOCALE);
