@@ -18,5 +18,7 @@
   "standalone": "Anda telah menyelesaikan tes!",
   "standalone_body": "Hasil Anda akan memberikan wawasan berharga tentang kesehatan Anda.",
   "standalone_research": "Terima kasih telah menyelesaikan asesmen ini!",
-  "standalone_research_body": "Respons Anda membantu meningkatkan kesehatan publik untuk semua."
+  "standalone_research_body": "Respons Anda membantu meningkatkan kesehatan publik untuk semua.",
+  "share_default_label": "Ketuk untuk membagikan survei ini",
+  "share_copied": "Tautan disalin!"
 }

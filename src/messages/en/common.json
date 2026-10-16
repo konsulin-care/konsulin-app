@@ -41,5 +41,36 @@
     "october": "October",
     "november": "November",
     "december": "December"
+  },
+  "pwa": {
+    "install_app": "Install app",
+    "sync_now": "Sync now",
+    "waiting_to_sync": "{count, plural, one {# submission waiting to sync} other {# submissions waiting to sync}}"
+  },
+  "sw": {
+    "update_available": "Update available",
+    "reload": "Reload"
+  },
+  "qr": {
+    "copy_link": "Copy Link",
+    "show": "Show QR"
+  },
+  "geolocation": {
+    "not_supported": "Geolocation not supported",
+    "unavailable": "Location unavailable",
+    "permission_denied": "Location permission denied",
+    "timeout": "Location request timed out"
+  },
+  "validation": {
+    "cannot_be_empty": "{label} cannot be empty",
+    "invalid_format": "{label} format is invalid",
+    "min_length": "{label} must be at least two characters",
+    "email_required": "Email is required",
+    "email_invalid": "Email format is invalid",
+    "phone_required": "Phone number is required",
+    "phone_invalid": "WhatsApp phone number must be 8-15 digits",
+    "address_required": "Address cannot be empty",
+    "birth_date_required": "Birth date cannot be empty",
+    "gender_required": "Gender cannot be empty"
   }
 }

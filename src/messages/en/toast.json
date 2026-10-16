@@ -10,5 +10,7 @@
   "submit_error": "An error occurred while submitting the questionnaire",
   "soap_submit_error": "Failed to submit SOAP note",
   "soap_submit_success_created": "SOAP note submitted successfully",
-  "soap_submit_success_updated": "SOAP note updated successfully"
+  "soap_submit_success_updated": "SOAP note updated successfully",
+  "qr_copy_success": "Link copied to clipboard",
+  "qr_copy_error": "Error copying to clipboard"
 }

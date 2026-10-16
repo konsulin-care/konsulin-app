@@ -10,5 +10,7 @@
   "submit_error": "Terjadi kesalahan saat mengirim asesmen",
   "soap_submit_error": "SOAP gagal dikirim",
   "soap_submit_success_created": "SOAP berhasil dikirim",
-  "soap_submit_success_updated": "SOAP berhasil diupdate"
+  "soap_submit_success_updated": "SOAP berhasil diupdate",
+  "qr_copy_success": "Tautan disalin ke papan klip",
+  "qr_copy_error": "Gagal menyalin ke papan klip"
 }

@@ -41,5 +41,36 @@
     "october": "Oktober",
     "november": "November",
     "december": "Desember"
+  },
+  "pwa": {
+    "install_app": "Instal aplikasi",
+    "sync_now": "Sinkron sekarang",
+    "waiting_to_sync": "{count} submission menunggu untuk disinkronkan"
+  },
+  "sw": {
+    "update_available": "Pembaruan tersedia",
+    "reload": "Muat ulang"
+  },
+  "qr": {
+    "copy_link": "Salin Tautan",
+    "show": "Tampilkan QR"
+  },
+  "geolocation": {
+    "not_supported": "Dukungan lokasi tidak tersedia",
+    "unavailable": "Lokasi tidak tersedia",
+    "permission_denied": "Izin lokasi ditolak",
+    "timeout": "Permintaan lokasi habis waktu"
+  },
+  "validation": {
+    "cannot_be_empty": "{label} tidak boleh kosong",
+    "invalid_format": "Format {label} tidak valid",
+    "min_length": "{label} minimal dua karakter",
+    "email_required": "Email wajib diisi",
+    "email_invalid": "Format email tidak valid",
+    "phone_required": "Nomor telepon wajib diisi",
+    "phone_invalid": "Nomor WhatsApp harus 8-15 digit",
+    "address_required": "Alamat tidak boleh kosong",
+    "birth_date_required": "Tanggal lahir tidak boleh kosong",
+    "gender_required": "Jenis kelamin tidak boleh kosong"
   }
 }
