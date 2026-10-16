@@ -13,16 +13,18 @@
   "day_label": "Tanggal",
   "month_label": "Bulan",
   "year_label": "Tahun",
-  "months.january": "Januari",
-  "months.february": "Februari",
-  "months.march": "Maret",
-  "months.april": "April",
-  "months.may": "Mei",
-  "months.june": "Juni",
-  "months.july": "Juli",
-  "months.august": "Agustus",
-  "months.september": "September",
-  "months.october": "Oktober",
-  "months.november": "November",
-  "months.december": "Desember"
+  "months": {
+    "january": "Januari",
+    "february": "Februari",
+    "march": "Maret",
+    "april": "April",
+    "may": "Mei",
+    "june": "Juni",
+    "july": "Juli",
+    "august": "Agustus",
+    "september": "September",
+    "october": "Oktober",
+    "november": "November",
+    "december": "Desember"
+  }
 }

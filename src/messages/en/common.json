@@ -13,16 +13,18 @@
   "day_label": "Day",
   "month_label": "Month",
   "year_label": "Year",
-  "months.january": "January",
-  "months.february": "February",
-  "months.march": "March",
-  "months.april": "April",
-  "months.may": "May",
-  "months.june": "June",
-  "months.july": "July",
-  "months.august": "August",
-  "months.september": "September",
-  "months.october": "October",
-  "months.november": "November",
-  "months.december": "December"
+  "months": {
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
+  }
 }
