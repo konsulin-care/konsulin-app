@@ -124,9 +124,7 @@ export function useProfilePhotoSave({
       try {
         const chatwootId = await ensureChatwootId();
         if (!chatwootId) {
-          toast.error(
-            'Profile does not own chatwoot_id; avatar update is cancelled'
-          );
+          toast.error(t('photo_update_missing_account'));
           return;
         }
 

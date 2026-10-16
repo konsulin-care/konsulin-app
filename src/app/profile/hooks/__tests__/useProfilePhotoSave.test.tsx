@@ -8,7 +8,9 @@ vi.mock('@/i18n', () => ({
   useTranslations: vi.fn(() => (key: string) => {
     const translations: Record<string, string> = {
       photo_updated: 'Profile photo updated',
-      photo_update_failed: 'Failed updating the profile picture'
+      photo_update_failed: 'Failed updating the profile picture',
+      photo_update_missing_account:
+        'Failed to update profile photo: profile account is not linked yet'
     };
     return translations[key] ?? key;
   })
@@ -356,7 +358,9 @@ describe('useProfilePhotoSave', () => {
     });
 
     expect(uploadAvatar).not.toHaveBeenCalled();
-    expect(toast.error).toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith(
+      'Failed to update profile photo: profile account is not linked yet'
+    );
     await waitFor(() => expect(result.current.isUploading).toBe(false));
   });
 });

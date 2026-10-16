@@ -54,9 +54,7 @@ export function useAvatarUpload({
       console.error('[avatar] missing chatwoot_id, aborting upload', {
         fhirId
       });
-      toast.error(
-        'Profile does not own chatwoot_id; avatar update is cancelled'
-      );
+      toast.error(tToast('photo_update_missing_account'));
       return existingPhotoUrl;
     }
     setIsUploadingPhoto(true);
