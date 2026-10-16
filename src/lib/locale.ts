@@ -9,8 +9,9 @@ export const LOCALES = ['en', 'id'] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'id';
 
-/** Read all cookies as a raw string (jsdom-safe wrapper). */
+/** Read all cookies as a raw string. Returns '' when `document` is unavailable (SSR/static-export prerender). */
 function readCookies(): string {
+  if (typeof document === 'undefined') return '';
   // eslint-disable-next-line unicorn/no-document-cookie -- low-level cookie access required for locale persistence
   return document.cookie;
 }

@@ -47,6 +47,31 @@ describe('getLocale', () => {
   });
 });
 
+describe('getLocale SSR safety', () => {
+  beforeEach(() => {
+    document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+  });
+
+  it('returns DEFAULT_LOCALE instead of throwing when document is undefined', () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'document');
+    Object.defineProperty(globalThis, 'document', {
+      value: undefined,
+      configurable: true,
+      writable: true
+    });
+    try {
+      expect(getLocale()).toBe(DEFAULT_LOCALE);
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'document', original);
+    }
+  });
+
+  it('still returns the cookie value when document is available', () => {
+    document.cookie = 'NEXT_LOCALE=en; path=/';
+    expect(getLocale()).toBe('en');
+  });
+});
+
 describe('setLocale', () => {
   beforeEach(() => {
     document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
