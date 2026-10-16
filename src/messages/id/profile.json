@@ -37,6 +37,7 @@
   "given_name_n": "Nama depan {n}",
   "family_name": "Nama belakang",
   "add_given": "Tambah nama depan",
+  "remove_given_name_n": "Hapus nama depan {n}",
   "professional": "Profesional",
   "additional": "Tambahan",
   "specialty": "Spesialisasi",

@@ -37,6 +37,7 @@
   "given_name_n": "Given name {n}",
   "family_name": "Family name",
   "add_given": "Add given name",
+  "remove_given_name_n": "Remove given name {n}",
   "professional": "Professional",
   "additional": "Additional",
   "specialty": "Specialty",

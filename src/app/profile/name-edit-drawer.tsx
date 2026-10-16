@@ -125,7 +125,9 @@ export default function NameEditDrawer({
                     handleRemoveGiven(row.id);
                   }}
                   data-testid={`remove-given-${row.id}`}
-                  aria-label={`Remove given name ${row.id + 1}`}
+                  aria-label={t('remove_given_name_n', {
+                    n: String(row.id + 1)
+                  })}
                   className='text-secondary shrink-0 cursor-pointer'
                 >
                   <Trash2 className='h-4 w-4' />
@@ -140,7 +142,6 @@ export default function NameEditDrawer({
             className='text-secondary flex cursor-pointer items-center gap-1 text-xs font-semibold'
           >
             <Plus className='h-4 w-4' />
-            {t('add_given')}
             {t('add_given')}
           </button>
         </div>

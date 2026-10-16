@@ -7,18 +7,25 @@ vi.mock('../hooks/useProfileSectionSave', () => ({
 }));
 
 vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      save: 'Save',
-      edit_name: 'Edit Name',
-      name_desc: 'Given names can include middle names.',
-      given_names: 'Given names',
-      family_name: 'Family name',
-      add_given: 'Add given name',
-      given_name_n: 'Given name {n}'
-    };
-    return translations[key] ?? key;
-  })
+  useTranslations: vi.fn(
+    () => (key: string, values?: Record<string, string>) => {
+      const translations: Record<string, string> = {
+        save: 'Save',
+        edit_name: 'Edit Name',
+        name_desc: 'Given names can include middle names.',
+        given_names: 'Given names',
+        family_name: 'Family name',
+        add_given: 'Add given name',
+        given_name_n: 'Given name {n}',
+        remove_given_name_n: 'Remove given name {n}'
+      };
+      let result = translations[key] ?? key;
+      for (const [name, value] of Object.entries(values ?? {})) {
+        result = result.replaceAll(`{${name}}`, value);
+      }
+      return result;
+    }
+  )
 }));
 
 import { useProfileSectionSave } from '../hooks/useProfileSectionSave';
@@ -80,6 +87,19 @@ describe('NameEditDrawer', () => {
     }
     expect(container).not.toBeNull();
     expect(container?.className).not.toMatch(/px-4|pb-4/);
+  });
+
+  it('renders the add-given label exactly once', () => {
+    renderDrawer();
+    expect(screen.getByText('Add given name')).toBeDefined();
+  });
+
+  it('labels the remove button via the i18n key with the row number', () => {
+    renderDrawer();
+    expect(screen.getByTestId('remove-given-1')).toHaveAttribute(
+      'aria-label',
+      'Remove given name 2'
+    );
   });
 
   it('adds and removes repeatable given name rows', () => {
