@@ -5,5 +5,8 @@
   "photo_update_failed": "Failed to update profile photo",
   "missing_practitioner": "Missing practitioner or patient information",
   "missing_patient": "Missing patient information",
-  "submit_error": "An error occurred while submitting the questionnaire"
+  "submit_error": "An error occurred while submitting the questionnaire",
+  "soap_submit_error": "Failed to submit SOAP note",
+  "soap_submit_success_created": "SOAP note submitted successfully",
+  "soap_submit_success_updated": "SOAP note updated successfully"
 }

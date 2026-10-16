@@ -5,5 +5,8 @@
   "photo_update_failed": "Gagal memperbarui foto profil",
   "missing_practitioner": "Informasi praktisi atau pasien tidak lengkap",
   "missing_patient": "Informasi pasien tidak lengkap",
-  "submit_error": "Terjadi kesalahan saat mengirim asesmen"
+  "submit_error": "Terjadi kesalahan saat mengirim asesmen",
+  "soap_submit_error": "SOAP gagal dikirim",
+  "soap_submit_success_created": "SOAP berhasil dikirim",
+  "soap_submit_success_updated": "SOAP berhasil diupdate"
 }
