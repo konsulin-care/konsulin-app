@@ -8,6 +8,26 @@ import { ComplaintSearch } from '../complaint-search';
 import { EmergencyBanner } from '../emergency-banner';
 import { InterviewFlow } from '../interview-flow';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      close_interview: 'Close interview',
+      back: 'Back',
+      which_describes: 'Which best describes your concern?',
+      search_placeholder: 'Search your concern (Indonesian or English)',
+      search_label: 'Search concern',
+      clear_search: 'Clear search',
+      no_match_hint:
+        'No matching concern found. Try a keyword like pain, mood, sleep, or breath.',
+      popular_concerns: 'Popular concerns',
+      safe_answer: "No, I'm safe",
+      flagged_answer: "Yes, that's me",
+      show_recommendations: 'Show me recommendations'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 const MOOD_COMPLAINT = searchChiefComplaints('low mood')[0];
 
 describe('EmergencyBanner', () => {

@@ -3,6 +3,7 @@
 import { InterviewAccordion } from '@/components/general/home/interview/interview-accordion';
 import AppDrawer from '@/components/ui/app-drawer';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { useTranslations } from '@/i18n';
 import type { InterviewResult } from '@/types/recommendation-interview';
 import {
   getAllChiefComplaints,
@@ -35,6 +36,8 @@ export default function ScreeningDrawer({
   onClose,
   onComplete
 }: Readonly<ScreeningDrawerProps>) {
+  const t = useTranslations('interview');
+  const tToast = useTranslations('toast');
   const router = useRouter();
   const pathname = usePathname();
   const allComplaints = useMemo(() => getAllChiefComplaints(), []);
@@ -91,7 +94,7 @@ export default function ScreeningDrawer({
       } else {
         // Error or timeout: show toast and submit without coords
         if (geolocation.error) {
-          toast.info('Location unavailable, showing all results');
+          toast.info(tToast('location_unavailable'));
         }
         handleSubmit(pendingResult);
       }
@@ -99,15 +102,15 @@ export default function ScreeningDrawer({
 
     // Start checking after a brief delay to allow geolocation to complete
     setTimeout(checkGeo, 100);
-  }, [pendingResult, geolocation, handleSubmit]);
+  }, [pendingResult, geolocation, handleSubmit, tToast]);
 
   return (
     <AppDrawer
       open={open}
       onClose={handleClose}
-      title="What's bringing you in today?"
-      description='Select a concern to get matched with the right care.'
-      ctaLabel='Get Recommendation'
+      title={t('drawer_title')}
+      description={t('drawer_description')}
+      ctaLabel={t('drawer_cta')}
       ctaDisabled={!pendingResult}
       onCtaClick={handleCtaClick}
       footerContent={
@@ -116,7 +119,7 @@ export default function ScreeningDrawer({
           className='mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-sm font-medium text-gray-700 hover:bg-gray-50'
         >
           <ShieldPlus className='h-4 w-4' />
-          Emergency Line
+          {t('emergency_line')}
         </a>
       }
     >

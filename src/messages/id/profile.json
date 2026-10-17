@@ -50,6 +50,7 @@
   "incomplete_desc": "Silakan perbarui informasi Anda untuk menyelesaikan pendaftaran.",
   "incomplete_modal_title": "Profil Anda belum lengkap",
   "incomplete_modal_desc": "Lengkapi data Anda untuk memanfaatkan fitur Konsulin sepenuhnya.",
+  "close_completeness_prompt": "Tutup pengingat kelengkapan profil",
   "complete_profile": "Lengkapi profil",
   "delete_account": "Hapus Akun",
   "log_out": "Keluar",

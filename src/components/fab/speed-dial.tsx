@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import type { Pill } from './types';
 
 /** Animated role-based speed-dial pill list. */
@@ -10,6 +11,7 @@ export function FabSpeedDial({
   readonly pills: readonly Pill[];
   readonly onPillClick: (pill: Pill) => void;
 }) {
+  const t = useTranslations('page-header');
   return (
     <div className='flex flex-col-reverse items-end gap-3'>
       {pills.map(pill => (
@@ -21,7 +23,7 @@ export function FabSpeedDial({
           style={{ animationDelay: `${pill.delay}ms` }}
         >
           <pill.icon className='h-4 w-4' />
-          {pill.label}
+          {t(pill.label)}
         </button>
       ))}
     </div>

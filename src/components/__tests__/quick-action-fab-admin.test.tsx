@@ -28,7 +28,22 @@ vi.mock('react-toastify', () => ({
 vi.mock('@/i18n', () => ({
   useTranslations: vi.fn((namespace: string) => (key: string) => {
     const translations: Record<string, Record<string, string>> = {
+      'page-header': {
+        pill_register_survey: 'Register Survey',
+        pill_my_survey: 'My Survey',
+        pill_self_checkup: 'Self Checkup',
+        pill_view_schedule: 'View Schedule',
+        pill_join_research: 'Join Research',
+        pill_get_recommendation: 'Get Recommendation',
+        pill_set_availability: 'Set Availability',
+        pill_health_screening: 'Health Screening',
+        pill_register_practitioner: 'Register Practitioner',
+        pill_add_location: 'Add Location',
+        pill_add_assessments: 'Add Assessments'
+      },
       common: {
+        'questionnaire_upload.assessment_title': 'Add Assessment',
+        'questionnaire_upload.category': 'Category',
         'location.open': 'Open',
         'location.close': 'Close',
         'location.name': 'Location Name',

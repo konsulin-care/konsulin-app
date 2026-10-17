@@ -70,7 +70,7 @@ const ProfileCompletenessModal = () => {
           ref={closeBtnRef}
           type='button'
           className='absolute top-3 right-3 text-gray-500 hover:text-gray-700'
-          aria-label='Close profile completeness prompt'
+          aria-label={t('close_completeness_prompt')}
           onClick={() => {
             setIsOpen(false);
             setDismissed(true);

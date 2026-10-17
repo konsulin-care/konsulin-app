@@ -8,10 +8,24 @@ import { FabSpeedDial } from '../speed-dial';
 import { FabToggleButton } from '../toggle-button';
 import { FabToggleShell } from '../toggle-shell';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      close_menu: 'Close menu'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 describe('FabOverlay', () => {
   it('renders a backdrop button', () => {
     const { container } = render(<FabOverlay onClose={vi.fn()} />);
     expect(container.querySelector('button')).toBeInTheDocument();
+  });
+
+  it('labels the backdrop with the translated close label', () => {
+    const { getByRole } = render(<FabOverlay onClose={vi.fn()} />);
+    expect(getByRole('button', { name: 'Close menu' })).toBeInTheDocument();
   });
 });
 

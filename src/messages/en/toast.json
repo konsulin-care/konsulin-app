@@ -15,5 +15,6 @@
   "qr_copy_error": "Error copying to clipboard",
   "questionnaire_uploaded": "Questionnaire uploaded successfully",
   "assessment_added": "Assessment added successfully",
-  "questionnaire_upload_failed": "Failed to upload questionnaire"
+  "questionnaire_upload_failed": "Failed to upload questionnaire",
+  "location_unavailable": "Location unavailable, showing all results"
 }

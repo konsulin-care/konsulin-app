@@ -1,5 +1,21 @@
 {
   "chief_concern": "Health Concern",
   "specific_focus": "Specific Focus",
-  "which_describes": "Which best describes your concern?"
+  "which_describes": "Which best describes your concern?",
+  "close_interview": "Close interview",
+  "back": "Back",
+  "search_placeholder": "Search your concern (Indonesian or English)",
+  "search_label": "Search concern",
+  "clear_search": "Clear search",
+  "no_match_hint": "No matching concern found. Try a keyword like pain, mood, sleep, or breath.",
+  "popular_concerns": "Popular concerns",
+  "safe_answer": "No, I'm safe",
+  "flagged_answer": "Yes, that's me",
+  "show_recommendations": "Show me recommendations",
+  "drawer_title": "What's bringing you in today?",
+  "drawer_description": "Select a concern to get matched with the right care.",
+  "drawer_cta": "Get Recommendation",
+  "emergency_line": "Emergency Line",
+  "select_concern": "Select or search concern",
+  "combobox_empty": "No matching concern found."
 }

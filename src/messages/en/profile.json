@@ -50,6 +50,7 @@
   "incomplete_desc": "Please update your information to complete registration.",
   "incomplete_modal_title": "Your profile is incomplete",
   "incomplete_modal_desc": "Fill out your details to fully utilize Konsulin features.",
+  "close_completeness_prompt": "Close profile completeness prompt",
   "complete_profile": "Complete profile",
   "delete_account": "Delete Account",
   "log_out": "Log out",

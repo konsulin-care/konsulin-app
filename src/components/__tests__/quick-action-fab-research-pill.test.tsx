@@ -23,6 +23,16 @@ vi.mock('@/lib/indexeddb', () => ({
   dbGet: vi.fn().mockResolvedValue(null)
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      pill_join_research: 'Join Research',
+      pill_get_recommendation: 'Get Recommendation',
+      pill_self_checkup: 'Self Checkup'
+    };
+    return translations[key] ?? key;
+  })
+}));
 vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));

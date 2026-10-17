@@ -10,7 +10,9 @@ vi.mock('@/i18n', () => ({
     const translations: Record<string, string> = {
       chief_concern: 'Chief Concern',
       specific_focus: 'Specific Focus',
-      which_describes: 'Which best describes your concern?'
+      which_describes: 'Which best describes your concern?',
+      select_concern: 'Select or search concern',
+      search_placeholder: 'Search your concern (Indonesian or English)'
     };
     return translations[key] ?? key;
   })

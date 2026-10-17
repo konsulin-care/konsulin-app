@@ -2,10 +2,12 @@
 
 import Combobox, { type ComboboxOption } from '@/components/shared/combobox';
 import { QUICK_COMPLAINT_IDS } from '@/constants/recommendation-decision-tree';
+import { useTranslations } from '@/i18n';
 import type { ChiefComplaint } from '@/types/recommendation-interview';
 import { useMemo } from 'react';
 
-const COMBOBOX_PLACEHOLDER = 'Select or search concern';
+/** Message key for the trigger placeholder (namespace `interview`). */
+const COMBOBOX_PLACEHOLDER = 'select_concern';
 
 interface ChiefComplaintComboboxProps {
   /** Available chief complaints to search and select. */
@@ -36,6 +38,7 @@ export function ChiefComplaintCombobox({
   value,
   onSelect
 }: Readonly<ChiefComplaintComboboxProps>) {
+  const t = useTranslations('interview');
   const comboboxOptions = useMemo(
     () => options.map(complaint => toComboboxOption(complaint)),
     [options]
@@ -57,9 +60,9 @@ export function ChiefComplaintCombobox({
         const complaint = options.find(item => item.id === option.code);
         if (complaint) onSelect(complaint);
       }}
-      placeholder={COMBOBOX_PLACEHOLDER}
-      searchPlaceholder='Search your concern (Indonesian or English)'
-      emptyMessage='No matching concern found.'
+      placeholder={t(COMBOBOX_PLACEHOLDER)}
+      searchPlaceholder={t('search_placeholder')}
+      emptyMessage={t('combobox_empty')}
       triggerRole='button'
     />
   );

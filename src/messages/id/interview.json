@@ -1,5 +1,21 @@
 {
   "chief_concern": "Keluhan Kesehatan",
   "specific_focus": "Fokus Spesifik",
-  "which_describes": "Mana yang paling menggambarkan kondisi Anda?"
+  "which_describes": "Mana yang paling menggambarkan kondisi Anda?",
+  "close_interview": "Tutup wawancara",
+  "back": "Kembali",
+  "search_placeholder": "Cari keluhan Anda (Indonesia atau Inggris)",
+  "search_label": "Cari keluhan",
+  "clear_search": "Hapus pencarian",
+  "no_match_hint": "Keluhan yang cocok tidak ditemukan. Coba kata kunci seperti nyeri, suasana hati, tidur, atau napas.",
+  "popular_concerns": "Keluhan populer",
+  "safe_answer": "Tidak, saya aman",
+  "flagged_answer": "Ya, itu saya",
+  "show_recommendations": "Tampilkan rekomendasi untuk saya",
+  "drawer_title": "Apa yang membawa Anda hari ini?",
+  "drawer_description": "Pilih keluhan untuk dicocokkan dengan layanan yang tepat.",
+  "drawer_cta": "Dapatkan Rekomendasi",
+  "emergency_line": "Hotline Darurat",
+  "select_concern": "Pilih atau cari keluhan",
+  "combobox_empty": "Keluhan yang cocok tidak ditemukan."
 }

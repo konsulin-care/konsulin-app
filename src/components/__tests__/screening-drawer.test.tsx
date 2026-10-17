@@ -12,6 +12,20 @@ const { mockPush, mockPathname, mockSave, mockOnComplete, mockOnClose } =
     mockOnClose: vi.fn()
   }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      drawer_title: "What's bringing you in today?",
+      drawer_description:
+        'Select a concern to get matched with the right care.',
+      drawer_cta: 'Get Recommendation',
+      emergency_line: 'Emergency Line',
+      location_unavailable: 'Location unavailable, showing all results'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
   useRouter: () => ({ push: mockPush })

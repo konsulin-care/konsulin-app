@@ -15,5 +15,6 @@
   "qr_copy_error": "Gagal menyalin ke papan klip",
   "questionnaire_uploaded": "Kuesioner berhasil diunggah",
   "assessment_added": "Asesmen berhasil ditambahkan",
-  "questionnaire_upload_failed": "Gagal mengunggah kuesioner"
+  "questionnaire_upload_failed": "Gagal mengunggah kuesioner",
+  "location_unavailable": "Lokasi tidak tersedia, menampilkan semua hasil"
 }

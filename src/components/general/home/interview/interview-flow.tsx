@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import type {
   ChiefComplaint,
   InterviewResult
@@ -40,6 +41,7 @@ export function InterviewFlow({
   onComplete,
   onClose
 }: Readonly<InterviewFlowProps>) {
+  const t = useTranslations('interview');
   const [step, setStep] = useState<Step>('options');
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [flagged, setFlagged] = useState(false);
@@ -75,7 +77,7 @@ export function InterviewFlow({
             <button
               type='button'
               onClick={onClose}
-              aria-label='Close interview'
+              aria-label={t('close_interview')}
               className='text-[12px] text-gray-400'
             >
               ✕
@@ -86,7 +88,7 @@ export function InterviewFlow({
         {step === 'options' && (
           <>
             <h2 className='mb-4 text-[16px] font-bold text-gray-900'>
-              Which best describes your concern?
+              {t('which_describes')}
             </h2>
             <ul className='flex flex-col gap-2'>
               {complaint.options.map(option => (
@@ -113,11 +115,11 @@ export function InterviewFlow({
               onClick={() => {
                 setStep('options');
               }}
-              aria-label='Back'
+              aria-label={t('back')}
               className='mb-3 flex items-center gap-1 text-[12px] text-gray-500'
             >
               <ChevronLeft className='h-3.5 w-3.5' aria-hidden='true' />
-              Back
+              {t('back')}
             </button>
             <h2 className='mb-4 text-[16px] font-bold text-gray-900'>
               {complaint.redFlag.label}
@@ -130,7 +132,7 @@ export function InterviewFlow({
                 }}
                 className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] text-gray-800 hover:border-[var(--secondary)]'
               >
-                No, I&apos;m safe
+                {t('safe_answer')}
               </button>
               <button
                 type='button'
@@ -139,7 +141,7 @@ export function InterviewFlow({
                 }}
                 className='w-full rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-left text-[14px] text-amber-900 hover:border-amber-400'
               >
-                Yes, that&apos;s me
+                {t('flagged_answer')}
               </button>
             </div>
 
@@ -151,7 +153,7 @@ export function InterviewFlow({
                   onClick={finish}
                   className='mt-4 w-full rounded-full bg-[var(--secondary)] py-3 text-[14px] font-semibold text-white'
                 >
-                  Show me recommendations
+                  {t('show_recommendations')}
                 </button>
               </>
             )}

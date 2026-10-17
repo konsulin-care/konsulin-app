@@ -13,7 +13,8 @@ vi.mock('@/i18n', () => ({
       assessment_center: 'Assessment Center',
       user_profile: 'User Profile',
       recommended: 'Recommendations for You',
-      research: 'Research'
+      research: 'Research',
+      go_back: 'Go back'
     };
     return translations[key] ?? key;
   })

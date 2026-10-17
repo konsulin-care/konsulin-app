@@ -243,7 +243,7 @@ export default function PageHeader({
           (backAction ? (
             <a
               href={backAction}
-              aria-label='Go back'
+              aria-label={t('go_back')}
               className='absolute left-0 flex h-10 w-10 items-center justify-center'
             >
               <ChevronLeftIcon size={24} color='#2c2f35' aria-hidden='true' />
@@ -251,7 +251,7 @@ export default function PageHeader({
           ) : (
             <button
               type='button'
-              aria-label='Go back'
+              aria-label={t('go_back')}
               onClick={() => router.back()}
               className='absolute left-0 flex h-10 w-10 items-center justify-center'
             >
