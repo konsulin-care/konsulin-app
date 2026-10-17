@@ -4,6 +4,8 @@
   "loading": "Loading...",
   "no_results": "No results",
   "no_results_found": "No results found.",
+  "question_navigation": "Question navigation",
+  "question_progress": "Question {current} of {total}",
   "select_option": "Select option",
   "try_different": "Try a different search or filter.",
   "see_all": "See All",

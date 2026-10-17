@@ -16,5 +16,6 @@
   "questionnaire_uploaded": "Kuesioner berhasil diunggah",
   "assessment_added": "Asesmen berhasil ditambahkan",
   "questionnaire_upload_failed": "Gagal mengunggah kuesioner",
-  "location_unavailable": "Lokasi tidak tersedia, menampilkan semua hasil"
+  "location_unavailable": "Lokasi tidak tersedia, menampilkan semua hasil",
+  "cannot_skip_required": "Pertanyaan wajib tidak dapat dilewati"
 }

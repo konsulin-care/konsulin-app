@@ -96,8 +96,6 @@
   "src/components/clinic/edit-location-drawer.tsx|attribute|title='Edit Location'",
   "src/components/clinic/edit-location-drawer.tsx|toast|toast:Failed to save location. Please try again.",
   "src/components/general/avatar.tsx|attribute|alt='practitioner'",
-  "src/components/general/card-stack-container.tsx|attribute|aria-label='Question navigation'",
-  "src/components/general/card-stack-container.tsx|toast|toast:Can't skip required question",
   "src/components/general/empty-state.tsx|attribute|alt='no-data'",
   "src/components/general/fhir-forms-renderer.tsx|attribute|alt='success'",
   "src/components/general/input.tsx|attribute|alt='prefix-icon'",

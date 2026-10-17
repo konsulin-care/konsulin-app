@@ -11,6 +11,21 @@ const { mockF, mockSwipe, mockToast, mockStyles } = vi.hoisted(() => ({
 vi.mock('@/hooks/useQuestionFocus', () => ({ useQuestionFocus: mockF }));
 vi.mock('@/hooks/useCardSwipe', () => ({ useCardSwipe: mockSwipe }));
 vi.mock('../card-dom-mapper', () => ({ CardDomMapper: () => null }));
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(
+    () => (key: string, values?: Record<string, number>) => {
+      const translations: Record<string, string> = {
+        question_navigation: 'Question navigation',
+        question_progress: 'Question {current} of {total}',
+        cannot_skip_required: "Can't skip required question"
+      };
+      return (translations[key] ?? key).replace(
+        /\{(\w+)\}/g,
+        (_, name: string) => String(values?.[name] ?? '')
+      );
+    }
+  )
+}));
 vi.mock('react-toastify', () => ({ toast: mockToast }));
 vi.mock('@/lib/injectCardStyles', () => ({ injectCardStyles: mockStyles }));
 

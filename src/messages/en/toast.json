@@ -16,5 +16,6 @@
   "questionnaire_uploaded": "Questionnaire uploaded successfully",
   "assessment_added": "Assessment added successfully",
   "questionnaire_upload_failed": "Failed to upload questionnaire",
-  "location_unavailable": "Location unavailable, showing all results"
+  "location_unavailable": "Location unavailable, showing all results",
+  "cannot_skip_required": "Can't skip required question"
 }

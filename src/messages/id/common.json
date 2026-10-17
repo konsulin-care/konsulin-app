@@ -4,6 +4,8 @@
   "loading": "Memuat...",
   "no_results": "Tidak ada hasil",
   "no_results_found": "Tidak ada hasil.",
+  "question_navigation": "Navigasi pertanyaan",
+  "question_progress": "Pertanyaan {current} dari {total}",
   "select_option": "Pilih opsi",
   "try_different": "Coba pencarian atau filter berbeda.",
   "see_all": "Lihat Semua",
