@@ -94,5 +94,35 @@
     "address_required": "Alamat tidak boleh kosong",
     "birth_date_required": "Tanggal lahir tidak boleh kosong",
     "gender_required": "Jenis kelamin tidak boleh kosong"
+  },
+  "questionnaire_upload": {
+    "research_title": "Unggah Kuesioner",
+    "assessment_title": "Tambah Asesmen",
+    "research_description": "Unggah kuesioner dan atur metadatanya untuk keperluan penelitian.",
+    "assessment_description": "Unggah kuesioner dan atur metadata tampilannya.",
+    "upload_label": "Unggah Kuesioner",
+    "submit": "Kirim",
+    "image_url": "URL Gambar (opsional)",
+    "estimated_duration": "Perkiraan Durasi (menit)",
+    "fee": "Biaya",
+    "category": "Kategori",
+    "select_category": "Pilih kategori"
+  },
+  "journal": {
+    "response_prompt": "Tulis apa saja di sini",
+    "response_placeholder": "Ketik pesan Anda di sini.",
+    "add_new_thought": "+ Tambah Catatan Baru",
+    "success_title": "Tetap Termotivasi Hari Ini!",
+    "success_description": "Menulis jurnal adalah langkah penting untuk memahami diri sendiri dan menjaga kesehatan mental Anda.",
+    "back": "Kembali"
+  },
+  "schedule": {
+    "search": "Cari",
+    "upcoming_session": "Sesi Mendatang",
+    "past_session": "Sesi Lampau",
+    "no_upcoming_title": "Tidak Ada Sesi Mendatang",
+    "no_upcoming_subtitle": "Anda tidak memiliki sesi terjadwal saat ini",
+    "no_past_title": "Tidak Ada Sesi Lampau",
+    "no_past_subtitle": "Anda belum menyelesaikan sesi apa pun"
   }
 }

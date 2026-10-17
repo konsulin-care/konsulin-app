@@ -94,5 +94,35 @@
     "address_required": "Address cannot be empty",
     "birth_date_required": "Birth date cannot be empty",
     "gender_required": "Gender cannot be empty"
+  },
+  "questionnaire_upload": {
+    "research_title": "Upload Questionnaire",
+    "assessment_title": "Add Assessment",
+    "research_description": "Upload a questionnaire and set its metadata for research use.",
+    "assessment_description": "Upload a questionnaire and set its display metadata.",
+    "upload_label": "Upload Questionnaire",
+    "submit": "Submit",
+    "image_url": "Image URL (optional)",
+    "estimated_duration": "Estimated Duration (minutes)",
+    "fee": "Fee",
+    "category": "Category",
+    "select_category": "Select category"
+  },
+  "journal": {
+    "response_prompt": "Write anything here",
+    "response_placeholder": "Type your message here.",
+    "add_new_thought": "+ Add New Thought",
+    "success_title": "Stay Motivated Today!",
+    "success_description": "Writing a journal is an important step to understand yourself and maintain your mental health.",
+    "back": "Back"
+  },
+  "schedule": {
+    "search": "Search",
+    "upcoming_session": "Upcoming Session",
+    "past_session": "Past Session",
+    "no_upcoming_title": "No Upcoming Sessions",
+    "no_upcoming_subtitle": "You have no scheduled sessions at the moment",
+    "no_past_title": "No Past Sessions",
+    "no_past_subtitle": "You haven't completed any sessions yet"
   }
 }

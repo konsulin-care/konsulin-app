@@ -12,5 +12,8 @@
   "soap_submit_success_created": "SOAP note submitted successfully",
   "soap_submit_success_updated": "SOAP note updated successfully",
   "qr_copy_success": "Link copied to clipboard",
-  "qr_copy_error": "Error copying to clipboard"
+  "qr_copy_error": "Error copying to clipboard",
+  "questionnaire_uploaded": "Questionnaire uploaded successfully",
+  "assessment_added": "Assessment added successfully",
+  "questionnaire_upload_failed": "Failed to upload questionnaire"
 }

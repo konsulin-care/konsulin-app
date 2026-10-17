@@ -12,5 +12,8 @@
   "soap_submit_success_created": "SOAP berhasil dikirim",
   "soap_submit_success_updated": "SOAP berhasil diupdate",
   "qr_copy_success": "Tautan disalin ke papan klip",
-  "qr_copy_error": "Gagal menyalin ke papan klip"
+  "qr_copy_error": "Gagal menyalin ke papan klip",
+  "questionnaire_uploaded": "Kuesioner berhasil diunggah",
+  "assessment_added": "Asesmen berhasil ditambahkan",
+  "questionnaire_upload_failed": "Gagal mengunggah kuesioner"
 }
