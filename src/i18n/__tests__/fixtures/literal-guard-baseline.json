@@ -131,7 +131,6 @@
   "src/components/shared/journal-succes-drawer.tsx|attribute|alt='success'",
   "src/components/shared/location-form-fields.tsx|attribute|placeholder='-6.305'",
   "src/components/shared/location-form-fields.tsx|attribute|placeholder='106.846'",
-  "src/components/shared/location-form-fields.tsx|attribute|placeholder='Jl. Example No. 1'",
   "src/components/shared/practitioner-location-combobox.tsx|attribute|placeholder='Select location...'",
   "src/components/shared/questionnaire-upload-drawer.tsx|attribute|placeholder='0'",
   "src/components/shared/questionnaire-upload-drawer.tsx|attribute|placeholder='10'",

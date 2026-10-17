@@ -27,7 +27,8 @@
     "select_district": "Pilih Kecamatan",
     "add_time": "Tambah Jam",
     "no_hours": "Belum ada jam pada hari ini",
-    "image_alt": "Pratinjau lokasi"
+    "image_alt": "Pratinjau lokasi",
+    "address_placeholder": "contoh: Jl. Contoh No. 1"
   },
   "date_picker": {
     "select_date": "Pilih Tanggal",

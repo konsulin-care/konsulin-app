@@ -27,7 +27,8 @@
     "select_district": "Select District",
     "add_time": "Add Time",
     "no_hours": "No hours set for this day",
-    "image_alt": "Location preview"
+    "image_alt": "Location preview",
+    "address_placeholder": "e.g. Jl. Example No. 1"
   },
   "date_picker": {
     "select_date": "Select Date",

@@ -128,7 +128,7 @@ export default function LocationFormFields({
           onChange={e => {
             onAddressLineChange(e.target.value);
           }}
-          placeholder='Jl. Example No. 1'
+          placeholder={t('location.address_placeholder')}
           className='bg-white'
           aria-label={t('location.address')}
         />

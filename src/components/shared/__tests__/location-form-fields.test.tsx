@@ -24,7 +24,8 @@ vi.mock('@/i18n', () => ({
         'location.select_district': 'Select District',
         'location.add_time': 'Add Time',
         'location.no_hours': 'No hours set for this day',
-        'location.image_alt': 'Location preview'
+        'location.image_alt': 'Location preview',
+        'location.address_placeholder': 'Street address'
       }
     };
     return translations[namespace]?.[key] ?? key;
@@ -164,5 +165,44 @@ describe('LocationFormFields status toggle', () => {
     expect(switchEl).not.toBeChecked();
     expect(screen.getByText('Close')).toBeInTheDocument();
     expect(screen.queryByText('Open')).not.toBeInTheDocument();
+  });
+});
+
+describe('LocationFormFields address placeholder', () => {
+  it('uses the translated address placeholder', () => {
+    render(
+      <LocationFormFields
+        status='active'
+        name=''
+        addressLine=''
+        provinceCode=''
+        cityCode=''
+        districtCode=''
+        longitude=''
+        latitude=''
+        listProvinces={[]}
+        listCities={[]}
+        listDistricts={[]}
+        provinceLoading={false}
+        cityLoading={false}
+        districtLoading={false}
+        hours={defaultHours()}
+        onStatusChange={vi.fn()}
+        onNameChange={vi.fn()}
+        onAddressLineChange={vi.fn()}
+        onProvinceSelect={vi.fn()}
+        onCitySelect={vi.fn()}
+        onDistrictSelect={vi.fn()}
+        onLongitudeChange={vi.fn()}
+        onLatitudeChange={vi.fn()}
+        onAddTimeRange={vi.fn()}
+        onUpdateTimeRange={vi.fn()}
+        onDeleteTimeRange={vi.fn()}
+        imageUrl=''
+        onImageUrlChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByPlaceholderText('Street address')).toBeInTheDocument();
   });
 });
