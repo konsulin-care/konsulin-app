@@ -3,6 +3,7 @@
   "cancel": "Cancel",
   "loading": "Loading...",
   "no_results": "No results",
+  "no_results_found": "No results found.",
   "select_option": "Select option",
   "try_different": "Try a different search or filter.",
   "see_all": "See All",
@@ -27,6 +28,27 @@
     "add_time": "Add Time",
     "no_hours": "No hours set for this day",
     "image_alt": "Location preview"
+  },
+  "date_picker": {
+    "select_date": "Select Date",
+    "pick_a_date": "Pick a date"
+  },
+  "date_filter": {
+    "heading": "Date",
+    "custom": "Custom"
+  },
+  "filter": {
+    "reset": "Reset Filter"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "previous_page": "Go to previous page",
+    "next_page": "Go to next page",
+    "more_pages": "More pages"
+  },
+  "progress": {
+    "questionnaire_completion": "Questionnaire completion"
   },
   "months": {
     "january": "January",

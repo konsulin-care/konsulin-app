@@ -127,8 +127,6 @@
   "src/components/screening-drawer.tsx|attribute|ctaLabel='Get Recommendation'",
   "src/components/screening-drawer.tsx|attribute|description='Select a concern to get matched with the right care.'",
   "src/components/screening-drawer.tsx|toast|toast:Location unavailable, showing all results",
-  "src/components/shared/date-picker-button.tsx|attribute|placeholder='Pick a date'",
-  "src/components/shared/date-picker-button.tsx|attribute|title='Select Date'",
   "src/components/shared/journal-response-fields.tsx|attribute|placeholder='Type your message here.'",
   "src/components/shared/journal-submit-button.tsx|attribute|label='Save Journal'",
   "src/components/shared/journal-succes-drawer.tsx|attribute|alt='success'",
@@ -164,9 +162,6 @@
   "src/components/soap-report/soap-form.tsx|toast|toast:An error occurred while submitting the SOAP",
   "src/components/soap-report/soap-form.tsx|toast|toast:SOAP gagal dikirim",
   "src/components/ui/breadcrumb.tsx|attribute|aria-label='breadcrumb'",
-  "src/components/ui/circular-progress.tsx|attribute|aria-label='Questionnaire completion'",
-  "src/components/ui/pagination.tsx|attribute|aria-label='Go to next page'",
-  "src/components/ui/pagination.tsx|attribute|aria-label='Go to previous page'",
   "src/components/ui/pagination.tsx|attribute|aria-label='pagination'",
   "src/hooks/useRedirectIntent.ts|toast|toast:Your assessment result is now linked to your account."
 ]

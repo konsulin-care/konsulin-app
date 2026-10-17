@@ -1,9 +1,48 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockLocale } = vi.hoisted(() => ({
+  mockLocale: { current: 'en' }
+}));
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      en: {
+        'common.progress.questionnaire_completion': 'Questionnaire completion'
+      },
+      id: {
+        'common.progress.questionnaire_completion': 'Kelengkapan kuesioner'
+      }
+    };
+    return translations[mockLocale.current]?.[`${namespace}.${key}`] ?? key;
+  })
+}));
 
 import CircularProgress from '../circular-progress';
 
 describe('CircularProgress', () => {
+  beforeEach(() => {
+    mockLocale.current = 'en';
+  });
+
+  it('renders the localized questionnaire completion label under en', () => {
+    render(<CircularProgress value={0.5} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'aria-label',
+      'Questionnaire completion'
+    );
+  });
+
+  it('renders the localized questionnaire completion label under id', () => {
+    mockLocale.current = 'id';
+    render(<CircularProgress value={0.5} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'aria-label',
+      'Kelengkapan kuesioner'
+    );
+  });
+
   it('renders the rounded percentage text for a 0-1 value', () => {
     render(<CircularProgress value={0.33} />);
     expect(screen.getByText('33%')).toBeInTheDocument();

@@ -3,6 +3,26 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Combobox, { type ComboboxOption } from '../combobox';
 
+const { mockLocale } = vi.hoisted(() => ({
+  mockLocale: { current: 'en' }
+}));
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      en: {
+        'common.loading': 'Loading...',
+        'common.no_results_found': 'No results found.'
+      },
+      id: {
+        'common.loading': 'Memuat...',
+        'common.no_results_found': 'Tidak ada hasil.'
+      }
+    };
+    return translations[mockLocale.current]?.[`${namespace}.${key}`] ?? key;
+  })
+}));
+
 const PROVINCES: readonly ComboboxOption[] = [
   { code: '31', name: 'DKI Jakarta' },
   { code: '32', name: 'Jawa Barat' },
@@ -30,6 +50,84 @@ function stubMobileViewport() {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe('Combobox (localized labels)', () => {
+  beforeEach(() => {
+    mockLocale.current = 'en';
+  });
+
+  it('shows the localized loading label in the trigger under en', () => {
+    render(
+      <Combobox
+        options={PROVINCES}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select province'
+        loading
+      />
+    );
+
+    expect(screen.getByRole('combobox')).toHaveTextContent('Loading...');
+  });
+
+  it('shows the localized loading label in the trigger under id', () => {
+    mockLocale.current = 'id';
+    render(
+      <Combobox
+        options={PROVINCES}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select province'
+        loading
+      />
+    );
+
+    expect(screen.getByRole('combobox')).toHaveTextContent('Memuat...');
+  });
+
+  it('shows the localized empty message when nothing matches under en', async () => {
+    render(
+      <Combobox
+        options={PROVINCES}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select province'
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox'));
+    const input = await waitFor(() =>
+      screen.getByPlaceholderText('Select province')
+    );
+    fireEvent.change(input, { target: { value: 'zzz' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('No results found.')).toBeInTheDocument();
+    });
+  });
+
+  it('shows the localized empty message when nothing matches under id', async () => {
+    mockLocale.current = 'id';
+    render(
+      <Combobox
+        options={PROVINCES}
+        value=''
+        onSelect={vi.fn()}
+        placeholder='Select province'
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox'));
+    const input = await waitFor(() =>
+      screen.getByPlaceholderText('Select province')
+    );
+    fireEvent.change(input, { target: { value: 'zzz' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Tidak ada hasil.')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('Combobox (desktop popover)', () => {

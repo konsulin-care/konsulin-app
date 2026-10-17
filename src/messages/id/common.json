@@ -3,6 +3,7 @@
   "cancel": "Batal",
   "loading": "Memuat...",
   "no_results": "Tidak ada hasil",
+  "no_results_found": "Tidak ada hasil.",
   "select_option": "Pilih opsi",
   "try_different": "Coba pencarian atau filter berbeda.",
   "see_all": "Lihat Semua",
@@ -27,6 +28,27 @@
     "add_time": "Tambah Jam",
     "no_hours": "Belum ada jam pada hari ini",
     "image_alt": "Pratinjau lokasi"
+  },
+  "date_picker": {
+    "select_date": "Pilih Tanggal",
+    "pick_a_date": "Pilih tanggal"
+  },
+  "date_filter": {
+    "heading": "Tanggal",
+    "custom": "Kustom"
+  },
+  "filter": {
+    "reset": "Atur Ulang Filter"
+  },
+  "pagination": {
+    "previous": "Sebelumnya",
+    "next": "Berikutnya",
+    "previous_page": "Ke halaman sebelumnya",
+    "next_page": "Ke halaman berikutnya",
+    "more_pages": "Halaman lainnya"
+  },
+  "progress": {
+    "questionnaire_completion": "Kelengkapan kuesioner"
   },
   "months": {
     "january": "Januari",

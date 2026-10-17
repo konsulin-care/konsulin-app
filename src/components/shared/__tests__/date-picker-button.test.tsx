@@ -1,6 +1,26 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockLocale } = vi.hoisted(() => ({
+  mockLocale: { current: 'en' }
+}));
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      en: {
+        'common.date_picker.pick_a_date': 'Pick a date',
+        'common.date_picker.select_date': 'Select Date'
+      },
+      id: {
+        'common.date_picker.pick_a_date': 'Pilih tanggal',
+        'common.date_picker.select_date': 'Pilih Tanggal'
+      }
+    };
+    return translations[mockLocale.current]?.[`${namespace}.${key}`] ?? key;
+  })
+}));
 
 vi.mock('@/components/ui/app-drawer', () => ({
   default: ({
@@ -38,9 +58,34 @@ vi.mock('@/components/ui/calendar-base', () => ({
 import DatePickerButton from '../date-picker-button';
 
 describe('DatePickerButton', () => {
+  beforeEach(() => {
+    mockLocale.current = 'en';
+  });
+
   it('renders placeholder when no value is provided', () => {
     render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
     expect(screen.getByText('Pick a date')).toBeInTheDocument();
+  });
+
+  it('renders the localized placeholder under id', () => {
+    mockLocale.current = 'id';
+    render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
+    expect(screen.getByText('Pilih tanggal')).toBeInTheDocument();
+  });
+
+  it('renders the localized drawer title under both locales', () => {
+    render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /pick a date/i }));
+    expect(screen.getByTestId('drawer-title')).toHaveTextContent('Select Date');
+  });
+
+  it('renders the localized drawer title under id', () => {
+    mockLocale.current = 'id';
+    render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /pilih tanggal/i }));
+    expect(screen.getByTestId('drawer-title')).toHaveTextContent(
+      'Pilih Tanggal'
+    );
   });
 
   it('renders custom placeholder text', () => {
