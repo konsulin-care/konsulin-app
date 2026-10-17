@@ -6,6 +6,7 @@ import type { ComboboxOption } from '@/components/shared/location-combobox';
 import LocationCombobox from '@/components/shared/location-combobox';
 import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/i18n';
 import {
   addDays,
   endOfMonth,
@@ -22,21 +23,21 @@ const today = new Date();
 
 const filterContentListDate = [
   {
-    label: 'Today',
+    labelKey: 'today',
     value: {
       start: today,
       end: today
     }
   },
   {
-    label: 'This Week',
+    labelKey: 'this_week',
     value: {
       start: addDays(startOfWeek(today), 1),
       end: addDays(endOfWeek(today), 1)
     }
   },
   {
-    label: 'This Month',
+    labelKey: 'this_month',
     value: {
       start: startOfMonth(today),
       end: endOfMonth(today)
@@ -45,13 +46,13 @@ const filterContentListDate = [
 ];
 
 /** Record type options for the multi-select combobox. */
-const RECORD_TYPE_OPTIONS: ComboboxOption[] = [
-  { code: 'QuestionnaireResponse', name: 'Assessment' },
-  { code: 'PractitionerNote', name: 'Practitioner Note' },
-  { code: 'SOAP Notes', name: 'SOAP' },
-  { code: 'PatientNote', name: 'Self Journal' },
-  { code: 'Condition', name: 'Condition' },
-  { code: 'Encounter', name: 'Encounter' }
+const RECORD_TYPE_OPTIONS: { code: string; nameKey: string }[] = [
+  { code: 'QuestionnaireResponse', nameKey: 'record.record_type.assessment' },
+  { code: 'PractitionerNote', nameKey: 'record.record_type.practitioner_note' },
+  { code: 'SOAP Notes', nameKey: 'record.record_type.soap' },
+  { code: 'PatientNote', nameKey: 'record.record_type.self_journal' },
+  { code: 'Condition', nameKey: 'record.record_type.condition' },
+  { code: 'Encounter', nameKey: 'record.record_type.encounter' }
 ];
 
 export type IRecordParams = {
@@ -73,6 +74,14 @@ export default function RecordFilter({
 }: Readonly<{
   onChange: (filter: IRecordParams) => void;
 }>) {
+  const t = useTranslations('common');
+  const dateOptions = filterContentListDate.map(preset => ({
+    label: t(preset.labelKey),
+    value: preset.value
+  }));
+  const recordTypeOptions: ComboboxOption[] = RECORD_TYPE_OPTIONS.map(
+    option => ({ code: option.code, name: t(option.nameKey) })
+  );
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
@@ -128,7 +137,7 @@ export default function RecordFilter({
         return (
           <div className='flex flex-col'>
             <DatePresetFilter
-              presets={filterContentListDate}
+              presets={dateOptions}
               activeStart={filter.start_date}
               activeEnd={filter.end_date}
               isCustom={isUseCustomDate}
@@ -143,15 +152,15 @@ export default function RecordFilter({
 
             {/* Multi-select record types */}
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Show By</div>
+              <div className='mb-4 font-bold'>{t('record.show_by')}</div>
               <LocationCombobox
                 multiple
-                options={RECORD_TYPE_OPTIONS}
+                options={recordTypeOptions}
                 value={filter.type ?? []}
                 onSelect={(codes: string[]) =>
                   handleFilterChange('type', codes)
                 }
-                placeholder='All types'
+                placeholder={t('record.all_types')}
               />
             </div>
 
@@ -186,7 +195,7 @@ export default function RecordFilter({
               onClick={() => setWhichContent(CONTENT_DEFAULT)}
               className='bg-secondary mt-4 rounded-xl text-white'
             >
-              Kembali
+              {t('back')}
             </Button>
           </div>
         );
@@ -206,8 +215,8 @@ export default function RecordFilter({
         setIsOpen(false);
       }}
       trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
-      title='Filter & Sort'
-      ctaLabel='Terapkan Filter'
+      title={t('filter_title')}
+      ctaLabel={t('apply_filter')}
       onCtaClick={() => {
         setIsOpen(false);
         onChange(filter);

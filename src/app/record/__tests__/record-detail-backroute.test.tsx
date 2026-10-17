@@ -6,6 +6,11 @@ vi.mock('next/navigation', () => ({
   usePathname: vi.fn(() => '/record'),
   useRouter: vi.fn(() => ({ back: vi.fn(), replace: vi.fn(), push: vi.fn() }))
 }));
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/hooks/useRecordDetail', () => ({
   useRecordDetail: vi.fn()
 }));

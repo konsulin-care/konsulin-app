@@ -6,6 +6,7 @@ import FilterCustomTimeInputs from '@/components/shared/filter-custom-time-input
 import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
 import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { IUseClinicParams } from '@/services/clinic';
 import {
@@ -30,21 +31,21 @@ const today = new Date();
 
 const filterContentListUpcomingDate = [
   {
-    label: 'Today',
+    labelKey: 'today',
     value: {
       start: startOfDay(today),
       end: endOfDay(today)
     }
   },
   {
-    label: 'This Week',
+    labelKey: 'this_week',
     value: {
       start: startOfWeek(today, { weekStartsOn: 1 }),
       end: endOfWeek(today, { weekStartsOn: 1 })
     }
   },
   {
-    label: 'Next Week',
+    labelKey: 'next_week',
     value: {
       start: startOfWeek(addWeeks(today, 1), { weekStartsOn: 1 }),
       end: endOfWeek(addWeeks(today, 1), { weekStartsOn: 1 })
@@ -54,21 +55,21 @@ const filterContentListUpcomingDate = [
 
 const filterContentListPastDate = [
   {
-    label: 'Today',
+    labelKey: 'today',
     value: {
       start: startOfDay(today),
       end: endOfDay(today)
     }
   },
   {
-    label: 'Past Week',
+    labelKey: 'past_week',
     value: {
       start: startOfWeek(subWeeks(today, 1), { weekStartsOn: 1 }),
       end: endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 })
     }
   },
   {
-    label: 'Past Month',
+    labelKey: 'past_month',
     value: {
       start: startOfMonth(subMonths(today, 1)),
       end: endOfMonth(subMonths(today, 1))
@@ -118,6 +119,11 @@ const filterContentListTime = [
  *
  */
 export default function SessionFilter({ onChange, type, initialFilter }) {
+  const t = useTranslations('common');
+  const localizePresets = (
+    presets: { labelKey: string; value: { start: Date; end: Date } }[]
+  ) =>
+    presets.map(preset => ({ label: t(preset.labelKey), value: preset.value }));
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
@@ -212,14 +218,15 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
-  const activePresets =
+  const activePresets = localizePresets(
     type === 'upcoming'
       ? filterContentListUpcomingDate
-      : filterContentListPastDate;
+      : filterContentListPastDate
+  );
 
   const timeFilterSection = (
     <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4 font-bold'>Session Time</div>
+      <div className='mb-4 font-bold'>{t('session_time')}</div>
       <div className='flex flex-wrap gap-[10px]'>
         {filterContentListTime.map(time => (
           <Button
@@ -321,7 +328,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
               onClick={() => setWhichContent(CONTENT_DEFAULT)}
               className='bg-secondary mt-4 rounded-xl text-white'
             >
-              Kembali
+              {t('back')}
             </Button>
           </div>
         );
@@ -341,8 +348,8 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
         setIsOpen(false);
       }}
       trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
-      title='Filter & Sort'
-      ctaLabel='Terapkan Filter'
+      title={t('filter_title')}
+      ctaLabel={t('apply_filter')}
       onCtaClick={() => {
         setIsOpen(false);
         onChange(filter);

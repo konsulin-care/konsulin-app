@@ -7,6 +7,7 @@ import { useScheduleFilter } from '@/components/shared/hooks/useScheduleFilter';
 import SchedulePageShell from '@/components/shared/schedule-page-shell';
 import { useAuth } from '@/context/auth/authContext';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useTranslations } from '@/i18n';
 import { IUseClinicParams } from '@/services/clinic';
 import { useAppointments } from '@/services/hooks/useAppointments';
 import { MergedAppointment } from '@/types/appointment';
@@ -31,9 +32,10 @@ function isProcessingStatus(status: string | null): boolean {
 
 /** Pill shown while a proposed/pending appointment awaits payment. */
 function ProcessingPill() {
+  const t = useTranslations('common');
   return (
     <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
-      Processing
+      {t('processing')}
     </span>
   );
 }
@@ -44,11 +46,14 @@ function AppointmentTypeLabel({
 }: Readonly<{
   appointmentType: string | null;
 }>) {
+  const t = useTranslations('common');
   return (
     <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
       {appointmentType
-        ? `${capitalizeFirstLetter(appointmentType)} Session`
-        : 'Session'}
+        ? t('session_type', {
+            type: `${capitalizeFirstLetter(appointmentType)}`
+          })
+        : t('session')}
     </div>
   );
 }

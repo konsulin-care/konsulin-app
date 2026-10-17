@@ -18,7 +18,8 @@ vi.mock('@/i18n', () => ({
     const translations: Record<string, string> = {
       missing_practitioner: 'Missing practitioner or patient information',
       missing_patient: 'Missing patient information',
-      submit_error: 'An error occurred while submitting the questionnaire'
+      submit_error: 'An error occurred while submitting the questionnaire',
+      share_default_label: 'Tap to share this survey'
     };
     return translations[key] ?? key;
   })

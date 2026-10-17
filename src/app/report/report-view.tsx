@@ -3,6 +3,7 @@
 import ClaimReportFab from '@/components/assessment/claim-report-fab';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import {
   EMPTY_QUESTIONNAIRE_INFO_MAP,
   useQuestionnaireTitles
@@ -18,12 +19,7 @@ import { extractQuestionnaireId, sortBatches } from '@/utils/fhir/research';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
-import {
-  BatchSection,
-  CLAIM_REPORT_NUDGE,
-  ParticipationCard,
-  REPORT_DISCLAIMER
-} from './report-sections';
+import { BatchSection, ParticipationCard } from './report-sections';
 
 /**
  * Research participation report for one study.
@@ -33,6 +29,7 @@ import {
  * Guests get a claim nudge with the shared Claim Report FAB.
  */
 export default function ReportView() {
+  const t = useTranslations('common');
   const searchParams = useSearchParams();
   const studyId = searchParams.get('id');
   const { state: authState } = useAuth();
@@ -133,10 +130,12 @@ export default function ReportView() {
   if (!studyId || !study) {
     return (
       <>
-        <PageHeader pageIndicator='Research Report' backRoute='/research' />
+        <PageHeader pageIndicator={t('report.title')} backRoute='/research' />
         <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
           <div className='flex min-h-[300px] items-center justify-center'>
-            <p className='text-muted-foreground text-sm'>Report not found</p>
+            <p className='text-muted-foreground text-sm'>
+              {t('report.not_found')}
+            </p>
           </div>
         </div>
       </>
@@ -147,13 +146,13 @@ export default function ReportView() {
     return (
       <>
         <PageHeader
-          pageIndicator='Research Report'
+          pageIndicator={t('report.title')}
           backRoute={`/research?id=${studyId}`}
         />
         <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
           <div className='flex min-h-[300px] items-center justify-center'>
             <p className='text-muted-foreground text-sm'>
-              No completed assessments yet
+              {t('report.no_assessments')}
             </p>
           </div>
         </div>
@@ -168,7 +167,7 @@ export default function ReportView() {
   return (
     <>
       <PageHeader
-        pageIndicator='Research Report'
+        pageIndicator={t('report.title')}
         backRoute={`/research?id=${studyId}`}
       />
       <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
@@ -206,7 +205,7 @@ export default function ReportView() {
               data-testid='report-claim-nudge'
               className='text-xs text-gray-600'
             >
-              {CLAIM_REPORT_NUDGE}
+              {t('report.claim_nudge')}
             </p>
           </div>
         )}
@@ -215,7 +214,7 @@ export default function ReportView() {
           data-testid='report-disclaimer'
           className='mt-auto rounded-xl bg-gray-50 p-4 text-[11px] leading-relaxed text-gray-500'
         >
-          {REPORT_DISCLAIMER}
+          {t('report.disclaimer')}
         </footer>
       </div>
       <ClaimReportFab

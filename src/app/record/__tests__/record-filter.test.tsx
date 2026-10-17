@@ -2,6 +2,12 @@ import RecordFilter from '@/app/record/record-filter';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 describe('RecordFilter', () => {
   it('renders filter trigger button', () => {
     render(<RecordFilter onChange={vi.fn()} />);
@@ -29,7 +35,7 @@ describe('RecordFilter', () => {
     });
 
     // Click Apply button
-    const applyButton = screen.getByText('Terapkan Filter');
+    const applyButton = screen.getByText('Apply Filter');
     fireEvent.click(applyButton);
 
     // onChange should be called exactly once (by Apply, not by outside click)

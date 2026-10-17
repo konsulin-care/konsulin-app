@@ -19,15 +19,18 @@ export function formatDay(date: string | undefined): string | null {
  *
  * Same-month windows collapse into "dd - dd MMM yyyy"; cross-month windows
  * fall back to a full "dd MMM yyyy - dd MMM yyyy" range. Position comes from
- * the batch's index in the study's chronological order.
+ * the batch's index in the study's chronological order. The "Batch N" prefix
+ * is supplied already translated by the caller.
  *
  * @param batch - The batch to title.
  * @param sorted - All batches sorted by period start ascending.
+ * @param prefix - Translated label for the batch position, e.g. index => "Batch {index}".
  * @returns The header title, e.g. "Batch 2: 01 - 31 Aug 2026".
  */
 export function batchTitle(
   batch: ResearchBatch,
-  sorted: readonly ResearchBatch[]
+  sorted: readonly ResearchBatch[],
+  prefix: (index: number) => string
 ): string {
   const index = sorted.findIndex(item => item.id === batch.id) + 1;
   const start = parseISO(batch.start);
@@ -38,7 +41,7 @@ export function batchTitle(
   const range = sameMonth
     ? `${format(start, 'dd')} - ${format(end, 'dd MMM yyyy')}`
     : `${format(start, 'dd MMM yyyy')} - ${format(end, 'dd MMM yyyy')}`;
-  return `Batch ${index}: ${range}`;
+  return `${prefix(index)}: ${range}`;
 }
 
 /**
@@ -59,17 +62,6 @@ export function sharedAuthoredDate(
     new Set(dates).size === 1
     ? (dates[0] ?? null)
     : null;
-}
-
-/**
- * Copy for the batch-level baseline note, pluralized by card count.
- *
- * @param count - Number of baseline cards in the batch.
- * @returns The note sentence, e.g. "... for 2 assessments ...".
- */
-export function baselineNoteText(count: number): string {
-  const unit = count === 1 ? 'assessment' : 'assessments';
-  return `Baseline scores recorded for ${count} ${unit} for future comparison`;
 }
 
 /**

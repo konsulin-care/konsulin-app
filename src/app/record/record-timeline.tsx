@@ -12,6 +12,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { usePatientRecords } from '@/hooks/usePatientRecords';
 import { usePractitionerRecords } from '@/hooks/usePractitionerRecords';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
+import { useTranslations } from '@/i18n';
 import type { IRecord } from '@/types/record';
 import { format } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
@@ -47,9 +48,8 @@ function flattenResult(v: unknown): string {
 
 /** Shared page header used by all render branches. */
 function TimelineHeader({ backRoute }: Readonly<{ backRoute?: string }>) {
-  return (
-    <PageHeader pageIndicator='Personal Health Records' backRoute={backRoute} />
-  );
+  const t = useTranslations('common');
+  return <PageHeader pageIndicator={t('record.title')} backRoute={backRoute} />;
 }
 
 /** Skeleton shown while records are loading. */
@@ -73,6 +73,7 @@ function TimelineSkeleton({ backRoute }: Readonly<{ backRoute?: string }>) {
 
 /** Empty state when no records exist. */
 function TimelineEmpty({ backRoute }: Readonly<{ backRoute?: string }>) {
+  const t = useTranslations('common');
   return (
     <>
       <TimelineHeader backRoute={backRoute} />
@@ -81,7 +82,7 @@ function TimelineEmpty({ backRoute }: Readonly<{ backRoute?: string }>) {
         className='mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20'
       >
         <div className='flex flex-col items-center justify-center py-16'>
-          <p className='text-muted-foreground'>No records found</p>
+          <p className='text-muted-foreground'>{t('record.no_records')}</p>
         </div>
       </div>
     </>
@@ -94,6 +95,7 @@ function TimelineEmpty({ backRoute }: Readonly<{ backRoute?: string }>) {
  * Replaces the old toggle pills with a search+filter pattern matching /clinic.
  */
 export default function RecordTimeline({ patientId, backRoute }: Props) {
+  const t = useTranslations('common');
   const { state: authState } = useAuth();
   const isPatient = authState.userInfo?.role_name === Roles.Patient;
 
@@ -160,9 +162,11 @@ export default function RecordTimeline({ patientId, backRoute }: Props) {
     debounceDelay: 1000
   });
 
-  /** Active filter label for a record type code. */
-  const typeBadgeLabel = (code: string): string =>
-    typeMappings[code]?.text ?? code;
+  /** Active filter label for a record type code, resolved via i18n key. */
+  const typeBadgeLabel = (code: string): string => {
+    const key = typeMappings[code]?.labelKey;
+    return key ? t(key) : code;
+  };
 
   /** Handle filter drawer change — store the params. */
   const handleFilterChange = useCallback((filter: IRecordParams) => {
@@ -213,10 +217,7 @@ export default function RecordTimeline({ patientId, backRoute }: Props) {
   // ---- Normal render ----
   return (
     <>
-      <PageHeader
-        pageIndicator='Personal Health Records'
-        backRoute={backRoute}
-      />
+      <PageHeader pageIndicator={t('record.title')} backRoute={backRoute} />
 
       <div
         data-testid='timeline-overlay'
@@ -228,7 +229,7 @@ export default function RecordTimeline({ patientId, backRoute }: Props) {
             <InputWithIcon
               value={searchTerm}
               onChange={event => setSearchTerm(event.target.value)}
-              placeholder='Search records'
+              placeholder={t('record.search_placeholder')}
               className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />

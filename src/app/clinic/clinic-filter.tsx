@@ -11,6 +11,7 @@ import LocationCombobox, {
 import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
 import { Roles } from '@/constants/roles';
+import { useTranslations } from '@/i18n';
 import { useGetCities, useGetProvinces } from '@/services/api/cities';
 import { IUseClinicParams } from '@/services/clinic';
 import { useListActiveOrganizations } from '@/services/clinic-locations';
@@ -25,18 +26,18 @@ const today = new Date();
 
 const filterContentListDate = [
   {
-    label: 'Today',
+    labelKey: 'today',
     value: { start: today, end: today }
   },
   {
-    label: 'This Week',
+    labelKey: 'this_week',
     value: {
       start: addDays(startOfWeek(today), 1),
       end: addDays(endOfWeek(today), 1)
     }
   },
   {
-    label: 'Next Week',
+    labelKey: 'next_week',
     value: {
       start: addDays(startOfWeek(today), 8),
       end: addDays(endOfWeek(today), 8)
@@ -83,6 +84,11 @@ export default function ClinicFilter({
   type: string;
   role?: string;
 }>) {
+  const t = useTranslations('common');
+  const datePresets = filterContentListDate.map(preset => ({
+    label: t(preset.labelKey),
+    value: preset.value
+  }));
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [whichContent, setWhichContent] = useState<
     typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
@@ -160,9 +166,9 @@ export default function ClinicFilter({
   const renderLocationSection = () => (
     <div className='card mt-4 border-0 bg-[#F9F9F9]'>
       <div className='mb-4'>
-        <div className='font-bold'>Location</div>
+        <div className='font-bold'>{t('clinic.location')}</div>
         <span className='text-muted-foreground text-xs opacity-50'>
-          Select a province first, then optionally select a city.
+          {t('clinic.location_hint')}
         </span>
       </div>
       <div className='flex flex-wrap gap-[10px]'>
@@ -173,7 +179,7 @@ export default function ClinicFilter({
             handleFilterChange('province_code', option.code);
             handleFilterChange('province', option.name);
           }}
-          placeholder='Select Province'
+          placeholder={t('clinic.select_province')}
           loading={provinceLoading}
         />
         {filter.province_code && (
@@ -183,7 +189,7 @@ export default function ClinicFilter({
             onSelect={(option: ComboboxOption) =>
               handleFilterChange('city', option.name)
             }
-            placeholder='Select City'
+            placeholder={t('clinic.select_city')}
             loading={cityLoading}
           />
         )}
@@ -195,9 +201,9 @@ export default function ClinicFilter({
   const renderOrganizationSection = () => (
     <div className='card mt-4 border-0 bg-[#F9F9F9]'>
       <div className='mb-4'>
-        <div className='font-bold'>Organization</div>
+        <div className='font-bold'>{t('clinic.organization')}</div>
         <span className='text-muted-foreground text-xs opacity-50'>
-          Filter by a specific clinic organization.
+          {t('clinic.organization_hint')}
         </span>
       </div>
       <div className='flex flex-wrap gap-[10px]'>
@@ -207,7 +213,7 @@ export default function ClinicFilter({
           onSelect={(option: ComboboxOption) =>
             handleFilterChange('organization', option.code)
           }
-          placeholder='Select Organization'
+          placeholder={t('clinic.select_organization')}
           loading={orgLoading}
         />
       </div>
@@ -223,7 +229,7 @@ export default function ClinicFilter({
             {type === 'practitioner' ? (
               <>
                 <DatePresetFilter
-                  presets={filterContentListDate}
+                  presets={datePresets}
                   activeStart={filter.start_date}
                   activeEnd={filter.end_date}
                   isCustom={isUseCustomDate}
@@ -235,7 +241,7 @@ export default function ClinicFilter({
                   onCustomOpen={handleCustomFilterOpen}
                 />
                 <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-                  <div className='mb-4 font-bold'>Session Time</div>
+                  <div className='mb-4 font-bold'>{t('session_time')}</div>
                   <div className='flex flex-wrap gap-[10px]'>
                     {filterContentListTime.map(time => (
                       <Button
@@ -259,7 +265,9 @@ export default function ClinicFilter({
                           onClick={handleCustomFilterOpen}
                           className='bg-secondary hover:bg-secondary h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-bold text-white'
                         >
-                          Custom : {`${filter.start_time} - ${filter.end_time}`}
+                          {t('custom_range', {
+                            range: `${filter.start_time} - ${filter.end_time}`
+                          })}
                         </Button>
                       )}
                   </div>
@@ -279,7 +287,7 @@ export default function ClinicFilter({
                 className='mt-4 w-min border-0 text-[12px]'
                 onClick={resetFilter}
               >
-                Reset Filter
+                {t('reset_filter')}
               </Button>
             )}
           </div>
@@ -322,7 +330,7 @@ export default function ClinicFilter({
               onClick={() => setWhichContent(CONTENT_DEFAULT)}
               className='bg-secondary mt-4 rounded-xl text-white'
             >
-              Kembali
+              {t('back')}
             </Button>
           </div>
         );
@@ -341,8 +349,8 @@ export default function ClinicFilter({
         setIsOpen(false);
       }}
       trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
-      title='Filter & Sort'
-      ctaLabel='Apply Filter'
+      title={t('filter_title')}
+      ctaLabel={t('apply_filter')}
       onCtaClick={() => {
         setIsOpen(false);
         onChange(filter);
