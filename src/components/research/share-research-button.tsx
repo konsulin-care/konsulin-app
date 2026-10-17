@@ -1,6 +1,7 @@
 'use client';
 
 import { useShareStudy } from '@/hooks/useShareStudy';
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { Share2 } from 'lucide-react';
 
@@ -13,7 +14,7 @@ export interface ShareResearchButtonProps {
   fhirId?: string;
   /** Study to deep-link in the shared research URL. */
   studyId?: string;
-  /** Visible label; defaults to "Tap to share this survey". */
+  /** Visible label; defaults to the localized share prompt. */
   label?: string;
   /** Extra classes for context-specific layout. */
   className?: string;
@@ -36,10 +37,12 @@ export default function ShareResearchButton({
   isPatient,
   fhirId,
   studyId,
-  label = 'Tap to share this survey',
+  label,
   className,
   dataTestId = 'share-research-footer'
 }: Readonly<ShareResearchButtonProps>) {
+  const t = useTranslations('research');
+  const visibleLabel = label ?? t('share_default_label');
   const { handleShare, copied } = useShareStudy({
     studyId: studyId ?? '',
     isPatient,
@@ -62,7 +65,7 @@ export default function ShareResearchButton({
       )}
     >
       <Share2 className='h-3 w-3' />
-      {copied ? 'Link copied!' : label}
+      {copied ? t('share_copied') : visibleLabel}
     </button>
   );
 }

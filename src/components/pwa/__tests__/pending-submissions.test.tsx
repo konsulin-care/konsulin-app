@@ -18,6 +18,24 @@ vi.mock('@/lib/submission-replay', () => ({
   registerSubmissionReplayHandlers: vi.fn()
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(
+    (namespace: string) =>
+      (key: string, values?: Record<string, string | number>) => {
+        const translations: Record<string, Record<string, string>> = {
+          common: {
+            'pwa.waiting_to_sync': '{count} submissions waiting to sync',
+            'pwa.sync_now': 'Sync now'
+          }
+        };
+        const template = translations[namespace]?.[key] ?? key;
+        return template.replace(/\{(\w+)\}/g, (match, name: string) =>
+          String(values?.[name] ?? match)
+        );
+      }
+  )
+}));
+
 describe('PendingSubmissionsBanner', () => {
   beforeEach(() => {
     vi.mocked(pendingCount).mockResolvedValue(2);
