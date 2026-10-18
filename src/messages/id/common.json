@@ -278,5 +278,21 @@
     "session_type": "Jenis Sesi",
     "not_found_title": "Janji Temu Tidak Ditemukan",
     "not_found_subtitle": "Silakan kembali ke halaman janji temu dan pilih janji temu."
+  },
+  "recommendation": {
+    "screening_title": "Mulai skrining untuk melihat rekomendasi",
+    "screening_hint": "Lengkapi asesmen singkat dan kami akan mencocokkan Anda dengan praktisi yang tepat.",
+    "start_screening": "Mulai Skrining",
+    "load_failed": "Gagal memuat rekomendasi. Silakan coba lagi.",
+    "retry": "Coba Lagi",
+    "no_recommendation": "Belum ada rekomendasi untuk spesialisasi ini.",
+    "picker_title": "Pilih Spesialisasi",
+    "picker_description": "Lihat rekomendasi layanan kesehatan sesuai kebutuhan Anda."
+  },
+  "unauthorized": {
+    "title": "Akses Tidak Diizinkan!",
+    "description": "Maaf, Anda tidak memiliki akses ke halaman ini.",
+    "go_home": "Ke Beranda",
+    "image_alt": "offline"
   }
 }

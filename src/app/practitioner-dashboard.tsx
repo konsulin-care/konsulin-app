@@ -4,6 +4,7 @@ import BookingCalendar from '@/app/practitioner/booking-calendar';
 import SessionCard from '@/components/schedule/session-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { usePractitionerDashboard } from '@/services/hooks/usePractitionerDashboard';
 import type { MergedSession } from '@/types/appointment';
 import { endOfMonth, format, startOfDay, startOfMonth } from 'date-fns';
@@ -13,20 +14,19 @@ import { useMemo, useState } from 'react';
 /** Render appointment summary or placeholder for the selected day. */
 function renderDayContent(
   selectedDate: Date | null,
-  selectedSessions: MergedSession[]
+  selectedSessions: MergedSession[],
+  t: (key: string) => string
 ): ReactNode {
   if (!selectedDate) {
     return (
-      <p className='text-center text-[12px] text-gray-400'>
-        Select a day to view appointments
-      </p>
+      <p className='text-center text-[12px] text-gray-400'>{t('select_day')}</p>
     );
   }
 
   if (selectedSessions.length === 0) {
     return (
       <p className='text-center text-[12px] text-gray-400'>
-        No appointments for this day
+        {t('no_appointments')}
       </p>
     );
   }
@@ -49,6 +49,7 @@ const noop = () => {
 
 /** Practitioner home dashboard showing monthly calendar with availability dots. */
 export default function PractitionerDashboard() {
+  const t = useTranslations('home');
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const practitionerId = authState?.userInfo?.fhirId;
 
@@ -127,7 +128,7 @@ export default function PractitionerDashboard() {
       />
 
       <div className='mt-6'>
-        {renderDayContent(selectedDate, selectedSessions)}
+        {renderDayContent(selectedDate, selectedSessions, t)}
       </div>
     </div>
   );

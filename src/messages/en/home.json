@@ -26,5 +26,10 @@
   "reports": "Reports",
   "reports_desc": "Generate operational and clinical reports",
   "load_practitioner_fail": "Failed to load practitioner data. Tap to retry.",
-  "unable_load_role": "Unable to load content for this role."
+  "unable_load_role": "Unable to load content for this role.",
+  "ongoing_studies": "Ongoing Studies",
+  "total_participants": "Total Participants",
+  "active_batches": "Active Batches",
+  "select_day": "Select a day to view appointments",
+  "no_appointments": "No appointments for this day"
 }

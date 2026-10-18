@@ -2,6 +2,7 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import AppDrawer from '@/components/ui/app-drawer';
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -18,6 +19,7 @@ export default function SpecialtyPickerModal({
   specialties,
   loading
 }: Readonly<SpecialtyPickerModalProps>) {
+  const t = useTranslations('common');
   const router = useRouter();
 
   const selectSpecialty = (code: string) => {
@@ -31,8 +33,8 @@ export default function SpecialtyPickerModal({
       onClose={() => {
         router.push('/');
       }}
-      title='Pilih Spesialisasi'
-      description='Lihat rekomendasi layanan kesehatan sesuai kebutuhan Anda.'
+      title={t('recommendation.picker_title')}
+      description={t('recommendation.picker_description')}
     >
       {loading ? (
         <div className='flex min-h-[200px] items-center justify-center'>

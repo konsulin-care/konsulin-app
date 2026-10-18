@@ -278,5 +278,21 @@
     "session_type": "Session Type",
     "not_found_title": "Appointment Not Found",
     "not_found_subtitle": "Please return to the appointment page and select an appointment."
+  },
+  "recommendation": {
+    "screening_title": "Start a screening to see recommendations",
+    "screening_hint": "Complete a short assessment and we'll match you with the right practitioner.",
+    "start_screening": "Start Screening",
+    "load_failed": "Gagal memuat rekomendasi. Silakan coba lagi.",
+    "retry": "Coba Lagi",
+    "no_recommendation": "Belum ada rekomendasi untuk spesialisasi ini.",
+    "picker_title": "Pilih Spesialisasi",
+    "picker_description": "Lihat rekomendasi layanan kesehatan sesuai kebutuhan Anda."
+  },
+  "unauthorized": {
+    "title": "Unauthorized Access!",
+    "description": "Sorry, you dont have access for this page.",
+    "go_home": "Go to Home Page",
+    "image_alt": "offline"
   }
 }

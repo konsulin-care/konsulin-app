@@ -3,6 +3,7 @@
 import ContentWraper from '@/components/general/content-wraper';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import HomeContentAdmin from './home-content-admin';
 import HomeContentGuest from './home-content-guest';
 import HomeContentPatient from './home-content-patient';
@@ -13,6 +14,7 @@ import ResearcherDashboard from './researcher-dashboard';
  *
  */
 export default function HomeContent() {
+  const t = useTranslations('home');
   const { state: authState } = useAuth();
 
   return (
@@ -39,7 +41,7 @@ export default function HomeContent() {
           authState.userInfo.role_name
         ) && (
           <div className='flex min-h-[40vh] items-center justify-center p-4 text-center text-gray-500'>
-            Unable to load content for this role.
+            {t('unable_load_role')}
           </div>
         )}
     </ContentWraper>
