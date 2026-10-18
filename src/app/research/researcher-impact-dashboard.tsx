@@ -3,6 +3,7 @@
 import ResearcherLevelHalo from '@/components/research/researcher-level-halo';
 import ShareResearchButton from '@/components/research/share-research-button';
 import { useResearcherImpact } from '@/hooks/useResearcherImpact';
+import { useTranslations } from '@/i18n';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import { useResearcherDashboard } from '@/services/api/researcher';
 import {
@@ -91,6 +92,7 @@ export default function ResearcherImpactDashboard({
   activeStudyId: string;
   practitionerId: string | undefined;
 }>) {
+  const t = useTranslations('research');
   const { data: dashboardData } = useResearcherDashboard(practitionerId);
   const totalParticipants = dashboardData?.totalParticipants ?? 0;
 
@@ -156,7 +158,7 @@ export default function ResearcherImpactDashboard({
           isPatient={false}
           fhirId={practitionerId}
           studyId={activeStudyId}
-          label='Share this study to grow your impact'
+          label={t('share_impact_label')}
           className='pointer-events-auto -mx-4 mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 px-4 pt-2 text-[10px] text-black'
         />
       )}

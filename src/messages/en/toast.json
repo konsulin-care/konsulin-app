@@ -19,5 +19,10 @@
   "location_unavailable": "Location unavailable, showing all results",
   "cannot_skip_required": "Can't skip required question",
   "location_added": "Location added successfully",
-  "location_save_failed": "Failed to save location. Please try again."
+  "location_save_failed": "Failed to save location. Please try again.",
+  "research_create_success": "Research study created successfully",
+  "research_create_failed": "Failed to create research study. Please try again.",
+  "consent_record_failed": "Could not record your consent.",
+  "study_update_success": "Study updated successfully",
+  "study_update_failed": "Failed to update study. Please try again."
 }

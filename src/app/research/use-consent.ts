@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { useConsentToStudy } from '@/services/api/research';
 import { readConsentFlag, writeConsentFlag } from '@/utils/consent';
 import type { StudyProgress } from '@/utils/fhir/research';
@@ -29,6 +30,7 @@ export function useConsent({
   setPendingConsent,
   router
 }: UseConsentParams) {
+  const tToast = useTranslations('toast');
   const consentedStudyIds = useMemo(() => {
     if (isPatient) return new Set(serverConsentedStudyIds);
     // For non-patients, read from localStorage
@@ -66,7 +68,7 @@ export function useConsent({
     if (isPatient) {
       consentMutation.mutate(undefined, {
         onSuccess: finish,
-        onError: () => toast.error('Could not record your consent.')
+        onError: () => toast.error(tToast('consent_record_failed'))
       });
       return;
     }
@@ -78,7 +80,8 @@ export function useConsent({
     router,
     studies,
     consentMutation,
-    setPendingConsent
+    setPendingConsent,
+    tToast
   ]);
 
   return {

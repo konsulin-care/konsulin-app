@@ -2,6 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ConsentDrawer from '../consent-drawer';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 describe('ConsentDrawer', () => {
   it('renders the informed consent copy with a single CTA', () => {
     render(<ConsentDrawer open onClose={vi.fn()} onAgree={vi.fn()} />);

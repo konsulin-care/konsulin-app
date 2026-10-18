@@ -1,6 +1,7 @@
 'use client';
 
 import EmptyState from '@/components/general/empty-state';
+import { useTranslations } from '@/i18n';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import type { StudyProgress } from '@/utils/fhir/research';
 import ResearchSkeleton from './research-skeleton';
@@ -46,6 +47,7 @@ export default function ResearcherContent({
   practitionerId,
   activeStudyId
 }: Readonly<ResearcherContentProps>) {
+  const t = useTranslations('research');
   if (isLoading) {
     return <ResearchSkeleton />;
   }
@@ -54,8 +56,8 @@ export default function ResearcherContent({
     return (
       <EmptyState
         className='py-16'
-        title='No research studies yet'
-        subtitle='Register your first study to get started.'
+        title={t('no_studies_title')}
+        subtitle={t('no_studies_subtitle')}
       />
     );
   }

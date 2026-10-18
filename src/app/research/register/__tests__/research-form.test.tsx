@@ -7,6 +7,11 @@ afterEach(() => {
   localStorage.clear();
 });
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
     state: {

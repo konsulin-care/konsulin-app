@@ -3,6 +3,7 @@
 import ShareResearchButton from '@/components/research/share-research-button';
 import AppDrawer from '@/components/ui/app-drawer';
 import { Roles } from '@/constants/roles';
+import { useTranslations } from '@/i18n';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { FlaskConical } from 'lucide-react';
@@ -55,11 +56,12 @@ export default function StudyDetailView({
   isTitlesLoading,
   completionCounts
 }: Readonly<StudyDetailViewProps>) {
+  const t = useTranslations('research');
   const isResearcher = roleName === Roles.Researcher;
   const isComplete = progress?.isComplete ?? false;
-  let ctaLabel = 'Participate';
-  if (isResearcher) ctaLabel = 'Manage Study';
-  else if (isComplete) ctaLabel = 'See Report';
+  let ctaLabel = t('participate');
+  if (isResearcher) ctaLabel = t('manage_study');
+  else if (isComplete) ctaLabel = t('see_report');
 
   return (
     <AppDrawer
@@ -112,11 +114,10 @@ export default function StudyDetailView({
           />
           {roleName === Roles.Researcher && (
             <div className='rounded-lg bg-gray-50 p-3 text-xs text-gray-600'>
-              <p className='font-medium text-gray-700'>Researcher View</p>
-              <p className='mt-1'>
-                Individual participant data will be available after
-                anonymization upon study completion.
+              <p className='font-medium text-gray-700'>
+                {t('researcher_view')}
               </p>
+              <p className='mt-1'>{t('participant_data_note')}</p>
             </div>
           )}
           <ShareResearchButton

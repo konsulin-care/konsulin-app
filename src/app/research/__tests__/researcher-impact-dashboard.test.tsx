@@ -5,6 +5,11 @@ import ResearcherImpactDashboard from '../researcher-impact-dashboard';
 import { makeStudyWithBatches } from './research-fixtures';
 
 // Mock useAuth
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
     state: {

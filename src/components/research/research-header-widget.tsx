@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { useResearchProgress } from '@/services/api/research';
 import { daysUntilBatch } from '@/utils/fhir/research';
 import { FlaskConical } from 'lucide-react';
@@ -14,6 +15,7 @@ import Link from 'next/link';
  * Consumers (PageHeader) gate it to patients and guests only.
  */
 export default function ResearchHeaderWidget() {
+  const t = useTranslations('research');
   const { data: progress, isLoading } = useResearchProgress();
 
   if (isLoading || !progress || progress.studies.length === 0) return null;
@@ -58,9 +60,7 @@ export default function ResearchHeaderWidget() {
           {primary.completedCount}/{primary.totalCount} Questionnaires
         </span>
       </div>
-      <p className='text-[10px] leading-4 text-gray-500'>
-        Every questionnaire you complete counts toward the ongoing study
-      </p>
+      <p className='text-[10px] leading-4 text-gray-500'>{t('widget_note')}</p>
     </Link>
   );
 }
