@@ -2,6 +2,7 @@
 
 /* eslint-disable react/jsx-max-depth */
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/i18n';
 import { OrganizationCardProps } from '@/types/availability';
 import { validateTimeRange } from '@/utils/availability';
 import { Plus } from 'lucide-react';
@@ -17,6 +18,7 @@ export default function OrganizationCard({
   onTimeRangeRemove,
   onTimeRangeChange
 }: OrganizationCardProps) {
+  const t = useTranslations('common');
   return (
     <div className='rounded-lg border border-gray-200 bg-white p-4'>
       <div className='mb-3 flex flex-col gap-2'>
@@ -33,7 +35,7 @@ export default function OrganizationCard({
               className='h-7 gap-1 text-xs whitespace-nowrap'
             >
               <Plus className='h-3 w-3' />
-              Add Time
+              {t('location.add_time')}
             </Button>
           </div>
         </div>
@@ -42,7 +44,7 @@ export default function OrganizationCard({
       <div className='space-y-3'>
         {timeRanges.length === 0 ? (
           <p className='text-xs text-gray-500'>
-            No availability configured for this location
+            {t('location.no_availability')}
           </p>
         ) : (
           timeRanges.map(timeRange => {

@@ -2,6 +2,11 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { Invoice } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/components/general/avatar', () => ({
   default: ({
     initials,

@@ -26,6 +26,11 @@ const mockServices: HealthcareService[] = [
   }
 ];
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/services/clinic-practitioners', () => ({
   usePractitionerRoleHealthcareServices: vi.fn()
 }));
@@ -185,8 +190,7 @@ describe('ServicesTab', () => {
     const roleEntry = bundle.entry?.find(
       e => e.resource?.resourceType === 'PractitionerRole'
     ) as
-      | { resource: { healthcareService: { reference: string }[] } }
-      | undefined;
+      { resource: { healthcareService: { reference: string }[] } } | undefined;
     const refs = roleEntry?.resource.healthcareService ?? [];
     expect(refs.some(r => r.reference.startsWith('urn:uuid:'))).toBe(true);
     expect(refs.some(r => r.reference.startsWith('HealthcareService/'))).toBe(

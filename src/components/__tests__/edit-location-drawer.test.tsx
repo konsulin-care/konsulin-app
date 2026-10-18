@@ -5,6 +5,11 @@ import { type AxiosInstance } from 'axios';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import EditLocationDrawer from '../clinic/edit-location-drawer';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
@@ -22,29 +27,6 @@ vi.mock('react-toastify', () => ({
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { uiPreferences: 'ui_preferences' },
   dbGet: vi.fn()
-}));
-
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn((namespace: string) => (key: string) => {
-    const translations: Record<string, Record<string, string>> = {
-      common: {
-        'location.open': 'Open',
-        'location.close': 'Close',
-        'location.name': 'Location Name',
-        'location.name_placeholder': 'Main Clinic',
-        'location.address': 'Address',
-        'location.longitude': 'Longitude',
-        'location.latitude': 'Latitude',
-        'location.select_province': 'Select Province',
-        'location.select_city': 'Select City',
-        'location.select_district': 'Select District',
-        'location.add_time': 'Add Time',
-        'location.no_hours': 'No hours set for this day',
-        'location.image_alt': 'Location preview'
-      }
-    };
-    return translations[namespace]?.[key] ?? key;
-  })
 }));
 
 import { dbGet } from '@/lib/indexeddb';

@@ -1,6 +1,7 @@
 'use client';
 
 import AppDrawer from '@/components/ui/app-drawer';
+import { useTranslations } from '@/i18n';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { useOrganizationLocations } from '@/services/clinic-practitioners';
@@ -29,6 +30,7 @@ export type LocationOption = { id: string; name: string };
  * via useOrganizationLocations. Admin must select a location for registration.
  */
 export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
+  const t = useTranslations('common');
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -66,9 +68,9 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
   // Close drawer if no locations exist (after org ID is loaded and query finishes)
   useEffect(() => {
     if (!orgId || isLoading || locations.length > 0) return;
-    toast.error('No locations found. Please add a location first.');
+    toast.error(t('practitioner.no_locations_toast'));
     onClose();
-  }, [orgId, isLoading, locations, onClose]);
+  }, [orgId, isLoading, locations, onClose, t]);
 
   const isValid =
     name.trim().length > 0 &&
@@ -155,9 +157,9 @@ export default function RegisterPractitionerDrawer({ open, onClose }: Props) {
     <AppDrawer
       open={open}
       onClose={onClose}
-      title='Register Practitioner'
-      description='Add a new practitioner to your clinic.'
-      ctaLabel='Register'
+      title={t('practitioner.register_practitioner_title')}
+      description={t('practitioner.register_practitioner_description')}
+      ctaLabel={t('practitioner.register_practitioner_cta')}
       onCtaClick={handleRegister}
       ctaDisabled={!isValid || isSubmitting}
       ctaLoading={isSubmitting}

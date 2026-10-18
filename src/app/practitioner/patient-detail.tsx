@@ -3,6 +3,7 @@
 import { LoadingSpinnerIcon } from '@/components/icons';
 import ServiceCard from '@/components/practitioner/service-card';
 import { Badge } from '@/components/ui/badge';
+import { useTranslations } from '@/i18n';
 import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import { generateAvatarPlaceholder } from '@/utils/helper';
@@ -177,10 +178,11 @@ function HealthcareServicesSection({
     [services]
   );
 
+  const t = useTranslations('common');
   return (
     <div>
       <div className='mb-2 text-sm font-bold text-black'>
-        Healthcare Services
+        {t('practitioner.healthcare_services')}
       </div>
       {activeServices.length > 0 ? (
         <div className='flex flex-col gap-2'>

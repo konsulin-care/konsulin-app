@@ -5,6 +5,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { PractitionerCard } from '@/components/practitioner/practitioner-card';
 import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { useTranslations } from '@/i18n';
 import { STORES, dbGet, dbSet } from '@/lib/indexeddb';
 import {
   useOrganizationLocations,
@@ -55,6 +56,7 @@ function FilterBar({
   dismissStatus,
   dismissLocation
 }: Readonly<FilterBarProps>) {
+  const t = useTranslations('common');
   return (
     <div className='flex flex-col gap-2'>
       <div className='flex items-center gap-2'>
@@ -63,7 +65,7 @@ function FilterBar({
           onChange={e => {
             setSearchQuery(e.target.value);
           }}
-          placeholder='Search practitioner...'
+          placeholder={t('practitioner.search_practitioner')}
           className='h-[50px] w-full border-0 bg-[#F9F9F9]'
           startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
         />
@@ -117,6 +119,7 @@ function LoadingState() {
  * Filter state is persisted to IndexedDB.
  */
 export default function AdminListing() {
+  const t = useTranslations('common');
   const [selectedClinicId, setSelectedClinicId] = useState<string>('');
   const [filter, setFilter] = useState<FilterState>({ status: 'all' });
   const [searchQuery, setSearchQuery] = useState('');
@@ -174,7 +177,7 @@ export default function AdminListing() {
 
   const locationName = filter.locationId
     ? (locations?.find(l => l.id === filter.locationId)?.name ??
-      'Unknown location')
+      t('practitioner.unknown_location'))
     : '';
 
   const dismissStatus = useCallback(() => {
@@ -225,8 +228,8 @@ export default function AdminListing() {
         {filterBar}
         <EmptyState
           className='py-16'
-          title='No Practitioners Found'
-          subtitle='Try another clinic.'
+          title={t('practitioner.no_practitioners_title')}
+          subtitle={t('practitioner.no_practitioners_subtitle')}
         />
       </>
     );
@@ -238,8 +241,8 @@ export default function AdminListing() {
         {filterBar}
         <EmptyState
           className='py-16'
-          title='No Practitioners Match Your Filters'
-          subtitle='Try adjusting your filter criteria.'
+          title={t('practitioner.no_practitioners_filtered_title')}
+          subtitle={t('practitioner.no_practitioners_filtered_subtitle')}
         />
       </>
     );

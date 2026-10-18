@@ -17,5 +17,7 @@
   "assessment_added": "Asesmen berhasil ditambahkan",
   "questionnaire_upload_failed": "Gagal mengunggah kuesioner",
   "location_unavailable": "Lokasi tidak tersedia, menampilkan semua hasil",
-  "cannot_skip_required": "Pertanyaan wajib tidak dapat dilewati"
+  "cannot_skip_required": "Pertanyaan wajib tidak dapat dilewati",
+  "location_added": "Lokasi berhasil ditambahkan",
+  "location_save_failed": "Gagal menyimpan lokasi. Silakan coba lagi."
 }

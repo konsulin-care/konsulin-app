@@ -2,11 +2,11 @@ import type { IStateBooking } from '@/context/booking/bookingTypes';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(
-    (namespace: string) => (key: string) => `${namespace}.${key}`
-  )
-}));
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 
 import TimeSlotsSection from '../time-slots-section';
 

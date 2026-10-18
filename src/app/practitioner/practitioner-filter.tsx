@@ -9,6 +9,7 @@ import {
   PopoverTrigger
 } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useTranslations } from '@/i18n';
 import type { ComponentPropsWithoutRef } from 'react';
 import { forwardRef, useState } from 'react';
 
@@ -66,10 +67,13 @@ function FilterPopoverContent({
   readonly onReset: () => void;
   readonly activeCount: number;
 }) {
+  const t = useTranslations('common');
   return (
     <div className='space-y-4'>
       <div>
-        <span className='mb-2 block text-sm font-medium'>Status</span>
+        <span className='mb-2 block text-sm font-medium'>
+          {t('practitioner.status_label')}
+        </span>
         <ToggleGroup
           type='single'
           value={value.status === 'all' ? '' : value.status}
@@ -77,14 +81,22 @@ function FilterPopoverContent({
           variant='outline'
           className='justify-start'
         >
-          <ToggleGroupItem value='all'>All</ToggleGroupItem>
-          <ToggleGroupItem value='active'>Active</ToggleGroupItem>
-          <ToggleGroupItem value='inactive'>Inactive</ToggleGroupItem>
+          <ToggleGroupItem value='all'>
+            {t('practitioner.all_label')}
+          </ToggleGroupItem>
+          <ToggleGroupItem value='active'>
+            {t('practitioner.service_active')}
+          </ToggleGroupItem>
+          <ToggleGroupItem value='inactive'>
+            {t('practitioner.service_inactive')}
+          </ToggleGroupItem>
         </ToggleGroup>
       </div>
 
       <div>
-        <span className='mb-2 block text-sm font-medium'>Location</span>
+        <span className='mb-2 block text-sm font-medium'>
+          {t('practitioner.location_label')}
+        </span>
         <PractitionerLocationCombobox
           locations={locations}
           selectedId={value.locationId ?? null}
@@ -99,7 +111,7 @@ function FilterPopoverContent({
           className='w-full text-xs'
           onClick={onReset}
         >
-          Reset filters
+          {t('practitioner.reset_filters')}
         </Button>
       )}
     </div>

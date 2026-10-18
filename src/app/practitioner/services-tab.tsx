@@ -3,6 +3,7 @@
 import ServiceCard from '@/components/practitioner/service-card';
 import { useFab } from '@/context/fabContext';
 import { useClinicContext } from '@/hooks/useClinicContext';
+import { useTranslations } from '@/i18n';
 import { submitFhirBundle } from '@/services/api/fhir-bundle';
 /* eslint-disable max-lines */
 /* reason: file contains multiple hook definitions and test utilities */
@@ -31,6 +32,7 @@ export default function ServicesTab({
   onDirtyChange,
   practitionerRole
 }: Props) {
+  const t = useTranslations('common');
   const { clinicId } = useClinicContext();
   const { data: fetchedServices, refetch } =
     usePractitionerRoleHealthcareServices(practitionerRoleId ?? '');
@@ -255,14 +257,14 @@ export default function ServicesTab({
     return (
       <>
         <div className='py-8 text-center text-sm text-gray-500'>
-          No healthcare services configured.
+          {t('practitioner.no_services')}
           <br />
           <button
             type='button'
             onClick={handleAddService}
             className='text-primary mt-2 underline'
           >
-            Add Service
+            {t('practitioner.add_service')}
           </button>
         </div>
         <ServiceFormDrawer
@@ -306,7 +308,7 @@ export default function ServicesTab({
             onClick={handleAddService}
             className='text-primary text-sm underline'
           >
-            + Add Service
+            + {t('practitioner.add_service')}
           </button>
         )}
       </div>
