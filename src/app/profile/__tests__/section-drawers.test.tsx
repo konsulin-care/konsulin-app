@@ -12,6 +12,10 @@ vi.mock('../hooks/useProfileSectionSave', () => ({
   useProfileSectionSave: vi.fn()
 }));
 
+const { mockLocale } = vi.hoisted(() => ({
+  mockLocale: { current: 'id' }
+}));
+
 vi.mock('@/i18n', () => ({
   useTranslations: vi.fn(() => (key: string) => {
     const translations: Record<string, string> = {
@@ -47,7 +51,11 @@ vi.mock('@/i18n', () => ({
       'profile.gender_male': 'Male',
       'profile.gender_female': 'Female',
       'profile.lang_id': 'Bahasa Indonesia',
-      'profile.lang_en': 'English'
+      'profile.lang_en': 'English',
+      remove_address_line:
+        mockLocale.current === 'id'
+          ? 'Hapus baris alamat'
+          : 'Remove address line'
     };
     return translations[key] ?? key;
   })
@@ -319,6 +327,7 @@ describe('AddressEditDrawer', () => {
   const mockSaveSection = vi.fn();
 
   beforeEach(() => {
+    mockLocale.current = 'id';
     vi.clearAllMocks();
     mockSaveSection.mockImplementation((params: { onSuccess?: () => void }) => {
       params.onSuccess?.();
@@ -429,6 +438,47 @@ describe('AddressEditDrawer', () => {
     expect(screen.queryByTestId('province-select')).toBeNull();
     expect(screen.queryByTestId('city-select')).toBeNull();
     expect(screen.queryByTestId('district-select')).toBeNull();
+  });
+
+  it('labels the remove-line button from remove_address_line in both locales', () => {
+    mockLocale.current = 'id';
+    const { unmount } = render(
+      <AddressEditDrawer
+        open
+        onClose={onClose}
+        fhirId='pat-1'
+        resourceType='Patient'
+        line={['Jl. Merdeka 12', 'Jl. Sudirman 5']}
+        district=''
+        city=''
+        province=''
+        postalCode=''
+      />
+    );
+    expect(screen.getByTestId('remove-line-1')).toHaveAttribute(
+      'aria-label',
+      'Hapus baris alamat'
+    );
+    unmount();
+
+    mockLocale.current = 'en';
+    render(
+      <AddressEditDrawer
+        open
+        onClose={onClose}
+        fhirId='pat-1'
+        resourceType='Patient'
+        line={['Jl. Merdeka 12', 'Jl. Sudirman 5']}
+        district=''
+        city=''
+        province=''
+        postalCode=''
+      />
+    );
+    expect(screen.getByTestId('remove-line-1')).toHaveAttribute(
+      'aria-label',
+      'Remove address line'
+    );
   });
 
   it('hides city and district comboboxes when province is not selected', () => {

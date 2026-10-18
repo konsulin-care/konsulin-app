@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { genderList, languageOptions, settingMenus } from '../profile';
+import {
+  genderList,
+  languageOptions,
+  medalLists,
+  settingMenus
+} from '../profile';
+
+describe('medalLists', () => {
+  it('keeps role titles in English as brand copy, not i18n keys', () => {
+    expect(medalLists.length).toBeGreaterThan(0);
+    for (const medal of medalLists) {
+      expect(medal.title).toBe('Survivor');
+    }
+  });
+});
 
 describe('languageOptions', () => {
   it('offers exactly Indonesian and English via translation keys', () => {
