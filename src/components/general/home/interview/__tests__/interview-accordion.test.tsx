@@ -5,18 +5,11 @@ import {
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      chief_concern: 'Chief Concern',
-      specific_focus: 'Specific Focus',
-      which_describes: 'Which best describes your concern?',
-      select_concern: 'Select or search concern',
-      search_placeholder: 'Search your concern (Indonesian or English)'
-    };
-    return translations[key] ?? key;
-  })
-}));
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 
 import { InterviewAccordion } from '../interview-accordion';
 
@@ -41,7 +34,7 @@ describe('InterviewAccordion', () => {
       render(
         <InterviewAccordion options={ALL_COMPLAINTS} onComplete={vi.fn()} />
       );
-      expect(screen.getByText('Chief Concern')).toBeInTheDocument();
+      expect(screen.getByText('Health Concern')).toBeInTheDocument();
       expect(screen.getByText('Specific Focus')).toBeInTheDocument();
       expect(screen.getByTestId('step-2-lock')).toBeInTheDocument();
     });

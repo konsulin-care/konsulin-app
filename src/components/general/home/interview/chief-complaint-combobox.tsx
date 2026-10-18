@@ -4,6 +4,10 @@ import Combobox, { type ComboboxOption } from '@/components/shared/combobox';
 import { QUICK_COMPLAINT_IDS } from '@/constants/recommendation-decision-tree';
 import { useTranslations } from '@/i18n';
 import type { ChiefComplaint } from '@/types/recommendation-interview';
+import {
+  resolveLabel,
+  type TranslateFn
+} from '@/utils/recommendation-interview';
 import { useMemo } from 'react';
 
 /** Message key for the trigger placeholder (namespace `interview`). */
@@ -18,10 +22,13 @@ interface ChiefComplaintComboboxProps {
   onSelect: (complaint: ChiefComplaint) => void;
 }
 
-/** Map a complaint to a generic option; synonyms join the search text. */
-const toComboboxOption = (complaint: ChiefComplaint): ComboboxOption => ({
+/** Map a complaint to a generic option; search keeps English + synonyms. */
+const toComboboxOption = (
+  complaint: ChiefComplaint,
+  t: TranslateFn
+): ComboboxOption => ({
   code: complaint.id,
-  name: complaint.label,
+  name: resolveLabel(complaint, t),
   searchText: [complaint.label, ...complaint.synonyms].join(' ')
 });
 
@@ -40,8 +47,8 @@ export function ChiefComplaintCombobox({
 }: Readonly<ChiefComplaintComboboxProps>) {
   const t = useTranslations('interview');
   const comboboxOptions = useMemo(
-    () => options.map(complaint => toComboboxOption(complaint)),
-    [options]
+    () => options.map(complaint => toComboboxOption(complaint, t)),
+    [options, t]
   );
   const quickOptions = useMemo(() => {
     const byId = new Map(comboboxOptions.map(option => [option.code, option]));

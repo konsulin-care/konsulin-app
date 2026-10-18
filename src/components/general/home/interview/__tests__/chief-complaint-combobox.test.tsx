@@ -8,16 +8,11 @@ import { ChiefComplaintCombobox } from '../chief-complaint-combobox';
 
 const COMBOBOX_PLACEHOLDER = 'Select or search concern';
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      select_concern: 'Select or search concern',
-      search_placeholder: 'Search your concern (Indonesian or English)',
-      combobox_empty: 'No matching concern found.'
-    };
-    return translations[key] ?? key;
-  })
-}));
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 
 const ALL_OPTIONS = getAllChiefComplaints();
 const MOOD_COMPLAINT = searchChiefComplaints('low mood')[0];

@@ -5,7 +5,10 @@ import type {
   ChiefComplaint,
   InterviewResult
 } from '@/types/recommendation-interview';
-import { resolveInterviewResult } from '@/utils/recommendation-interview';
+import {
+  resolveInterviewResult,
+  resolveLabel
+} from '@/utils/recommendation-interview';
 import { Lock, Pencil } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { ChiefComplaintCombobox } from './chief-complaint-combobox';
@@ -38,6 +41,8 @@ export function InterviewAccordion({
 
   const step1Complete = complaint !== null;
   const step2Complete = selectedOptionId !== null;
+  const selectedOption =
+    complaint?.options.find(o => o.id === selectedOptionId) ?? null;
 
   /** Select a complaint and auto-advance to step 2. */
   const handleComplaintSelect = useCallback((c: ChiefComplaint) => {
@@ -82,7 +87,9 @@ export function InterviewAccordion({
           </div>
           {step1Complete ? (
             <div className='flex items-center gap-2'>
-              <span className='text-xs text-gray-500'>{complaint?.label}</span>
+              <span className='text-xs text-gray-500'>
+                {complaint ? resolveLabel(complaint, t) : null}
+              </span>
               <Pencil
                 data-testid='step-1-edit'
                 className='h-4 w-4 text-gray-400'
@@ -122,7 +129,7 @@ export function InterviewAccordion({
           {step2Complete && complaint && (
             <div className='flex items-center gap-2'>
               <span className='text-xs text-gray-500'>
-                {complaint.options.find(o => o.id === selectedOptionId)?.label}
+                {selectedOption ? resolveLabel(selectedOption, t) : null}
               </span>
               <Pencil
                 data-testid='step-2-edit'
@@ -150,7 +157,7 @@ export function InterviewAccordion({
                         : 'border-gray-200 bg-white text-gray-800 hover:border-[var(--secondary)]'
                     }`}
                   >
-                    {option.label}
+                    {resolveLabel(option, t)}
                   </button>
                 </li>
               ))}

@@ -4,6 +4,7 @@ import { useTranslations } from '@/i18n';
 import type { ChiefComplaint } from '@/types/recommendation-interview';
 import {
   getQuickComplaints,
+  resolveLabel,
   searchChiefComplaints
 } from '@/utils/recommendation-interview';
 import { SearchIcon, X } from 'lucide-react';
@@ -79,7 +80,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
                 }}
                 className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] hover:border-[var(--secondary)]'
               >
-                {complaint.label}
+                {resolveLabel(complaint, t)}
               </button>
             </li>
           ))}
@@ -101,7 +102,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
                 }}
                 className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[12px] text-gray-700 hover:border-[var(--secondary)] hover:text-[var(--secondary)]'
               >
-                {complaint.label}
+                {resolveLabel(complaint, t)}
               </button>
             ))}
           </div>

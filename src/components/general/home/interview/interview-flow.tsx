@@ -5,7 +5,10 @@ import type {
   ChiefComplaint,
   InterviewResult
 } from '@/types/recommendation-interview';
-import { resolveInterviewResult } from '@/utils/recommendation-interview';
+import {
+  resolveInterviewResult,
+  resolveLabel
+} from '@/utils/recommendation-interview';
 import { ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import { EmergencyBanner } from './emergency-banner';
@@ -71,7 +74,7 @@ export function InterviewFlow({
       <div className='w-full max-w-md rounded-t-3xl bg-white p-5 pb-8 shadow-lg'>
         <div className='mb-2 flex items-center justify-between'>
           <span className='text-[12px] font-medium text-gray-400'>
-            {complaint.label} · {step === 'options' ? '1/2' : '2/2'}
+            {resolveLabel(complaint, t)} · {step === 'options' ? '1/2' : '2/2'}
           </span>
           {onClose && (
             <button
@@ -100,7 +103,7 @@ export function InterviewFlow({
                     }}
                     className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] text-gray-800 hover:border-[var(--secondary)]'
                   >
-                    {option.label}
+                    {resolveLabel(option, t)}
                   </button>
                 </li>
               ))}
@@ -122,7 +125,7 @@ export function InterviewFlow({
               {t('back')}
             </button>
             <h2 className='mb-4 text-[16px] font-bold text-gray-900'>
-              {complaint.redFlag.label}
+              {resolveLabel(complaint.redFlag, t)}
             </h2>
             <div className='flex flex-col gap-2'>
               <button
