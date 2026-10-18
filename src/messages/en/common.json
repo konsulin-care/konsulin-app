@@ -294,5 +294,24 @@
     "description": "Sorry, you dont have access for this page.",
     "go_home": "Go to Home Page",
     "image_alt": "offline"
+  },
+  "not_found": {
+    "title": "Oops! Page Not Found",
+    "description": "Sorry, we can't find the page you're looking for."
+  },
+  "offline": {
+    "title": "Oops! It Looks Like You're Offline",
+    "retry": "Retry"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "chunk_load": "A component failed to load. This can happen on unstable connections.",
+    "page_load": "The page failed to load. This can happen on unstable connections.",
+    "try_again": "Try again",
+    "reload_page": "Reload page"
+  },
+  "no_data_found": "No Data Found",
+  "media": {
+    "offline_alt": "offline"
   }
 }

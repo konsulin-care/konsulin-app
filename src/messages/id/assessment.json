@@ -29,5 +29,11 @@
   "category.functional": "Kapasitas Fungsional",
   "category.meaning": "Makna, Tujuan & Pemenuhan",
   "category.health_behaviours": "Perilaku Kesehatan & Gaya Hidup",
-  "category.environmental": "Lingkungan & Kontekstual"
+  "category.environmental": "Lingkungan & Kontekstual",
+  "clear_search": "Hapus pencarian",
+  "email_placeholder": "Masukkan Alamat Email",
+  "no_patient_today": "Tidak ada pasien hari ini",
+  "soap_required_fields": "Masih ada kolom wajib yang belum terisi, yuk dilengkapi dulu!",
+  "image_note_alt": "catatan",
+  "image_exercise_alt": "olahraga"
 }

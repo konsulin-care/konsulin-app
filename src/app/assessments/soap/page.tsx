@@ -6,6 +6,7 @@ import PageHeader from '@/components/page-header';
 import SoapForm from '@/components/soap-report/soap-form';
 import { useAuth } from '@/context/auth/authContext';
 import { useTodaySessions } from '@/hooks/useTodaySessions';
+import { useTranslations } from '@/i18n';
 import { useQuestionnaireSoap } from '@/services/api/assessment';
 import { useEffect, useState } from 'react';
 import Participant from './participant';
@@ -14,6 +15,7 @@ import Participant from './participant';
  *
  */
 export default function Soap() {
+  const t = useTranslations('assessment');
   const { state: authState } = useAuth();
   const [participantId, setParticipantId] = useState('');
   const [patientsListToday, setPatientListToday] = useState([]);
@@ -47,7 +49,7 @@ export default function Soap() {
               <Participant
                 list={patientsListToday}
                 value={participantId}
-                placeholder='Select patient'
+                placeholder={t('select_patient')}
                 onSelect={value => {
                   setParticipantId(value.patientId);
                 }}

@@ -3,6 +3,7 @@
 import CardLoader from '@/components/general/card-loader';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useTranslations } from '@/i18n';
 import { BundleEntry, Questionnaire } from 'fhir/r4';
 import { AwardIcon, BookmarkIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -42,6 +43,7 @@ function PopularAssessmentCard({
   assessment: BundleEntry<Questionnaire>;
   onClick: (assessment: Questionnaire) => void;
 }>) {
+  const t = useTranslations('assessment');
   return (
     <button
       key={assessment.resource.id}
@@ -56,7 +58,7 @@ function PopularAssessmentCard({
           src='/images/exercise.svg'
           height={40}
           width={40}
-          alt='exercise'
+          alt={t('image_exercise_alt')}
         />
         <AssessmentBadges />
       </div>

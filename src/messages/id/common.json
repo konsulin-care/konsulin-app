@@ -294,5 +294,24 @@
     "description": "Maaf, Anda tidak memiliki akses ke halaman ini.",
     "go_home": "Ke Beranda",
     "image_alt": "offline"
+  },
+  "not_found": {
+    "title": "Ups! Halaman Tidak Ditemukan",
+    "description": "Maaf, kami tidak dapat menemukan halaman yang Anda cari."
+  },
+  "offline": {
+    "title": "Ups! Sepertinya Anda Sedang Offline",
+    "retry": "Coba Lagi"
+  },
+  "error": {
+    "title": "Terjadi Kesalahan",
+    "chunk_load": "Komponen gagal dimuat. Hal ini bisa terjadi pada koneksi yang tidak stabil.",
+    "page_load": "Halaman gagal dimuat. Hal ini bisa terjadi pada koneksi yang tidak stabil.",
+    "try_again": "Coba lagi",
+    "reload_page": "Muat ulang halaman"
+  },
+  "no_data_found": "Data Tidak Ditemukan",
+  "media": {
+    "offline_alt": "offline"
   }
 }

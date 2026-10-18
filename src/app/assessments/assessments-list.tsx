@@ -209,7 +209,7 @@ export default function AssessmentsList() {
           <InputWithIcon
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            placeholder='Search Assessment'
+            placeholder={t('search')}
             className='h-[50px] w-full border-0 bg-[#F9F9F9]'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
           />
@@ -243,7 +243,7 @@ export default function AssessmentsList() {
                   type='button'
                   onClick={() => setSearchTerm('')}
                   className='ml-1 cursor-pointer'
-                  aria-label='Clear search'
+                  aria-label={t('clear_search')}
                 >
                   <X size={12} />
                 </button>
@@ -258,7 +258,7 @@ export default function AssessmentsList() {
               }}
               className='text-xs text-gray-500 underline'
             >
-              Clear all
+              {t('clear_all')}
             </button>
           </div>
         )}

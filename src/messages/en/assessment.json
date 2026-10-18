@@ -29,5 +29,11 @@
   "category.functional": "Functional Capacity",
   "category.meaning": "Meaning, Purpose & Fulfilment",
   "category.health_behaviours": "Health Behaviours & Lifestyle",
-  "category.environmental": "Environmental & Contextual"
+  "category.environmental": "Environmental & Contextual",
+  "clear_search": "Clear search",
+  "email_placeholder": "Enter Email Address",
+  "no_patient_today": "No patient today",
+  "soap_required_fields": "Masih ada kolom wajib yang belum terisi, yuk dilengkapi dulu!",
+  "image_note_alt": "note",
+  "image_exercise_alt": "exercise"
 }

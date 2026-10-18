@@ -76,6 +76,7 @@ export default function SoapForm({
 }: Props) {
   const [isBuilding, setIsBuilding] = useState<boolean>(false);
   const tToast = useTranslations('toast');
+  const tAssessment = useTranslations('assessment');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -232,7 +233,7 @@ export default function SoapForm({
       <div className='flex-flex-col px-2'>
         {requiredItemEmpty > 0 || !patientId ? (
           <div className='text-destructive mb-2 w-full text-sm'>
-            Masih ada kolom wajib yang belum terisi, yuk dilengkapi dulu!
+            {tAssessment('soap_required_fields')}
           </div>
         ) : (
           ''

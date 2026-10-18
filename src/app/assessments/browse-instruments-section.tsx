@@ -1,6 +1,7 @@
 'use client';
 
 import CardLoader from '@/components/general/card-loader';
+import { useTranslations } from '@/i18n';
 import { BundleEntry, Questionnaire } from 'fhir/r4';
 import Image from 'next/image';
 
@@ -18,6 +19,7 @@ export default function BrowseInstrumentsSection({
   isAuthLoading,
   onAssessmentClick
 }: Readonly<BrowseInstrumentsSectionProps>) {
+  const t = useTranslations('assessment');
   return (
     <div className='p-4'>
       <div className='text-[14px] font-bold text-[hsla(220,9%,19%,0.6)]'>
@@ -44,7 +46,7 @@ export default function BrowseInstrumentsSection({
                     src={'/images/note.svg'}
                     width={24}
                     height={24}
-                    alt='note'
+                    alt={t('image_note_alt')}
                   />
                 </div>
                 <div className='text-[12px] text-[hsla(220,9%,19%,1)]'>
