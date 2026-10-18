@@ -28,7 +28,12 @@ vi.mock('@/context/auth/authContext', () => ({
 vi.mock('@/hooks/useResearcherImpact', () => ({
   useResearcherImpact: () => ({
     totalImpact: 150,
-    level: { label: 'Torchbearer', icon: vi.fn(), reward: 'Early access' },
+    level: {
+      label: 'Torchbearer',
+      icon: vi.fn(),
+      reward: 'Early access to batch results + cohort insights',
+      rewardKey: 'researcher_reward.torchbearer'
+    },
     levelNumber: 2,
     impactInLevel: 50,
     perStudy: [
@@ -39,7 +44,6 @@ vi.mock('@/hooks/useResearcherImpact', () => ({
         milestonesHit: 1
       }
     ],
-    mission: 'Enroll 6 participants to hit the next milestone.',
     isLoading: false
   })
 }));
@@ -112,6 +116,20 @@ describe('ResearcherImpactDashboard', () => {
     );
   });
 
+  it('renders the level reward line translated', () => {
+    render(
+      <ResearcherImpactDashboard
+        studies={[makeStudyWithBatches('study-1')]}
+        activeStudyId='study-1'
+        practitionerId='practitioner-1'
+      />,
+      { wrapper }
+    );
+    expect(screen.getByTestId('dashboard-reward')).toHaveTextContent(
+      'Early access to batch results + cohort insights'
+    );
+  });
+
   it('renders total participants stat', () => {
     render(
       <ResearcherImpactDashboard
@@ -150,7 +168,7 @@ describe('ResearcherImpactDashboard', () => {
       { wrapper }
     );
     expect(screen.getByTestId('dashboard-mission')).toHaveTextContent(
-      'Enroll 6 participants to hit the next milestone.'
+      'Enroll 25 participants to hit the next milestone.'
     );
   });
 

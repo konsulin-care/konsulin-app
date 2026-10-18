@@ -3,15 +3,7 @@ import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
 import ShareResearchButton from '@/components/research/share-research-button';
 import type { DrawerCopy } from '@/constants/research-copy';
-import {
-  fillProgress,
-  FINAL_BATCH_MESSAGE,
-  LAST_MID_BATCH_MESSAGE,
-  MID_BATCH_FALLBACK_MESSAGE,
-  MID_BATCH_MESSAGES,
-  STANDALONE_MESSAGE,
-  STANDALONE_RESEARCH_MESSAGE
-} from '@/constants/research-copy';
+import { MID_BATCH_MESSAGES } from '@/constants/research-copy';
 import { Roles } from '@/constants/roles';
 import { useFab } from '@/context/fabContext';
 import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
@@ -97,6 +89,7 @@ async function triggerInterpretWebhook(opts: {
  */
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const t = useTranslations('toast');
+  const rd = useTranslations('research');
   const {
     questionnaire,
     isAuthenticated,
@@ -203,39 +196,49 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   }, [researchProgress, continuation?.studyId, doneIds, questionnaire.id]);
 
   /**
-   * Motivational copy for the mid-batch drawer: the dedicated last-one
-   * message when a single questionnaire remains, otherwise a pick from the
-   * pool seeded by the questionnaire id so each one shows a fresh variation
-   * while staying stable across re-renders.
+   * Zero-based variation index for the mid-batch drawer copy, seeded by the
+   * questionnaire id so each questionnaire shows a fresh variation while
+   * staying stable across re-renders. The English pool in research-copy.ts
+   * remains the selection data; rendered copy resolves through research.json.
    */
-  const midBatchMessage = useMemo(() => {
-    if (batchProgress === null) return MID_BATCH_FALLBACK_MESSAGE;
-    if (batchProgress.total - batchProgress.completed === 1) {
-      return LAST_MID_BATCH_MESSAGE;
-    }
+  const midBatchVariation = useMemo(() => {
     let seed = 0;
     for (const ch of questionnaire.id) {
       seed = (seed * 31 + (ch.codePointAt(0) ?? 0)) >>> 0;
     }
-    return MID_BATCH_MESSAGES[seed % MID_BATCH_MESSAGES.length];
-  }, [batchProgress, questionnaire.id]);
+    return seed % MID_BATCH_MESSAGES.length;
+  }, [questionnaire.id]);
 
   /** Title/body for the submission drawer, keyed on the flow state. */
   const drawerCopy: DrawerCopy = (() => {
     if (hasNextQuestionnaire) {
+      if (batchProgress === null) {
+        return {
+          title: rd('mid_batch_fallback.title'),
+          body: rd('mid_batch_fallback.body')
+        };
+      }
+      if (batchProgress.total - batchProgress.completed === 1) {
+        return { title: rd('almost_there'), body: rd('almost_there_body') };
+      }
+      const variation = midBatchVariation + 1;
       return {
-        title: midBatchMessage.title,
-        body: fillProgress(
-          midBatchMessage.body,
-          batchProgress?.completed ?? 0,
-          batchProgress?.total ?? 0
-        )
+        title: rd(`mid_batch_${variation}.title`),
+        body: rd(`mid_batch_${variation}.body`, {
+          completed: batchProgress.completed,
+          total: batchProgress.total
+        })
       };
     }
-    if (isBatchComplete) return FINAL_BATCH_MESSAGE;
+    if (isBatchComplete) {
+      return { title: rd('batch_complete'), body: rd('batch_complete_body') };
+    }
     return formType === 'research'
-      ? STANDALONE_RESEARCH_MESSAGE
-      : STANDALONE_MESSAGE;
+      ? {
+          title: rd('standalone_research'),
+          body: rd('standalone_research_body')
+        }
+      : { title: rd('standalone'), body: rd('standalone_body') };
   })();
 
   const { requiredItemEmpty, checkRequiredIsEmpty, invalidItems } =

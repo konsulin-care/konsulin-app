@@ -4,6 +4,12 @@ import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchForm from '../research-form';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
     state: {

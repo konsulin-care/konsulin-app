@@ -6,6 +6,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import EditResearchForm from '../research-form';
 import { submitEditStudy } from '../submit-helpers';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
     state: {

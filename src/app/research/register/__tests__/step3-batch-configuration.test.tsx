@@ -8,6 +8,12 @@ import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Step3 } from '../research-form-steps';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
     state: {

@@ -31,6 +31,12 @@ function renderCarousel(
 
 const OPEN_STUDY_NAME = 'Open study Konsulin Mental Health Survey';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 describe('ResearchCarousel keyboard and click containment', () => {
   it('exposes the card action as a real button, not a fake button role', () => {
     const onStudyClick = vi.fn();

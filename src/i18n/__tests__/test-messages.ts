@@ -40,7 +40,7 @@ export function createUseTranslationsMock(): (
     (key: string, values?: Record<string, string | number>) => {
       const messages =
         NAMESPACE_MESSAGES[namespace] ?? NAMESPACE_MESSAGES.common;
-      const found = key
+      const deep = key
         .split('.')
         .reduce<unknown>(
           (node, part) =>
@@ -49,6 +49,9 @@ export function createUseTranslationsMock(): (
               : undefined,
           messages
         );
+      // next-intl falls back to the full dotted key as a flat lookup.
+      const flat = (messages as Record<string, unknown>)[key];
+      const found = typeof deep === 'string' ? deep : flat;
       const template = typeof found === 'string' ? found : key;
       return template.replace(/\{(\w+)\}/g, (_, name: string) =>
         String(values?.[name] ?? '')
