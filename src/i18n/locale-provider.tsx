@@ -29,33 +29,39 @@ import idToast from '@/messages/id/toast.json';
 /** All namespace messages for a single locale, keyed by namespace. */
 type MessageBundle = Record<string, Record<string, unknown>>;
 
-/** Statically imported message bundles per locale. */
-const MESSAGES: Record<Locale, MessageBundle> = {
-  en: {
-    admin: enAdmin,
-    assessment: enAssessment,
-    auth: enAuth,
-    common: enCommon,
-    home: enHome,
-    interview: enInterview,
-    'page-header': enPageHeader,
-    profile: enProfile,
-    research: enResearch,
-    toast: enToast
-  },
-  id: {
-    admin: idAdmin,
-    assessment: idAssessment,
-    auth: idAuth,
-    common: idCommon,
-    home: idHome,
-    interview: idInterview,
-    'page-header': idPageHeader,
-    profile: idProfile,
-    research: idResearch,
-    toast: idToast
-  }
-};
+/** Statically imported message bundles, keyed by locale (avoids variable-key indexing). */
+const MESSAGES = new Map<Locale, MessageBundle>([
+  [
+    'en',
+    {
+      admin: enAdmin,
+      assessment: enAssessment,
+      auth: enAuth,
+      common: enCommon,
+      home: enHome,
+      interview: enInterview,
+      'page-header': enPageHeader,
+      profile: enProfile,
+      research: enResearch,
+      toast: enToast
+    }
+  ],
+  [
+    'id',
+    {
+      admin: idAdmin,
+      assessment: idAssessment,
+      auth: idAuth,
+      common: idCommon,
+      home: idHome,
+      interview: idInterview,
+      'page-header': idPageHeader,
+      profile: idProfile,
+      research: idResearch,
+      toast: idToast
+    }
+  ]
+]);
 
 /**
  * Client-side intl provider. Reads the locale from the NEXT_LOCALE cookie
@@ -73,7 +79,10 @@ export function LocaleProvider({ children }: { readonly children: ReactNode }) {
   }, [locale]);
 
   return (
-    <NextIntlClientProvider locale={locale} messages={MESSAGES[locale]}>
+    <NextIntlClientProvider
+      locale={locale}
+      messages={MESSAGES.get(locale) ?? {}}
+    >
       {children}
     </NextIntlClientProvider>
   );
