@@ -2,17 +2,11 @@ import { DayOfWeek, TimeRange } from '@/types/availability';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn((namespace: string) => (key: string) => {
-    const translations: Record<string, Record<string, string>> = {
-      common: {
-        'location.add_time': 'Add Time',
-        'location.no_hours': 'No hours set for this day'
-      }
-    };
-    return translations[namespace]?.[key] ?? key;
-  })
-}));
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 
 import LocationHoursEditor from '../location-hours-editor';
 

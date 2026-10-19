@@ -25,43 +25,11 @@ vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
 vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn((namespace: string) => (key: string) => {
-    const translations: Record<string, Record<string, string>> = {
-      'page-header': {
-        pill_register_survey: 'Register Survey',
-        pill_my_survey: 'My Survey',
-        pill_self_checkup: 'Self Checkup',
-        pill_view_schedule: 'View Schedule',
-        pill_join_research: 'Join Research',
-        pill_get_recommendation: 'Get Recommendation',
-        pill_set_availability: 'Set Availability',
-        pill_health_screening: 'Health Screening',
-        pill_register_practitioner: 'Register Practitioner',
-        pill_add_location: 'Add Location',
-        pill_add_assessments: 'Add Assessments'
-      },
-      common: {
-        'questionnaire_upload.assessment_title': 'Add Assessment',
-        'questionnaire_upload.category': 'Category',
-        'location.open': 'Open',
-        'location.close': 'Close',
-        'location.name': 'Location Name',
-        'location.name_placeholder': 'Main Clinic',
-        'location.address': 'Address',
-        'location.longitude': 'Longitude',
-        'location.latitude': 'Latitude',
-        'location.select_province': 'Select Province',
-        'location.select_city': 'Select City',
-        'location.select_district': 'Select District',
-        'location.add_time': 'Add Time',
-        'location.no_hours': 'No hours set for this day',
-        'location.image_alt': 'Location preview'
-      }
-    };
-    return translations[namespace]?.[key] ?? key;
-  })
-}));
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 
 function TestHarness() {
   const { dispatch } = useFab();
