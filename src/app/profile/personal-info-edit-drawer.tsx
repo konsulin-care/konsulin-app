@@ -4,7 +4,7 @@ import DobInput from '@/components/profile/dob-input';
 import AppDrawer from '@/components/ui/app-drawer';
 import { genderList, languageOptions } from '@/constants/profile';
 import { useTranslations } from '@/i18n';
-import { setLocale, type Locale } from '@/lib/locale';
+import { updateLocale, type Locale } from '@/lib/locale';
 import type { FhirResourceType } from '@/utils/role-fhir';
 import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useProfileSectionSave } from './hooks/useProfileSectionSave';
@@ -124,7 +124,7 @@ export default function PersonalInfoEditDrawer({
         }),
       onSuccess: () => {
         if (supportsLanguage && languageValue) {
-          setLocale(languageValue as Locale);
+          updateLocale(languageValue as Locale);
         }
         onClose();
       }

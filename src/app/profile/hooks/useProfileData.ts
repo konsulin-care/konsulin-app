@@ -2,7 +2,7 @@
 
 import { PROFILE_CACHE_STALE_MS } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
-import { getLocale, LOCALES, setLocale, type Locale } from '@/lib/locale';
+import { getLocale, LOCALES, updateLocale, type Locale } from '@/lib/locale';
 import { collapseHumanName } from '@/utils/fhir/human-name';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import { roleToFhirResource } from '@/utils/role-fhir';
@@ -253,7 +253,7 @@ export function useProfileData(
   useEffect(() => {
     const code = readLanguageCode(activeProfile);
     if (!code || !(LOCALES as readonly string[]).includes(code)) return;
-    if (code !== getLocale()) setLocale(code as Locale);
+    if (code !== getLocale()) updateLocale(code as Locale);
   }, [activeProfile]);
 
   const identity = useMemo(

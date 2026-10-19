@@ -36,7 +36,7 @@ export function getLocale(): Locale {
 const listeners = new Set<() => void>();
 
 /** Write locale to cookie and notify hook subscribers. */
-export function setLocale(locale: Locale): void {
+export function updateLocale(locale: Locale): void {
   writeCookie(
     `${COOKIE_NAME}=${locale}; path=/; sameSite=lax; max-age=${MAX_AGE}`
   );
@@ -50,14 +50,14 @@ export function setLocale(locale: Locale): void {
  * hydration mismatch), then syncs the cookie value in an effect.
  */
 export function useLocale(): Locale {
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+  const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
 
   useEffect(() => {
-    setLocaleState(getLocale());
+    setLocale(getLocale());
   }, []);
 
   useEffect(() => {
-    const handler = () => setLocaleState(getLocale());
+    const handler = () => setLocale(getLocale());
     listeners.add(handler);
     return () => {
       listeners.delete(handler);

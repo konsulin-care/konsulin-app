@@ -14,7 +14,7 @@ import path from 'node:path';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { setLocale } from '@/lib/locale';
+import { updateLocale } from '@/lib/locale';
 
 import { LocaleProvider } from '../locale-provider';
 
@@ -85,7 +85,7 @@ describe('LocaleProvider', () => {
     expect(document.documentElement.lang).toBe('en');
   });
 
-  it('re-renders translated text and updates document lang on setLocale without a reload', () => {
+  it('re-renders translated text and updates document lang on updateLocale without a reload', () => {
     clearLocaleCookie();
     const hrefBefore = window.location.href;
     const { getByTestId } = render(
@@ -105,7 +105,7 @@ describe('LocaleProvider', () => {
     expect(counter).toHaveTextContent('1');
 
     act(() => {
-      setLocale('en');
+      updateLocale('en');
     });
     expect(label).toHaveTextContent('Save');
     expect(document.documentElement.lang).toBe('en');
@@ -113,7 +113,7 @@ describe('LocaleProvider', () => {
     expect(window.location.href).toBe(hrefBefore);
 
     act(() => {
-      setLocale('id');
+      updateLocale('id');
     });
     expect(label).toHaveTextContent('Simpan');
     expect(document.documentElement.lang).toBe('id');
@@ -229,12 +229,12 @@ describe('End-to-end locale flow (manual check automated)', () => {
     expect(screen.getByText('Pilih opsi')).toBeDefined();
 
     act(() => {
-      setLocale('en');
+      updateLocale('en');
     });
     expect(screen.getByText('Select option')).toBeDefined();
 
     act(() => {
-      setLocale('id');
+      updateLocale('id');
     });
     expect(screen.getByText('Pilih opsi')).toBeDefined();
     expect(document.documentElement.lang).toBe('id');

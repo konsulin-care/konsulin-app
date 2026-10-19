@@ -67,9 +67,9 @@ vi.mock('@/services/api/cities', () => ({
   useGetDistricts: vi.fn()
 }));
 
-const mockSetLocale = vi.fn();
+const mockUpdateLocale = vi.fn();
 vi.mock('@/lib/locale', () => ({
-  setLocale: (...args: unknown[]) => mockSetLocale(...args)
+  updateLocale: (...args: unknown[]) => mockUpdateLocale(...args)
 }));
 
 import {
@@ -242,7 +242,7 @@ describe('PersonalInfoEditDrawer', () => {
     fireEvent.click(screen.getByText('Save'));
 
     await waitFor(() => {
-      expect(mockSetLocale).toHaveBeenCalledWith('en');
+      expect(mockUpdateLocale).toHaveBeenCalledWith('en');
     });
   });
 

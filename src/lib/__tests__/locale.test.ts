@@ -4,7 +4,7 @@ import {
   DEFAULT_LOCALE,
   getLocale,
   LOCALES,
-  setLocale,
+  updateLocale,
   useLocale
 } from '../locale';
 
@@ -72,30 +72,30 @@ describe('getLocale SSR safety', () => {
   });
 });
 
-describe('setLocale', () => {
+describe('updateLocale', () => {
   beforeEach(() => {
     document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
   });
 
   it('writes the locale to the cookie', () => {
-    setLocale('en');
+    updateLocale('en');
     expect(getLocale()).toBe('en');
   });
 
   it('sets path to /', () => {
-    setLocale('id');
+    updateLocale('id');
     const cookieString = document.cookie;
     expect(cookieString).toContain('NEXT_LOCALE=id');
   });
 
   it('sets sameSite to lax', () => {
-    setLocale('en');
+    updateLocale('en');
     // jsdom doesn't expose cookie attributes, but we verify the value is set
     expect(getLocale()).toBe('en');
   });
 
   it('sets a max-age of approximately 1 year', () => {
-    setLocale('en');
+    updateLocale('en');
     expect(getLocale()).toBe('en');
   });
 });
@@ -133,12 +133,12 @@ describe('useLocale', () => {
     expect(result.current).toBe('en');
   });
 
-  it('updates when setLocale is called', () => {
+  it('updates when updateLocale is called', () => {
     const { result } = renderHook(() => useLocale());
     expect(result.current).toBe(DEFAULT_LOCALE);
 
     act(() => {
-      setLocale('en');
+      updateLocale('en');
     });
     expect(result.current).toBe('en');
   });
