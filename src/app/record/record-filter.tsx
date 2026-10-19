@@ -1,3 +1,10 @@
+import {
+  CONTENT_CUSTOM,
+  CONTENT_DEFAULT,
+  filterContentListRecordDate,
+  localizeDatePresets,
+  today
+} from '@/components/shared/date-filter-presets';
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -6,44 +13,10 @@ import type { ComboboxOption } from '@/components/shared/location-combobox';
 import LocationCombobox from '@/components/shared/location-combobox';
 import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
+import { useDateFilter } from '@/hooks/useDateFilter';
 import { useTranslations } from '@/i18n';
-import {
-  addDays,
-  endOfMonth,
-  endOfWeek,
-  startOfMonth,
-  startOfWeek
-} from 'date-fns';
+import { addDays } from 'date-fns';
 import { useState } from 'react';
-
-const CONTENT_DEFAULT = 0;
-const CONTENT_CUSTOM = 1;
-
-const today = new Date();
-
-const filterContentListDate = [
-  {
-    labelKey: 'today',
-    value: {
-      start: today,
-      end: today
-    }
-  },
-  {
-    labelKey: 'this_week',
-    value: {
-      start: addDays(startOfWeek(today), 1),
-      end: addDays(endOfWeek(today), 1)
-    }
-  },
-  {
-    labelKey: 'this_month',
-    value: {
-      start: startOfMonth(today),
-      end: endOfMonth(today)
-    }
-  }
-];
 
 /** Record type options for the multi-select combobox. */
 const RECORD_TYPE_OPTIONS: { code: string; nameKey: string }[] = [
@@ -75,18 +48,11 @@ export default function RecordFilter({
   onChange: (filter: IRecordParams) => void;
 }>) {
   const t = useTranslations('common');
-  const dateOptions = filterContentListDate.map(preset => ({
-    label: t(preset.labelKey),
-    value: preset.value
-  }));
+  const dateOptions = localizeDatePresets(t, filterContentListRecordDate);
   const recordTypeOptions: ComboboxOption[] = RECORD_TYPE_OPTIONS.map(
     option => ({ code: option.code, name: t(option.nameKey) })
   );
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [whichContent, setWhichContent] = useState<
-    typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
-  >(CONTENT_DEFAULT);
-  const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false);
   const [filter, setFilter] = useState<IRecordParams>({
     start_date: undefined,
     end_date: undefined,
@@ -121,14 +87,39 @@ export default function RecordFilter({
     handleFilterChange('isUseCustomDate', false);
   };
 
-  /** Open custom date picker with default 7-day range. */
-  const handleCustomFilterOpen = () => {
+  /** Apply a chosen date range and clear the custom-date flag. */
+  const handlePresetSelect = (start: Date, end: Date) => {
+    handleFilterChange('start_date', start);
+    handleFilterChange('end_date', end);
+    handleFilterChange('isUseCustomDate', false);
+  };
+
+  /** Apply a chosen calendar range to the record filter. */
+  const applyCalendarRange = (from?: Date, to?: Date) => {
+    handleFilterChange('start_date', from);
+    handleFilterChange('end_date', to);
+  };
+
+  /** Seed the default 7-day custom date range. */
+  const seedCustomDefaults = () => {
     handleFilterChange('start_date', today);
     handleFilterChange('end_date', addDays(today, 7));
-    setIsUseCustomDate(true);
     handleFilterChange('isUseCustomDate', true);
-    setWhichContent(CONTENT_CUSTOM);
   };
+
+  const {
+    whichContent,
+    isUseCustomDate,
+    openDefaultPane,
+    handleCustomOpen,
+    handleCalendarSelect,
+    setIsUseCustomDate
+  } = useDateFilter({
+    isInitialState: true,
+    onCustomOpenSeed: seedCustomDefaults,
+    onPresetSelect: handlePresetSelect,
+    onCalendarSelect: applyCalendarRange
+  });
 
   /** Render default filter content or custom calendar filter based on whichContent. */
   const renderDrawerContent = () => {
@@ -141,13 +132,8 @@ export default function RecordFilter({
               activeStart={filter.start_date}
               activeEnd={filter.end_date}
               isCustom={isUseCustomDate}
-              onPresetSelect={(start, end) => {
-                handleFilterChange('start_date', start);
-                handleFilterChange('end_date', end);
-                handleFilterChange('isUseCustomDate', false);
-                setIsUseCustomDate(false);
-              }}
-              onCustomOpen={handleCustomFilterOpen}
+              onPresetSelect={handlePresetSelect}
+              onCustomOpen={handleCustomOpen}
             />
 
             {/* Multi-select record types */}
@@ -180,19 +166,12 @@ export default function RecordFilter({
                   from: filter.start_date,
                   to: filter.end_date
                 }}
-                onSelect={date => {
-                  handleFilterChange('start_date', date?.from);
-                  handleFilterChange(
-                    'end_date',
-                    date?.to ? date.to : date?.from
-                  );
-                  setIsUseCustomDate(true);
-                }}
+                onSelect={handleCalendarSelect}
               />
             </div>
             <Button
               type='button'
-              onClick={() => setWhichContent(CONTENT_DEFAULT)}
+              onClick={openDefaultPane}
               className='bg-secondary mt-4 rounded-xl text-white'
             >
               {t('back')}
@@ -211,7 +190,7 @@ export default function RecordFilter({
     <AppDrawer
       open={isOpen}
       onClose={() => {
-        setWhichContent(CONTENT_DEFAULT);
+        openDefaultPane();
         setIsOpen(false);
       }}
       trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}

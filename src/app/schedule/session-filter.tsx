@@ -1,4 +1,13 @@
-/* eslint-disable max-lines, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+import {
+  CONTENT_CUSTOM,
+  CONTENT_DEFAULT,
+  filterContentListPastDate,
+  filterContentListTime,
+  filterContentListUpcomingDate,
+  localizeDatePresets,
+  today
+} from '@/components/shared/date-filter-presets';
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -6,129 +15,19 @@ import FilterCustomTimeInputs from '@/components/shared/filter-custom-time-input
 import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
 import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
+import { useDateFilter } from '@/hooks/useDateFilter';
 import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { IUseClinicParams } from '@/services/clinic';
-import {
-  addDays,
-  addWeeks,
-  endOfDay,
-  endOfMonth,
-  endOfWeek,
-  format,
-  startOfDay,
-  startOfMonth,
-  startOfWeek,
-  subDays,
-  subMonths,
-  subWeeks
-} from 'date-fns';
+import { addDays, format, subDays } from 'date-fns';
 import { useEffect, useState } from 'react';
-const CONTENT_DEFAULT = 0;
-const CONTENT_CUSTOM = 1;
-
-const today = new Date();
-
-const filterContentListUpcomingDate = [
-  {
-    labelKey: 'today',
-    value: {
-      start: startOfDay(today),
-      end: endOfDay(today)
-    }
-  },
-  {
-    labelKey: 'this_week',
-    value: {
-      start: startOfWeek(today, { weekStartsOn: 1 }),
-      end: endOfWeek(today, { weekStartsOn: 1 })
-    }
-  },
-  {
-    labelKey: 'next_week',
-    value: {
-      start: startOfWeek(addWeeks(today, 1), { weekStartsOn: 1 }),
-      end: endOfWeek(addWeeks(today, 1), { weekStartsOn: 1 })
-    }
-  }
-];
-
-const filterContentListPastDate = [
-  {
-    labelKey: 'today',
-    value: {
-      start: startOfDay(today),
-      end: endOfDay(today)
-    }
-  },
-  {
-    labelKey: 'past_week',
-    value: {
-      start: startOfWeek(subWeeks(today, 1), { weekStartsOn: 1 }),
-      end: endOfWeek(subWeeks(today, 1), { weekStartsOn: 1 })
-    }
-  },
-  {
-    labelKey: 'past_month',
-    value: {
-      start: startOfMonth(subMonths(today, 1)),
-      end: endOfMonth(subMonths(today, 1))
-    }
-  }
-];
-
-const filterContentListTime = [
-  {
-    label: '07:00 - 10:00',
-    value: {
-      start: '07:00',
-      end: '10:00'
-    }
-  },
-  {
-    label: '10:00 - 13:00',
-    value: {
-      start: '10:00',
-      end: '13:00'
-    }
-  },
-  {
-    label: '13:00 - 16:00',
-    value: {
-      start: '13:00',
-      end: '16:00'
-    }
-  },
-  {
-    label: '16:00 - 18:00',
-    value: {
-      start: '16:00',
-      end: '18:00'
-    }
-  },
-  {
-    label: '18:00 - 22:00',
-    value: {
-      start: '18:00',
-      end: '22:00'
-    }
-  }
-];
 
 /**
  *
  */
 export default function SessionFilter({ onChange, type, initialFilter }) {
   const t = useTranslations('common');
-  const localizePresets = (
-    presets: { labelKey: string; value: { start: Date; end: Date } }[]
-  ) =>
-    presets.map(preset => ({ label: t(preset.labelKey), value: preset.value }));
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [whichContent, setWhichContent] = useState<
-    typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
-  >(CONTENT_DEFAULT);
-  const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false);
   const [isUseCustomTime, setIsUseCustomTime] = useState<boolean>(false);
   const [filter, setFilter] = useState<IUseClinicParams>({
     start_date: undefined,
@@ -164,6 +63,42 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     });
   };
 
+  /** Apply a chosen date range to the session filter. */
+  const handleDateChange = (start?: Date, end?: Date) => {
+    handleFilterChange('start_date', start);
+    handleFilterChange('end_date', end);
+  };
+
+  /** Seed default start/end date and time values for the custom pane. */
+  const seedCustomDefaults = () => {
+    handleFilterChange('start_time', '00:00');
+    handleFilterChange('end_time', '23:59');
+
+    if (type === 'past') {
+      handleFilterChange('start_date', subDays(today, 7));
+      handleFilterChange('end_date', today);
+    } else {
+      handleFilterChange('start_date', today);
+      handleFilterChange('end_date', addDays(today, 7));
+    }
+    setIsUseCustomTime(true);
+  };
+
+  const {
+    whichContent,
+    isUseCustomDate,
+    openDefaultPane,
+    handleCustomOpen,
+    handlePresetSelect,
+    handleCalendarSelect,
+    setIsUseCustomDate
+  } = useDateFilter({
+    isInitialState: isInitiaFilterState,
+    onCustomOpenSeed: seedCustomDefaults,
+    onPresetSelect: handleDateChange,
+    onCalendarSelect: handleDateChange
+  });
+
   useEffect(() => {
     if (initialFilter.start_date && initialFilter.end_date) {
       handleFilterChange('start_date', initialFilter.start_date);
@@ -187,27 +122,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
 
       setIsUseCustomDate(!matchedPreset);
     }
-  }, [initialFilter]);
-
-  /** Open custom date/time filter with default start/end values. */
-  const handleCustomFilterOpen = () => {
-    if (isInitiaFilterState) {
-      handleFilterChange('start_time', '00:00');
-      handleFilterChange('end_time', '23:59');
-
-      if (type === 'past') {
-        handleFilterChange('start_date', subDays(today, 7));
-        handleFilterChange('end_date', today);
-      } else {
-        handleFilterChange('start_date', today);
-        handleFilterChange('end_date', addDays(today, 7));
-      }
-      setIsUseCustomDate(true);
-      setIsUseCustomTime(true);
-    }
-
-    setWhichContent(CONTENT_CUSTOM);
-  };
+  }, [initialFilter, setIsUseCustomDate]);
 
   const disabledDates =
     type === 'upcoming' ? { before: today } : { after: today };
@@ -218,7 +133,8 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
-  const activePresets = localizePresets(
+  const activePresets = localizeDatePresets(
+    t,
     type === 'upcoming'
       ? filterContentListUpcomingDate
       : filterContentListPastDate
@@ -251,7 +167,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
         {isUseCustomTime && filter.start_time && filter.end_time && (
           <Button
             variant='outline'
-            onClick={handleCustomFilterOpen}
+            onClick={handleCustomOpen}
             className={cn(
               'bg-secondary hover:bg-secondary h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-bold text-white'
             )}
@@ -263,7 +179,6 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     </div>
   );
 
-  /** Renders the filter drawer content based on current selection. */
   /** Render default or custom date/time filter drawer content. */
   const renderDrawerContent = () => {
     switch (whichContent) {
@@ -275,12 +190,8 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
               activeStart={filter.start_date}
               activeEnd={filter.end_date}
               isCustom={isUseCustomDate}
-              onPresetSelect={(start, end) => {
-                handleFilterChange('start_date', start);
-                handleFilterChange('end_date', end);
-                setIsUseCustomDate(false);
-              }}
-              onCustomOpen={handleCustomFilterOpen}
+              onPresetSelect={handlePresetSelect}
+              onCustomOpen={handleCustomOpen}
             />
             {timeFilterSection}
             <FilterActions
@@ -299,14 +210,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
                   from: filter.start_date,
                   to: filter.end_date
                 }}
-                onSelect={date => {
-                  handleFilterChange('start_date', date?.from);
-                  handleFilterChange(
-                    'end_date',
-                    date?.to ? date.to : date?.from
-                  );
-                  setIsUseCustomDate(true);
-                }}
+                onSelect={handleCalendarSelect}
                 disabled={disabledDates}
               />
 
@@ -325,7 +229,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
             </div>
             <Button
               type='button'
-              onClick={() => setWhichContent(CONTENT_DEFAULT)}
+              onClick={openDefaultPane}
               className='bg-secondary mt-4 rounded-xl text-white'
             >
               {t('back')}
@@ -344,7 +248,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
     <AppDrawer
       open={isOpen}
       onClose={() => {
-        setWhichContent(CONTENT_DEFAULT);
+        openDefaultPane();
         setIsOpen(false);
       }}
       trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
