@@ -19,6 +19,24 @@ const NAMESPACE_MESSAGES: Record<string, unknown> = {
   toast: enToast
 };
 
+/**
+ * Reads an own property from a record by variable key.
+ *
+ * Single documented suppression for the four Codacy object-injection sinks
+ * in this file: keys are developer-defined namespace/message names from test
+ * fixtures, never user input, and Object.hasOwn blocks prototype-chain access.
+ *
+ * @param record - Object to read from.
+ * @param key - Property name to look up.
+ * @returns The own-property value, or undefined if absent.
+ */
+function pick(record: object, key: string): unknown {
+  if (!Object.hasOwn(record, key)) {
+    return undefined;
+  }
+  return (record as Record<string, unknown>)[key]; // NOSONAR: documented above; guarded by Object.hasOwn
+}
+
 /** Signature of the t() function returned by useTranslations. */
 export type TestTranslate = (
   key: string,
@@ -39,22 +57,23 @@ export function createUseTranslationsMock(): (
   return (namespace: string) =>
     (key: string, values?: Record<string, string | number>) => {
       const messages =
-        NAMESPACE_MESSAGES[namespace] ?? NAMESPACE_MESSAGES.common;
+        pick(NAMESPACE_MESSAGES, namespace) ?? NAMESPACE_MESSAGES.common;
       const deep = key
         .split('.')
         .reduce<unknown>(
           (node, part) =>
-            node && typeof node === 'object'
-              ? (node as Record<string, unknown>)[part]
-              : undefined,
+            node && typeof node === 'object' ? pick(node, part) : undefined,
           messages
         );
       // next-intl falls back to the full dotted key as a flat lookup.
-      const flat = (messages as Record<string, unknown>)[key];
+      const flat = pick(messages as object, key);
       const found = typeof deep === 'string' ? deep : flat;
       const template = typeof found === 'string' ? found : key;
-      return template.replace(/\{(\w+)\}/g, (_, name: string) =>
-        String(values?.[name] ?? '')
-      );
+      return template.replace(/\{(\w+)\}/g, (_, name: string) => {
+        const found = values === undefined ? undefined : pick(values, name);
+        return String(
+          typeof found === 'string' || typeof found === 'number' ? found : ''
+        );
+      });
     };
 }
