@@ -97,7 +97,11 @@ export function listSourceFiles(srcDir: string): string[] {
   const root = path.dirname(srcDir);
   const files: string[] = [];
   const walk = (dir: string): void => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    // Repo-local src/ tree only: `dir` starts from the srcDir argument and
+    // never comes from user input.
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    const entries = fs.readdirSync(dir, { withFileTypes: true }); // NOSONAR
+    for (const entry of entries) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         walk(full);
@@ -123,7 +127,10 @@ export function scanTree(srcDir: string): Map<string, Violation> {
   const root = path.dirname(srcDir);
   const found = new Map<string, Violation>();
   for (const file of listSourceFiles(srcDir)) {
-    const code = fs.readFileSync(path.resolve(root, file), 'utf8');
+    // Repo-local src/ tree only: `file` comes from listSourceFiles' walk
+    // over srcDir and never comes from user input.
+    // eslint-disable-next-line security/detect-non-literal-fs-filename
+    const code = fs.readFileSync(path.resolve(root, file), 'utf8'); // NOSONAR: repo-local src/ tree only
     for (const violation of scanSource(file, code)) {
       found.set(violationKey(violation), violation);
     }
