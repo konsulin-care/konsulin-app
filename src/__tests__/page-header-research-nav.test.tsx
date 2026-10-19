@@ -4,55 +4,33 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../components/page-header';
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      dashboard: 'Welcome to Konsulin',
-      book_session: 'Schedule a Session',
-      assessment_center: 'Assessment Center',
-      user_profile: 'User Profile',
-      recommended: 'Recommendations for You',
-      research: 'Research',
-      go_back: 'Go back'
-    };
-    return translations[key] ?? key;
-  })
+// Hoisted mocks — shared factories from @/__tests__/mocks/page-header
+vi.mock('@/i18n', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderI18nMock
 }));
 
-vi.mock('next/navigation', () => ({
-  usePathname: vi.fn().mockReturnValue('/'),
-  useSearchParams: vi.fn().mockReturnValue(new URLSearchParams()),
-  useRouter: vi.fn().mockReturnValue({ push: vi.fn(), back: vi.fn() })
+vi.mock('next/navigation', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderNavigationMock
 }));
 
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn().mockReturnValue({
-    isLoading: false,
-    state: {
-      isAuthenticated: true,
-      userInfo: { role_name: 'Patient', fhirId: 'patient-1' }
-    }
-  })
+vi.mock('@/context/auth/authContext', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderAuthMock
 }));
 
-vi.mock('@/hooks/useUpcomingEvents', () => ({
-  useUpcomingEvents: vi.fn().mockReturnValue({
-    appointmentData: null,
-    sessionData: null
-  })
+vi.mock('@/hooks/useUpcomingEvents', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).upcomingEventsMock
 }));
 
-vi.mock('@/lib/indexeddb', () => ({
-  STORES: { uiPreferences: 'ui_preferences' },
-  dbGet: vi.fn().mockResolvedValue(null)
+vi.mock('@/lib/indexeddb', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).indexedDbMock
 }));
 
-vi.mock('@/services/api', () => ({
-  getAPI: vi.fn()
+vi.mock('@/services/api', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).apiMock
 }));
 
-vi.mock('@/components/general/avatar', () => ({
-  default: () => <div>Avatar</div>
+vi.mock('@/components/general/avatar', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).avatarMock
 }));
 
 describe('PageHeader - research form page navigation', () => {

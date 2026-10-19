@@ -5,11 +5,9 @@ import type { ReactNode } from 'react';
 import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/i18n', async () => {
-  const { createUseTranslationsMock } =
-    await import('@/i18n/__tests__/test-messages');
-  return { useTranslations: createUseTranslationsMock() };
-});
+vi.mock('@/i18n', async () =>
+  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+);
 vi.mock('@/components/general/avatar', () => ({
   default: ({
     initials,
