@@ -27,10 +27,9 @@ vi.mock('@/components/ui/popover', () => ({
       {children}
     </div>
   ),
+  // prettier-ignore
   PopoverTrigger: ({ children, asChild }: any) =>
-    asChild ? (
-      (children as ReactNode)
-    ) : (
+    asChild ? (children as ReactNode) : (
       <div data-testid='popover-trigger'>{children}</div>
     )
 }));
