@@ -57,57 +57,57 @@ vi.mock('@/components/ui/calendar-base', () => ({
 
 import DatePickerButton from '../date-picker-button';
 
+/** Render DatePickerButton with an undefined value unless overridden. */
+function renderDatePickerButton(
+  overrides: Partial<React.ComponentProps<typeof DatePickerButton>> = {}
+) {
+  return render(
+    <DatePickerButton value={undefined} onChange={vi.fn()} {...overrides} />
+  );
+}
+
 describe('DatePickerButton', () => {
   beforeEach(() => {
     mockLocale.current = 'en';
   });
 
-  it('renders placeholder when no value is provided', () => {
-    render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
-    expect(screen.getByText('Pick a date')).toBeInTheDocument();
-  });
+  it.each([
+    { locale: 'en', placeholder: 'Pick a date' },
+    { locale: 'id', placeholder: 'Pilih tanggal' }
+  ])(
+    'renders the localized placeholder under $locale',
+    ({ locale, placeholder }) => {
+      mockLocale.current = locale;
+      renderDatePickerButton();
+      expect(screen.getByText(placeholder)).toBeInTheDocument();
+    }
+  );
 
-  it('renders the localized placeholder under id', () => {
-    mockLocale.current = 'id';
-    render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
-    expect(screen.getByText('Pilih tanggal')).toBeInTheDocument();
-  });
-
-  it('renders the localized drawer title under both locales', () => {
-    render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /pick a date/i }));
-    expect(screen.getByTestId('drawer-title')).toHaveTextContent('Select Date');
-  });
-
-  it('renders the localized drawer title under id', () => {
-    mockLocale.current = 'id';
-    render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /pilih tanggal/i }));
-    expect(screen.getByTestId('drawer-title')).toHaveTextContent(
-      'Pilih Tanggal'
-    );
-  });
+  it.each([
+    { locale: 'en', buttonName: /pick a date/i, title: 'Select Date' },
+    { locale: 'id', buttonName: /pilih tanggal/i, title: 'Pilih Tanggal' }
+  ])(
+    'renders the localized drawer title under $locale',
+    ({ locale, buttonName, title }) => {
+      mockLocale.current = locale;
+      renderDatePickerButton();
+      fireEvent.click(screen.getByRole('button', { name: buttonName }));
+      expect(screen.getByTestId('drawer-title')).toHaveTextContent(title);
+    }
+  );
 
   it('renders custom placeholder text', () => {
-    render(
-      <DatePickerButton
-        value={undefined}
-        onChange={vi.fn()}
-        placeholder='Select start date'
-      />
-    );
+    renderDatePickerButton({ placeholder: 'Select start date' });
     expect(screen.getByText('Select start date')).toBeInTheDocument();
   });
 
   it('renders formatted date when value is provided', () => {
-    render(
-      <DatePickerButton value={new Date('2026-03-15')} onChange={vi.fn()} />
-    );
+    renderDatePickerButton({ value: new Date('2026-03-15') });
     expect(screen.getByText('15 Mar 2026')).toBeInTheDocument();
   });
 
   it('opens drawer when button is clicked', () => {
-    render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
+    renderDatePickerButton();
     fireEvent.click(screen.getByRole('button', { name: /pick a date/i }));
     expect(screen.getByTestId('drawer-root')).toHaveAttribute(
       'data-open',
@@ -117,14 +117,14 @@ describe('DatePickerButton', () => {
 
   it('closes drawer and calls onChange when a date is selected', () => {
     const onChange = vi.fn();
-    render(<DatePickerButton value={undefined} onChange={onChange} />);
+    renderDatePickerButton({ onChange });
     fireEvent.click(screen.getByRole('button', { name: /pick a date/i }));
     fireEvent.click(screen.getByText('Select Mar 15'));
     expect(onChange).toHaveBeenCalledWith(new Date('2026-03-15'));
   });
 
   it('renders calendar in single mode', () => {
-    render(<DatePickerButton value={undefined} onChange={vi.fn()} />);
+    renderDatePickerButton();
     fireEvent.click(screen.getByRole('button', { name: /pick a date/i }));
     expect(screen.getByTestId('calendar-base')).toHaveAttribute(
       'data-mode',
@@ -133,12 +133,12 @@ describe('DatePickerButton', () => {
   });
 
   it('disables the button when disabled prop is true', () => {
-    render(<DatePickerButton value={undefined} onChange={vi.fn()} disabled />);
+    renderDatePickerButton({ disabled: true });
     expect(screen.getByRole('button', { name: /pick a date/i })).toBeDisabled();
   });
 
   it('does not open drawer when disabled button is clicked', () => {
-    render(<DatePickerButton value={undefined} onChange={vi.fn()} disabled />);
+    renderDatePickerButton({ disabled: true });
     fireEvent.click(screen.getByRole('button', { name: /pick a date/i }));
     expect(screen.getByTestId('drawer-root')).toHaveAttribute(
       'data-open',

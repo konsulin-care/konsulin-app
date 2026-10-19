@@ -4,45 +4,33 @@ import type { Bundle, Patient, Practitioner } from 'fhir/r4';
 import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      photo_updated: 'Profile photo updated',
-      photo_update_failed: 'Failed updating the profile picture',
-      photo_update_missing_account:
-        'Failed to update profile photo: profile account is not linked yet'
-    };
-    return translations[key] ?? key;
-  })
-}));
+vi.mock('@/i18n', async () =>
+  (await import('./profile-hook-mocks')).i18nMockFactory()
+);
 
-vi.mock('@/services/profile', () => ({
-  getProfileById: vi.fn(),
-  modifyProfile: vi.fn(),
-  uploadAvatar: vi.fn(),
-  useUpdateProfile: vi.fn()
-}));
+vi.mock('@/services/profile', async () =>
+  (await import('./profile-hook-mocks')).profileServiceMockFactory()
+);
 
-vi.mock('@/services/api/fhir-bundle', () => ({
-  submitFhirBundle: vi.fn()
-}));
+vi.mock('@/services/api/fhir-bundle', async () =>
+  (await import('./profile-hook-mocks')).fhirBundleMockFactory()
+);
 
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn()
-}));
+vi.mock('@/context/auth/authContext', async () =>
+  (await import('./profile-hook-mocks')).authContextMockFactory()
+);
 
-vi.mock('@/utils/image-processing', () => ({
-  processImageForAvatar: vi.fn()
-}));
+vi.mock('@/utils/image-processing', async () =>
+  (await import('./profile-hook-mocks')).imageProcessingMockFactory()
+);
 
-vi.mock('@/lib/indexeddb', () => ({
-  STORES: { userProfile: 'user_profile' },
-  dbSet: vi.fn()
-}));
+vi.mock('@/lib/indexeddb', async () =>
+  (await import('./profile-hook-mocks')).indexeddbMockFactory()
+);
 
-vi.mock('react-toastify', () => ({
-  toast: { success: vi.fn(), error: vi.fn() }
-}));
+vi.mock('react-toastify', async () =>
+  (await import('./profile-hook-mocks')).toastMockFactory()
+);
 
 import { useAuth } from '@/context/auth/authContext';
 import type { IActionLogin, IStateUserInfo } from '@/context/auth/authTypes';

@@ -1,7 +1,7 @@
 import AppDrawer from '@/components/ui/app-drawer';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import Combobox, { type ComboboxOption } from '../combobox';
+import Combobox, { type ComboboxOption, type ComboboxProps } from '../combobox';
 
 const { mockLocale } = vi.hoisted(() => ({
   mockLocale: { current: 'en' }
@@ -34,6 +34,24 @@ const TWO_OPTIONS: readonly ComboboxOption[] = [
   { code: 'b', name: 'Option B' }
 ];
 
+/** Override props for the single-select renderCombobox helper. */
+type ComboboxOverrides = Partial<
+  Extract<ComboboxProps, { readonly multiple?: false }>
+>;
+
+/** Render Combobox with the shared defaults; override per-test props. */
+function renderCombobox(overrides: ComboboxOverrides = {}) {
+  return render(
+    <Combobox
+      options={PROVINCES}
+      value=''
+      onSelect={vi.fn()}
+      placeholder='Select province'
+      {...overrides}
+    />
+  );
+}
+
 /** Make (max-width: 640px) match so the sheet variant renders. */
 function stubMobileViewport() {
   vi.stubGlobal('matchMedia', (query: string) => ({
@@ -57,116 +75,57 @@ describe('Combobox (localized labels)', () => {
     mockLocale.current = 'en';
   });
 
-  it('shows the localized loading label in the trigger under en', () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-        loading
-      />
-    );
+  it.each([
+    { locale: 'en', expected: 'Loading...' },
+    { locale: 'id', expected: 'Memuat...' }
+  ])(
+    'shows the localized loading label in the trigger under $locale',
+    ({ locale, expected }) => {
+      mockLocale.current = locale;
+      renderCombobox({ loading: true });
 
-    expect(screen.getByRole('combobox')).toHaveTextContent('Loading...');
-  });
+      expect(screen.getByRole('combobox')).toHaveTextContent(expected);
+    }
+  );
 
-  it('shows the localized loading label in the trigger under id', () => {
-    mockLocale.current = 'id';
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-        loading
-      />
-    );
+  it.each([
+    { locale: 'en', expected: 'No results found.' },
+    { locale: 'id', expected: 'Tidak ada hasil.' }
+  ])(
+    'shows the localized empty message when nothing matches under $locale',
+    async ({ locale, expected }) => {
+      mockLocale.current = locale;
+      renderCombobox();
 
-    expect(screen.getByRole('combobox')).toHaveTextContent('Memuat...');
-  });
+      fireEvent.click(screen.getByRole('combobox'));
+      const input = await waitFor(() =>
+        screen.getByPlaceholderText('Select province')
+      );
+      fireEvent.change(input, { target: { value: 'zzz' } });
 
-  it('shows the localized empty message when nothing matches under en', async () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
-
-    fireEvent.click(screen.getByRole('combobox'));
-    const input = await waitFor(() =>
-      screen.getByPlaceholderText('Select province')
-    );
-    fireEvent.change(input, { target: { value: 'zzz' } });
-
-    await waitFor(() => {
-      expect(screen.getByText('No results found.')).toBeInTheDocument();
-    });
-  });
-
-  it('shows the localized empty message when nothing matches under id', async () => {
-    mockLocale.current = 'id';
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
-
-    fireEvent.click(screen.getByRole('combobox'));
-    const input = await waitFor(() =>
-      screen.getByPlaceholderText('Select province')
-    );
-    fireEvent.change(input, { target: { value: 'zzz' } });
-
-    await waitFor(() => {
-      expect(screen.getByText('Tidak ada hasil.')).toBeInTheDocument();
-    });
-  });
+      await waitFor(() => {
+        expect(screen.getByText(expected)).toBeInTheDocument();
+      });
+    }
+  );
 });
 
 describe('Combobox (desktop popover)', () => {
   it('renders the placeholder in the trigger when nothing is selected', () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox();
 
     expect(screen.getByRole('combobox')).toHaveTextContent('Select province');
   });
 
   it('keeps role=combobox and aria-expanded on the trigger', () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox();
 
     const trigger = screen.getByRole('combobox');
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('opens a popover with a search input and all options', async () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox();
 
     fireEvent.click(screen.getByRole('combobox'));
 
@@ -180,14 +139,7 @@ describe('Combobox (desktop popover)', () => {
   });
 
   it('filters options by name when typing', async () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox();
 
     fireEvent.click(screen.getByRole('combobox'));
     const input = await waitFor(() =>
@@ -262,14 +214,7 @@ describe('Combobox (desktop popover)', () => {
 
   it('selects an option and closes the popover on pick', async () => {
     const onSelect = vi.fn();
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={onSelect}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox({ onSelect });
 
     fireEvent.click(screen.getByRole('combobox'));
     fireEvent.click(await waitFor(() => screen.getByText('DKI Jakarta')));
@@ -308,15 +253,7 @@ describe('Combobox (desktop popover)', () => {
   });
 
   it('caps the popover list height to maxVisibleOptions rows', async () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-        maxVisibleOptions={5}
-      />
-    );
+    renderCombobox({ maxVisibleOptions: 5 });
 
     fireEvent.click(screen.getByRole('combobox'));
 
@@ -334,14 +271,7 @@ describe('Combobox (mobile sheet)', () => {
   });
 
   it('renders a sheet with a pinned search input instead of a popover', async () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox();
 
     fireEvent.click(screen.getByRole('combobox'));
 
@@ -357,14 +287,7 @@ describe('Combobox (mobile sheet)', () => {
   });
 
   it('keeps the search input inside the pinned header above the list', async () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox();
 
     fireEvent.click(screen.getByRole('combobox'));
 
@@ -376,14 +299,7 @@ describe('Combobox (mobile sheet)', () => {
   });
 
   it('insets the search field as a rounded chip on a padded white header', async () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox();
 
     fireEvent.click(screen.getByRole('combobox'));
 
@@ -400,14 +316,7 @@ describe('Combobox (mobile sheet)', () => {
   });
 
   it('keeps role=combobox and aria-expanded on the trigger in sheet mode', async () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox();
 
     const trigger = screen.getByRole('combobox');
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
@@ -420,14 +329,7 @@ describe('Combobox (mobile sheet)', () => {
 
   it('closes the sheet on single select', async () => {
     const onSelect = vi.fn();
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={onSelect}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox({ onSelect });
 
     fireEvent.click(screen.getByRole('combobox'));
     fireEvent.click(await waitFor(() => screen.getByText('DKI Jakarta')));
@@ -464,14 +366,7 @@ describe('Combobox (mobile sheet)', () => {
   });
 
   it('floors the sheet height so short option lists sit mid-screen', async () => {
-    render(
-      <Combobox
-        options={TWO_OPTIONS}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox({ options: TWO_OPTIONS });
 
     fireEvent.click(screen.getByRole('combobox'));
 
@@ -517,14 +412,7 @@ describe('Combobox (mobile sheet)', () => {
   });
 
   it('suspends nothing when the sheet has no host AppDrawer', async () => {
-    render(
-      <Combobox
-        options={PROVINCES}
-        value=''
-        onSelect={vi.fn()}
-        placeholder='Select province'
-      />
-    );
+    renderCombobox();
 
     fireEvent.click(screen.getByRole('combobox'));
 

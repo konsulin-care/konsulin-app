@@ -4,51 +4,41 @@ import type { Bundle, HumanName, Patient, Practitioner } from 'fhir/r4';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      profile_updated: 'Profile updated',
-      profile_update_failed: 'Failed updating profile'
-    };
-    return translations[key] ?? key;
-  })
-}));
+vi.mock('@/i18n', async () =>
+  (await import('./profile-hook-mocks')).i18nMockFactory()
+);
 
-vi.mock('@/services/profile', () => ({
-  getProfileById: vi.fn(),
-  modifyProfile: vi.fn(),
-  uploadAvatar: vi.fn(),
-  useUpdateProfile: vi.fn()
-}));
+vi.mock('@/services/profile', async () =>
+  (await import('./profile-hook-mocks')).profileServiceMockFactory()
+);
 
-vi.mock('@/services/api/fhir-bundle', () => ({
-  submitFhirBundle: vi.fn()
-}));
+vi.mock('@/services/api/fhir-bundle', async () =>
+  (await import('./profile-hook-mocks')).fhirBundleMockFactory()
+);
 
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn()
-}));
+vi.mock('@/context/auth/authContext', async () =>
+  (await import('./profile-hook-mocks')).authContextMockFactory()
+);
 
-vi.mock('supertokens-auth-react/recipe/session', () => ({
-  getClaimValue: vi.fn()
-}));
+vi.mock('supertokens-auth-react/recipe/session', async () =>
+  (await import('./profile-hook-mocks')).sessionMockFactory()
+);
 
-vi.mock('supertokens-web-js/recipe/userroles', () => ({
-  UserRoleClaim: 'user-role'
-}));
+vi.mock('supertokens-web-js/recipe/userroles', async () =>
+  (await import('./profile-hook-mocks')).userRolesMockFactory()
+);
 
-vi.mock('@/lib/indexeddb', () => ({
-  STORES: { userProfile: 'user_profile' },
-  dbSet: vi.fn()
-}));
+vi.mock('@/lib/indexeddb', async () =>
+  (await import('./profile-hook-mocks')).indexeddbMockFactory()
+);
 
-vi.mock('react-toastify', () => ({
-  toast: { success: vi.fn(), error: vi.fn() }
-}));
+vi.mock('react-toastify', async () =>
+  (await import('./profile-hook-mocks')).toastMockFactory()
+);
 
-vi.mock('@/utils/profileCompleteness', () => ({
-  isProfileCompleteFromFHIR: vi.fn(() => true)
-}));
+vi.mock('@/utils/profileCompleteness', async () =>
+  (await import('./profile-hook-mocks')).profileCompletenessMockFactory()
+);
 
 import { useAuth } from '@/context/auth/authContext';
 import type { IActionLogin, IStateUserInfo } from '@/context/auth/authTypes';
