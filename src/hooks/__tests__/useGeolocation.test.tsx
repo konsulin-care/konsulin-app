@@ -65,31 +65,17 @@ describe('useGeolocation', () => {
     vi.clearAllMocks();
   });
 
-  it('reports Location unavailable when the position cannot be resolved', () => {
-    stubGeolocation((_success, error) => error(geolocationError(2)));
+  it.each<[number, string]>([
+    [1, 'Location permission denied'],
+    [2, 'Location unavailable'],
+    [3, 'Location request timed out']
+  ])('maps error code %i to %s', (code, expectedMessage) => {
+    stubGeolocation((_success, error) => error(geolocationError(code)));
 
     const { result } = renderHook(() => useGeolocation());
     act(() => result.current.request());
 
-    expect(result.current.error).toBe('Location unavailable');
-  });
-
-  it('reports Location permission denied when permission is refused', () => {
-    stubGeolocation((_success, error) => error(geolocationError(1)));
-
-    const { result } = renderHook(() => useGeolocation());
-    act(() => result.current.request());
-
-    expect(result.current.error).toBe('Location permission denied');
-  });
-
-  it('reports Location request timed out on timeout', () => {
-    stubGeolocation((_success, error) => error(geolocationError(3)));
-
-    const { result } = renderHook(() => useGeolocation());
-    act(() => result.current.request());
-
-    expect(result.current.error).toBe('Location request timed out');
+    expect(result.current.error).toBe(expectedMessage);
   });
 
   it('reports Geolocation not supported without a geolocation API', () => {
