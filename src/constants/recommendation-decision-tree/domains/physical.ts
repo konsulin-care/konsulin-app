@@ -1,37 +1,16 @@
-import type {
-  ChiefComplaintOption,
-  DecisionDomain
-} from '@/types/recommendation-interview';
+import type { DecisionDomain } from '@/types/recommendation-interview';
+import { defineDomain } from '../domain-builder';
 import { ER, SEHAT_JIWA } from '../resources';
 
-/**
- * Attach deterministic option labelKeys derived from the owning complaint id.
- *
- * @param complaintId - Owning complaint id used as the key namespace
- * @param options - Options without an explicit labelKey
- * @returns Options with `option_<complaintId>_<optionId>` labelKeys
- */
-const withOptionKeys = (
-  complaintId: string,
-  options: Omit<ChiefComplaintOption, 'labelKey'>[]
-): ChiefComplaintOption[] =>
-  options.map(option => ({
-    ...option,
-    labelKey: `option_${complaintId}_${option.id}`
-  }));
-
 /** Physical Health domain branches. */
-const physical: DecisionDomain = {
+const physical: DecisionDomain = defineDomain({
   code: 'physical-health',
   label: 'Physical Health',
-  labelKey: 'domain_physical-health',
   complaints: [
     {
       id: 'pain-musculoskeletal',
       label: 'Musculoskeletal & Joint Pain',
-      labelKey: 'complaint_pain-musculoskeletal',
       synonyms: ['nyeri', 'sakit', 'back pain', 'joint', 'otot', 'sendi'],
-      icfDomain: 'physical-health',
       keywords: [
         'musculoskeletal',
         'joint',
@@ -44,27 +23,24 @@ const physical: DecisionDomain = {
         'muscle'
       ],
       serviceTypeCode: 'pain-management',
-      options: withOptionKeys('pain-musculoskeletal', [
+      options: [
         { id: 'low-back-pain', label: 'Low back pain' },
         { id: 'joint-stiffness', label: 'Stiff or aching joints' },
         { id: 'neck-shoulder-tension', label: 'Neck or shoulder tension' },
         { id: 'body-aches', label: 'Widespread body aches' },
         { id: 'post-exercise-soreness', label: 'Pain after exercise' },
         { id: 'pain-other', label: 'Other pain concern', isOther: true }
-      ]),
+      ],
       redFlag: {
         isEmergency: true,
         label: 'Are you having chest pain or acute difficulty breathing?',
-        labelKey: 'redflag_pain-musculoskeletal',
         resources: [ER]
       }
     },
     {
       id: 'headache-migraine',
       label: 'Headache & Migraine',
-      labelKey: 'complaint_headache-migraine',
       synonyms: ['sakit kepala', 'migrain', 'headache', 'migraine', 'pusing'],
-      icfDomain: 'physical-health',
       keywords: [
         'headache',
         'migraine',
@@ -74,28 +50,25 @@ const physical: DecisionDomain = {
         'dizziness'
       ],
       serviceTypeCode: 'headache-care',
-      options: withOptionKeys('headache-migraine', [
+      options: [
         { id: 'tension-headache', label: 'Throbbing tension headache' },
         { id: 'migraine', label: 'Migraine with or without aura' },
         { id: 'chronic-daily-headache', label: 'Headache most days' },
         { id: 'sinus-headache', label: 'Pressure behind eyes or forehead' },
         { id: 'cluster-headache', label: 'Severe one-sided headache' },
         { id: 'headache-other', label: 'Other headache concern', isOther: true }
-      ]),
+      ],
       redFlag: {
         isEmergency: true,
         label:
           'Did the headache start suddenly and severely, or did you lose consciousness?',
-        labelKey: 'redflag_headache-migraine',
         resources: [ER]
       }
     },
     {
       id: 'respiratory-airway',
       label: 'Cough & Breathing Issues',
-      labelKey: 'complaint_respiratory-airway',
       synonyms: ['batuk', 'sesak', 'cough', 'breath', 'napas', 'tenggorokan'],
-      icfDomain: 'physical-health',
       keywords: [
         'respiratory',
         'breath',
@@ -107,7 +80,7 @@ const physical: DecisionDomain = {
         'illness'
       ],
       serviceTypeCode: 'respiratory-care',
-      options: withOptionKeys('respiratory-airway', [
+      options: [
         { id: 'persistent-cough', label: 'Cough lasting more than a week' },
         { id: 'shortness-of-breath', label: 'Shortness of breath' },
         { id: 'sore-throat', label: 'Sore throat or pharyngitis' },
@@ -117,18 +90,16 @@ const physical: DecisionDomain = {
           label: 'Other breathing concern',
           isOther: true
         }
-      ]),
+      ],
       redFlag: {
         isEmergency: true,
         label: 'Are you struggling to breathe or turning blue?',
-        labelKey: 'redflag_respiratory-airway',
         resources: [ER]
       }
     },
     {
       id: 'gastrointestinal',
       label: 'Stomach & Digestion Issues',
-      labelKey: 'complaint_gastrointestinal',
       synonyms: [
         'perut',
         'mual',
@@ -138,7 +109,6 @@ const physical: DecisionDomain = {
         'maag',
         'diare'
       ],
-      icfDomain: 'physical-health',
       keywords: [
         'gastrointestinal',
         'stomach',
@@ -148,7 +118,7 @@ const physical: DecisionDomain = {
         'diarrhea'
       ],
       serviceTypeCode: 'digestive-care',
-      options: withOptionKeys('gastrointestinal', [
+      options: [
         { id: 'nausea-vomiting', label: 'Nausea or vomiting' },
         { id: 'diarrhea', label: 'Diarrhea or food poisoning' },
         { id: 'acid-reflux', label: 'Acid reflux or heartburn' },
@@ -159,45 +129,36 @@ const physical: DecisionDomain = {
           label: 'Other digestion concern',
           isOther: true
         }
-      ]),
+      ],
       redFlag: {
         isEmergency: true,
         label: 'Do you have severe abdominal pain or blood in your stool?',
-        labelKey: 'redflag_gastrointestinal',
         resources: [ER]
       }
     },
     {
       id: 'sleep-fatigue',
       label: 'Sleep & Fatigue Problems',
-      labelKey: 'complaint_sleep-fatigue',
       synonyms: ['tidur', 'insomnia', 'lelah', 'sleep', 'fatigue', 'lemas'],
-      icfDomain: 'physical-health',
       keywords: ['sleep', 'insomnia', 'fatigue', 'exhaustion', 'tiredness'],
       serviceTypeCode: 'sleep-care',
-      options: withOptionKeys('sleep-fatigue', [
-        {
-          id: 'insomnia',
-          label: 'Difficulty falling or staying asleep'
-        },
+      options: [
+        { id: 'insomnia', label: 'Difficulty falling or staying asleep' },
         { id: 'poor-sleep-quality', label: 'Waking up unrefreshed' },
         { id: 'daytime-fatigue', label: 'Fatigue during the day' },
         { id: 'chronic-exhaustion', label: 'Constant exhaustion' },
         { id: 'sleep-other', label: 'Other sleep concern', isOther: true }
-      ]),
+      ],
       redFlag: {
         isEmergency: false,
         label: 'Are you too exhausted to care for your basic needs?',
-        labelKey: 'redflag_sleep-fatigue',
         resources: [SEHAT_JIWA]
       }
     },
     {
       id: 'fever-malaise',
       label: 'Fever & General Malaise',
-      labelKey: 'complaint_fever-malaise',
       synonyms: ['demam', 'lemah', 'pusing', 'fever', 'weakness', 'dizziness'],
-      icfDomain: 'physical-health',
       keywords: [
         'fever',
         'weakness',
@@ -207,46 +168,39 @@ const physical: DecisionDomain = {
         'general'
       ],
       serviceTypeCode: 'systemic-care',
-      options: withOptionKeys('fever-malaise', [
+      options: [
         { id: 'acute-fever', label: 'High or persistent fever' },
-        {
-          id: 'generalized-weakness',
-          label: 'General weakness or malaise'
-        },
+        { id: 'generalized-weakness', label: 'General weakness or malaise' },
         { id: 'dizziness-vertigo', label: 'Dizziness or vertigo' },
         { id: 'skin-rash', label: 'Skin rash or swelling' },
         { id: 'fever-other', label: 'Other general symptom', isOther: true }
-      ]),
+      ],
       redFlag: {
         isEmergency: true,
         label: 'Do you have a high fever with confusion or a stiff neck?',
-        labelKey: 'redflag_fever-malaise',
         resources: [ER]
       }
     },
     {
       id: 'other-physical',
       label: 'Other Physical Concern',
-      labelKey: 'complaint_other-physical',
       synonyms: ['physical', 'fisik', 'lain', 'other'],
-      icfDomain: 'physical-health',
       keywords: ['physical', 'general', 'illness'],
       serviceTypeCode: 'other-physical-health',
-      options: withOptionKeys('other-physical', [
+      options: [
         {
           id: 'other-physical',
           label: 'Another physical concern',
           isOther: true
         }
-      ]),
+      ],
       redFlag: {
         isEmergency: false,
         label: 'Is this concern making you unable to function today?',
-        labelKey: 'redflag_other-physical',
         resources: [SEHAT_JIWA]
       }
     }
   ]
-};
+});
 
 export default physical;
