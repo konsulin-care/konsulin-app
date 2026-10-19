@@ -1,4 +1,4 @@
-import { useProfileSectionSave } from '@/app/profile/hooks/useProfileSectionSave';
+import { mockSectionSave } from '@/__tests__/mocks/section-save-mock';
 import PersonalInfoEditDrawer from '@/app/profile/personal-info-edit-drawer';
 import DropdownProfile from '@/components/profile/dropdown-profile';
 import enAdmin from '@/messages/en/admin.json';
@@ -156,14 +156,7 @@ describe('End-to-end locale flow (manual check automated)', () => {
 
   beforeEach(() => {
     clearLocaleCookie();
-    vi.clearAllMocks();
-    mockSaveSection.mockImplementation((params: { onSuccess?: () => void }) => {
-      params.onSuccess?.();
-    });
-    vi.mocked(useProfileSectionSave).mockReturnValue({
-      isSaving: false,
-      saveSection: mockSaveSection
-    });
+    mockSectionSave(mockSaveSection);
   });
 
   it('renders Indonesian by default and switches to English on save without a reload', () => {

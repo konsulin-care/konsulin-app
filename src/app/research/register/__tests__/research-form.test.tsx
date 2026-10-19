@@ -133,7 +133,8 @@ describe('Step2 - Questionnaire Selection', () => {
 });
 
 describe('Step3 - Batch Configuration', () => {
-  it('renders batch configuration heading and Add Batch button', () => {
+  /** Renders Step3 with a single default batch field. */
+  function renderStep3() {
     renderWithQuery(
       <Step3
         fields={[mockField]}
@@ -144,6 +145,10 @@ describe('Step3 - Batch Configuration', () => {
         onRemoveBatch={vi.fn()}
       />
     );
+  }
+
+  it('renders batch configuration heading and Add Batch button', () => {
+    renderStep3();
 
     expect(screen.getByText(/batch configuration/i)).toBeInTheDocument();
     expect(
@@ -152,16 +157,7 @@ describe('Step3 - Batch Configuration', () => {
   });
 
   it('has no Back or Submit buttons', () => {
-    renderWithQuery(
-      <Step3
-        fields={[mockField]}
-        errors={{}}
-        batches={[mockBatch]}
-        setValue={vi.fn()}
-        onAddBatch={vi.fn()}
-        onRemoveBatch={vi.fn()}
-      />
-    );
+    renderStep3();
 
     expect(
       screen.queryByRole('button', { name: /back/i })
@@ -172,16 +168,7 @@ describe('Step3 - Batch Configuration', () => {
   });
 
   it('renders date picker buttons for each batch', () => {
-    renderWithQuery(
-      <Step3
-        fields={[mockField]}
-        errors={{}}
-        batches={[mockBatch]}
-        setValue={vi.fn()}
-        onAddBatch={vi.fn()}
-        onRemoveBatch={vi.fn()}
-      />
-    );
+    renderStep3();
 
     expect(
       screen.getByRole('button', { name: /select start date/i })
