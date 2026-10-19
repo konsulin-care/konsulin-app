@@ -165,10 +165,14 @@ interface SubmitEditStudyParams {
   tToast?: (key: string) => string;
 }
 
+/** Toast messages keyed by translation key; avoids variable-key indexing. */
+const TOAST_MESSAGES = new Map<string, string>(
+  Object.entries(enToast as Record<string, string>)
+);
+
 /** Resolves a toast key against the built-in English messages. */
 function defaultToast(key: string): string {
-  const messages = enToast as Record<string, string>;
-  return messages[key] ?? key;
+  return TOAST_MESSAGES.get(key) ?? key;
 }
 
 /** Submits the edit form as a FHIR transaction bundle. */

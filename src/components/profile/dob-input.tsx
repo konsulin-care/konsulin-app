@@ -137,7 +137,7 @@ export default function DobInput({ value, onChange }: DobInputProps) {
   };
 
   /** Get the English month key from its index for the select value. */
-  const getMonthKey = (index: number) => MONTH_KEYS[index] ?? '';
+  const getMonthKey = (index: number) => MONTH_KEYS.at(index) ?? '';
 
   /** Emit the date when the year select changes. */
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -169,11 +169,14 @@ export default function DobInput({ value, onChange }: DobInputProps) {
         className={`${SELECT_CLASS} w-[120px]`}
       >
         <option value=''>{t('month')}</option>
-        {MONTH_KEYS.map((key, index) => (
-          <option key={key} value={key}>
-            {months[index]}
-          </option>
-        ))}
+        {months.map((label, index) => {
+          const key = MONTH_KEYS.at(index) ?? '';
+          return (
+            <option key={key} value={key}>
+              {label}
+            </option>
+          );
+        })}
       </select>
 
       <select
