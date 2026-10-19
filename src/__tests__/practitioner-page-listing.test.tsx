@@ -6,6 +6,12 @@ import { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Hoisted mocks
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn().mockReturnValue({ push: vi.fn() }),
   useSearchParams: vi.fn(),

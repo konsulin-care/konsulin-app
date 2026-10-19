@@ -12,6 +12,12 @@ import { useSearchParams } from 'next/navigation';
 // Mocks – vi.mock is hoisted so these run before any import
 // ---------------------------------------------------------------------------
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
   useSearchParams: vi.fn()
