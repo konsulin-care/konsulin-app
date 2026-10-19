@@ -54,8 +54,8 @@ export function scanSource(file: string, code: string): Violation[] {
   const lines = code.split('\n');
   for (const line of lines) {
     for (const match of line.matchAll(ATTRIBUTE_PATTERN)) {
-      const name = match[1] ?? '';
-      const value = match[3] ?? '';
+      const name = match.at(1) ?? '';
+      const value = match.at(3) ?? '';
       violations.push({
         file,
         kind: 'attribute',
@@ -63,8 +63,8 @@ export function scanSource(file: string, code: string): Violation[] {
       });
     }
     for (const match of line.matchAll(TOAST_PATTERN)) {
-      const quote = match[1] ?? "'";
-      const body = match[2] ?? '';
+      const quote = match.at(1) ?? "'";
+      const body = match.at(2) ?? '';
       if (quote === '`' && body.includes('${')) continue;
       if (body.trim() === '') continue;
       violations.push({ file, kind: 'toast', detail: `toast:${body}` });
