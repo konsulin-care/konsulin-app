@@ -5,23 +5,11 @@ import ResearcherImpactDashboard from '../researcher-impact-dashboard';
 import { makeStudyWithBatches } from './research-fixtures';
 
 // Mock useAuth
-vi.mock('@/i18n', async () => {
-  const { createUseTranslationsMock } =
-    await import('@/i18n/__tests__/test-messages');
-  return { useTranslations: createUseTranslationsMock() };
-});
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: () => ({
-    state: {
-      userInfo: {
-        fullname: 'Dr. Smith',
-        email: 'smith@example.com',
-        userId: 'user-1',
-        fhirId: 'practitioner-1',
-        profile_picture: undefined
-      }
-    }
-  })
+vi.mock('@/i18n', async () =>
+  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+);
+vi.mock('@/context/auth/authContext', async () => ({
+  ...(await import('@/__tests__/mocks/research-form')).researcherAuthMock
 }));
 
 // Mock useResearcherImpact

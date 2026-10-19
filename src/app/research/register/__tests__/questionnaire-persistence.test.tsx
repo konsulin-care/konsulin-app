@@ -5,24 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchForm from '../research-form';
 
-const mockPush = vi.fn();
-const mockReplace = vi.fn();
-
-vi.mock('@/i18n', async () => {
-  const { createUseTranslationsMock } =
-    await import('@/i18n/__tests__/test-messages');
-  return { useTranslations: createUseTranslationsMock() };
-});
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: () => ({
-    state: {
-      userInfo: {
-        fhirId: 'test-practitioner-id',
-        role_name: 'Researcher'
-      }
-    },
-    isLoading: false
-  })
+vi.mock('@/i18n', async () =>
+  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+);
+vi.mock('@/context/auth/authContext', async () => ({
+  ...(await import('@/__tests__/mocks/research-form')).researcherAuthMock
 }));
 
 vi.mock('@/services/api', () => ({
@@ -40,8 +27,8 @@ vi.mock('@/services/api', () => ({
     })
 }));
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
+vi.mock('next/navigation', async () => ({
+  ...(await import('@/__tests__/mocks/research-form')).researchRouterMock,
   usePathname: () => '/research/register',
   useSearchParams: vi.fn()
 }));
