@@ -34,10 +34,10 @@ export function violationKey(violation: Violation): string {
   return `${violation.file}|${violation.kind}|${violation.detail}`;
 }
 
-const ATTRIBUTE_PATTERN = new RegExp(
-  `(?:^|[\\s(<])(${GUARDED_ATTRIBUTES.join('|')})\\s*=\\s*(["'])([^"']+?)\\2`,
-  'g'
-);
+// Literal pattern (no dynamic RegExp construction). Attribute names must be
+// kept in sync with GUARDED_ATTRIBUTES above.
+const ATTRIBUTE_PATTERN =
+  /(?:^|[\s(<])(placeholder|title|aria-label|alt|label|ctaLabel|subtitle|description)\s*=\s*(["'])([^"']+?)\2/g;
 
 const TOAST_PATTERN =
   /(?:^|[^a-zA-Z0-9_$.])toast(?:\.(?:success|error|info|warning|message))?\(\s*(["'`])((?:\\.|(?!\1)[^\\\n])*)\1/g;
