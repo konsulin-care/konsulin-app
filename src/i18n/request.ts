@@ -28,6 +28,11 @@ export const loadNamespace = async (
   namespace: string
 ): Promise<[string, Record<string, unknown>] | null> => {
   try {
+    // skipcq - NOSONAR - template-literal import() is required for Next.js
+    // namespace code-splitting: each messages/<locale>/<namespace>.json must
+    // become its own lazy chunk, so a static import list is not possible.
+    // locale and namespace are constrained to the LOCALES and NAMESPACES
+    // constants in this module and are never user input.
     const mod = (await import(`../messages/${locale}/${namespace}.json`)) as {
       default: Record<string, unknown>;
     };
