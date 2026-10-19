@@ -12,19 +12,9 @@ vi.mock('@/context/auth/authContext', async () => ({
   ...(await import('@/__tests__/mocks/research-form')).researcherAuthMock
 }));
 
-vi.mock('@/services/api', () => ({
-  getAPI: () =>
-    Promise.resolve({
-      get: vi.fn().mockResolvedValue({
-        data: {
-          entry: [
-            { resource: { id: 'phq2', title: 'PHQ-2', status: 'active' } }
-          ]
-        }
-      }),
-      post: vi.fn().mockResolvedValue({ data: { id: 'new-id' } })
-    })
-}));
+vi.mock('@/services/api', async () =>
+  (await import('@/__tests__/mocks/research-form')).researchApiMockFactory()
+);
 
 vi.mock('next/navigation', async () => ({
   ...(await import('@/__tests__/mocks/research-form')).researchRouterMock,
