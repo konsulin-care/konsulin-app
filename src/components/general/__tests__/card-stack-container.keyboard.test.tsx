@@ -1,46 +1,32 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockF, mockSwipe, mockToast, mockStyles } = vi.hoisted(() => ({
-  mockF: vi.fn<() => any>(),
-  mockSwipe: vi.fn<() => any>(),
-  mockToast: { error: vi.fn() } as Record<string, (...args: any[]) => any>,
-  mockStyles: vi.fn().mockReturnValue(vi.fn())
-}));
-
-vi.mock('@/hooks/useQuestionFocus', () => ({ useQuestionFocus: mockF }));
-vi.mock('@/hooks/useCardSwipe', () => ({ useCardSwipe: mockSwipe }));
-vi.mock('../card-dom-mapper', () => ({ CardDomMapper: () => null }));
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(
-    () => (key: string, values?: Record<string, number>) => {
-      const translations: Record<string, string> = {
-        question_navigation: 'Question navigation',
-        question_progress: 'Question {current} of {total}',
-        cannot_skip_required: "Can't skip required question"
-      };
-      return (translations[key] ?? key).replace(
-        /\{(\w+)\}/g,
-        (_, name: string) => String(values?.[name] ?? '')
-      );
-    }
-  )
-}));
-vi.mock('react-toastify', () => ({ toast: mockToast }));
-vi.mock('@/lib/injectCardStyles', () => ({ injectCardStyles: mockStyles }));
+vi.mock('@/hooks/useQuestionFocus', async () =>
+  (await import('./card-stack-test-fixtures')).questionFocusMockFactory()
+);
+vi.mock('@/hooks/useCardSwipe', async () =>
+  (await import('./card-stack-test-fixtures')).cardSwipeMockFactory()
+);
+vi.mock('../card-dom-mapper', async () =>
+  (await import('./card-stack-test-fixtures')).cardDomMapperMockFactory()
+);
+vi.mock('@/i18n', async () =>
+  (await import('./card-stack-test-fixtures')).cardStackI18nMockFactory()
+);
+vi.mock('react-toastify', async () =>
+  (await import('./card-stack-test-fixtures')).toastMockFactory()
+);
+vi.mock('@/lib/injectCardStyles', async () =>
+  (await import('./card-stack-test-fixtures')).injectCardStylesMockFactory()
+);
 
 import { CardStackContainer } from '../card-stack-container';
+import { BASE, mockF, mockSwipe, mockToast } from './card-stack-test-fixtures';
 
-const BASE = {
+const ANSWERED_ACTIVE = {
+  ...BASE,
   activeCardIndex: 1,
-  setIdx: vi.fn(),
-  totalFocusable: 3,
-  totalAnswerable: 3,
-  cardStates: { q1: 'answered', q2: 'active', q3: 'future' },
-  displayItemLinkIds: [],
-  focusableLinkIds: ['q1', 'q2', 'q3'],
-  isRequired: vi.fn().mockReturnValue(false),
-  isAnswered: vi.fn().mockReturnValue(false)
+  cardStates: { q1: 'answered', q2: 'active', q3: 'future' }
 };
 
 function withCards(classes: Record<string, string>) {
@@ -60,7 +46,7 @@ describe('keyboard navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     set = vi.fn();
-    mockF.mockReturnValue({ ...BASE, setActiveCardIndex: set });
+    mockF.mockReturnValue({ ...ANSWERED_ACTIVE, setActiveCardIndex: set });
     mockSwipe.mockReturnValue({
       swipeDirection: null,
       onTouchStart: vi.fn(),
@@ -96,7 +82,7 @@ describe('keyboard navigation', () => {
 
   it('marks future cards aria-disabled when active card is required and unanswered', () => {
     mockF.mockReturnValue({
-      ...BASE,
+      ...ANSWERED_ACTIVE,
       setActiveCardIndex: set,
       isRequired: vi.fn().mockReturnValue(true),
       isAnswered: vi.fn().mockReturnValue(false)
@@ -154,7 +140,7 @@ describe('keyboard navigation', () => {
 
   it('blocks Enter on future card when active card is required', () => {
     mockF.mockReturnValue({
-      ...BASE,
+      ...ANSWERED_ACTIVE,
       setActiveCardIndex: set,
       isRequired: vi.fn().mockReturnValue(true),
       isAnswered: vi.fn().mockReturnValue(false)
