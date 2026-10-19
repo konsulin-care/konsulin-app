@@ -295,6 +295,12 @@ describe('Profile page', () => {
       expect(container.firstChild).toBeNull();
     });
 
+    it('marks the dismiss icon as decorative for screen readers', () => {
+      render(<CompletenessBanner show />);
+      const icon = screen.getByLabelText('Dismiss').querySelector('svg');
+      expect(icon?.getAttribute('aria-hidden')).toBe('true');
+    });
+
     it('dismisses on the dismiss button', () => {
       render(<CompletenessBanner show />);
       fireEvent.click(screen.getByLabelText('Dismiss'));
