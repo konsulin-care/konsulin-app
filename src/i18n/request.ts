@@ -16,6 +16,44 @@ const NAMESPACES = [
   'admin'
 ] as const;
 
+/**
+ * Loads the messages for a single namespace via dynamic import.
+ *
+ * @param locale - The locale whose message file to load.
+ * @param namespace - The message namespace (file name without extension).
+ * @returns A [namespace, messages] tuple, or null when the file is missing.
+ */
+export const loadNamespace = async (
+  locale: string,
+  namespace: string
+): Promise<[string, Record<string, unknown>] | null> => {
+  try {
+    const mod = (await import(`../messages/${locale}/${namespace}.json`)) as {
+      default: Record<string, unknown>;
+    };
+    return [namespace, mod.default];
+  } catch {
+    // Namespace file missing; skip
+    return null;
+  }
+};
+
+/**
+ * Loads all namespace messages for a locale concurrently.
+ * Missing namespace files are skipped rather than failing the whole load.
+ *
+ * @param locale - The locale whose messages to load.
+ * @returns A record mapping each loaded namespace to its messages.
+ */
+export const loadMessages = async (
+  locale: string
+): Promise<Record<string, Record<string, unknown>>> => {
+  const entries = await Promise.all(
+    NAMESPACES.map(namespace => loadNamespace(locale, namespace))
+  );
+  return Object.fromEntries(entries.filter(entry => entry !== null));
+};
+
 export default getRequestConfig(async ({ locale }) => {
   // Validate locale
   const validLocale = (LOCALES as readonly string[]).includes(locale)
@@ -23,17 +61,7 @@ export default getRequestConfig(async ({ locale }) => {
     : 'id';
 
   // Load all namespace messages for this locale
-  const messages: Record<string, Record<string, unknown>> = {};
-  for (const namespace of NAMESPACES) {
-    try {
-      const mod = (await import(
-        `../messages/${validLocale}/${namespace}.json`
-      )) as { default: Record<string, unknown> };
-      messages[namespace] = mod.default;
-    } catch {
-      // Namespace file missing; skip
-    }
-  }
+  const messages = await loadMessages(validLocale);
 
   return {
     locale: validLocale,
