@@ -67,7 +67,7 @@ const createBatch = (date = ''): FormData['batches'][number] => ({
   questionnaireIds: []
 });
 /** POST a new research study to the API. */
-const submitStudy = async (
+export const submitStudy = async (
   API: Awaited<ReturnType<typeof getAPI>>,
   options: {
     data: FormData;
@@ -78,22 +78,23 @@ const submitStudy = async (
   }
 ) => {
   const { data, userId, storageKey, router, tToast } = options;
-  const planIds: string[] = [];
-  for (const batch of data.batches) {
-    const res: { data: { id?: string } } = await API.post(
-      '/fhir/PlanDefinition',
-      {
-        resourceType: 'PlanDefinition',
-        title: `Batch ${planIds.length + 1}`,
-        status: 'active',
-        effectivePeriod: { start: batch.startDate, end: batch.endDate },
-        action: batch.questionnaireIds.map(qId => ({
-          definitionCanonical: `Questionnaire/${qId}`
-        }))
-      }
-    );
-    if (res.data.id) planIds.push(res.data.id);
-  }
+  const planIds = await Promise.all(
+    data.batches.map(async (batch, index) => {
+      const res: { data: { id?: string } } = await API.post(
+        '/fhir/PlanDefinition',
+        {
+          resourceType: 'PlanDefinition',
+          title: `Batch ${index + 1}`,
+          status: 'active',
+          effectivePeriod: { start: batch.startDate, end: batch.endDate },
+          action: batch.questionnaireIds.map(qId => ({
+            definitionCanonical: `Questionnaire/${qId}`
+          }))
+        }
+      );
+      return res.data.id;
+    })
+  );
 
   const starts = data.batches
     .map(b => b.startDate)
@@ -108,7 +109,9 @@ const submitStudy = async (
     description: data.description,
     status: 'active',
     principalInvestigator: { reference: `Practitioner/${userId}` },
-    protocol: planIds.map(id => ({ reference: `PlanDefinition/${id}` })),
+    protocol: planIds
+      .filter(id => id !== undefined)
+      .map(id => ({ reference: `PlanDefinition/${id}` })),
     period: { start: starts[0], end: ends.at(-1) }
   });
 
