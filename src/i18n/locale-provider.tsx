@@ -65,7 +65,7 @@ const MESSAGES: Record<Locale, MessageBundle> = {
  * @param props.children - Tree to provide translations to.
  * @returns Provider wrapping children with locale-aware intl context.
  */
-export function LocaleProvider({ children }: { children: ReactNode }) {
+export function LocaleProvider({ children }: { readonly children: ReactNode }) {
   const locale = useLocale();
 
   useEffect(() => {
