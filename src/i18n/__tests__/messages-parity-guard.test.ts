@@ -1,55 +1,11 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-
-// Vitest runs with the project root as cwd.
-const EN_DIR = path.resolve(process.cwd(), 'src/messages/en');
-const ID_DIR = path.resolve(process.cwd(), 'src/messages/id');
-
-/**
- * Flatten a nested message object into dot-separated leaf key paths.
- * Arrays count as leaves, matching next-intl key resolution.
- */
-function flattenKeys(messages: Record<string, unknown>): Set<string> {
-  const keys = new Set<string>();
-  const walk = (prefix: string, value: Record<string, unknown>): void => {
-    for (const [key, child] of Object.entries(value)) {
-      const fullKey = prefix ? `${prefix}.${key}` : key;
-      if (
-        child !== null &&
-        typeof child === 'object' &&
-        !Array.isArray(child)
-      ) {
-        walk(fullKey, child as Record<string, unknown>);
-      } else {
-        keys.add(fullKey);
-      }
-    }
-  };
-  walk('', messages);
-  return keys;
-}
-
-/** Read a namespace JSON file from a messages directory. */
-function readMessages(dir: string, namespace: string): Record<string, unknown> {
-  return JSON.parse(
-    fs.readFileSync(path.join(dir, `${namespace}.json`), 'utf8')
-  ) as Record<string, unknown>;
-}
-
-/**
- * Compare en and id flattened key sets.
- * Returns en keys absent from id and id keys absent from en, each sorted.
- */
-function compareKeySets(
-  enKeys: Set<string>,
-  idKeys: Set<string>
-): { missingInId: string[]; extraInId: string[] } {
-  return {
-    missingInId: [...enKeys].filter(key => !idKeys.has(key)).sort(),
-    extraInId: [...idKeys].filter(key => !enKeys.has(key)).sort()
-  };
-}
+import {
+  EN_DIR,
+  ID_DIR,
+  compareKeySets,
+  flattenKeys,
+  readMessages
+} from './message-scanner';
 
 describe('locale parity guard detects divergence', () => {
   const enFixture: Record<string, unknown> = {

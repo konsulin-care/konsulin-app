@@ -18,25 +18,21 @@ vi.mock('@/lib/locale', () => ({
 }));
 
 describe('i18n request config', () => {
-  it('loads English messages for the en locale', async () => {
-    const { default: getConfig } = await import('../request');
-    const config = await getConfig({
-      locale: 'en',
-      requestLocale: Promise.resolve('en')
-    });
-    expect(config.locale).toBe('en');
-    expect(config.messages.common.save).toBe('Save');
-  });
-
-  it('loads Indonesian messages for the id locale', async () => {
-    const { default: getConfig } = await import('../request');
-    const config = await getConfig({
-      locale: 'id',
-      requestLocale: Promise.resolve('id')
-    });
-    expect(config.locale).toBe('id');
-    expect(config.messages.common.save).toBe('Simpan');
-  });
+  it.each([
+    { locale: 'en', message: 'Save' },
+    { locale: 'id', message: 'Simpan' }
+  ])(
+    'loads $locale messages for the $locale locale',
+    async ({ locale, message }) => {
+      const { default: getConfig } = await import('../request');
+      const config = await getConfig({
+        locale,
+        requestLocale: Promise.resolve(locale)
+      });
+      expect(config.locale).toBe(locale);
+      expect(config.messages.common.save).toBe(message);
+    }
+  );
 
   it('falls back to id for an unknown locale', async () => {
     const { default: getConfig } = await import('../request');
