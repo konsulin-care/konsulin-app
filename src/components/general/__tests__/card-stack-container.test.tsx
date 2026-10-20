@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/hooks/useQuestionFocus', async () =>
@@ -23,26 +23,23 @@ vi.mock('@/lib/injectCardStyles', async () =>
 import { CardStackContainer } from '../card-stack-container';
 import {
   BASE,
+  defaultSwipeResult,
   mockF,
   mockStyles,
   mockSwipe,
-  mockToast
+  mockToast,
+  renderCards
 } from './card-stack-test-fixtures';
 
 describe('CardStackContainer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockF.mockReturnValue(BASE);
-    mockSwipe.mockReturnValue({
-      swipeDirection: null,
-      onTouchStart: vi.fn(),
-      onTouchMove: vi.fn(),
-      onTouchEnd: vi.fn()
-    });
+    mockSwipe.mockReturnValue(defaultSwipeResult());
   });
 
   it('renders children', () => {
-    render(
+    renderCards(
       <CardStackContainer>
         <div data-testid='child'>Form</div>
       </CardStackContainer>
@@ -52,7 +49,7 @@ describe('CardStackContainer', () => {
   });
 
   it('shows progress', () => {
-    render(
+    renderCards(
       <CardStackContainer>
         <div>c</div>
       </CardStackContainer>
@@ -61,7 +58,7 @@ describe('CardStackContainer', () => {
   });
 
   it('hides Previous and Skip', () => {
-    render(
+    renderCards(
       <CardStackContainer>
         <div>c</div>
       </CardStackContainer>
@@ -70,7 +67,7 @@ describe('CardStackContainer', () => {
   });
 
   it('updates styles on state change', () => {
-    render(
+    renderCards(
       <CardStackContainer>
         <div>c</div>
       </CardStackContainer>
@@ -86,7 +83,7 @@ describe('CardStackContainer', () => {
       activeCardIndex: 1,
       cardStates: { q1: 'answered', q2: 'active', q3: 'future' }
     });
-    const { rerender } = render(
+    const { rerender } = renderCards(
       <CardStackContainer>
         <div>c</div>
       </CardStackContainer>
@@ -108,12 +105,10 @@ describe('CardStackContainer', () => {
     const setActiveCardIndex = vi.fn();
     mockF.mockReturnValue({ ...BASE, setActiveCardIndex });
     mockSwipe.mockReturnValue({
-      swipeDirection: 'up',
-      onTouchStart: vi.fn(),
-      onTouchMove: vi.fn(),
-      onTouchEnd: vi.fn()
+      ...defaultSwipeResult(),
+      swipeDirection: 'up'
     });
-    render(
+    renderCards(
       <CardStackContainer>
         <div>c</div>
       </CardStackContainer>
@@ -130,12 +125,10 @@ describe('CardStackContainer', () => {
       cardStates: { q1: 'answered', q2: 'active', q3: 'future' }
     });
     mockSwipe.mockReturnValue({
-      swipeDirection: 'down',
-      onTouchStart: vi.fn(),
-      onTouchMove: vi.fn(),
-      onTouchEnd: vi.fn()
+      ...defaultSwipeResult(),
+      swipeDirection: 'down'
     });
-    render(
+    renderCards(
       <CardStackContainer>
         <div>c</div>
       </CardStackContainer>
@@ -153,12 +146,10 @@ describe('CardStackContainer', () => {
       isAnswered: vi.fn().mockImplementation((id: string) => id === 'q1')
     });
     mockSwipe.mockReturnValue({
-      swipeDirection: 'up',
-      onTouchStart: vi.fn(),
-      onTouchMove: vi.fn(),
-      onTouchEnd: vi.fn()
+      ...defaultSwipeResult(),
+      swipeDirection: 'up'
     });
-    render(
+    renderCards(
       <CardStackContainer>
         <div>c</div>
       </CardStackContainer>

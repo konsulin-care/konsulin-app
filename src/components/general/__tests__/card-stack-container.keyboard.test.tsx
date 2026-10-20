@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/hooks/useQuestionFocus', async () =>
@@ -21,7 +21,14 @@ vi.mock('@/lib/injectCardStyles', async () =>
 );
 
 import { CardStackContainer } from '../card-stack-container';
-import { BASE, mockF, mockSwipe, mockToast } from './card-stack-test-fixtures';
+import {
+  BASE,
+  defaultSwipeResult,
+  mockF,
+  mockSwipe,
+  mockToast,
+  renderCards
+} from './card-stack-test-fixtures';
 
 const ANSWERED_ACTIVE = {
   ...BASE,
@@ -47,12 +54,7 @@ describe('keyboard navigation', () => {
     vi.clearAllMocks();
     set = vi.fn();
     mockF.mockReturnValue({ ...ANSWERED_ACTIVE, setActiveCardIndex: set });
-    mockSwipe.mockReturnValue({
-      swipeDirection: null,
-      onTouchStart: vi.fn(),
-      onTouchMove: vi.fn(),
-      onTouchEnd: vi.fn()
-    });
+    mockSwipe.mockReturnValue(defaultSwipeResult());
   });
 
   function keyDown(cls: string, key: string) {
@@ -63,7 +65,7 @@ describe('keyboard navigation', () => {
   }
 
   it('makes non-active cards tabbable with role=button, active card not', () => {
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-active',
@@ -87,7 +89,7 @@ describe('keyboard navigation', () => {
       isRequired: vi.fn().mockReturnValue(true),
       isAnswered: vi.fn().mockReturnValue(false)
     });
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-active',
@@ -103,7 +105,7 @@ describe('keyboard navigation', () => {
   });
 
   it('navigates to a future card on Enter', () => {
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-active',
@@ -115,7 +117,7 @@ describe('keyboard navigation', () => {
   });
 
   it('navigates to an answered card on Enter', () => {
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-active',
@@ -127,7 +129,7 @@ describe('keyboard navigation', () => {
   });
 
   it('navigates to a future card on Space', () => {
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-active',
@@ -145,7 +147,7 @@ describe('keyboard navigation', () => {
       isRequired: vi.fn().mockReturnValue(true),
       isAnswered: vi.fn().mockReturnValue(false)
     });
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-active',
@@ -160,7 +162,7 @@ describe('keyboard navigation', () => {
   });
 
   it('ignores Enter on the active card', () => {
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-active',
@@ -172,7 +174,7 @@ describe('keyboard navigation', () => {
   });
 
   it('advances on ArrowDown and moves focus to the next card', () => {
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-active',
@@ -185,7 +187,7 @@ describe('keyboard navigation', () => {
   });
 
   it('retreats on ArrowUp and moves focus to the previous card', () => {
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-active',
@@ -200,7 +202,7 @@ describe('keyboard navigation', () => {
   });
 
   it('does not hijack arrow keys when focus is inside a form input', () => {
-    render(
+    renderCards(
       <CardStackContainer>
         <div data-link-id='q2' className='card-active'>
           <input data-testid='inner-input' />

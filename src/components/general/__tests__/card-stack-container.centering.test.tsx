@@ -1,4 +1,3 @@
-import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/hooks/useQuestionFocus', async () =>
@@ -21,7 +20,13 @@ vi.mock('@/lib/injectCardStyles', async () =>
 );
 
 import { CardStackContainer } from '../card-stack-container';
-import { BASE, mockF, mockSwipe } from './card-stack-test-fixtures';
+import {
+  BASE,
+  defaultSwipeResult,
+  mockF,
+  mockSwipe,
+  renderCards
+} from './card-stack-test-fixtures';
 
 describe('CardStackContainer centering', () => {
   const scrollToSpy = vi.spyOn(window, 'scrollTo').mockReturnValue();
@@ -29,12 +34,7 @@ describe('CardStackContainer centering', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockF.mockReturnValue(BASE);
-    mockSwipe.mockReturnValue({
-      swipeDirection: null,
-      onTouchStart: vi.fn(),
-      onTouchMove: vi.fn(),
-      onTouchEnd: vi.fn()
-    });
+    mockSwipe.mockReturnValue(defaultSwipeResult());
   });
 
   function cards() {
@@ -50,7 +50,7 @@ describe('CardStackContainer centering', () => {
   }
 
   it('scrolls the window to center the active card vertically', () => {
-    const { rerender } = render(cards());
+    const { rerender } = renderCards(cards());
     const vp = document.querySelector<HTMLElement>('.card-stack-viewport');
 
     // Mock positions for all cards
@@ -106,7 +106,7 @@ describe('CardStackContainer centering', () => {
   });
 
   it('clears leftover inline styles before scrolling', () => {
-    const { rerender } = render(cards());
+    const { rerender } = renderCards(cards());
     const vp = document.querySelector<HTMLElement>('.card-stack-viewport');
     const q1 = vp.querySelector<HTMLElement>('[data-link-id="q1"]');
     vi.spyOn(q1, 'getBoundingClientRect').mockReturnValue({
@@ -149,14 +149,14 @@ describe('CardStackContainer centering', () => {
   });
 
   it('does nothing when activeCardIndex is out of bounds', () => {
-    render(cards());
+    renderCards(cards());
     vi.clearAllMocks();
 
     mockF.mockReturnValue({
       ...BASE,
       activeCardIndex: 99
     });
-    render(cards());
+    renderCards(cards());
 
     expect(scrollToSpy).not.toHaveBeenCalled();
   });

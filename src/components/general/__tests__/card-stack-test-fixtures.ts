@@ -1,5 +1,8 @@
 import type { SwipeDirection } from '@/hooks/useCardSwipe';
 import type { QuestionFocusResult } from '@/hooks/useQuestionFocus';
+import type { RenderResult } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { vi } from 'vitest';
 
 /**
@@ -24,6 +27,33 @@ export const mockF = vi.fn<(state?: MockedFocusState) => MockedFocusState>();
 
 /** Mock stand-in for the useCardSwipe hook. */
 export const mockSwipe = vi.fn<() => MockedCardSwipeResult>();
+
+/**
+ * Default mocked useCardSwipe result: no active swipe with no-op touch
+ * handlers. Each call returns fresh vi.fn() stubs so per-test mock-clear
+ * assertions stay isolated.
+ *
+ * @returns Mocked card-swipe result with a null swipeDirection.
+ */
+export function defaultSwipeResult(): MockedCardSwipeResult {
+  return {
+    swipeDirection: null,
+    onTouchStart: vi.fn(),
+    onTouchMove: vi.fn(),
+    onTouchEnd: vi.fn()
+  };
+}
+
+/**
+ * Shared renderer for the card-stack suites. Delegates to RTL render and
+ * returns the full result so tests can rerender the same tree.
+ *
+ * @param ui - Element to render, typically a CardStackContainer tree.
+ * @returns RTL render result including rerender.
+ */
+export function renderCards(ui: ReactElement): RenderResult {
+  return render(ui);
+}
 
 /** Mock toast object; assertions target `mockToast.error`. */
 export const mockToast = { error: vi.fn() };
