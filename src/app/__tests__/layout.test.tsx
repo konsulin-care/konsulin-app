@@ -1,24 +1,9 @@
-import { act, render, screen } from '@testing-library/react';
+import { renderAsync } from '@/__tests__/mocks/render-async';
+import { screen } from '@testing-library/react';
 import fs from 'node:fs';
 import path from 'node:path';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-
-/** Render an async server component by resolving its Promise first. */
-async function renderAsync(
-  element: React.ReactElement
-): Promise<ReturnType<typeof render>> {
-  // Async server components return a Promise; unwrap before rendering.
-  const type = element.type as unknown as (
-    ...args: unknown[]
-  ) => Promise<React.ReactElement>;
-  const resolved = await type(element.props);
-  let result!: ReturnType<typeof render>;
-  act(() => {
-    result = render(resolved);
-  });
-  return result;
-}
 
 // Mock every import that layout.tsx pulls in
 vi.mock('next/font/google', () => ({
