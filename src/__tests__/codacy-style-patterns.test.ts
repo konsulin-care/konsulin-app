@@ -290,6 +290,16 @@ describe('Codacy-style patterns (enforced beyond ESLint)', () => {
     });
   });
 
+  describe('i18n/request.ts (dynamic loader registry)', () => {
+    const { content } = readFile('src/i18n/request.ts');
+
+    it('uses Map.get() instead of computed access into the loader object', () => {
+      expect(content).not.toContain('localeLoaders?[');
+      expect(content).not.toMatch(/localeLoaders\[/);
+      expect(content).toContain('.get(');
+    });
+  });
+
   describe('role-map.ts (guarded role-keyed accessors)', () => {
     const { content, lines } = readFile('src/app/profile/role-map.ts');
 

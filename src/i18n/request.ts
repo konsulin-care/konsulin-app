@@ -21,43 +21,44 @@ type MessagesModule = { default: Record<string, unknown> };
 type NamespaceLoader = () => Promise<MessagesModule>;
 
 /**
- * Static per-locale loader registry. Each entry maps a namespace to an
- * arrow function with a literal import() path, so every import stays
- * statically analyzable (Codacy) while preserving per-namespace chunks.
+ * Static per-locale loader registry. Each locale maps to a Map of
+ * namespace loaders whose values are arrow functions with literal
+ * import() paths, so every import stays statically analyzable (Codacy)
+ * while preserving per-namespace chunks.
  */
-const LOADER_REGISTRY: Map<
+const LOADER_REGISTRY: Map<Locale, Map<Namespace, NamespaceLoader>> = new Map<
   Locale,
-  Record<Namespace, NamespaceLoader>
-> = new Map<Locale, Record<Namespace, NamespaceLoader>>([
+  Map<Namespace, NamespaceLoader>
+>([
   [
     'en',
-    {
-      common: () => import('../messages/en/common.json'),
-      profile: () => import('../messages/en/profile.json'),
-      home: () => import('../messages/en/home.json'),
-      assessment: () => import('../messages/en/assessment.json'),
-      auth: () => import('../messages/en/auth.json'),
-      interview: () => import('../messages/en/interview.json'),
-      research: () => import('../messages/en/research.json'),
-      toast: () => import('../messages/en/toast.json'),
-      'page-header': () => import('../messages/en/page-header.json'),
-      admin: () => import('../messages/en/admin.json')
-    }
+    new Map<Namespace, NamespaceLoader>([
+      ['common', () => import('../messages/en/common.json')],
+      ['profile', () => import('../messages/en/profile.json')],
+      ['home', () => import('../messages/en/home.json')],
+      ['assessment', () => import('../messages/en/assessment.json')],
+      ['auth', () => import('../messages/en/auth.json')],
+      ['interview', () => import('../messages/en/interview.json')],
+      ['research', () => import('../messages/en/research.json')],
+      ['toast', () => import('../messages/en/toast.json')],
+      ['page-header', () => import('../messages/en/page-header.json')],
+      ['admin', () => import('../messages/en/admin.json')]
+    ])
   ],
   [
     'id',
-    {
-      common: () => import('../messages/id/common.json'),
-      profile: () => import('../messages/id/profile.json'),
-      home: () => import('../messages/id/home.json'),
-      assessment: () => import('../messages/id/assessment.json'),
-      auth: () => import('../messages/id/auth.json'),
-      interview: () => import('../messages/id/interview.json'),
-      research: () => import('../messages/id/research.json'),
-      toast: () => import('../messages/id/toast.json'),
-      'page-header': () => import('../messages/id/page-header.json'),
-      admin: () => import('../messages/id/admin.json')
-    }
+    new Map<Namespace, NamespaceLoader>([
+      ['common', () => import('../messages/id/common.json')],
+      ['profile', () => import('../messages/id/profile.json')],
+      ['home', () => import('../messages/id/home.json')],
+      ['assessment', () => import('../messages/id/assessment.json')],
+      ['auth', () => import('../messages/id/auth.json')],
+      ['interview', () => import('../messages/id/interview.json')],
+      ['research', () => import('../messages/id/research.json')],
+      ['toast', () => import('../messages/id/toast.json')],
+      ['page-header', () => import('../messages/id/page-header.json')],
+      ['admin', () => import('../messages/id/admin.json')]
+    ])
   ]
 ]);
 
@@ -85,7 +86,7 @@ export const loadNamespace = async (
     return null;
   }
   const localeLoaders = LOADER_REGISTRY.get(locale);
-  const loader = localeLoaders?.[namespace as Namespace];
+  const loader = localeLoaders?.get(namespace as Namespace);
   if (!loader) {
     return null;
   }
@@ -111,9 +112,7 @@ export const loadMessages = async (
 
 export default getRequestConfig(async ({ locale }) => {
   // Validate locale
-  const validLocale = (LOCALES as readonly string[]).includes(locale)
-    ? (locale as Locale)
-    : 'id';
+  const validLocale = isLocale(locale) ? locale : 'id';
 
   // Load all namespace messages for this locale
   const messages = await loadMessages(validLocale);
