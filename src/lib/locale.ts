@@ -57,6 +57,10 @@ export function useLocale(): Locale {
   }, []);
 
   useEffect(() => {
+    /**
+     * Listener callback: re-reads the locale from the cookie and triggers a
+     * re-render when `updateLocale` notifies subscribers.
+     */
     const handler = () => setLocale(getLocale());
     listeners.add(handler);
     return () => {
