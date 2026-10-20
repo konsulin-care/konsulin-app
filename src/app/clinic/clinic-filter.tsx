@@ -23,7 +23,24 @@ import { IUseClinicParams } from '@/services/clinic';
 import { useListActiveOrganizations } from '@/services/clinic-locations';
 
 import { addDays } from 'date-fns';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+
+/** Shared card wrapper for a filter section with title, hint, and content. */
+function FilterSection({
+  title,
+  hint,
+  children
+}: Readonly<{ title: string; hint: string; children: ReactNode }>) {
+  return (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4'>
+        <div className='font-bold'>{title}</div>
+        <span className='text-muted-foreground text-xs opacity-50'>{hint}</span>
+      </div>
+      <div className='flex flex-wrap gap-[10px]'>{children}</div>
+    </div>
+  );
+}
 
 /**
  * Role-aware clinic filter drawer.
@@ -130,60 +147,50 @@ export default function ClinicFilter({
 
   /** Render location filter section (province + city). */
   const renderLocationSection = () => (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4'>
-        <div className='font-bold'>{t('clinic.location')}</div>
-        <span className='text-muted-foreground text-xs opacity-50'>
-          {t('clinic.location_hint')}
-        </span>
-      </div>
-      <div className='flex flex-wrap gap-[10px]'>
+    <FilterSection
+      title={t('clinic.location')}
+      hint={t('clinic.location_hint')}
+    >
+      <LocationCombobox
+        options={listProvinces ?? []}
+        value={filter.province_code ?? ''}
+        onSelect={(option: ComboboxOption) => {
+          handleFilterChange('province_code', option.code);
+          handleFilterChange('province', option.name);
+        }}
+        placeholder={t('clinic.select_province')}
+        loading={provinceLoading}
+      />
+      {filter.province_code && (
         <LocationCombobox
-          options={listProvinces ?? []}
-          value={filter.province_code ?? ''}
-          onSelect={(option: ComboboxOption) => {
-            handleFilterChange('province_code', option.code);
-            handleFilterChange('province', option.name);
-          }}
-          placeholder={t('clinic.select_province')}
-          loading={provinceLoading}
+          options={listCities ?? []}
+          value={filter.city ?? ''}
+          onSelect={(option: ComboboxOption) =>
+            handleFilterChange('city', option.name)
+          }
+          placeholder={t('clinic.select_city')}
+          loading={cityLoading}
         />
-        {filter.province_code && (
-          <LocationCombobox
-            options={listCities ?? []}
-            value={filter.city ?? ''}
-            onSelect={(option: ComboboxOption) =>
-              handleFilterChange('city', option.name)
-            }
-            placeholder={t('clinic.select_city')}
-            loading={cityLoading}
-          />
-        )}
-      </div>
-    </div>
+      )}
+    </FilterSection>
   );
 
   /** Render organization filter section (Patient/Guest only). */
   const renderOrganizationSection = () => (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4'>
-        <div className='font-bold'>{t('clinic.organization')}</div>
-        <span className='text-muted-foreground text-xs opacity-50'>
-          {t('clinic.organization_hint')}
-        </span>
-      </div>
-      <div className='flex flex-wrap gap-[10px]'>
-        <LocationCombobox
-          options={organizations ?? []}
-          value={filter.organization ?? ''}
-          onSelect={(option: ComboboxOption) =>
-            handleFilterChange('organization', option.code)
-          }
-          placeholder={t('clinic.select_organization')}
-          loading={orgLoading}
-        />
-      </div>
-    </div>
+    <FilterSection
+      title={t('clinic.organization')}
+      hint={t('clinic.organization_hint')}
+    >
+      <LocationCombobox
+        options={organizations ?? []}
+        value={filter.organization ?? ''}
+        onSelect={(option: ComboboxOption) =>
+          handleFilterChange('organization', option.code)
+        }
+        placeholder={t('clinic.select_organization')}
+        loading={orgLoading}
+      />
+    </FilterSection>
   );
 
   /** Render default or custom date/time filter content. */
