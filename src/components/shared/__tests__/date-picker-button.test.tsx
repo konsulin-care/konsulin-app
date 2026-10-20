@@ -2,69 +2,25 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockLocale } = vi.hoisted(() => ({
-  mockLocale: { current: 'en' }
-}));
+import {
+  mockLocale,
+  renderDatePickerButton
+} from './date-picker-button-test-fixtures';
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn((namespace: string) => (key: string) => {
-    const translations: Record<string, Record<string, string>> = {
-      en: {
-        'common.date_picker.pick_a_date': 'Pick a date',
-        'common.date_picker.select_date': 'Select Date'
-      },
-      id: {
-        'common.date_picker.pick_a_date': 'Pilih tanggal',
-        'common.date_picker.select_date': 'Pilih Tanggal'
-      }
-    };
-    return translations[mockLocale.current]?.[`${namespace}.${key}`] ?? key;
-  })
-}));
+// Locale, drawer, and calendar stubs live in the shared mocks file.
+vi.mock('@/i18n', async () =>
+  (await import('./date-picker-button-test-mocks')).datePickerI18nMockFactory()
+);
 
-vi.mock('@/components/ui/app-drawer', () => ({
-  default: ({
-    children,
-    open,
-    title
-  }: {
-    children: React.ReactNode;
-    open: boolean;
-    title?: string;
-  }) => (
-    <div data-testid='drawer-root' data-open={open}>
-      {title && <div data-testid='drawer-title'>{title}</div>}
-      {open && children}
-    </div>
-  )
-}));
+vi.mock('@/components/ui/app-drawer', async () =>
+  (await import('./date-picker-button-test-mocks')).appDrawerMockFactory()
+);
 
-vi.mock('@/components/ui/calendar-base', () => ({
-  CalendarBase: ({
-    mode,
-    onSelect
-  }: {
-    mode: string;
-    onSelect?: (date: unknown) => void;
-  }) => (
-    <div data-testid='calendar-base' data-mode={mode}>
-      <button type='button' onClick={() => onSelect?.(new Date('2026-03-15'))}>
-        Select Mar 15
-      </button>
-    </div>
-  )
-}));
+vi.mock('@/components/ui/calendar-base', async () =>
+  (await import('./date-picker-button-test-mocks')).calendarBaseMockFactory()
+);
 
 import DatePickerButton from '../date-picker-button';
-
-/** Render DatePickerButton with an undefined value unless overridden. */
-function renderDatePickerButton(
-  overrides: Partial<React.ComponentProps<typeof DatePickerButton>> = {}
-) {
-  return render(
-    <DatePickerButton value={undefined} onChange={vi.fn()} {...overrides} />
-  );
-}
 
 describe('DatePickerButton', () => {
   beforeEach(() => {

@@ -1,70 +1,20 @@
 import AppDrawer from '@/components/ui/app-drawer';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import Combobox, { type ComboboxOption, type ComboboxProps } from '../combobox';
+import Combobox, { type ComboboxOption } from '../combobox';
+import {
+  mockLocale,
+  PROVINCES,
+  renderCombobox,
+  renderMultiCombobox,
+  stubMobileViewport,
+  TWO_OPTIONS
+} from './combobox-test-fixtures';
 
-const { mockLocale } = vi.hoisted(() => ({
-  mockLocale: { current: 'en' }
-}));
-
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn((namespace: string) => (key: string) => {
-    const translations: Record<string, Record<string, string>> = {
-      en: {
-        'common.loading': 'Loading...',
-        'common.no_results_found': 'No results found.'
-      },
-      id: {
-        'common.loading': 'Memuat...',
-        'common.no_results_found': 'Tidak ada hasil.'
-      }
-    };
-    return translations[mockLocale.current]?.[`${namespace}.${key}`] ?? key;
-  })
-}));
-
-const PROVINCES: readonly ComboboxOption[] = [
-  { code: '31', name: 'DKI Jakarta' },
-  { code: '32', name: 'Jawa Barat' },
-  { code: '33', name: 'Jawa Tengah' }
-];
-
-const TWO_OPTIONS: readonly ComboboxOption[] = [
-  { code: 'a', name: 'Option A' },
-  { code: 'b', name: 'Option B' }
-];
-
-/** Override props for the single-select renderCombobox helper. */
-type ComboboxOverrides = Partial<
-  Extract<ComboboxProps, { readonly multiple?: false }>
->;
-
-/** Render Combobox with the shared defaults; override per-test props. */
-function renderCombobox(overrides: ComboboxOverrides = {}) {
-  return render(
-    <Combobox
-      options={PROVINCES}
-      value=''
-      onSelect={vi.fn()}
-      placeholder='Select province'
-      {...overrides}
-    />
-  );
-}
-
-/** Make (max-width: 640px) match so the sheet variant renders. */
-function stubMobileViewport() {
-  vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: query.includes('(max-width: 640px)'),
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn()
-  }));
-}
+// Locale setup lives in the shared mocks file.
+vi.mock('@/i18n', async () =>
+  (await import('./combobox-test-mocks')).comboboxI18nMockFactory()
+);
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -232,15 +182,7 @@ describe('Combobox (desktop popover)', () => {
 
   it('toggles multi-select values without closing the popover', async () => {
     const onSelect = vi.fn();
-    render(
-      <Combobox
-        multiple
-        options={TWO_OPTIONS}
-        value={[]}
-        onSelect={onSelect}
-        placeholder='Select items'
-      />
-    );
+    renderMultiCombobox(onSelect);
 
     // The cmdk search input also exposes role=combobox once open, so keep a
     // reference to the trigger button for assertions while the list is open.
@@ -347,15 +289,7 @@ describe('Combobox (mobile sheet)', () => {
 
   it('keeps the sheet open for multi-select toggling', async () => {
     const onSelect = vi.fn();
-    render(
-      <Combobox
-        multiple
-        options={TWO_OPTIONS}
-        value={[]}
-        onSelect={onSelect}
-        placeholder='Select items'
-      />
-    );
+    renderMultiCombobox(onSelect);
 
     const trigger = screen.getByRole('combobox');
     fireEvent.click(trigger);
