@@ -18,7 +18,7 @@ type OrganizationCardHeaderProps = Pick<
 function OrganizationCardHeader({
   organization,
   onTimeRangeAdd
-}: OrganizationCardHeaderProps) {
+}: Readonly<OrganizationCardHeaderProps>) {
   const t = useTranslations('common');
   return (
     <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>

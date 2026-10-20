@@ -30,6 +30,26 @@ describe('profile component props are read-only', () => {
     }
   });
 
+  it('marks SonarCloud S6759 flagged props (availability + dropdown) as Readonly', async () => {
+    const flaggedPropsFiles = [
+      {
+        file: 'src/components/availability/organization-card.tsx',
+        props: 'OrganizationCardHeaderProps'
+      },
+      {
+        file: 'src/components/profile/dropdown-profile.tsx',
+        props: 'TriggerValueProps'
+      }
+    ];
+    for (const { file, props } of flaggedPropsFiles) {
+      // Fixed repo paths, never user input.
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      const src = await fs.promises.readFile(file, 'utf8');
+      expect(src, file).toMatch(new RegExp(`Readonly<${props}>\\)`));
+      expect(src, file).not.toMatch(new RegExp(`}: ${props}\\)`));
+    }
+  });
+
   it('marks the inline props annotations in profile-display as Readonly', async () => {
     const src = await fs.promises.readFile(
       'src/app/profile/profile-display.tsx',

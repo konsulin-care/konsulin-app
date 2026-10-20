@@ -36,7 +36,7 @@ function TriggerValue({
   placeholder,
   labelPlaceholder,
   loading
-}: TriggerValueProps) {
+}: Readonly<TriggerValueProps>) {
   const tCommon = useTranslations('common');
   return (
     <span className='text-sm font-normal text-[#2C2F35]'>
