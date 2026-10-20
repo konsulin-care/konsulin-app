@@ -15,6 +15,60 @@ const NAMESPACES = [
   'page-header',
   'admin'
 ] as const;
+type Namespace = (typeof NAMESPACES)[number];
+
+type MessagesModule = { default: Record<string, unknown> };
+type NamespaceLoader = () => Promise<MessagesModule>;
+
+/**
+ * Static per-locale loader registry. Each entry maps a namespace to an
+ * arrow function with a literal import() path, so every import stays
+ * statically analyzable (Codacy) while preserving per-namespace chunks.
+ */
+const LOADER_REGISTRY: Map<
+  Locale,
+  Record<Namespace, NamespaceLoader>
+> = new Map<Locale, Record<Namespace, NamespaceLoader>>([
+  [
+    'en',
+    {
+      common: () => import('../messages/en/common.json'),
+      profile: () => import('../messages/en/profile.json'),
+      home: () => import('../messages/en/home.json'),
+      assessment: () => import('../messages/en/assessment.json'),
+      auth: () => import('../messages/en/auth.json'),
+      interview: () => import('../messages/en/interview.json'),
+      research: () => import('../messages/en/research.json'),
+      toast: () => import('../messages/en/toast.json'),
+      'page-header': () => import('../messages/en/page-header.json'),
+      admin: () => import('../messages/en/admin.json')
+    }
+  ],
+  [
+    'id',
+    {
+      common: () => import('../messages/id/common.json'),
+      profile: () => import('../messages/id/profile.json'),
+      home: () => import('../messages/id/home.json'),
+      assessment: () => import('../messages/id/assessment.json'),
+      auth: () => import('../messages/id/auth.json'),
+      interview: () => import('../messages/id/interview.json'),
+      research: () => import('../messages/id/research.json'),
+      toast: () => import('../messages/id/toast.json'),
+      'page-header': () => import('../messages/id/page-header.json'),
+      admin: () => import('../messages/id/admin.json')
+    }
+  ]
+]);
+
+/**
+ * Type guard checking whether a string is a supported locale.
+ *
+ * @param value - The string to check.
+ * @returns True when the value is a member of LOCALES.
+ */
+const isLocale = (value: string): value is Locale =>
+  (LOCALES as readonly string[]).includes(value);
 
 /**
  * Loads the messages for a single namespace via dynamic import.
@@ -27,20 +81,16 @@ export const loadNamespace = async (
   locale: string,
   namespace: string
 ): Promise<[string, Record<string, unknown>] | null> => {
-  try {
-    // skipcq - NOSONAR - template-literal import() is required for Next.js
-    // namespace code-splitting: each messages/<locale>/<namespace>.json must
-    // become its own lazy chunk, so a static import list is not possible.
-    // locale and namespace are constrained to the LOCALES and NAMESPACES
-    // constants in this module and are never user input.
-    const mod = (await import(`../messages/${locale}/${namespace}.json`)) as {
-      default: Record<string, unknown>;
-    };
-    return [namespace, mod.default];
-  } catch {
-    // Namespace file missing; skip
+  if (!isLocale(locale)) {
     return null;
   }
+  const localeLoaders = LOADER_REGISTRY.get(locale);
+  const loader = localeLoaders?.[namespace as Namespace];
+  if (!loader) {
+    return null;
+  }
+  const mod = await loader();
+  return [namespace, mod.default];
 };
 
 /**
