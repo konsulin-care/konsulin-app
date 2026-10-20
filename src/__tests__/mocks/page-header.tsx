@@ -1,4 +1,5 @@
-import { vi } from 'vitest';
+import { fireEvent } from '@testing-library/react';
+import { expect, vi } from 'vitest';
 
 /**
  * Shared vi.mock modules for PageHeader tests. Consumed via dynamic import
@@ -69,3 +70,62 @@ export const apiMock = {
 export const avatarMock = {
   default: () => <div data-testid='mock-avatar'>Avatar</div>
 };
+
+/** AppRouter-shaped spy object shared by PageHeader tests. */
+export interface MockRouter {
+  push: ReturnType<typeof vi.fn>;
+  back: ReturnType<typeof vi.fn>;
+  forward: ReturnType<typeof vi.fn>;
+  refresh: ReturnType<typeof vi.fn>;
+  replace: ReturnType<typeof vi.fn>;
+  prefetch: ReturnType<typeof vi.fn>;
+  bfcacheId: string;
+}
+
+/**
+ * Configure the shared next/navigation useRouter mock to return a fresh
+ * router spy object.
+ * @returns The router mock for asserting push/back calls.
+ */
+export function setupMockRouter(): MockRouter {
+  const router: MockRouter = {
+    push: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    bfcacheId: '0'
+  };
+  pageHeaderNavigationMock.useRouter.mockReturnValue(router);
+  return router;
+}
+
+/**
+ * Shared test body for the "falls back to router.back button for unknown
+ * routes" behavior. Mocks an unknown pathname, renders PageHeader with
+ * renderWithQuery, and asserts no back anchor is rendered while the back
+ * button calls router.back exactly once without pushing. Dynamic imports
+ * keep this module free of static imports of the mocked modules.
+ * @param router - Router mock returned by setupMockRouter().
+ */
+export async function runRouterBackFallbackTest(
+  router: MockRouter
+): Promise<void> {
+  const { usePathname } = await import('next/navigation');
+  const { renderWithQuery } = await import('@/__tests__/react-test-utils');
+  const { default: PageHeader } = await import('@/components/page-header');
+
+  vi.mocked(usePathname).mockReturnValue('/some-unknown-page');
+
+  renderWithQuery(<PageHeader />);
+
+  const link = document.querySelector('a[aria-label="Go back"]');
+  expect(link).toBeNull();
+
+  const button = document.querySelector('button[aria-label="Go back"]');
+  expect(button).not.toBeNull();
+  fireEvent.click(button as HTMLElement);
+  expect(router.back).toHaveBeenCalledTimes(1);
+  expect(router.push).not.toHaveBeenCalled();
+}
