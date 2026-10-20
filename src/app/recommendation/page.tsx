@@ -88,8 +88,8 @@ export default function RecommendationPage() {
   // result already published to the shared context by the FAB).
   useEffect(() => {
     let active = true;
-    void (async () => {
-      // skipcq: JS-0098 — void correctly marks unawaited promise
+    // prettier-ignore
+    void (async () => { // skipcq: JS-0098 — void correctly marks unawaited promise
       try {
         const stored = await readLastInterviewResult();
         if (active && !latestResultRef.current && stored) setResult(stored);
