@@ -14,7 +14,7 @@ async function renderAsync(
   ) => Promise<React.ReactElement>;
   const resolved = await type(element.props);
   let result!: ReturnType<typeof render>;
-  await act(async () => {
+  act(() => {
     result = render(resolved);
   });
   return result;

@@ -1,5 +1,7 @@
 /* eslint-disable max-lines */
 
+import { vi } from 'vitest';
+
 vi.mock('@/i18n', async () => {
   const { createUseTranslationsMock } =
     await import('@/i18n/__tests__/test-messages');
@@ -11,7 +13,7 @@ import type { FabAction } from '@/context/fabContext';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createElement } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import ResearchPage from '../research-page';
 import {
   makeProgress,

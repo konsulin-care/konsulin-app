@@ -41,7 +41,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@aehrc/smart-forms-renderer', () => ({
-  buildForm: vi.fn().mockResolvedValue(undefined),
+  buildForm: vi.fn(),
   destroyForm: vi.fn(),
   extractObservationBased: vi.fn().mockReturnValue([]),
   getResponse: vi.fn().mockReturnValue({
@@ -57,7 +57,7 @@ vi.mock('@aehrc/smart-forms-renderer', () => ({
 vi.mock('@/lib/indexeddb', () => ({
   STORES: { soapDrafts: 'soapDrafts' },
   dbGet: vi.fn().mockResolvedValue(null),
-  dbDelete: vi.fn().mockResolvedValue(undefined)
+  dbDelete: vi.fn()
 }));
 
 vi.mock('@/services/api/assessment', () => ({

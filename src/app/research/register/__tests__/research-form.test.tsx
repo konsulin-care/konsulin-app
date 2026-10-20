@@ -203,7 +203,12 @@ describe('submitStudy', () => {
     let maxInFlight = 0;
     let planCallCount = 0;
 
-    const post = vi.fn(async (url: string, body: Record<string, unknown>) => {
+    const post = vi.fn<
+      (
+        url: string,
+        body: Record<string, unknown>
+      ) => Promise<{ data: { id: string } }>
+    >(async (url: string) => {
       if (url === '/fhir/PlanDefinition') {
         planCallCount += 1;
         const callIndex = planCallCount;
