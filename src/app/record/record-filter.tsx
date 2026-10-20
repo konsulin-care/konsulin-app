@@ -76,17 +76,6 @@ export default function RecordFilter({
     }));
   };
 
-  /** Reset all filter fields and custom date mode. */
-  const resetFilter = () => {
-    setFilter({
-      start_date: undefined,
-      end_date: undefined,
-      type: undefined
-    });
-    setIsUseCustomDate(false);
-    handleFilterChange('isUseCustomDate', false);
-  };
-
   /** Apply a chosen date range and clear the custom-date flag. */
   const handlePresetSelect = (start: Date, end: Date) => {
     handleFilterChange('start_date', start);
@@ -120,6 +109,17 @@ export default function RecordFilter({
     onPresetSelect: handlePresetSelect,
     onCalendarSelect: applyCalendarRange
   });
+
+  /** Reset all filter fields and custom date mode. */
+  const resetFilter = () => {
+    setFilter({
+      start_date: undefined,
+      end_date: undefined,
+      type: undefined
+    });
+    setIsUseCustomDate(false);
+    handleFilterChange('isUseCustomDate', false);
+  };
 
   /** Render default filter content or custom calendar filter based on whichContent. */
   const renderDrawerContent = () => {
