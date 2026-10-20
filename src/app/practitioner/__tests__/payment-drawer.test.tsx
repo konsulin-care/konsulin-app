@@ -6,75 +6,20 @@ import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/i18n', async () =>
-  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+  (await import('./payment-drawer-mocks')).paymentDrawerI18nMockFactory()
 );
-vi.mock('@/components/general/avatar', () => ({
-  default: ({
-    initials,
-    photoUrl
-  }: {
-    initials?: string;
-    photoUrl?: string;
-  }) => (
-    <div
-      data-testid='mock-avatar'
-      data-initials={initials}
-      data-photo={photoUrl}
-    >
-      Avatar
-    </div>
-  )
-}));
-
-vi.mock('@/components/icons', () => ({
-  LoadingSpinnerIcon: (props: React.SVGProps<SVGSVGElement>) => (
-    <svg data-testid='mock-loading-spinner' {...props} />
-  )
-}));
-
-vi.mock('@/components/ui/button', () => ({
-  Button: Object.assign(
-    ({
-      children,
-      onClick,
-      disabled,
-      className
-    }: {
-      children: React.ReactNode;
-      onClick?: () => void;
-      disabled?: boolean;
-      className?: string;
-    }) => (
-      <button
-        data-testid='mock-button'
-        onClick={onClick}
-        disabled={disabled}
-        className={className}
-      >
-        {children}
-      </button>
-    ),
-    { displayName: 'Button' }
-  ),
-  buttonVariants: () => 'btn-variants-class'
-}));
-
-vi.mock('@/components/ui/drawer', () => ({
-  Drawer: ({
-    children,
-    open
-  }: {
-    children: React.ReactNode;
-    open: boolean;
-  }) => (
-    <div data-testid='mock-drawer' data-open={open}>
-      {children}
-    </div>
-  ),
-  DrawerContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid='mock-drawer-content'>{children}</div>
-  )
-}));
+vi.mock('@/components/general/avatar', async () =>
+  (await import('./payment-drawer-mocks')).paymentDrawerAvatarMockFactory()
+);
+vi.mock('@/components/icons', async () =>
+  (await import('./payment-drawer-mocks')).paymentDrawerIconsMockFactory()
+);
+vi.mock('@/components/ui/button', async () =>
+  (await import('./payment-drawer-mocks')).paymentDrawerButtonMockFactory()
+);
+vi.mock('@/components/ui/drawer', async () =>
+  (await import('./payment-drawer-mocks')).paymentDrawerUIMockFactory()
+);
 
 vi.mock('@/context/booking/bookingTypes', () => ({}));
 
