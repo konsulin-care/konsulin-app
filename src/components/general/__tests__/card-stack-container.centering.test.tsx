@@ -23,6 +23,7 @@ import { CardStackContainer } from '../card-stack-container';
 import {
   BASE,
   defaultSwipeResult,
+  mockCardRect,
   mockF,
   mockSwipe,
   renderCards
@@ -56,7 +57,7 @@ describe('CardStackContainer centering', () => {
     // Mock positions for all cards
     const q1 = vp.querySelector<HTMLElement>('[data-link-id="q1"]');
     const q2 = vp.querySelector<HTMLElement>('[data-link-id="q2"]');
-    vi.spyOn(q1, 'getBoundingClientRect').mockReturnValue({
+    mockCardRect(q1, {
       top: 200,
       bottom: 280,
       left: 0,
@@ -64,10 +65,9 @@ describe('CardStackContainer centering', () => {
       width: 300,
       height: 80,
       x: 0,
-      y: 0,
-      toJSON: () => ({})
+      y: 0
     });
-    vi.spyOn(q2, 'getBoundingClientRect').mockReturnValue({
+    mockCardRect(q2, {
       top: 320,
       bottom: 400,
       left: 0,
@@ -75,8 +75,7 @@ describe('CardStackContainer centering', () => {
       width: 300,
       height: 80,
       x: 0,
-      y: 0,
-      toJSON: () => ({})
+      y: 0
     });
 
     Object.defineProperty(window, 'scrollY', {
@@ -109,7 +108,7 @@ describe('CardStackContainer centering', () => {
     const { rerender } = renderCards(cards());
     const vp = document.querySelector<HTMLElement>('.card-stack-viewport');
     const q1 = vp.querySelector<HTMLElement>('[data-link-id="q1"]');
-    vi.spyOn(q1, 'getBoundingClientRect').mockReturnValue({
+    mockCardRect(q1, {
       top: 200,
       bottom: 280,
       left: 0,
@@ -117,8 +116,7 @@ describe('CardStackContainer centering', () => {
       width: 300,
       height: 80,
       x: 0,
-      y: 0,
-      toJSON: () => ({})
+      y: 0
     });
 
     // Set stale inline styles

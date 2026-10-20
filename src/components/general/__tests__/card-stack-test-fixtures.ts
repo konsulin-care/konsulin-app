@@ -45,6 +45,40 @@ export function defaultSwipeResult(): MockedCardSwipeResult {
 }
 
 /**
+ * Rect coordinates for a mocked card position. Mirrors the DOMRect fields
+ * the card-stack component reads or that tests previously spelled out.
+ */
+export interface CardRectCoords {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+}
+
+/**
+ * Spy on an element's getBoundingClientRect and return fixed coordinates.
+ * Replaces per-test blocks of `vi.spyOn(el, 'getBoundingClientRect')
+ * .mockReturnValue({...})`.
+ *
+ * @param el - Element whose getBoundingClientRect is mocked.
+ * @param rect - Card position coordinates returned by the spy.
+ * @returns The vitest spy standing in for getBoundingClientRect.
+ */
+export function mockCardRect(
+  el: HTMLElement,
+  rect: CardRectCoords
+): ReturnType<typeof vi.spyOn> {
+  return vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({
+    ...rect,
+    toJSON: () => ({})
+  });
+}
+
+/**
  * Shared renderer for the card-stack suites. Delegates to RTL render and
  * returns the full result so tests can rerender the same tree.
  *
