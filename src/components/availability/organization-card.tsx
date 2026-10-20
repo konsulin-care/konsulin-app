@@ -1,12 +1,45 @@
 'use client';
 
-/* eslint-disable react/jsx-max-depth */
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/i18n';
 import { OrganizationCardProps } from '@/types/availability';
 import { validateTimeRange } from '@/utils/availability';
 import { Plus } from 'lucide-react';
 import TimeRangeInput from './time-range-input';
+
+type OrganizationCardHeaderProps = Pick<
+  OrganizationCardProps,
+  'organization' | 'onTimeRangeAdd'
+>;
+
+/**
+ * Card header row with the organization name and the add-time action button.
+ */
+function OrganizationCardHeader({
+  organization,
+  onTimeRangeAdd
+}: OrganizationCardHeaderProps) {
+  const t = useTranslations('common');
+  return (
+    <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
+      <h3 className='max-w-[200px] truncate text-sm font-semibold text-gray-900'>
+        {organization.name}
+      </h3>
+      <div className='mt-2 sm:mt-0'>
+        <Button
+          type='button'
+          variant='outline'
+          size='sm'
+          onClick={onTimeRangeAdd}
+          className='h-7 gap-1 text-xs whitespace-nowrap'
+        >
+          <Plus className='h-3 w-3' />
+          {t('location.add_time')}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 /**
  *
@@ -22,23 +55,10 @@ export default function OrganizationCard({
   return (
     <div className='rounded-lg border border-gray-200 bg-white p-4'>
       <div className='mb-3 flex flex-col gap-2'>
-        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
-          <h3 className='max-w-[200px] truncate text-sm font-semibold text-gray-900'>
-            {organization.name}
-          </h3>
-          <div className='mt-2 sm:mt-0'>
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              onClick={onTimeRangeAdd}
-              className='h-7 gap-1 text-xs whitespace-nowrap'
-            >
-              <Plus className='h-3 w-3' />
-              {t('location.add_time')}
-            </Button>
-          </div>
-        </div>
+        <OrganizationCardHeader
+          organization={organization}
+          onTimeRangeAdd={onTimeRangeAdd}
+        />
       </div>
 
       <div className='space-y-3'>
@@ -60,7 +80,7 @@ export default function OrganizationCard({
                   onTimeRangeChange(timeRange.id, 'to', value)
                 }
                 onRemove={() => onTimeRangeRemove(timeRange.id)}
-                showRemoveButton={true}
+                showRemoveButton
                 error={validation.valid ? undefined : validation.error}
               />
             );

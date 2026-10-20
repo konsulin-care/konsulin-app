@@ -25,6 +25,37 @@ type DropdownProps = {
   onSelect: (value: DropdownOption) => void;
 };
 
+type TriggerValueProps = Omit<DropdownProps, 'onSelect'>;
+
+/**
+ * Trigger button display: loading spinner or resolved option/placeholder text.
+ */
+function TriggerValue({
+  options,
+  value,
+  placeholder,
+  labelPlaceholder,
+  loading
+}: TriggerValueProps) {
+  const tCommon = useTranslations('common');
+  return (
+    <span className='text-sm font-normal text-[#2C2F35]'>
+      {loading ? (
+        <LoadingSpinnerIcon
+          width={20}
+          height={20}
+          className='w-full animate-spin'
+        />
+      ) : (
+        options?.find(option => option.code === value)?.name ||
+        (!value && labelPlaceholder) ||
+        placeholder ||
+        tCommon('select_option')
+      )}
+    </span>
+  );
+}
+
 /** Profile dropdown selector with search and keyboard navigation. */
 const DropdownProfile: React.FC<DropdownProps> = ({
   options,
@@ -36,7 +67,6 @@ const DropdownProfile: React.FC<DropdownProps> = ({
 }) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [triggerWidth, setTriggerWidth] = useState<number>(0);
-  const tCommon = useTranslations('common');
 
   useEffect(() => {
     if (triggerRef.current) {
@@ -54,20 +84,13 @@ const DropdownProfile: React.FC<DropdownProps> = ({
             className='h-[56px] w-full justify-between bg-white'
             disabled={loading}
           >
-            <span className='text-sm font-normal text-[#2C2F35]'>
-              {loading ? (
-                <LoadingSpinnerIcon
-                  width={20}
-                  height={20}
-                  className='w-full animate-spin'
-                />
-              ) : (
-                options?.find(option => option.code === value)?.name ||
-                (!value && labelPlaceholder) ||
-                placeholder ||
-                tCommon('select_option')
-              )}
-            </span>
+            <TriggerValue
+              options={options}
+              value={value}
+              placeholder={placeholder}
+              labelPlaceholder={labelPlaceholder}
+              loading={loading}
+            />
             <ChevronDown
               className='ml-2 h-4 w-4 shrink-0 opacity-50'
               color='#18AAA1'
