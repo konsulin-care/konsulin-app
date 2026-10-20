@@ -8,6 +8,18 @@ import {
   useLocale
 } from '../locale';
 
+/**
+ * Forwards each cookie string to document.cookie.
+ *
+ * @param values - Cookie strings to assign, in order.
+ */
+const setCookies = (...values: string[]): void => {
+  for (const value of values) {
+    // eslint-disable-next-line unicorn/no-document-cookie -- test helper
+    document.cookie = value;
+  }
+};
+
 describe('LOCALES', () => {
   it('contains en and id', () => {
     expect(LOCALES).toEqual(['en', 'id']);
@@ -22,11 +34,11 @@ describe('DEFAULT_LOCALE', () => {
 
 describe('getLocale', () => {
   beforeEach(() => {
-    document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+    setCookies('NEXT_LOCALE=; path=/; max-age=0');
   });
 
   it('returns the locale from the cookie when present', () => {
-    document.cookie = 'NEXT_LOCALE=en; path=/';
+    setCookies('NEXT_LOCALE=en; path=/');
     expect(getLocale()).toBe('en');
   });
 
@@ -35,21 +47,23 @@ describe('getLocale', () => {
   });
 
   it('returns DEFAULT_LOCALE when cookie has an invalid value', () => {
-    document.cookie = 'NEXT_LOCALE=fr; path=/';
+    setCookies('NEXT_LOCALE=fr; path=/');
     expect(getLocale()).toBe(DEFAULT_LOCALE);
   });
 
   it('reads the first NEXT_LOCALE when multiple cookies exist', () => {
-    document.cookie = 'theme=dark; path=/';
-    document.cookie = 'NEXT_LOCALE=en; path=/';
-    document.cookie = 'session=abc; path=/';
+    setCookies(
+      'theme=dark; path=/',
+      'NEXT_LOCALE=en; path=/',
+      'session=abc; path=/'
+    );
     expect(getLocale()).toBe('en');
   });
 });
 
 describe('getLocale SSR safety', () => {
   beforeEach(() => {
-    document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+    setCookies('NEXT_LOCALE=; path=/; max-age=0');
   });
 
   it('returns DEFAULT_LOCALE instead of throwing when document is undefined', () => {
@@ -67,14 +81,14 @@ describe('getLocale SSR safety', () => {
   });
 
   it('still returns the cookie value when document is available', () => {
-    document.cookie = 'NEXT_LOCALE=en; path=/';
+    setCookies('NEXT_LOCALE=en; path=/');
     expect(getLocale()).toBe('en');
   });
 });
 
 describe('updateLocale', () => {
   beforeEach(() => {
-    document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+    setCookies('NEXT_LOCALE=; path=/; max-age=0');
   });
 
   it('writes the locale to the cookie', () => {
@@ -102,11 +116,11 @@ describe('updateLocale', () => {
 
 describe('useLocale', () => {
   beforeEach(() => {
-    document.cookie = 'NEXT_LOCALE=; path=/; max-age=0';
+    setCookies('NEXT_LOCALE=; path=/; max-age=0');
   });
 
   it('returns the current locale from the cookie', () => {
-    document.cookie = 'NEXT_LOCALE=en; path=/';
+    setCookies('NEXT_LOCALE=en; path=/');
     const { result } = renderHook(() => useLocale());
     expect(result.current).toBe('en');
   });
@@ -117,7 +131,7 @@ describe('useLocale', () => {
   });
 
   it('renders DEFAULT_LOCALE before effects flush even when cookie differs', () => {
-    document.cookie = 'NEXT_LOCALE=en; path=/';
+    setCookies('NEXT_LOCALE=en; path=/');
     let firstRender: ReturnType<typeof useLocale> | undefined;
     renderHook(() => {
       const value = useLocale();
@@ -128,7 +142,7 @@ describe('useLocale', () => {
   });
 
   it('syncs to the cookie locale after effects flush', () => {
-    document.cookie = 'NEXT_LOCALE=en; path=/';
+    setCookies('NEXT_LOCALE=en; path=/');
     const { result } = renderHook(() => useLocale());
     expect(result.current).toBe('en');
   });
