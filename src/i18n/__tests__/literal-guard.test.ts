@@ -63,7 +63,7 @@ describe('literal guard for hardcoded JSX attributes and toasts', () => {
     const fixture = [
       "toast.success('Location added successfully');",
       'toast.error("Failed to save. Please try again.");',
-      'toast.info(`Loading results`);'
+      'toast.info(`Loading results`);' // skipcq: JS-0038 - fixture string, not a template literal
     ].join('\n');
 
     const violations = scanSource('src/__fixtures__/toast-fixture.ts', fixture);
@@ -126,8 +126,7 @@ describe('literal guard for hardcoded JSX attributes and toasts', () => {
 
     expect(
       newViolations,
-      `Hardcoded literals must move to t() in src/messages. New violations:\n` +
-        newViolations.join('\n')
+      `Hardcoded literals must move to t() in src/messages. New violations:\n${newViolations.join('\n')}`
     ).toEqual([]);
   });
 });

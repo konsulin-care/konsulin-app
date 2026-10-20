@@ -83,6 +83,7 @@ describe('locale parity guard detects divergence', () => {
       )
       .sort();
     const idBroken: Record<string, unknown> = { ...idCommon };
+    // skipcq: JS-0320 - intentional delete to build a broken fixture
     delete idBroken[firstTopLevelKey];
 
     const broken = compareKeySets(flattenKeys(enCommon), flattenKeys(idBroken));

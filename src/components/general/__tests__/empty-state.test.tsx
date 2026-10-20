@@ -15,8 +15,8 @@ vi.mock('@/i18n', () => ({
 
 vi.mock('next/image', () => ({
   default: (props: Record<string, unknown>) => (
-    // eslint-disable-next-line jsx-a11y/alt-text -- test mock
-    <img {...props} />
+    // eslint-disable-next-line jsx-a11y/alt-text, next/no-img-element -- test mock
+    <img {...props} /> // skipcq: JS-W1015
   )
 }));
 
