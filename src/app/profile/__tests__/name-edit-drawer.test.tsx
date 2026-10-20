@@ -6,27 +6,9 @@ vi.mock('../hooks/useProfileSectionSave', () => ({
   useProfileSectionSave: vi.fn()
 }));
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(
-    () => (key: string, values?: Record<string, string>) => {
-      const translations: Record<string, string> = {
-        save: 'Save',
-        edit_name: 'Edit Name',
-        name_desc: 'Given names can include middle names.',
-        given_names: 'Given names',
-        family_name: 'Family name',
-        add_given: 'Add given name',
-        given_name_n: 'Given name {n}',
-        remove_given_name_n: 'Remove given name {n}'
-      };
-      let result = translations[key] ?? key;
-      for (const [name, value] of Object.entries(values ?? {})) {
-        result = result.replaceAll(`{${name}}`, value);
-      }
-      return result;
-    }
-  )
-}));
+vi.mock('@/i18n', async () =>
+  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+);
 
 import { useProfileSectionSave } from '../hooks/useProfileSectionSave';
 import NameEditDrawer from '../name-edit-drawer';

@@ -16,50 +16,24 @@ const { mockLocale } = vi.hoisted(() => ({
   mockLocale: { current: 'id' }
 }));
 
-vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      save: 'Save',
-      personal_info: 'Personal Information',
-      personal_info_desc: 'Gender, date of birth and preferred language.',
-      gender: 'Gender',
-      birth_date: 'Date of Birth',
-      language: 'Language',
-      select_gender: 'Select gender',
-      select_language: 'Select language',
-      edit_name: 'Edit Name',
-      name_desc: 'Given names can include middle names.',
-      given_names: 'Given names',
-      family_name: 'Family name',
-      add_given: 'Add given name',
-      contact: 'Contact',
-      contact_desc: 'Email and phone used for communication.',
-      email: 'Email',
-      phone: 'Phone',
-      email_placeholder: 'Email address',
-      phone_placeholder: 'Phone number',
-      address: 'Address',
-      address_desc: 'Street, district, city and province.',
-      street: 'Street',
-      street_placeholder: 'Street address',
-      add_address_line: 'Add address line',
-      postal_code: 'Postal Code',
-      postal_code_placeholder: 'Postal code',
-      select_province: 'Select province',
-      select_city: 'Select city',
-      select_district: 'Select district',
-      'profile.gender_male': 'Male',
-      'profile.gender_female': 'Female',
-      'profile.lang_id': 'Bahasa Indonesia',
-      'profile.lang_en': 'English',
-      remove_address_line:
-        mockLocale.current === 'id'
-          ? 'Hapus baris alamat'
-          : 'Remove address line'
-    };
-    return translations[key] ?? key;
-  })
-}));
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  const translate = createUseTranslationsMock();
+  return {
+    useTranslations: (namespace?: string) => {
+      const t = translate(namespace);
+      return (key: string, values?: Record<string, string | number>) => {
+        if (key === 'remove_address_line') {
+          return mockLocale.current === 'id'
+            ? 'Hapus baris alamat'
+            : 'Remove address line';
+        }
+        return t(key, values);
+      };
+    }
+  };
+});
 
 vi.mock('@/services/api/cities', () => ({
   useGetProvinces: vi.fn(),

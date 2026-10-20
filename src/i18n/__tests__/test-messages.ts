@@ -47,17 +47,22 @@ export type TestTranslate = (
  * Creates a useTranslations mock that resolves dotted keys and {placeholder}
  * values from the real English message JSON for the requested namespace.
  *
+ * When the namespace is undefined or empty, keys resolve against the
+ * namespace root so cross-namespace dotted keys like 'profile.gender_male'
+ * work (mirrors components calling useTranslations() with no argument).
  * Unknown namespaces and unknown keys fall back to returning the key itself.
  *
- * @returns A useTranslations-compatible function taking a namespace name.
+ * @returns A useTranslations-compatible function taking an optional namespace.
  */
 export function createUseTranslationsMock(): (
-  namespace: string
+  namespace?: string
 ) => TestTranslate {
-  return (namespace: string) =>
+  return (namespace?: string) =>
     (key: string, values?: Record<string, string | number>) => {
       const messages =
-        pick(NAMESPACE_MESSAGES, namespace) ?? NAMESPACE_MESSAGES.common;
+        namespace === undefined || namespace === ''
+          ? NAMESPACE_MESSAGES
+          : (pick(NAMESPACE_MESSAGES, namespace) ?? NAMESPACE_MESSAGES.common);
       const deep = key
         .split('.')
         .reduce<unknown>(
