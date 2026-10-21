@@ -85,7 +85,7 @@ describe('literal guard for hardcoded JSX attributes and toasts', () => {
       "      <Card label={t('summary.label')} description={t('summary.description')} />",
       '      {toast.error(errorMessage)}',
       '      {toast.error(err.message)}',
-      '      {toast.success(`Saved ${count} items`)}',
+      '      {toast.success(`Saved ${count} items`)}', // skipcq: JS-0038 - fixture string, not a template literal
       '    </AppDrawer>',
       '  );',
       '}'
