@@ -8,6 +8,16 @@ import { ButtonProps, buttonVariants } from '@/components/ui/button';
 import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 
+/**
+ * Pagination root navigation container.
+ *
+ * Renders a centered `<nav>` bar labelled "pagination" that wraps the
+ * pagination controls.
+ *
+ * @param props - Native `nav` element props; `className` is merged with the
+ * centered layout classes.
+ * @returns The pagination root navigation element.
+ */
 const Pagination = ({ className, ...props }: ComponentProps<'nav'>) => (
   <nav
     role='navigation'
