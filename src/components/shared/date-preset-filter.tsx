@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { format, isSameDay } from 'date-fns';
 
@@ -29,6 +30,8 @@ export default function DatePresetFilter({
   onPresetSelect,
   onCustomOpen
 }: Props) {
+  const t = useTranslations('common');
+
   const getCustomLabel = (): string | undefined => {
     // skipcq: JS-D1001 — self-explanatory helper
     if (!activeStart || !activeEnd) return undefined;
@@ -40,7 +43,7 @@ export default function DatePresetFilter({
 
   return (
     <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4 font-bold'>Date</div>
+      <div className='mb-4 font-bold'>{t('date_filter.heading')}</div>
       <div className='flex flex-wrap gap-[10px]'>
         {presets.map(date => (
           <Button
@@ -70,7 +73,7 @@ export default function DatePresetFilter({
               : 'bg-white font-normal'
           )}
         >
-          Custom
+          {t('date_filter.custom')}
           {customLabel && ` : ${customLabel}`}
         </Button>
       </div>

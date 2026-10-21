@@ -1,8 +1,9 @@
 import type { DecisionDomain } from '@/types/recommendation-interview';
+import { defineDomain } from '../domain-builder';
 import { ER, SAPA129, SEHAT_JIWA } from '../resources';
 
 /** Social Health & Relationships domain branches. */
-const social: DecisionDomain = {
+const social: DecisionDomain = defineDomain({
   code: 'social-health-relationships',
   label: 'Social Health & Relationships',
   complaints: [
@@ -17,7 +18,6 @@ const social: DecisionDomain = {
         'marriage',
         'rumah tangga'
       ],
-      icfDomain: 'social-health-relationships',
       keywords: [
         'couple',
         'marital',
@@ -49,7 +49,6 @@ const social: DecisionDomain = {
       id: 'family-dynamics',
       label: 'Family & Parent-Child Conflict',
       synonyms: ['keluarga', 'anak', 'family', 'parent', 'orang tua'],
-      icfDomain: 'social-health-relationships',
       keywords: [
         'family',
         'parent',
@@ -76,7 +75,6 @@ const social: DecisionDomain = {
       id: 'workplace-conflict',
       label: 'Workplace Interpersonal Tension',
       synonyms: ['kerja', 'kantor', 'rekan', 'workplace', 'colleague', 'boss'],
-      icfDomain: 'social-health-relationships',
       keywords: [
         'workplace',
         'conflict',
@@ -106,7 +104,6 @@ const social: DecisionDomain = {
       id: 'loneliness-isolation',
       label: 'Loneliness & Social Isolation',
       synonyms: ['kesepian', 'sunyi', 'lonely', 'isolated', 'sendiri'],
-      icfDomain: 'social-health-relationships',
       keywords: [
         'loneliness',
         'lonely',
@@ -136,7 +133,6 @@ const social: DecisionDomain = {
       id: 'communication-barriers',
       label: 'Communication Barriers',
       synonyms: ['komunikasi', 'mengungkapkan', 'communication', 'express'],
-      icfDomain: 'social-health-relationships',
       keywords: [
         'communication',
         'interaction',
@@ -166,7 +162,6 @@ const social: DecisionDomain = {
       id: 'other-social',
       label: 'Other Relationship Concern',
       synonyms: ['hubungan', 'relationship', 'social'],
-      icfDomain: 'social-health-relationships',
       keywords: ['relationship', 'social', 'psychological'],
       serviceTypeCode: 'other-social-health-relationships',
       options: [
@@ -183,6 +178,6 @@ const social: DecisionDomain = {
       }
     }
   ]
-};
+});
 
 export default social;

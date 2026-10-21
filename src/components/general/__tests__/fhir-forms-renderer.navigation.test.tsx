@@ -13,6 +13,12 @@ const { mockSearchParams } = vi.hoisted(() => ({
   mockSearchParams: new URLSearchParams()
 }));
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('next/navigation', () => ({
   useRouter: vi
     .fn()

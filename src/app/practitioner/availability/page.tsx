@@ -4,6 +4,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { usePractitionerRoleHealthcareServices } from '@/services/clinic-practitioners';
 import { getServiceDuration } from '@/utils/fhir/service-duration';
 import { isOwnedRole } from '@/utils/practitioner-ownership';
@@ -20,6 +21,7 @@ import PractitionerRoleManagementShell from '../role-management-shell';
  * - Patient: page variant of PractitionerAvailability with dynamic duration
  */
 export default function AvailabilityPage() {
+  const t = useTranslations('common');
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
   const serviceId = searchParams.get('service') ?? '';
@@ -64,10 +66,10 @@ export default function AvailabilityPage() {
   if (!id) {
     return (
       <>
-        <PageHeader pageIndicator='Availability' />
+        <PageHeader pageIndicator={t('practitioner.tab_availability')} />
         <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
           <div className='flex min-h-[30vh] items-center justify-center text-sm text-gray-500'>
-            No practitioner selected
+            {t('practitioner.no_practitioner_selected')}
           </div>
         </div>
       </>
@@ -77,7 +79,7 @@ export default function AvailabilityPage() {
   /** Render availability + services management shell (admin / practitioner). */
   const renderManagementShell = () => (
     <>
-      <PageHeader pageIndicator='Manage Availability' />
+      <PageHeader pageIndicator={t('practitioner.manage_availability')} />
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
         <PractitionerRoleManagementShell practitionerRoleId={id} />
       </div>
@@ -87,7 +89,7 @@ export default function AvailabilityPage() {
   /** Render patient-facing availability calendar with dynamic duration. */
   const renderPatientView = () => (
     <>
-      <PageHeader pageIndicator='Availability' />
+      <PageHeader pageIndicator={t('practitioner.tab_availability')} />
       <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
         {isServicesLoading ? (
           <div className='flex min-h-[30vh] items-center justify-center'>
@@ -118,10 +120,10 @@ export default function AvailabilityPage() {
     if (!isOwnedRole(id)) {
       return (
         <>
-          <PageHeader pageIndicator='Availability' />
+          <PageHeader pageIndicator={t('practitioner.tab_availability')} />
           <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
             <div className='flex min-h-[30vh] items-center justify-center text-sm text-red-500'>
-              Not authorized to access this practitioner
+              {t('practitioner.not_authorized')}
             </div>
           </div>
         </>

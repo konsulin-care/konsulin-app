@@ -1,5 +1,28 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      filter: 'Filter',
+      apply: 'Apply',
+      category: 'Category',
+      sort: 'Sort',
+      sort_az: 'A-Z',
+      sort_popular: 'Most Popular',
+      sort_newest: 'Newest',
+      'category.physical-health': 'Physical Health',
+      'category.mental-emotional-health': 'Mental & Emotional Health',
+      'category.social-health-relationships': 'Social Health & Relationships',
+      'category.functional-capacity': 'Functional Capacity',
+      'category.meaning-purpose-fulfilment': 'Meaning, Purpose & Fulfilment',
+      'category.health-behaviours-lifestyle': 'Health Behaviours & Lifestyle',
+      'category.environmental-contextual': 'Environmental & Contextual'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 import AssessmentsFilter from '../assessments-filter';
 
 describe('AssessmentsFilter', () => {

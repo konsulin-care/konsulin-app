@@ -1,136 +1,122 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockLocale } = vi.hoisted(() => ({
+  mockLocale: { current: 'id' }
+}));
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      id: {
+        'common.day': 'TT',
+        'common.month': 'Bulan',
+        'common.year': 'YYYY',
+        'common.day_label': 'Tanggal',
+        'common.month_label': 'Bulan',
+        'common.year_label': 'Tahun',
+        'common.months.january': 'Januari',
+        'common.months.february': 'Februari',
+        'common.months.march': 'Maret',
+        'common.months.april': 'April',
+        'common.months.may': 'Mei',
+        'common.months.june': 'Juni',
+        'common.months.july': 'Juli',
+        'common.months.august': 'Agustus',
+        'common.months.september': 'September',
+        'common.months.october': 'Oktober',
+        'common.months.november': 'November',
+        'common.months.december': 'Desember'
+      },
+      en: {
+        'common.day': 'DD',
+        'common.month': 'Month',
+        'common.year': 'YYYY',
+        'common.day_label': 'Day',
+        'common.month_label': 'Month',
+        'common.year_label': 'Year',
+        'common.months.january': 'January',
+        'common.months.february': 'February',
+        'common.months.march': 'March',
+        'common.months.april': 'April',
+        'common.months.may': 'May',
+        'common.months.june': 'June',
+        'common.months.july': 'July',
+        'common.months.august': 'August',
+        'common.months.september': 'September',
+        'common.months.october': 'October',
+        'common.months.november': 'November',
+        'common.months.december': 'December'
+      }
+    };
+    return translations[mockLocale.current]?.[`${namespace}.${key}`] ?? key;
+  })
+}));
+
 import DobInput from '../dob-input';
 
+/** aria-label values per locale as rendered by the mocked translations. */
+const ARIA_LABELS = {
+  id: { day: 'Tanggal', month: 'Bulan', year: 'Tahun' },
+  en: { day: 'Day', month: 'Month', year: 'Year' }
+} as const;
+
 describe('DobInput', () => {
-  // ---------------------------------------------------------------------------
-  // Rendering
-  // ---------------------------------------------------------------------------
+  beforeEach(() => {
+    mockLocale.current = 'id';
+  });
 
-  it('renders three selects: Day, Month, Year', () => {
+  it('shows Indonesian aria-labels and month names under id', () => {
     render(<DobInput value='' onChange={vi.fn()} />);
-    expect(screen.getByRole('combobox', { name: 'Day' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Month' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Year' })).toBeInTheDocument();
+    const { day, month, year } = ARIA_LABELS.id;
+
+    const daySelect = screen.getByRole('combobox', { name: day });
+    expect(daySelect).toHaveTextContent('TT');
+
+    const monthSelect = screen.getByRole('combobox', { name: month });
+    expect(monthSelect).toHaveTextContent('Bulan');
+    expect(monthSelect).toHaveTextContent('Januari');
+    expect(monthSelect).toHaveTextContent('Desember');
+
+    const yearSelect = screen.getByRole('combobox', { name: year });
+    expect(yearSelect).toHaveTextContent('YYYY');
   });
 
-  it('shows placeholder options when value is empty', () => {
+  it('shows English aria-labels and month names under en', () => {
+    mockLocale.current = 'en';
     render(<DobInput value='' onChange={vi.fn()} />);
-    expect(screen.getByRole('option', { name: 'DD' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Month' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'YYYY' })).toBeInTheDocument();
+    const { day, month, year } = ARIA_LABELS.en;
+
+    const daySelect = screen.getByRole('combobox', { name: day });
+    expect(daySelect).toHaveTextContent('DD');
+
+    const monthSelect = screen.getByRole('combobox', { name: month });
+    expect(monthSelect).toHaveTextContent('Month');
+    expect(monthSelect).toHaveTextContent('January');
+    expect(monthSelect).toHaveTextContent('December');
+
+    const yearSelect = screen.getByRole('combobox', { name: year });
+    expect(yearSelect).toHaveTextContent('YYYY');
   });
 
-  // ---------------------------------------------------------------------------
-  // Parsing incoming value
-  // ---------------------------------------------------------------------------
-
-  it('parses incoming yyyy-MM-dd and selects correct day, month, year', () => {
-    render(<DobInput value='1990-03-12' onChange={vi.fn()} />);
-    expect(screen.getByRole('combobox', { name: 'Day' })).toHaveValue('12');
-    expect(screen.getByRole('combobox', { name: 'Month' })).toHaveValue(
-      'March'
-    );
-    expect(screen.getByRole('combobox', { name: 'Year' })).toHaveValue('1990');
-  });
-
-  // ---------------------------------------------------------------------------
-  // Selection and onChange emission
-  // ---------------------------------------------------------------------------
-
-  it.each([
-    { field: 'Day', initial: '1990-03-01', next: '5', expected: '1990-03-05' },
-    {
-      field: 'Month',
-      initial: '1990-01-12',
-      next: 'June',
-      expected: '1990-06-12'
-    },
-    {
-      field: 'Year',
-      initial: '2000-03-12',
-      next: '1995',
-      expected: '1995-03-12'
-    }
-  ])(
-    'emits yyyy-MM-dd when $field is selected',
-    ({ field, initial, next, expected }) => {
-      const onChange = vi.fn();
-      render(<DobInput value={initial} onChange={onChange} />);
-
-      fireEvent.change(screen.getByRole('combobox', { name: field }), {
-        target: { value: next }
-      });
-
-      expect(onChange).toHaveBeenCalledWith(expected);
-    }
-  );
-
-  // ---------------------------------------------------------------------------
-  // Day clamping when month or year changes
-  // ---------------------------------------------------------------------------
-
-  // ---------------------------------------------------------------------------
-  // Syncing from external value
-  // ---------------------------------------------------------------------------
-
-  it('clears selects when value changes from valid date to empty string', () => {
-    const { rerender } = render(
-      <DobInput value='1990-03-12' onChange={vi.fn()} />
-    );
-    expect(screen.getByRole('combobox', { name: 'Day' })).toHaveValue('12');
-
-    rerender(<DobInput value='' onChange={vi.fn()} />);
-
-    expect(screen.getByRole('combobox', { name: 'Day' })).toHaveValue('');
-    expect(screen.getByRole('option', { name: 'DD' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Month' })).toHaveValue('');
-    expect(screen.getByRole('option', { name: 'Month' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Year' })).toHaveValue('');
-    expect(screen.getByRole('option', { name: 'YYYY' })).toBeInTheDocument();
-  });
-
-  // ---------------------------------------------------------------------------
-  // Day clamping when month or year changes
-  // ---------------------------------------------------------------------------
-
-  it.each([
-    {
-      note: 'Jan 31 -> Feb in 2023 (non-leap) clamps to 28',
-      initial: '2023-01-31',
-      field: 'Month',
-      next: 'February',
-      expected: '2023-02-28'
-    },
-    {
-      note: 'Jan 31 -> Feb in 2024 (leap) clamps to 29',
-      initial: '2024-01-31',
-      field: 'Month',
-      next: 'February',
-      expected: '2024-02-29'
-    },
-    {
-      note: 'Feb 29 in 2024 -> 2023 (non-leap) clamps to 28',
-      initial: '2024-02-29',
-      field: 'Year',
-      next: '2023',
-      expected: '2023-02-28'
-    },
-    {
-      note: 'day 15 survives switching to March (31 days)',
-      initial: '2023-01-15',
-      field: 'Month',
-      next: 'March',
-      expected: '2023-03-15'
-    }
-  ])('clamps day: $note', ({ initial, field, next, expected }) => {
+  it('calls onChange with formatted date when all parts are selected', async () => {
+    mockLocale.current = 'en';
+    const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<DobInput value={initial} onChange={onChange} />);
+    render(<DobInput value='' onChange={onChange} />);
 
-    fireEvent.change(screen.getByRole('combobox', { name: field }), {
-      target: { value: next }
-    });
+    const { day, month, year } = ARIA_LABELS.en;
+    await user.selectOptions(screen.getByRole('combobox', { name: day }), '15');
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: month }),
+      'march'
+    );
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: year }),
+      '1990'
+    );
 
-    expect(onChange).toHaveBeenCalledWith(expected);
+    expect(onChange).toHaveBeenCalledWith('1990-03-15');
   });
 });

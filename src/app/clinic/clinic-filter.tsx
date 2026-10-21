@@ -1,6 +1,11 @@
-/* eslint-disable max-lines */
-/* reason: renderDrawerContent nests location, org, and date/time sections
-   in one drawer body — extracting would over-scatter state */
+import {
+  CONTENT_CUSTOM,
+  CONTENT_DEFAULT,
+  filterContentListClinicDate,
+  filterContentListTime,
+  localizeDatePresets,
+  today
+} from '@/components/shared/date-filter-presets';
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterCalendar from '@/components/shared/filter-calendar';
 import FilterCustomTimeInputs from '@/components/shared/filter-custom-time-inputs';
@@ -11,61 +16,31 @@ import LocationCombobox, {
 import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
 import { Roles } from '@/constants/roles';
+import { useDateFilter } from '@/hooks/useDateFilter';
+import { useTranslations } from '@/i18n';
 import { useGetCities, useGetProvinces } from '@/services/api/cities';
 import { IUseClinicParams } from '@/services/clinic';
 import { useListActiveOrganizations } from '@/services/clinic-locations';
 
-import { addDays, endOfWeek, startOfWeek } from 'date-fns';
-import { useState } from 'react';
+import { addDays } from 'date-fns';
+import { useState, type ReactNode } from 'react';
 
-const CONTENT_DEFAULT = 0;
-const CONTENT_CUSTOM = 1;
-
-const today = new Date();
-
-const filterContentListDate = [
-  {
-    label: 'Today',
-    value: { start: today, end: today }
-  },
-  {
-    label: 'This Week',
-    value: {
-      start: addDays(startOfWeek(today), 1),
-      end: addDays(endOfWeek(today), 1)
-    }
-  },
-  {
-    label: 'Next Week',
-    value: {
-      start: addDays(startOfWeek(today), 8),
-      end: addDays(endOfWeek(today), 8)
-    }
-  }
-];
-
-const filterContentListTime = [
-  {
-    label: '07:00 - 10:00',
-    value: { start: '07:00', end: '10:00' }
-  },
-  {
-    label: '10:00 - 13:00',
-    value: { start: '10:00', end: '13:00' }
-  },
-  {
-    label: '13:00 - 16:00',
-    value: { start: '13:00', end: '16:00' }
-  },
-  {
-    label: '16:00 - 18:00',
-    value: { start: '16:00', end: '18:00' }
-  },
-  {
-    label: '18:00 - 22:00',
-    value: { start: '18:00', end: '22:00' }
-  }
-];
+/** Shared card wrapper for a filter section with title, hint, and content. */
+function FilterSection({
+  title,
+  hint,
+  children
+}: Readonly<{ title: string; hint: string; children: ReactNode }>) {
+  return (
+    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+      <div className='mb-4'>
+        <div className='font-bold'>{title}</div>
+        <span className='text-muted-foreground text-xs opacity-50'>{hint}</span>
+      </div>
+      <div className='flex flex-wrap gap-[10px]'>{children}</div>
+    </div>
+  );
+}
 
 /**
  * Role-aware clinic filter drawer.
@@ -83,11 +58,9 @@ export default function ClinicFilter({
   type: string;
   role?: string;
 }>) {
+  const t = useTranslations('common');
+  const datePresets = localizeDatePresets(t, filterContentListClinicDate);
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [whichContent, setWhichContent] = useState<
-    typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
-  >(CONTENT_DEFAULT);
-  const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false);
   const [isUseCustomTime, setIsUseCustomTime] = useState<boolean>(false);
   const [filter, setFilter] = useState<IUseClinicParams>({
     start_date: undefined,
@@ -134,18 +107,34 @@ export default function ClinicFilter({
     });
   };
 
-  /** Open the custom date/time filter pane. */
-  const handleCustomFilterOpen = () => {
-    if (isInitiaFilterState) {
-      handleFilterChange('start_time', '00:00');
-      handleFilterChange('end_time', '23:59');
-      handleFilterChange('start_date', today);
-      handleFilterChange('end_date', addDays(today, 7));
-      setIsUseCustomDate(true);
-      setIsUseCustomTime(true);
-    }
-    setWhichContent(CONTENT_CUSTOM);
+  /** Apply a chosen date range to the clinic filter. */
+  const handleDateChange = (start?: Date, end?: Date) => {
+    handleFilterChange('start_date', start);
+    handleFilterChange('end_date', end);
   };
+
+  /** Seed default start/end date and time values for the custom pane. */
+  const seedCustomDefaults = () => {
+    handleFilterChange('start_time', '00:00');
+    handleFilterChange('end_time', '23:59');
+    handleFilterChange('start_date', today);
+    handleFilterChange('end_date', addDays(today, 7));
+    setIsUseCustomTime(true);
+  };
+
+  const {
+    whichContent,
+    isUseCustomDate,
+    openDefaultPane,
+    handleCustomOpen,
+    handlePresetSelect,
+    handleCalendarSelect
+  } = useDateFilter({
+    isInitialState: isInitiaFilterState,
+    onCustomOpenSeed: seedCustomDefaults,
+    onPresetSelect: handleDateChange,
+    onCalendarSelect: handleDateChange
+  });
 
   const isPatientOrGuest = role === Roles.Patient || role === Roles.Guest;
 
@@ -158,60 +147,50 @@ export default function ClinicFilter({
 
   /** Render location filter section (province + city). */
   const renderLocationSection = () => (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4'>
-        <div className='font-bold'>Location</div>
-        <span className='text-muted-foreground text-xs opacity-50'>
-          Select a province first, then optionally select a city.
-        </span>
-      </div>
-      <div className='flex flex-wrap gap-[10px]'>
+    <FilterSection
+      title={t('clinic.location')}
+      hint={t('clinic.location_hint')}
+    >
+      <LocationCombobox
+        options={listProvinces ?? []}
+        value={filter.province_code ?? ''}
+        onSelect={(option: ComboboxOption) => {
+          handleFilterChange('province_code', option.code);
+          handleFilterChange('province', option.name);
+        }}
+        placeholder={t('clinic.select_province')}
+        loading={provinceLoading}
+      />
+      {filter.province_code && (
         <LocationCombobox
-          options={listProvinces ?? []}
-          value={filter.province_code ?? ''}
-          onSelect={(option: ComboboxOption) => {
-            handleFilterChange('province_code', option.code);
-            handleFilterChange('province', option.name);
-          }}
-          placeholder='Select Province'
-          loading={provinceLoading}
+          options={listCities ?? []}
+          value={filter.city ?? ''}
+          onSelect={(option: ComboboxOption) =>
+            handleFilterChange('city', option.name)
+          }
+          placeholder={t('clinic.select_city')}
+          loading={cityLoading}
         />
-        {filter.province_code && (
-          <LocationCombobox
-            options={listCities ?? []}
-            value={filter.city ?? ''}
-            onSelect={(option: ComboboxOption) =>
-              handleFilterChange('city', option.name)
-            }
-            placeholder='Select City'
-            loading={cityLoading}
-          />
-        )}
-      </div>
-    </div>
+      )}
+    </FilterSection>
   );
 
   /** Render organization filter section (Patient/Guest only). */
   const renderOrganizationSection = () => (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-      <div className='mb-4'>
-        <div className='font-bold'>Organization</div>
-        <span className='text-muted-foreground text-xs opacity-50'>
-          Filter by a specific clinic organization.
-        </span>
-      </div>
-      <div className='flex flex-wrap gap-[10px]'>
-        <LocationCombobox
-          options={organizations ?? []}
-          value={filter.organization ?? ''}
-          onSelect={(option: ComboboxOption) =>
-            handleFilterChange('organization', option.code)
-          }
-          placeholder='Select Organization'
-          loading={orgLoading}
-        />
-      </div>
-    </div>
+    <FilterSection
+      title={t('clinic.organization')}
+      hint={t('clinic.organization_hint')}
+    >
+      <LocationCombobox
+        options={organizations ?? []}
+        value={filter.organization ?? ''}
+        onSelect={(option: ComboboxOption) =>
+          handleFilterChange('organization', option.code)
+        }
+        placeholder={t('clinic.select_organization')}
+        loading={orgLoading}
+      />
+    </FilterSection>
   );
 
   /** Render default or custom date/time filter content. */
@@ -223,19 +202,15 @@ export default function ClinicFilter({
             {type === 'practitioner' ? (
               <>
                 <DatePresetFilter
-                  presets={filterContentListDate}
+                  presets={datePresets}
                   activeStart={filter.start_date}
                   activeEnd={filter.end_date}
                   isCustom={isUseCustomDate}
-                  onPresetSelect={(start, end) => {
-                    handleFilterChange('start_date', start);
-                    handleFilterChange('end_date', end);
-                    setIsUseCustomDate(false);
-                  }}
-                  onCustomOpen={handleCustomFilterOpen}
+                  onPresetSelect={handlePresetSelect}
+                  onCustomOpen={handleCustomOpen}
                 />
                 <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-                  <div className='mb-4 font-bold'>Session Time</div>
+                  <div className='mb-4 font-bold'>{t('session_time')}</div>
                   <div className='flex flex-wrap gap-[10px]'>
                     {filterContentListTime.map(time => (
                       <Button
@@ -256,10 +231,12 @@ export default function ClinicFilter({
                       filter.end_time && (
                         <Button
                           variant='outline'
-                          onClick={handleCustomFilterOpen}
+                          onClick={handleCustomOpen}
                           className='bg-secondary hover:bg-secondary h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-bold text-white'
                         >
-                          Custom : {`${filter.start_time} - ${filter.end_time}`}
+                          {t('custom_range', {
+                            range: `${filter.start_time} - ${filter.end_time}`
+                          })}
                         </Button>
                       )}
                   </div>
@@ -279,7 +256,7 @@ export default function ClinicFilter({
                 className='mt-4 w-min border-0 text-[12px]'
                 onClick={resetFilter}
               >
-                Reset Filter
+                {t('reset_filter')}
               </Button>
             )}
           </div>
@@ -294,14 +271,7 @@ export default function ClinicFilter({
                   from: filter.start_date,
                   to: filter.end_date
                 }}
-                onSelect={date => {
-                  handleFilterChange('start_date', date?.from);
-                  handleFilterChange(
-                    'end_date',
-                    date?.to ? date.to : date?.from
-                  );
-                  setIsUseCustomDate(true);
-                }}
+                onSelect={handleCalendarSelect}
                 disabled={{ before: today }}
               />
               <FilterCustomTimeInputs
@@ -319,10 +289,10 @@ export default function ClinicFilter({
             </div>
             <Button
               type='button'
-              onClick={() => setWhichContent(CONTENT_DEFAULT)}
+              onClick={openDefaultPane}
               className='bg-secondary mt-4 rounded-xl text-white'
             >
-              Kembali
+              {t('back')}
             </Button>
           </div>
         );
@@ -337,12 +307,12 @@ export default function ClinicFilter({
     <AppDrawer
       open={isOpen}
       onClose={() => {
-        setWhichContent(CONTENT_DEFAULT);
+        openDefaultPane();
         setIsOpen(false);
       }}
       trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
-      title='Filter & Sort'
-      ctaLabel='Apply Filter'
+      title={t('filter_title')}
+      ctaLabel={t('apply_filter')}
       onCtaClick={() => {
         setIsOpen(false);
         onChange(filter);

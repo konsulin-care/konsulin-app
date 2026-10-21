@@ -486,22 +486,19 @@ export const parseMergedSessions = (bundle: Bundle): MergedSession[] => {
     });
 };
 
-/** Get display label for a record type. */
-export const getTypeLabel = (type: string) => {
+/**
+ * Get the i18n message key for a record type code (comma-separated codes
+ * resolve to the first known type). Callers translate the key via t().
+ *
+ * @param type - Record type code, e.g. "PractitionerNote".
+ * @returns The message key, e.g. "record.record_type.practitioner_note", or null.
+ */
+export const getTypeLabel = (type: string): string | null => {
   if (!type || type === 'All') return null;
 
   const types = type.split(',').map(t => t.trim());
 
-  // map each to its display label
-  const label = types.find(
-    type =>
-      (typeMappings as Record<string, { text: string; category: number }>)[type]
-        ?.text
-  );
+  const label = types.find(code => typeMappings[code]?.labelKey);
 
-  return (
-    (typeMappings as Record<string, { text: string; category: number }>)[
-      label ?? ''
-    ]?.text ?? null
-  );
+  return label ? (typeMappings[label]?.labelKey ?? null) : null;
 };

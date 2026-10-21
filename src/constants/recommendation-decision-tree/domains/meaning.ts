@@ -1,8 +1,9 @@
 import type { DecisionDomain } from '@/types/recommendation-interview';
+import { defineDomain } from '../domain-builder';
 import { SEHAT_JIWA } from '../resources';
 
 /** Meaning, Purpose & Fulfilment domain branches. */
-const meaning: DecisionDomain = {
+const meaning: DecisionDomain = defineDomain({
   code: 'meaning-purpose-fulfilment',
   label: 'Meaning, Purpose & Fulfilment',
   complaints: [
@@ -10,7 +11,6 @@ const meaning: DecisionDomain = {
       id: 'career-direction',
       label: 'Career Crossroads & Direction',
       synonyms: ['karier', 'karir', 'career', 'arah hidup', 'buntu'],
-      icfDomain: 'meaning-purpose-fulfilment',
       keywords: [
         'career',
         'direction',
@@ -44,7 +44,6 @@ const meaning: DecisionDomain = {
         'purpose',
         'arti'
       ],
-      icfDomain: 'meaning-purpose-fulfilment',
       keywords: [
         'purpose',
         'existential',
@@ -82,7 +81,6 @@ const meaning: DecisionDomain = {
         'move',
         'pindah'
       ],
-      icfDomain: 'meaning-purpose-fulfilment',
       keywords: [
         'transition',
         'retirement',
@@ -123,7 +121,6 @@ const meaning: DecisionDomain = {
         'motivation',
         'malas'
       ],
-      icfDomain: 'meaning-purpose-fulfilment',
       keywords: [
         'motivation',
         'self-esteem',
@@ -154,7 +151,6 @@ const meaning: DecisionDomain = {
       id: 'other-purpose',
       label: 'Other Purpose Concern',
       synonyms: ['meaning', 'purpose', 'lain'],
-      icfDomain: 'meaning-purpose-fulfilment',
       keywords: ['purpose', 'meaning', 'goal'],
       serviceTypeCode: 'other-meaning-purpose-fulfilment',
       options: [
@@ -167,6 +163,6 @@ const meaning: DecisionDomain = {
       }
     }
   ]
-};
+});
 
 export default meaning;

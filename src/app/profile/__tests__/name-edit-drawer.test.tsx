@@ -6,6 +6,10 @@ vi.mock('../hooks/useProfileSectionSave', () => ({
   useProfileSectionSave: vi.fn()
 }));
 
+vi.mock('@/i18n', async () =>
+  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+);
+
 import { useProfileSectionSave } from '../hooks/useProfileSectionSave';
 import NameEditDrawer from '../name-edit-drawer';
 
@@ -65,6 +69,19 @@ describe('NameEditDrawer', () => {
     }
     expect(container).not.toBeNull();
     expect(container?.className).not.toMatch(/px-4|pb-4/);
+  });
+
+  it('renders the add-given label exactly once', () => {
+    renderDrawer();
+    expect(screen.getByText('Add given name')).toBeDefined();
+  });
+
+  it('labels the remove button via the i18n key with the row number', () => {
+    renderDrawer();
+    expect(screen.getByTestId('remove-given-1')).toHaveAttribute(
+      'aria-label',
+      'Remove given name 2'
+    );
   });
 
   it('adds and removes repeatable given name rows', () => {

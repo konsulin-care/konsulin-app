@@ -55,7 +55,9 @@ check-go: check-file-length lint-go-cognitive check-fmt-go lint-go
 
 # Docker
 docker:
-	docker build --no-cache --progress=plain -t konsulin-app .
+	# --network=host: container DNS is broken on this host (Tailscale DNS disabled),
+	# so apk/npm/go module resolution must go through the host's working DNS path.
+	docker build --no-cache --progress=plain --network=host -t konsulin-app .
 	docker run --rm --network host --env-file .env konsulin-app
 
 # Dockerfile linting

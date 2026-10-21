@@ -1,10 +1,12 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { canInstall, installPwa, setupInstallPrompt } from '@/lib/pwa-install';
 import { useEffect, useState } from 'react';
 
 /** Offers PWA installation when the browser exposes an install prompt. */
 export default function InstallButton() {
+  const t = useTranslations('common');
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function InstallButton() {
       onClick={handleInstallClick}
       className='cursor-pointer font-semibold text-teal-600 underline'
     >
-      Install app
+      {t('pwa.install_app')}
     </button>
   );
 }

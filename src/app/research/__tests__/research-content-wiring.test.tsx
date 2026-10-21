@@ -4,6 +4,12 @@ import { describe, expect, it, vi } from 'vitest';
 import ResearchContent from '../research-content';
 
 // Mock ResearcherContent
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('../researcher-content', () => ({
   default: ({
     practitionerId,

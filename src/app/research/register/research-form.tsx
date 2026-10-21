@@ -2,6 +2,7 @@
 
 import QuestionnaireUploadDrawer from '@/components/shared/questionnaire-upload-drawer';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { getAPI } from '@/services/api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
@@ -22,19 +23,17 @@ import {
 import { RenderStep } from '../shared-components';
 
 export const schema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, 'title_required'),
   description: z.string().optional(),
   batches: z
     .array(
       z.object({
-        startDate: z.string().min(1, 'Start date required'),
-        endDate: z.string().min(1, 'End date required'),
-        questionnaireIds: z
-          .array(z.string())
-          .min(1, 'Select at least one questionnaire')
+        startDate: z.string().min(1, 'start_date_required'),
+        endDate: z.string().min(1, 'end_date_required'),
+        questionnaireIds: z.array(z.string()).min(1, 'questionnaire_required')
       })
     )
-    .min(1, 'At least one batch required')
+    .min(1, 'batch_required')
 });
 
 export type FormData = z.infer<typeof schema>;
@@ -68,29 +67,34 @@ const createBatch = (date = ''): FormData['batches'][number] => ({
   questionnaireIds: []
 });
 /** POST a new research study to the API. */
-const submitStudy = async (
+export const submitStudy = async (
   API: Awaited<ReturnType<typeof getAPI>>,
-  data: FormData,
-  userId: string | undefined,
-  storageKey: string,
-  router: ReturnType<typeof useRouter>
-) => {
-  const planIds: string[] = [];
-  for (const batch of data.batches) {
-    const res: { data: { id?: string } } = await API.post(
-      '/fhir/PlanDefinition',
-      {
-        resourceType: 'PlanDefinition',
-        title: `Batch ${planIds.length + 1}`,
-        status: 'active',
-        effectivePeriod: { start: batch.startDate, end: batch.endDate },
-        action: batch.questionnaireIds.map(qId => ({
-          definitionCanonical: `Questionnaire/${qId}`
-        }))
-      }
-    );
-    if (res.data.id) planIds.push(res.data.id);
+  options: {
+    data: FormData;
+    userId: string | undefined;
+    storageKey: string;
+    router: ReturnType<typeof useRouter>;
+    tToast: (key: string) => string;
   }
+) => {
+  const { data, userId, storageKey, router, tToast } = options;
+  const planIds = await Promise.all(
+    data.batches.map(async (batch, index) => {
+      const res: { data: { id?: string } } = await API.post(
+        '/fhir/PlanDefinition',
+        {
+          resourceType: 'PlanDefinition',
+          title: `Batch ${index + 1}`,
+          status: 'active',
+          effectivePeriod: { start: batch.startDate, end: batch.endDate },
+          action: batch.questionnaireIds.map(qId => ({
+            definitionCanonical: `Questionnaire/${qId}`
+          }))
+        }
+      );
+      return res.data.id;
+    })
+  );
 
   const starts = data.batches
     .map(b => b.startDate)
@@ -105,12 +109,14 @@ const submitStudy = async (
     description: data.description,
     status: 'active',
     principalInvestigator: { reference: `Practitioner/${userId}` },
-    protocol: planIds.map(id => ({ reference: `PlanDefinition/${id}` })),
+    protocol: planIds
+      .filter(id => id !== undefined)
+      .map(id => ({ reference: `PlanDefinition/${id}` })),
     period: { start: starts[0], end: ends.at(-1) }
   });
 
   localStorage.removeItem(storageKey);
-  toast.success('Research study created successfully');
+  toast.success(tToast('research_create_success'));
   router.push('/');
 };
 
@@ -118,6 +124,7 @@ const submitStudy = async (
  *
  */
 export default function ResearchForm() {
+  const tToast = useTranslations('toast');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { state: authState } = useAuth();
@@ -246,12 +253,18 @@ export default function ResearchForm() {
     async (data: FormData) => {
       try {
         const API = await getAPI();
-        await submitStudy(API, data, userId, storageKey, router);
+        await submitStudy(API, {
+          data,
+          userId,
+          storageKey,
+          router,
+          tToast
+        });
       } catch {
-        toast.error('Failed to create research study. Please try again.');
+        toast.error(tToast('research_create_failed'));
       }
     },
-    [userId, storageKey, router]
+    [userId, storageKey, router, tToast]
   );
 
   // Actions for the FAB (memoized to prevent infinite re-render in bridge)

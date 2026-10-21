@@ -3,20 +3,16 @@ import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Step2 } from '../research-form-steps';
 
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: () => ({
-    state: {
-      userInfo: {
-        fhirId: 'test-practitioner-id',
-        role_name: 'Researcher'
-      }
-    },
-    isLoading: false
-  })
+vi.mock('@/i18n', async () =>
+  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+);
+
+vi.mock('@/context/auth/authContext', async () => ({
+  ...(await import('@/__tests__/mocks/research-form')).researcherAuthMock
 }));
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
+vi.mock('next/navigation', async () => ({
+  ...(await import('@/__tests__/mocks/research-form')).researchRouterMock
 }));
 
 const libraryOptions = [

@@ -40,6 +40,16 @@ vi.mock('@/services/api', () => ({
   getAPI: vi.fn()
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      pill_register_survey: 'Register Survey',
+      pill_my_survey: 'My Survey'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('@/components/general/avatar', () => ({
   default: () => <div>Avatar</div>
 }));

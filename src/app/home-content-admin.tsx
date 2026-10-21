@@ -5,6 +5,7 @@ import ActionCard from '@/components/general/action-card';
 import CardLoader from '@/components/general/card-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
@@ -15,8 +16,9 @@ import { useCallback, useEffect, useState } from 'react';
 /** Stat card showing the active practitioner count. */
 function PractitionerCountCard({
   count,
-  isError
-}: Readonly<{ count: number; isError: boolean }>) {
+  isError,
+  t
+}: Readonly<{ count: number; isError: boolean; t: (key: string) => string }>) {
   return (
     <Link href='/practitioner' className='block'>
       <div className='card flex items-center gap-4 p-4'>
@@ -25,7 +27,9 @@ function PractitionerCountCard({
         </div>
         <div>
           <div className='text-[24px] font-bold'>{isError ? '-' : count}</div>
-          <div className='text-[12px] text-gray-500'>Active Practitioners</div>
+          <div className='text-[12px] text-gray-500'>
+            {t('active_practitioners')}
+          </div>
         </div>
       </div>
     </Link>
@@ -33,7 +37,9 @@ function PractitionerCountCard({
 }
 
 /** Stat card showing booked appointments today (placeholder until Location connector is built). */
-function BookedAppointmentsTodayCard() {
+function BookedAppointmentsTodayCard({
+  t
+}: Readonly<{ t: (key: string) => string }>) {
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -68,16 +74,14 @@ function BookedAppointmentsTodayCard() {
       </div>
       <div>
         <div className='text-[24px] font-bold'>-</div>
-        <div className='text-[12px] text-gray-500'>
-          Booked Appointments Today
-        </div>
+        <div className='text-[12px] text-gray-500'>{t('booked_today')}</div>
       </div>
     </div>
   );
 }
 
 /** Stat card showing pending approvals placeholder. */
-function PendingApprovalsCard() {
+function PendingApprovalsCard({ t }: Readonly<{ t: (key: string) => string }>) {
   return (
     <div className='card flex items-center gap-4 p-4'>
       <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#FFF7E6]'>
@@ -85,7 +89,9 @@ function PendingApprovalsCard() {
       </div>
       <div>
         <div className='text-[24px] font-bold'>-</div>
-        <div className='text-[12px] text-gray-500'>Pending Approvals</div>
+        <div className='text-[12px] text-gray-500'>
+          {t('pending_approvals')}
+        </div>
       </div>
     </div>
   );
@@ -93,6 +99,7 @@ function PendingApprovalsCard() {
 
 /** Admin home page with stats and service management. */
 export default function HomeContentAdmin() {
+  const t = useTranslations('home');
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
@@ -150,26 +157,27 @@ export default function HomeContentAdmin() {
         <PractitionerCountCard
           count={practitionerCount}
           isError={isCountError}
+          t={t}
         />
-        <BookedAppointmentsTodayCard />
-        <PendingApprovalsCard />
+        <BookedAppointmentsTodayCard t={t} />
+        <PendingApprovalsCard t={t} />
       </div>
 
       <section className='p-4'>
         <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
-          Service Management
+          {t('service_management')}
         </h2>
         <div className='flex flex-col gap-4'>
           <ActionCard
             icon={<Cog />}
-            title='Clinic Details'
-            description='Configure clinic information and services'
+            title={t('clinic_details')}
+            description={t('clinic_details_desc')}
             href='/clinic'
           />
           <ActionCard
             icon={<FileText />}
-            title='Reports'
-            description='Generate operational and clinical reports'
+            title={t('reports')}
+            description={t('reports_desc')}
             href='/record'
           />
         </div>
@@ -182,7 +190,7 @@ export default function HomeContentAdmin() {
             onClick={handleRetryCount}
             className='text-secondary w-full rounded-lg border border-gray-200 py-2 text-[12px]'
           >
-            Failed to load practitioner data. Tap to retry.
+            {t('load_practitioner_fail')}
           </button>
         </div>
       )}

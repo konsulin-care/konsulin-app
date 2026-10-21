@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslations } from '@/i18n';
 import { XIcon } from 'lucide-react';
 
 type ResponseItem = {
@@ -25,6 +26,7 @@ export default function JournalResponseFields({
   onRemove,
   onAdd
 }: Props) {
+  const t = useTranslations('common');
   return (
     <>
       <div>
@@ -32,7 +34,7 @@ export default function JournalResponseFields({
           <div className='mb-3' key={item.id}>
             <div className='flex items-center justify-between'>
               <div className='text-muted mb-2 text-[12px]'>
-                Write anything here
+                {t('journal.response_prompt')}
               </div>
               <Button
                 onClick={() => onRemove(index)}
@@ -52,7 +54,7 @@ export default function JournalResponseFields({
               value={item.text}
               onChange={e => onResponseChange(index, e.target.value)}
               className='rounded-lg bg-white text-[14px]'
-              placeholder='Type your message here.'
+              placeholder={t('journal.response_placeholder')}
             />
           </div>
         ))}
@@ -64,7 +66,7 @@ export default function JournalResponseFields({
           className='text-muted text-[12px]'
           onClick={onAdd}
         >
-          + Add New Thought
+          {t('journal.add_new_thought')}
         </Button>
       </div>
     </>

@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger as DropdownTrigger
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from '@/i18n';
 import {
   checkEmailExists,
   createProfile,
@@ -101,6 +102,7 @@ export default function Participant({
   loading,
   disabled
 }: DropdownProps) {
+  const t = useTranslations('assessment');
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [triggerWidth, setTriggerWidth] = useState<number>(0);
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -201,7 +203,7 @@ export default function Participant({
       <div className='flex flex-col gap-2'>
         <Input
           type='email'
-          placeholder='Enter Email Address'
+          placeholder={t('email_placeholder')}
           className='w-full rounded border p-2'
           value={email}
           onChange={e => setEmail(e.target.value)}
@@ -270,7 +272,9 @@ export default function Participant({
         />
       ))
     ) : (
-      <div className='text-muted px-4 py-2 text-sm'>No patient today</div>
+      <div className='text-muted px-4 py-2 text-sm'>
+        {t('no_patient_today')}
+      </div>
     );
 
   return (

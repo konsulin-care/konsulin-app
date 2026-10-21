@@ -11,16 +11,21 @@ import {
 } from 'lucide-react';
 import type { Pill } from './types';
 
+/**
+ * Pill `label` values are page-header message keys; FabSpeedDial translates
+ * them with t() at render time.
+ */
+
 /** Speed-dial pills for researcher role. */
 export const researcherPills: Pill[] = [
   {
-    label: 'Register Survey',
+    label: 'pill_register_survey',
     icon: FlaskConical,
     delay: 0,
     action: 'register-research'
   },
   {
-    label: 'My Survey',
+    label: 'pill_my_survey',
     href: '/research',
     icon: BookText,
     delay: 50,
@@ -31,35 +36,35 @@ export const researcherPills: Pill[] = [
 /** Speed-dial pills for patient role. */
 export const patientPills: Pill[] = [
   {
-    label: 'Self Checkup',
+    label: 'pill_self_checkup',
     href: '/assessments',
     icon: HeartPulse,
     delay: 0,
     action: 'navigate'
   },
   {
-    label: 'Write Journal',
+    label: 'pill_write_journal',
     href: '/journal',
     icon: BookText,
     delay: 50,
     action: 'navigate'
   },
   {
-    label: 'View Schedule',
+    label: 'pill_view_schedule',
     href: '/schedule',
     icon: Calendar,
     delay: 100,
     action: 'navigate'
   },
   {
-    label: 'Join Research',
+    label: 'pill_join_research',
     href: '/research',
     icon: FlaskConical,
     delay: 150,
     action: 'navigate'
   },
   {
-    label: 'Get Recommendation',
+    label: 'pill_get_recommendation',
     icon: Sparkles,
     delay: 200,
     action: 'get-recommendation'
@@ -69,28 +74,28 @@ export const patientPills: Pill[] = [
 /** Speed-dial pills for practitioner role. */
 export const practitionerPills: Pill[] = [
   {
-    label: 'Set Availability',
+    label: 'pill_set_availability',
     href: '/practitioner',
     icon: ClipboardClock,
     delay: 0,
     action: 'navigate'
   },
   {
-    label: 'View Schedule',
+    label: 'pill_view_schedule',
     href: '/schedule',
     icon: Calendar,
     delay: 50,
     action: 'navigate'
   },
   {
-    label: 'Health Screening',
+    label: 'pill_health_screening',
     href: '/assessments',
     icon: HeartPulse,
     delay: 100,
     action: 'navigate'
   },
   {
-    label: 'S.O.A.P.',
+    label: 'pill_soap',
     href: '/assessments/soap',
     icon: BookText,
     delay: 150,
@@ -101,14 +106,19 @@ export const practitionerPills: Pill[] = [
 /** Speed-dial pills for clinic admin role. */
 export const adminPills: Pill[] = [
   {
-    label: 'Register Practitioner',
+    label: 'pill_register_practitioner',
     icon: UserPlus,
     delay: 0,
     action: 'register-practitioner'
   },
-  { label: 'Add Location', icon: MapPin, delay: 50, action: 'add-location' },
   {
-    label: 'Add Assessments',
+    label: 'pill_add_location',
+    icon: MapPin,
+    delay: 50,
+    action: 'add-location'
+  },
+  {
+    label: 'pill_add_assessments',
     icon: Form,
     delay: 100,
     action: 'add-assessment'

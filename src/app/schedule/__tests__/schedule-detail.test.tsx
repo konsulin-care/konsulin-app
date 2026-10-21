@@ -2,6 +2,12 @@ import type { MergedAppointment } from '@/types/appointment';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('@/components/general/avatar', () => ({
   default: () => <div data-testid='mock-avatar' />
 }));

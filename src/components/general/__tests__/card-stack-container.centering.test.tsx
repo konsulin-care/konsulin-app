@@ -1,32 +1,33 @@
-import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockF, mockSwipe, mockToast, mockStyles } = vi.hoisted(() => ({
-  mockF: vi.fn<() => any>(),
-  mockSwipe: vi.fn<() => any>(),
-  mockToast: { error: vi.fn() } as Record<string, (...args: any[]) => any>,
-  mockStyles: vi.fn().mockReturnValue(vi.fn())
-}));
-
-vi.mock('@/hooks/useQuestionFocus', () => ({ useQuestionFocus: mockF }));
-vi.mock('@/hooks/useCardSwipe', () => ({ useCardSwipe: mockSwipe }));
-vi.mock('../card-dom-mapper', () => ({ CardDomMapper: () => null }));
-vi.mock('react-toastify', () => ({ toast: mockToast }));
-vi.mock('@/lib/injectCardStyles', () => ({ injectCardStyles: mockStyles }));
+vi.mock('@/hooks/useQuestionFocus', async () =>
+  (await import('./card-stack-test-fixtures')).questionFocusMockFactory()
+);
+vi.mock('@/hooks/useCardSwipe', async () =>
+  (await import('./card-stack-test-fixtures')).cardSwipeMockFactory()
+);
+vi.mock('../card-dom-mapper', async () =>
+  (await import('./card-stack-test-fixtures')).cardDomMapperMockFactory()
+);
+vi.mock('@/i18n', async () =>
+  (await import('./card-stack-test-fixtures')).cardStackI18nMockFactory()
+);
+vi.mock('react-toastify', async () =>
+  (await import('./card-stack-test-fixtures')).toastMockFactory()
+);
+vi.mock('@/lib/injectCardStyles', async () =>
+  (await import('./card-stack-test-fixtures')).injectCardStylesMockFactory()
+);
 
 import { CardStackContainer } from '../card-stack-container';
-
-const BASE = {
-  activeCardIndex: 0,
-  setIdx: vi.fn(),
-  totalFocusable: 3,
-  totalAnswerable: 3,
-  cardStates: { q1: 'active', q2: 'future', q3: 'future' },
-  displayItemLinkIds: [],
-  focusableLinkIds: ['q1', 'q2', 'q3'],
-  isRequired: vi.fn().mockReturnValue(false),
-  isAnswered: vi.fn().mockReturnValue(false)
-};
+import {
+  BASE,
+  defaultSwipeResult,
+  mockCardRect,
+  mockF,
+  mockSwipe,
+  renderCards
+} from './card-stack-test-fixtures';
 
 describe('CardStackContainer centering', () => {
   const scrollToSpy = vi.spyOn(window, 'scrollTo').mockReturnValue();
@@ -34,12 +35,7 @@ describe('CardStackContainer centering', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockF.mockReturnValue(BASE);
-    mockSwipe.mockReturnValue({
-      swipeDirection: null,
-      onTouchStart: vi.fn(),
-      onTouchMove: vi.fn(),
-      onTouchEnd: vi.fn()
-    });
+    mockSwipe.mockReturnValue(defaultSwipeResult());
   });
 
   function cards() {
@@ -55,13 +51,13 @@ describe('CardStackContainer centering', () => {
   }
 
   it('scrolls the window to center the active card vertically', () => {
-    const { rerender } = render(cards());
+    const { rerender } = renderCards(cards());
     const vp = document.querySelector<HTMLElement>('.card-stack-viewport');
 
     // Mock positions for all cards
     const q1 = vp.querySelector<HTMLElement>('[data-link-id="q1"]');
     const q2 = vp.querySelector<HTMLElement>('[data-link-id="q2"]');
-    vi.spyOn(q1, 'getBoundingClientRect').mockReturnValue({
+    mockCardRect(q1, {
       top: 200,
       bottom: 280,
       left: 0,
@@ -69,10 +65,9 @@ describe('CardStackContainer centering', () => {
       width: 300,
       height: 80,
       x: 0,
-      y: 0,
-      toJSON: () => ({})
+      y: 0
     });
-    vi.spyOn(q2, 'getBoundingClientRect').mockReturnValue({
+    mockCardRect(q2, {
       top: 320,
       bottom: 400,
       left: 0,
@@ -80,8 +75,7 @@ describe('CardStackContainer centering', () => {
       width: 300,
       height: 80,
       x: 0,
-      y: 0,
-      toJSON: () => ({})
+      y: 0
     });
 
     Object.defineProperty(window, 'scrollY', {
@@ -111,10 +105,10 @@ describe('CardStackContainer centering', () => {
   });
 
   it('clears leftover inline styles before scrolling', () => {
-    const { rerender } = render(cards());
+    const { rerender } = renderCards(cards());
     const vp = document.querySelector<HTMLElement>('.card-stack-viewport');
     const q1 = vp.querySelector<HTMLElement>('[data-link-id="q1"]');
-    vi.spyOn(q1, 'getBoundingClientRect').mockReturnValue({
+    mockCardRect(q1, {
       top: 200,
       bottom: 280,
       left: 0,
@@ -122,8 +116,7 @@ describe('CardStackContainer centering', () => {
       width: 300,
       height: 80,
       x: 0,
-      y: 0,
-      toJSON: () => ({})
+      y: 0
     });
 
     // Set stale inline styles
@@ -154,14 +147,14 @@ describe('CardStackContainer centering', () => {
   });
 
   it('does nothing when activeCardIndex is out of bounds', () => {
-    render(cards());
+    renderCards(cards());
     vi.clearAllMocks();
 
     mockF.mockReturnValue({
       ...BASE,
       activeCardIndex: 99
     });
-    render(cards());
+    renderCards(cards());
 
     expect(scrollToSpy).not.toHaveBeenCalled();
   });

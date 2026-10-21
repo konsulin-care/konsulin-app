@@ -7,6 +7,7 @@ import JournalSuccessDrawer from '@/components/shared/journal-succes-drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
+import { useTranslations } from '@/i18n';
 import { useGetSingleRecord, useUpdateJournal } from '@/services/api/record';
 import { format } from 'date-fns';
 import { FileCheckIcon, NotepadTextIcon, SavePen } from 'lucide-react';
@@ -22,6 +23,7 @@ type Props = {
  *
  */
 export default function EditJournal({ journalId }: Props) {
+  const t = useTranslations('common');
   const { isLoading: isAuthLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const {
@@ -120,7 +122,7 @@ export default function EditJournal({ journalId }: Props) {
     dispatch({
       type: 'SET_ACTION',
       config: {
-        label: 'Save Journal',
+        label: t('journal.save'),
         icon: SavePen,
         onAction: () => handleSubmitJournal(),
         isSaving: isSubmitLoading,
@@ -129,7 +131,14 @@ export default function EditJournal({ journalId }: Props) {
     });
 
     return () => dispatch({ type: 'SET_ACTION', config: null });
-  }, [journalTitle, response, isSubmitLoading, dispatch, handleSubmitJournal]);
+  }, [
+    journalTitle,
+    response,
+    isSubmitLoading,
+    dispatch,
+    handleSubmitJournal,
+    t
+  ]);
 
   /** Format an ISO date string to a human-readable Indonesian locale format. */
   const formattedDate = (date: string) => {
@@ -141,14 +150,18 @@ export default function EditJournal({ journalId }: Props) {
       <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
 
       <div className='flex grow flex-col'>
-        <span className='text-muted text-[10px]'>Journal Create</span>
+        <span className='text-muted text-[10px]'>
+          {t('journal.created_label')}
+        </span>
         <span className='text-[14px] font-bold'>
           {journalData.effectiveDateTime &&
             formattedDate(journalData.effectiveDateTime)}
         </span>
       </div>
       <div className='flex flex-col'>
-        <span className='text-muted text-right text-[10px]'>Last Edit</span>
+        <span className='text-muted text-right text-[10px]'>
+          {t('journal.last_edit_label')}
+        </span>
         <span className='text-right text-[14px] font-bold'>
           {journalData.meta.lastUpdated &&
             formattedDate(journalData.meta.lastUpdated)}
@@ -164,7 +177,7 @@ export default function EditJournal({ journalId }: Props) {
       <div className='card flex border'>
         <NotepadTextIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
         <input
-          placeholder='Journal Title'
+          placeholder={t('journal.title_placeholder')}
           value={journalTitle}
           onChange={e => setJournalTitle(e.target.value)}
           type='text'

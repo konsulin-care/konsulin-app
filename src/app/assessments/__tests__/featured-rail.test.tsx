@@ -1,6 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { Questionnaire } from 'fhir/r4';
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      editors_picks: "Editor's Picks"
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 import FeaturedRail from '../featured-rail';
 
 function createQuestionnaire(id: string, title: string): Questionnaire {

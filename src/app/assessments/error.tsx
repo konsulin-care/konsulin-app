@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { RotateCw } from 'lucide-react';
 
 interface ErrorProps {
@@ -69,6 +70,7 @@ export default function AssessmentsError({
   error,
   reset
 }: Readonly<ErrorProps>) {
+  const t = useTranslations('common');
   const chunkError = isChunkError(error);
   const chunkErr = error as ChunkError;
 
@@ -89,13 +91,9 @@ export default function AssessmentsError({
 
   return (
     <div className='container flex flex-col items-center px-4 pt-32'>
-      <h2 className='text-center text-2xl font-semibold'>
-        Something went wrong
-      </h2>
+      <h2 className='text-center text-2xl font-semibold'>{t('error.title')}</h2>
       <p className='mt-2 text-center text-sm opacity-50'>
-        {chunkError
-          ? 'A component failed to load. This can happen on unstable connections.'
-          : 'The page failed to load. This can happen on unstable connections.'}
+        {chunkError ? t('error.chunk_load') : t('error.page_load')}
       </p>
 
       <button
@@ -103,7 +101,9 @@ export default function AssessmentsError({
         onClick={handleRetry}
         className='mt-8 flex cursor-pointer items-center gap-2'
       >
-        <span className='text-2xl font-semibold underline'>Try again</span>
+        <span className='text-2xl font-semibold underline'>
+          {t('error.try_again')}
+        </span>
         <RotateCw width={21} height={21} />
       </button>
 
@@ -113,7 +113,7 @@ export default function AssessmentsError({
           onClick={handleReload}
           className='mt-4 flex cursor-pointer items-center gap-2 text-sm opacity-60 hover:opacity-100'
         >
-          <span className='underline'>Reload page</span>
+          <span className='underline'>{t('error.reload_page')}</span>
         </button>
       )}
 

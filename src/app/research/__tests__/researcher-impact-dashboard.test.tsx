@@ -5,25 +5,23 @@ import ResearcherImpactDashboard from '../researcher-impact-dashboard';
 import { makeStudyWithBatches } from './research-fixtures';
 
 // Mock useAuth
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: () => ({
-    state: {
-      userInfo: {
-        fullname: 'Dr. Smith',
-        email: 'smith@example.com',
-        userId: 'user-1',
-        fhirId: 'practitioner-1',
-        profile_picture: undefined
-      }
-    }
-  })
+vi.mock('@/i18n', async () =>
+  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+);
+vi.mock('@/context/auth/authContext', async () => ({
+  ...(await import('@/__tests__/mocks/research-form')).researcherAuthMock
 }));
 
 // Mock useResearcherImpact
 vi.mock('@/hooks/useResearcherImpact', () => ({
   useResearcherImpact: () => ({
     totalImpact: 150,
-    level: { label: 'Torchbearer', icon: vi.fn(), reward: 'Early access' },
+    level: {
+      label: 'Torchbearer',
+      icon: vi.fn(),
+      reward: 'Early access to batch results + cohort insights',
+      rewardKey: 'researcher_reward.torchbearer'
+    },
     levelNumber: 2,
     impactInLevel: 50,
     perStudy: [
@@ -34,7 +32,6 @@ vi.mock('@/hooks/useResearcherImpact', () => ({
         milestonesHit: 1
       }
     ],
-    mission: 'Enroll 6 participants to hit the next milestone.',
     isLoading: false
   })
 }));
@@ -107,6 +104,20 @@ describe('ResearcherImpactDashboard', () => {
     );
   });
 
+  it('renders the level reward line translated', () => {
+    render(
+      <ResearcherImpactDashboard
+        studies={[makeStudyWithBatches('study-1')]}
+        activeStudyId='study-1'
+        practitionerId='practitioner-1'
+      />,
+      { wrapper }
+    );
+    expect(screen.getByTestId('dashboard-reward')).toHaveTextContent(
+      'Early access to batch results + cohort insights'
+    );
+  });
+
   it('renders total participants stat', () => {
     render(
       <ResearcherImpactDashboard
@@ -145,7 +156,7 @@ describe('ResearcherImpactDashboard', () => {
       { wrapper }
     );
     expect(screen.getByTestId('dashboard-mission')).toHaveTextContent(
-      'Enroll 6 participants to hit the next milestone.'
+      'Enroll 25 participants to hit the next milestone.'
     );
   });
 

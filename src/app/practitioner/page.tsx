@@ -4,6 +4,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { useGetPractitionerRoleWorkingLocations } from '@/services/clinicians';
 import { storeOwnedRoleIds } from '@/utils/practitioner-ownership';
 import dynamic from 'next/dynamic';
@@ -21,6 +22,7 @@ const RecommendationCardStack = dynamic(
 
 /** Practitioner page — role-aware listing and detail dispatch. */
 export default function Practitioner() {
+  const t = useTranslations('common');
   const searchParams = useSearchParams();
   const router = useRouter();
   const id = searchParams.get('id') ?? '';
@@ -116,7 +118,7 @@ export default function Practitioner() {
       if (workingLocations.length === 0) {
         return (
           <div className='flex min-h-[30vh] items-center justify-center text-sm text-gray-500'>
-            No working locations found
+            {t('practitioner.no_working_locations')}
           </div>
         );
       }
@@ -149,9 +151,9 @@ export default function Practitioner() {
 
   let pageTitle: string | undefined;
   if (role === Roles.Patient && id) {
-    pageTitle = 'View Provided Services';
+    pageTitle = t('practitioner.view_provided_services');
   } else if (id) {
-    pageTitle = 'Manage Practitioner';
+    pageTitle = t('practitioner.manage_practitioner');
   } else {
     pageTitle = 'Manage Practitioners';
   }

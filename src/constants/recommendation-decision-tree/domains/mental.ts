@@ -1,8 +1,9 @@
 import type { DecisionDomain } from '@/types/recommendation-interview';
+import { defineDomain } from '../domain-builder';
 import { ER, SEHAT_JIWA } from '../resources';
 
 /** Mental & Emotional Health domain branches. */
-const mental: DecisionDomain = {
+const mental: DecisionDomain = defineDomain({
   code: 'mental-emotional-health',
   label: 'Mental & Emotional Health',
   complaints: [
@@ -17,7 +18,6 @@ const mental: DecisionDomain = {
         'hopeless',
         'murung'
       ],
-      icfDomain: 'mental-emotional-health',
       keywords: [
         'depression',
         'depressive',
@@ -45,7 +45,6 @@ const mental: DecisionDomain = {
       id: 'anxiety-stress',
       label: 'Anxiety, Stress & Panic',
       synonyms: ['cemas', 'khawatir', 'panik', 'anxiety', 'stress', 'panicky'],
-      icfDomain: 'mental-emotional-health',
       keywords: [
         'anxiety',
         'anxious',
@@ -73,7 +72,6 @@ const mental: DecisionDomain = {
       id: 'grief-trauma',
       label: 'Grief, Trauma & Bereavement',
       synonyms: ['duka', 'kehilangan', 'grief', 'trauma', 'berduka'],
-      icfDomain: 'mental-emotional-health',
       keywords: [
         'grief',
         'trauma',
@@ -105,7 +103,6 @@ const mental: DecisionDomain = {
       id: 'postpartum-mood',
       label: 'Postpartum & Maternal Mood',
       synonyms: ['postpartum', 'melahirkan', 'baby blues', 'ibu baru'],
-      icfDomain: 'mental-emotional-health',
       keywords: [
         'mood',
         'depression',
@@ -138,7 +135,6 @@ const mental: DecisionDomain = {
       id: 'burnout',
       label: 'Emotional Exhaustion & Burnout',
       synonyms: ['burnout', 'kelelahan emosional', 'jenuh', 'lelah batin'],
-      icfDomain: 'mental-emotional-health',
       keywords: [
         'burnout',
         'stress',
@@ -168,7 +164,6 @@ const mental: DecisionDomain = {
       id: 'mood-swings',
       label: 'Mood Swings & Emotional Dysregulation',
       synonyms: ['emosi', 'meledak', 'mood swings', 'marah', 'irritable'],
-      icfDomain: 'mental-emotional-health',
       keywords: [
         'mood',
         'irritable',
@@ -199,7 +194,6 @@ const mental: DecisionDomain = {
       id: 'other-mental',
       label: 'Other Mental Health Concern',
       synonyms: ['mental', 'jiwa', 'other mental'],
-      icfDomain: 'mental-emotional-health',
       keywords: ['mental', 'psychological', 'emotional'],
       serviceTypeCode: 'other-mental-emotional-health',
       options: [
@@ -216,6 +210,6 @@ const mental: DecisionDomain = {
       }
     }
   ]
-};
+});
 
 export default mental;

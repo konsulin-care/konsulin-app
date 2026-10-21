@@ -3,6 +3,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 
 import { Textarea } from '@/components/ui/textarea';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
+import { useTranslations } from '@/i18n';
 import { cn, conjunction } from '@/lib/utils';
 import type { PractitionerRole, Schedule } from 'fhir/r4';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
@@ -54,7 +55,10 @@ export default function BookingFormSection({
   hideCta = false,
   practitionerGivenName
 }: Readonly<Props>) {
-  const label = `What should ${practitionerGivenName ?? 'the doctor'} know?`;
+  const t = useTranslations('common');
+  const label = t('practitioner.problem_brief_label', {
+    name: practitionerGivenName ?? t('practitioner.default_doctor')
+  });
   return (
     <>
       <div className='mt-4 text-[12px] font-bold'>
@@ -67,7 +71,7 @@ export default function BookingFormSection({
           onChange={e => {
             handleBookingInformationChange('problem_brief', e.target.value);
           }}
-          placeholder='e.g., anxiety attacks for 1 week, persistent low mood since last month, trouble sleeping with racing thoughts'
+          placeholder={t('practitioner.booking_placeholder')}
           className='w-full resize-none bg-white text-[12px] text-[#2C2F35]'
         />
       </div>

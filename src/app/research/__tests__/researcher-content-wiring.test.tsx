@@ -5,6 +5,12 @@ import ResearcherContent from '../researcher-content';
 import { makeStudyWithBatches } from './research-fixtures';
 
 // Mock ResearcherCarousel
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('../researcher-carousel', () => ({
   default: ({ studies }: { studies: { study: { id: string } }[] }) => (
     <div data-testid='researcher-carousel'>

@@ -4,6 +4,7 @@ import LocationCombobox, {
   type ComboboxOption
 } from '@/components/shared/location-combobox';
 import { NUCC_TAXONOMY } from '@/data/nucc-taxonomy';
+import { useTranslations } from '@/i18n';
 import { useUpdatePractitionerInfo } from '@/services/clinicians';
 import { FhirSystems } from '@/utils/fhir/extensions';
 import {
@@ -57,6 +58,7 @@ export default function SpecialtySection({
   practitionerRole,
   onDirtyChange
 }: Props) {
+  const t = useTranslations('common');
   const [selectedCodes, setSelectedCodes] = useState<string[]>(() =>
     getNuccSpecialtyCodes(practitionerRole)
   );
@@ -124,9 +126,7 @@ export default function SpecialtySection({
   return (
     <div className='flex flex-col gap-4 px-4 py-2'>
       <p className='text-muted-foreground text-sm'>
-        Specialties tell patients which conditions you treat and drive
-        patient-facing recommendations. External specialties added outside this
-        app are kept as-is.
+        {t('practitioner.specialty_hint')}
       </p>
 
       <LocationCombobox
@@ -134,7 +134,7 @@ export default function SpecialtySection({
         options={NUCC_OPTIONS}
         value={selectedCodes}
         onSelect={handleToggle}
-        placeholder='Add specialty…'
+        placeholder={t('practitioner.add_specialty_placeholder')}
       />
 
       <div className='flex flex-wrap gap-2'>

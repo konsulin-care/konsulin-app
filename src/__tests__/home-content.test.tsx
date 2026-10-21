@@ -5,6 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HomeContent from '../app/home-content';
 
 // Mock all child components
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/app/home-content-guest', () => ({
   default: () => <div data-testid='guest-content'>Guest</div>
 }));

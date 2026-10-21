@@ -1,6 +1,7 @@
 import { CalendarBase } from '@/components/ui/calendar-base';
 import { DrawerDescription, DrawerTitle } from '@/components/ui/drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
+import { useTranslations } from '@/i18n';
 import { format } from 'date-fns';
 import type { PractitionerRoleAvailableTime } from 'fhir/r4';
 import { DayButton, type CalendarDay } from 'react-day-picker';
@@ -110,6 +111,7 @@ export default function BookingCalendar({
   parentOnMonthChange,
   showAllDates = false
 }: Readonly<Props>) {
+  const t = useTranslations('common');
   const customComponents = useMemo(() => {
     return dayDots ? { DayButton: DayButtonComp } : undefined;
   }, [dayDots]);
@@ -118,7 +120,7 @@ export default function BookingCalendar({
     <>
       {!hideHeader && (
         <DrawerTitle className='mx-auto text-[20px] font-bold'>
-          See Availability
+          {t('practitioner.see_availability')}
         </DrawerTitle>
       )}
       <div className='mt-4 flex w-full flex-col justify-center'>

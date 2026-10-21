@@ -5,6 +5,7 @@ import {
   DrawerContent,
   DrawerTrigger
 } from '@/components/ui/drawer';
+import { useTranslations } from '@/i18n';
 import { SquareCheckIcon, SquareIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -28,6 +29,7 @@ export default function ObjectiveFindingModal({
   readonly objectiveFinding: readonly boolean[];
   readonly onChange: (items: readonly TestItem[]) => void;
 }) {
+  const t = useTranslations('assessment');
   const [selectedTest, setSelectedTest] = useState(objectiveFinding);
 
   /** Toggle selection state for a test item at the given index. */
@@ -57,7 +59,7 @@ export default function ObjectiveFindingModal({
                 src={'/images/note.svg'}
                 width={24}
                 height={24}
-                alt='note'
+                alt={t('image_note_alt')}
               />
             </div>
             <div className='mr-auto'>{item.name}</div>

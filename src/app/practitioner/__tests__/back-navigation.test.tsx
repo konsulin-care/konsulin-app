@@ -10,6 +10,12 @@ type MockEmptyStateProps = Pick<React.ComponentProps<'div'>, 'children'> & {
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn().mockReturnValue({ push: vi.fn(), back: vi.fn() }),
   useSearchParams: vi.fn(),

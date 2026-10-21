@@ -1,6 +1,7 @@
 'use client';
 
 import LoadingSpinnerIcon from '@/components/icons/loading-spinner-icon';
+import { useTranslations } from '@/i18n';
 import { getAPI } from '@/services/api';
 import { fetchCSRFToken } from '@/services/auth';
 import { type ChangeEvent, useRef, useState } from 'react';
@@ -89,6 +90,7 @@ function LocationImageToggle({
   uploading: boolean;
   onClick: () => void;
 }>) {
+  const t = useTranslations('common');
   if (imageUrl) {
     return (
       <button
@@ -100,7 +102,7 @@ function LocationImageToggle({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
-          alt='Location preview'
+          alt={t('location.image_alt')}
           className='h-48 w-full rounded-lg object-cover'
         />
       </button>
@@ -134,6 +136,7 @@ export default function LocationImageUploader({
   imageUrl,
   onImageUrlChange
 }: Props) {
+  const tToast = useTranslations('toast');
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -148,7 +151,7 @@ export default function LocationImageUploader({
       const url = await uploadImage(processed);
       onImageUrlChange(url);
     } catch {
-      toast.error('Failed to upload image. Please try again.');
+      toast.error(tToast('location_image_upload_failed'));
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = '';

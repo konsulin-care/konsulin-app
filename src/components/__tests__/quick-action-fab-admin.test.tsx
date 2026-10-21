@@ -25,6 +25,11 @@ vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
 vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 
 function TestHarness() {
   const { dispatch } = useFab();

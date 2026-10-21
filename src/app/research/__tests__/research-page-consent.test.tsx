@@ -1,4 +1,11 @@
 /* eslint-disable max-lines */
+
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 import { createQueryClient } from '@/__tests__/test-utils';
 import type { FabAction } from '@/context/fabContext';
 import { QueryClientProvider } from '@tanstack/react-query';

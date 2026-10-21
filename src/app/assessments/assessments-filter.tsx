@@ -4,6 +4,7 @@ import FilterDrawerTrigger from '@/components/shared/filter-drawer-trigger';
 import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
 import { ASSESSMENT_CATEGORIES } from '@/constants/assessment-categories';
+import { useTranslations } from '@/i18n';
 import { useState } from 'react';
 
 export interface Filters {
@@ -30,6 +31,7 @@ const SORT_OPTIONS = [
 export default function AssessmentsFilter({
   onChange
 }: AssessmentsFilterProps) {
+  const t = useTranslations('assessment');
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<
@@ -54,12 +56,14 @@ export default function AssessmentsFilter({
       open={isOpen}
       onClose={() => setIsOpen(false)}
       trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
-      title='Filter'
-      ctaLabel='Apply'
+      title={t('filter')}
+      ctaLabel={t('apply')}
       onCtaClick={handleApply}
     >
       <div className='mt-4'>
-        <h3 className='mb-2 text-sm font-semibold text-gray-700'>Category</h3>
+        <h3 className='mb-2 text-sm font-semibold text-gray-700'>
+          {t('category')}
+        </h3>
         <div className='flex flex-col gap-2'>
           {ASSESSMENT_CATEGORIES.map(cat => (
             <label
@@ -71,16 +75,18 @@ export default function AssessmentsFilter({
                 checked={selectedCategories.includes(cat.code)}
                 onChange={() => handleCategoryToggle(cat.code)}
                 className='size-4 accent-[var(--secondary)]'
-                aria-label={cat.label}
+                aria-label={t(`category.${cat.code}`)}
               />
-              {cat.label}
+              {t(`category.${cat.code}`)}
             </label>
           ))}
         </div>
       </div>
 
       <div className='mt-4'>
-        <h3 className='mb-2 text-sm font-semibold text-gray-700'>Sort</h3>
+        <h3 className='mb-2 text-sm font-semibold text-gray-700'>
+          {t('sort')}
+        </h3>
         <div className='flex flex-wrap gap-2'>
           {SORT_OPTIONS.map(opt => (
             <Button

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { parseReferralRef, readRefFromUrl } from '@/utils/referral';
 import { useEffect, useState } from 'react';
 
@@ -11,6 +12,7 @@ import { useEffect, useState } from 'react';
  * Renders nothing when no patient ref is present.
  */
 export default function ReferralNotice() {
+  const t = useTranslations('research');
   const [ref, setRef] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,11 +26,7 @@ export default function ReferralNotice() {
       data-testid='referral-notice'
       className='mt-2 rounded-xl border border-[#13c2c2]/30 bg-[#13c2c2]/5 p-4'
     >
-      <p className='text-xs text-gray-600'>
-        A friend invited you to this research. Completing the batch gives them
-        community credit. Referral patterns are used only to study the structure
-        of the research community.
-      </p>
+      <p className='text-xs text-gray-600'>{t('referral_notice')}</p>
     </section>
   );
 }

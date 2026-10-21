@@ -34,6 +34,12 @@ const mockStudy: ResearchStudyWithBatches = {
   daysRemaining: 5
 };
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 describe('ResearcherStudySlide', () => {
   it('renders study title and status badge', () => {
     render(

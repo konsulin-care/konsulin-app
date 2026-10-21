@@ -2,6 +2,7 @@
 
 import { useCardSwipe } from '@/hooks/useCardSwipe';
 import { useQuestionFocus } from '@/hooks/useQuestionFocus';
+import { useTranslations } from '@/i18n';
 import { injectCardStyles } from '@/lib/injectCardStyles';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useInsertionEffect, useRef } from 'react';
@@ -36,6 +37,8 @@ export function CardStackContainer({
     isRequired,
     isAnswered
   } = useQuestionFocus();
+  const t = useTranslations('common');
+  const toastT = useTranslations('toast');
 
   const { swipeDirection, onTouchStart, onTouchMove, onTouchEnd } =
     useCardSwipe();
@@ -140,7 +143,7 @@ export function CardStackContainer({
           isRequired(currentLinkId) &&
           !isAnswered(currentLinkId)
         ) {
-          toast.error("Can't skip required question");
+          toast.error(toastT('cannot_skip_required'));
           return;
         }
 
@@ -157,7 +160,8 @@ export function CardStackContainer({
       goToCard,
       isRequired,
       isAnswered,
-      cardStates
+      cardStates,
+      toastT
     ]
   );
 
@@ -328,7 +332,7 @@ export function CardStackContainer({
       <div
         ref={containerRef}
         className='card-stack-viewport'
-        aria-label='Question navigation'
+        aria-label={t('question_navigation')}
         role='button' // NOSONAR: viewport delegates to runtime role=button cards; native <button> cannot wrap nested interactive card controls
         tabIndex={0}
         onClick={handleCardClick}
@@ -342,7 +346,10 @@ export function CardStackContainer({
 
       {/* Progress indicator */}
       <div className='mt-2 text-center text-sm text-gray-500'>
-        Question {answeredCount + 1} of {totalFocusable}
+        {t('question_progress', {
+          current: answeredCount + 1,
+          total: totalFocusable
+        })}
       </div>
     </div>
   );

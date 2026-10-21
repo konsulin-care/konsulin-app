@@ -20,6 +20,30 @@ const COMPLAINT_BY_ID = new Map(
   ALL_COMPLAINTS.map(complaint => [complaint.id, complaint])
 );
 
+/** Translator shape accepted by resolveLabel (from `useTranslations`). */
+export type TranslateFn = (key: string) => string;
+
+/**
+ * Resolve a localised label for a decision-tree node.
+ *
+ * When the node carries a `labelKey` and the translation resolves to a
+ * non-key string, that translation wins; otherwise the static English
+ * `label` is returned. Search keeps matching the English label plus
+ * synonyms regardless of locale.
+ *
+ * @param node - Tree node carrying the static English label and message key
+ * @param t - Translator bound to the `interview` namespace
+ * @returns The locale-aware display label
+ */
+export function resolveLabel(
+  node: { label: string; labelKey?: string },
+  t: TranslateFn
+): string {
+  if (!node.labelKey) return node.label;
+  const translated = t(node.labelKey);
+  return translated === node.labelKey ? node.label : translated;
+}
+
 /** Lowercased, trimmed search token matcher against label + synonyms. */
 function matchesQuery(complaint: ChiefComplaint, query: string): boolean {
   const haystack = [complaint.label, ...complaint.synonyms]

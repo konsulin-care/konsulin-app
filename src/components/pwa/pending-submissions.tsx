@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import {
   listenForSyncReplay,
   pendingCount,
@@ -69,6 +70,7 @@ export function usePendingSubmissions(): PendingSubmissionsState {
 /** Banner showing queued submissions with a manual sync button. */
 export default function PendingSubmissionsBanner() {
   const { count, syncNow } = usePendingSubmissions();
+  const t = useTranslations('common');
 
   if (count === 0) return null;
 
@@ -80,15 +82,13 @@ export default function PendingSubmissionsBanner() {
 
   return (
     <output className='flex items-center justify-between gap-2 border-b border-neutral-200 bg-amber-50 px-4 py-2 text-sm'>
-      <span>
-        {count} submission{count === 1 ? '' : 's'} waiting to sync
-      </span>
+      <span>{t('pwa.waiting_to_sync', { count })}</span>
       <button
         type='button'
         onClick={handleSyncNow}
         className='cursor-pointer font-semibold text-teal-600 underline'
       >
-        Sync now
+        {t('pwa.sync_now')}
       </button>
     </output>
   );

@@ -29,6 +29,9 @@ vi.mock('@/lib/indexeddb', () => ({
   dbGet: vi.fn().mockResolvedValue(null)
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => key)
+}));
 vi.mock('react-toastify', () => ({
   toast: { success: vi.fn(), error: vi.fn() }
 }));

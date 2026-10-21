@@ -4,34 +4,20 @@ import { useSearchParams } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchForm from '../research-form';
 
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: () => ({
-    state: {
-      userInfo: {
-        fhirId: 'test-practitioner-id',
-        role_name: 'Researcher'
-      }
-    },
-    isLoading: false
-  })
+vi.mock('@/i18n', async () =>
+  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+);
+
+vi.mock('@/context/auth/authContext', async () => ({
+  ...(await import('@/__tests__/mocks/research-form')).researcherAuthMock
 }));
 
-vi.mock('@/services/api', () => ({
-  getAPI: () =>
-    Promise.resolve({
-      get: vi.fn().mockResolvedValue({
-        data: {
-          entry: [
-            { resource: { id: 'phq2', title: 'PHQ-2', status: 'active' } }
-          ]
-        }
-      }),
-      post: vi.fn().mockResolvedValue({ data: { id: 'new-id' } })
-    })
-}));
+vi.mock('@/services/api', async () =>
+  (await import('@/__tests__/mocks/research-form')).researchApiMockFactory()
+);
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+vi.mock('next/navigation', async () => ({
+  ...(await import('@/__tests__/mocks/research-form')).researchRouterMock,
   usePathname: () => '/research/register',
   useSearchParams: vi.fn()
 }));

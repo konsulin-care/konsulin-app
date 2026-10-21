@@ -1,4 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslations } from '@/i18n';
 
 /**
  * Pulsating placeholder mirroring the /research layout so content swaps in
@@ -7,11 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton';
  * @returns A skeleton for the referral notice, carousel card, and dashboard.
  */
 export default function ResearchSkeleton() {
+  const t = useTranslations('research');
   return (
     <output
       data-testid='research-skeleton'
       aria-busy='true'
-      aria-label='Loading ongoing research'
+      aria-label={t('skeleton_label')}
       className='flex flex-col gap-4'
     >
       {/* Referral notice placeholder. */}

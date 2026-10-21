@@ -2,7 +2,9 @@
 
 import ResearcherLevelHalo from '@/components/research/researcher-level-halo';
 import ShareResearchButton from '@/components/research/share-research-button';
+import { buildResearcherMissionCopy } from '@/constants/research';
 import { useResearcherImpact } from '@/hooks/useResearcherImpact';
+import { useTranslations } from '@/i18n';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import { useResearcherDashboard } from '@/services/api/researcher';
 import {
@@ -91,16 +93,22 @@ export default function ResearcherImpactDashboard({
   activeStudyId: string;
   practitionerId: string | undefined;
 }>) {
+  const t = useTranslations('research');
   const { data: dashboardData } = useResearcherDashboard(practitionerId);
   const totalParticipants = dashboardData?.totalParticipants ?? 0;
 
-  const { totalImpact, level, levelNumber, impactInLevel, mission } =
+  const { totalImpact, level, levelNumber, impactInLevel } =
     useResearcherImpact(
       studies,
       activeStudyId,
       practitionerId,
       totalParticipants
     );
+
+  const mission = buildResearcherMissionCopy({
+    impactPoints: totalImpact,
+    totalParticipants
+  });
 
   const focusedStudy = studies.find(s => s.study.id === activeStudyId);
 
@@ -117,6 +125,12 @@ export default function ResearcherImpactDashboard({
         />
         <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
           <TitleBadge title={level} />
+          <p
+            data-testid='dashboard-reward'
+            className='text-[11px] text-gray-500'
+          >
+            {t(level.rewardKey)}
+          </p>
           <StatRow icon={Users} testId='dashboard-participants'>
             {totalParticipants} total participants
           </StatRow>
@@ -127,7 +141,7 @@ export default function ResearcherImpactDashboard({
       </div>
 
       {/* Row 2: Mission line */}
-      <Mission text={mission} />
+      <Mission text={t(mission.key, { gap: mission.gap })} />
 
       {/* Row 3: Milestones based on total participants */}
       <div className='mt-3 flex flex-col gap-1'>
@@ -156,7 +170,7 @@ export default function ResearcherImpactDashboard({
           isPatient={false}
           fhirId={practitionerId}
           studyId={activeStudyId}
-          label='Share this study to grow your impact'
+          label={t('share_impact_label')}
           className='pointer-events-auto -mx-4 mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 px-4 pt-2 text-[10px] text-black'
         />
       )}

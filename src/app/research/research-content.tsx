@@ -2,6 +2,7 @@
 
 import EmptyState from '@/components/general/empty-state';
 import ReferralNotice from '@/components/research/referral-notice';
+import { useTranslations } from '@/i18n';
 import type { QuestionnaireInfo } from '@/services/api/questionnaire-info';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import type { StudyProgress } from '@/utils/fhir/research';
@@ -48,6 +49,7 @@ export default function ResearchContent({
   onStudyClick,
   onQuestionnaireClick
 }: Readonly<ResearchContentProps>) {
+  const t = useTranslations('research');
   if (isResearcher) {
     return (
       <ResearcherContent
@@ -68,8 +70,8 @@ export default function ResearchContent({
     return (
       <EmptyState
         className='py-16'
-        title='No ongoing research'
-        subtitle='There are currently no research studies available.'
+        title={t('no_research_title')}
+        subtitle={t('no_research_subtitle')}
       />
     );
   }
