@@ -2,6 +2,7 @@ import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -38,6 +39,7 @@ export default function TimeSlotsSection({
   handleFilterChange,
   setSelectedSlotId
 }: Readonly<Props>) {
+  const t = useTranslations('common');
   /** Render time slot grid, loading state, or empty state. */
   const renderSlots = () => {
     if (isLoading) {
@@ -56,8 +58,8 @@ export default function TimeSlotsSection({
         <div className='flex w-full justify-center'>
           <EmptyState
             size={42}
-            title='Unable to load available slots'
-            subtitle='Please try again later'
+            title={t('practitioner.slots_error_title')}
+            subtitle={t('practitioner.slots_error_subtitle')}
           />
         </div>
       );
@@ -67,8 +69,8 @@ export default function TimeSlotsSection({
         <div className='flex w-full justify-center'>
           <EmptyState
             size={42}
-            title='No available time slots'
-            subtitle='Try another date'
+            title={t('practitioner.slots_empty_title')}
+            subtitle={t('practitioner.slots_empty_subtitle')}
           />
         </div>
       );

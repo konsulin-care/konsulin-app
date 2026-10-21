@@ -8,7 +8,7 @@ describe('researcherPills', () => {
 
   it('has Register Survey pill with correct properties', () => {
     const registerPill = researcherPills[0];
-    expect(registerPill.label).toBe('Register Survey');
+    expect(registerPill.label).toBe('pill_register_survey');
     expect(registerPill.action).toBe('register-research');
     expect(registerPill.delay).toBe(0);
     expect(registerPill.icon).toBeDefined();
@@ -16,7 +16,7 @@ describe('researcherPills', () => {
 
   it('has My Survey pill with correct properties', () => {
     const researchPill = researcherPills[1];
-    expect(researchPill.label).toBe('My Survey');
+    expect(researchPill.label).toBe('pill_my_survey');
     expect(researchPill.action).toBe('navigate');
     expect(researchPill.href).toBe('/research');
     expect(researchPill.delay).toBe(50);

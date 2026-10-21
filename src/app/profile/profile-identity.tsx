@@ -1,6 +1,7 @@
 'use client';
 
 import PhotoUploader from '@/components/profile/photo-uploader';
+import { useTranslations } from '@/i18n';
 import { Pencil } from 'lucide-react';
 import type { ProfileIdentity as Identity } from './hooks/useProfileData';
 
@@ -29,6 +30,7 @@ export default function ProfileIdentity({
   onFileSelected,
   onEditName
 }: Readonly<Props>) {
+  const t = useTranslations('profile');
   return (
     <div className='flex flex-col items-center px-4 py-6'>
       <div className='relative inline-block'>
@@ -57,7 +59,7 @@ export default function ProfileIdentity({
           type='button'
           data-testid='edit-name'
           onClick={onEditName}
-          aria-label='Edit name'
+          aria-label={t('edit_name')}
           className='text-secondary cursor-pointer'
         >
           <Pencil className='h-4 w-4' />

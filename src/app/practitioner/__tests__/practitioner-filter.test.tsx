@@ -5,6 +5,11 @@ import React, { type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PractitionerFilter, { FilterButton } from '../practitioner-filter';
 // Mock UI components used by the filter
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/components/ui/popover', () => ({
   Popover: ({ children, open, onOpenChange }: any) => (
     <div data-testid='popover' data-open={open}>
@@ -22,10 +27,9 @@ vi.mock('@/components/ui/popover', () => ({
       {children}
     </div>
   ),
+  // prettier-ignore
   PopoverTrigger: ({ children, asChild }: any) =>
-    asChild ? (
-      children as ReactNode
-    ) : (
+    asChild ? (children as ReactNode) : (
       <div data-testid='popover-trigger'>{children}</div>
     )
 }));

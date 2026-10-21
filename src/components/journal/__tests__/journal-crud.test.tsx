@@ -2,6 +2,12 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 // ── CreateJournal mock setup ──
 
 vi.mock('@/context/auth/authContext', () => ({
@@ -175,8 +181,7 @@ describe('CreateJournal', () => {
 
   function lastCallIsNull() {
     const lastCall = mockSetDirtyState.mock.calls.at(-1) as
-      | FabDispatchCall
-      | undefined;
+      FabDispatchCall | undefined;
     return lastCall?.[0]?.type === 'SET_ACTION' && lastCall[0]?.config === null;
   }
 

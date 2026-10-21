@@ -7,6 +7,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
+import { useTranslations } from '@/i18n';
 import { dbDelete, dbGet, STORES } from '@/lib/indexeddb';
 import { useSubmitSoapBundle } from '@/services/api/assessment';
 import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
@@ -74,6 +75,8 @@ export default function SoapForm({
   isAuthorSame
 }: Props) {
   const [isBuilding, setIsBuilding] = useState<boolean>(false);
+  const tToast = useTranslations('toast');
+  const tAssessment = useTranslations('assessment');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -202,7 +205,9 @@ export default function SoapForm({
 
       if (submitResult) {
         toast.success(
-          `SOAP berhasil ${mode === 'create' ? 'dikirim' : 'diupdate'}`
+          mode === 'create'
+            ? tToast('soap_submit_success_created')
+            : tToast('soap_submit_success_updated')
         );
         dbDelete(STORES.soapDrafts, [practitionerId, patientId]).catch(
           (err: unknown) => console.warn('[IndexedDB]', err)
@@ -210,9 +215,8 @@ export default function SoapForm({
         router.push('/');
       }
     } catch (error) {
-      toast.error('SOAP gagal dikirim');
+      toast.error(tToast('soap_submit_error'));
       console.error('Error message :', error);
-      toast.error('An error occurred while submitting the SOAP');
     }
   };
 
@@ -229,7 +233,7 @@ export default function SoapForm({
       <div className='flex-flex-col px-2'>
         {requiredItemEmpty > 0 || !patientId ? (
           <div className='text-destructive mb-2 w-full text-sm'>
-            Masih ada kolom wajib yang belum terisi, yuk dilengkapi dulu!
+            {tAssessment('soap_required_fields')}
           </div>
         ) : (
           ''

@@ -5,6 +5,12 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import { describe, expect, it, vi } from 'vitest';
 import BookingFormSection from '../booking-form-section';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 const defaultBookingState: IStateBooking = {
   date: new Date('2026-07-02'),
   startTime: '10:00',

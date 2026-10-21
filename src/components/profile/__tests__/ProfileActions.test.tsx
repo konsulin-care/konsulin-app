@@ -21,9 +21,31 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush })
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      delete_account: 'Delete Account',
+      log_out: 'Log out',
+      logout_title: 'Are you sure you want to log out?',
+      logout_desc:
+        'You need to login again and the notification will not appear if you log out',
+      logout_confirm: 'Yes, log me out',
+      delete_title: 'Are you sure you want to delete your account?',
+      delete_desc:
+        'You cannot retrieve any data from this account in the app if you delete your account.',
+      delete_confirm: 'Yes, delete my account'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 const menus = [
-  { name: 'Delete Account', link: '/remove-account', icon: 'trash2' as const },
-  { name: 'Log out', link: '/logout', icon: 'logout' as const }
+  {
+    nameKey: 'delete_account',
+    link: '/remove-account',
+    icon: 'trash2' as const
+  },
+  { nameKey: 'log_out', link: '/logout', icon: 'logout' as const }
 ];
 
 describe('ProfileActions', () => {
@@ -58,7 +80,7 @@ describe('ProfileActions', () => {
       const menuItem = screen.getByText(name);
       await user.click(menuItem);
 
-      expect(screen.getByText(/Apakah Anda Yakin/i)).toBeInTheDocument();
+      expect(screen.getByText(/Are you sure/i)).toBeInTheDocument();
     }
   );
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import {
@@ -12,24 +13,16 @@ import type { QuestionnaireResponse } from 'fhir/r4';
 
 import {
   baselineCardCount,
-  baselineNoteText,
   batchTitle,
   sharedAuthoredDate
 } from './batch-meta';
 import { QuestionnaireCard } from './questionnaire-card';
 
-/** Nudge shown to guests in place of score history. */
-export const CLAIM_REPORT_NUDGE =
-  'Claim this report to unlock score history record';
-
-/** Static mental-health disclosure for the report footer. */
-export const REPORT_DISCLAIMER =
-  'These scores are screening results for research purposes only and are not a medical diagnosis. If you are feeling distressed, please reach out to a qualified professional.';
-
 /** Participation summary card with the aggregate stats. */
 export function ParticipationCard({
   stats
 }: Readonly<{ stats: ParticipationStats }>) {
+  const t = useTranslations('common');
   return (
     <section
       data-testid='report-participation-card'
@@ -37,7 +30,9 @@ export function ParticipationCard({
     >
       <div className='grid grid-cols-2 gap-3 text-xs text-gray-600'>
         <div>
-          <p className='text-[11px] text-gray-400'>Assessments completed</p>
+          <p className='text-[11px] text-gray-400'>
+            {t('report.assessments_completed')}
+          </p>
           <p
             data-testid='report-stat-assessments'
             className='font-bold text-black'
@@ -46,32 +41,38 @@ export function ParticipationCard({
           </p>
         </div>
         <div>
-          <p className='text-[11px] text-gray-400'>Batches completed</p>
+          <p className='text-[11px] text-gray-400'>
+            {t('report.batches_completed')}
+          </p>
           <p data-testid='report-stat-batches' className='font-bold text-black'>
             {stats.batchesCompleted}/{stats.totalBatches}
           </p>
         </div>
         {stats.consecutiveBatches > 1 && (
           <div>
-            <p className='text-[11px] text-gray-400'>Streak</p>
+            <p className='text-[11px] text-gray-400'>{t('report.streak')}</p>
             <p
               data-testid='report-stat-streak'
               className='font-bold text-black'
             >
-              {stats.consecutiveBatches} batches
+              {t('report.batches_count', { count: stats.consecutiveBatches })}
             </p>
           </div>
         )}
         <div>
-          <p className='text-[11px] text-gray-400'>XP earned</p>
+          <p className='text-[11px] text-gray-400'>{t('report.xp_earned')}</p>
           <p data-testid='report-stat-xp' className='font-bold text-black'>
             {stats.xp}
           </p>
         </div>
         <div>
-          <p className='text-[11px] text-gray-400'>Time invested</p>
+          <p className='text-[11px] text-gray-400'>
+            {t('report.time_invested')}
+          </p>
           <p data-testid='report-stat-time' className='font-bold text-black'>
-            ~{stats.timeInvestedMinutes} min
+            {t('report.minutes_invested', {
+              minutes: stats.timeInvestedMinutes
+            })}
           </p>
         </div>
       </div>
@@ -95,6 +96,7 @@ export function BatchSection({
   buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>;
   latestBatchByQuestionnaire: ReadonlyMap<string, string>;
 }>) {
+  const t = useTranslations('common');
   const sharedDate = sharedAuthoredDate(responses);
   const baselineCount = baselineCardCount(
     responses,
@@ -112,10 +114,14 @@ export function BatchSection({
     >
       <div data-testid='report-batch-header' className='mb-2'>
         <p className='text-sm font-bold text-black'>
-          {batchTitle(batch, sortedBatches)}
+          {batchTitle(batch, sortedBatches, index =>
+            t('report.batch_prefix', { index })
+          )}
         </p>
         {sharedDate && (
-          <p className='text-[11px] text-gray-500'>Completed at {sharedDate}</p>
+          <p className='text-[11px] text-gray-500'>
+            {t('report.completed_at', { date: sharedDate })}
+          </p>
         )}
       </div>
 
@@ -124,7 +130,12 @@ export function BatchSection({
           data-testid='report-baseline-note'
           className='mb-2 rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-500'
         >
-          {baselineNoteText(baselineCount)}
+          {t(
+            baselineCount === 1
+              ? 'report.baseline_note_one'
+              : 'report.baseline_note_other',
+            { count: baselineCount }
+          )}
         </p>
       )}
 

@@ -15,6 +15,7 @@ import {
   getQuickComplaints,
   readLastInterviewResult,
   resolveInterviewResult,
+  resolveLabel,
   saveLastInterviewResult,
   searchChiefComplaints
 } from '../recommendation-interview';
@@ -36,8 +37,7 @@ function createMockRequest(result?: unknown, error?: DOMException) {
     result: result ?? null,
     error: error ?? null,
     onsuccess: null as unknown as
-      | ((this: IDBRequest, ev: Event) => void)
-      | null,
+      ((this: IDBRequest, ev: Event) => void) | null,
     onerror: null as unknown as ((this: IDBRequest, ev: Event) => void) | null,
     onupgradeneeded: null
   };
@@ -154,6 +154,33 @@ describe('decision tree data integrity', () => {
     }
   });
 
+  it('gives every domain, complaint, option and red flag a labelKey present in en and id', async () => {
+    const en = (await import('@/messages/en/interview.json')).default;
+    const id = (await import('@/messages/id/interview.json')).default;
+    for (const domain of DECISION_TREE) {
+      expect(domain.labelKey, domain.code).toBeDefined();
+      expect(en, domain.labelKey).toHaveProperty(domain.labelKey as string);
+      expect(id, domain.labelKey).toHaveProperty(domain.labelKey as string);
+      for (const complaint of domain.complaints) {
+        expect(complaint.labelKey, complaint.id).toBeDefined();
+        expect(en, complaint.id).toHaveProperty(complaint.labelKey as string);
+        expect(id, complaint.id).toHaveProperty(complaint.labelKey as string);
+        for (const option of complaint.options) {
+          expect(option.labelKey, option.id).toBeDefined();
+          expect(en, option.id).toHaveProperty(option.labelKey as string);
+          expect(id, option.id).toHaveProperty(option.labelKey as string);
+        }
+        expect(complaint.redFlag.labelKey, complaint.id).toBeDefined();
+        expect(en, complaint.id).toHaveProperty(
+          complaint.redFlag.labelKey as string
+        );
+        expect(id, complaint.id).toHaveProperty(
+          complaint.redFlag.labelKey as string
+        );
+      }
+    }
+  });
+
   it('maps the top-5 prevalence complaints into quick chips that exist in the tree', () => {
     const complaintIds = new Set(
       DECISION_TREE.flatMap(d => d.complaints.map(c => c.id))
@@ -212,6 +239,31 @@ describe('getQuickComplaints', () => {
     const quick = getQuickComplaints();
     expect(quick.map(c => c.id)).toEqual(QUICK_COMPLAINT_IDS);
     expect(quick).toHaveLength(5);
+  });
+});
+
+describe('resolveLabel', () => {
+  const MOOD_COMPLAINT = searchChiefComplaints('low mood')[0];
+
+  it('returns the translation when the node carries a labelKey', () => {
+    const t = (key: string) =>
+      key === MOOD_COMPLAINT.labelKey ? 'Suasana Hati Rendah' : key;
+    expect(resolveLabel(MOOD_COMPLAINT, t)).toBe('Suasana Hati Rendah');
+  });
+
+  it('falls back to the English label when the translation resolves to the key', () => {
+    expect(resolveLabel(MOOD_COMPLAINT, key => key)).toBe(MOOD_COMPLAINT.label);
+  });
+
+  it('returns the English label when the node has no labelKey', () => {
+    expect(resolveLabel({ label: 'Legacy label' }, () => 'ignored')).toBe(
+      'Legacy label'
+    );
+  });
+
+  it('keeps search matching English labels and Indonesian synonyms', () => {
+    expect(searchChiefComplaints('low mood').length).toBeGreaterThan(0);
+    expect(searchChiefComplaints('sedih').length).toBeGreaterThan(0);
   });
 });
 

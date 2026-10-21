@@ -5,6 +5,11 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PatientDetail from '../patient-detail';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/services/clinic-practitioners', () => ({
   useDetailPractitioner: vi.fn(),
   usePractitionerRoleHealthcareServices: vi.fn()

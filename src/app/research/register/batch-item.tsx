@@ -4,6 +4,7 @@ import Combobox from '@/components/shared/combobox';
 import DatePickerButton from '@/components/shared/date-picker-button';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/i18n';
 
 import type { FieldErrors, UseFormReturn } from 'react-hook-form';
 import type { QuestionnaireOption } from '../shared';
@@ -28,7 +29,9 @@ export function BatchDateField({
   setValue: UseFormReturn<FormData>['setValue'];
   isLocked: boolean;
 }>) {
-  const label = field === 'startDate' ? 'Start Date' : 'End Date';
+  const t = useTranslations('research');
+  const label =
+    field === 'startDate' ? t('start_date_label') : t('end_date_label');
   const error = errors.batches?.[index]?.[field]; // skipcq: JS-0075 - safe numeric field-array index
 
   const dateValue = currentValue ? new Date(currentValue) : undefined;
@@ -48,10 +51,14 @@ export function BatchDateField({
       <DatePickerButton
         value={dateValue}
         onChange={handleChange}
-        placeholder={`Select ${label.toLowerCase()}`}
+        placeholder={t('select_date_placeholder', {
+          label: label.toLowerCase()
+        })}
         disabled={isLocked}
       />
-      {error && <p className='text-xs text-red-500'>{error.message}</p>}
+      {error && (
+        <p className='text-xs text-red-500'>{t(error.message ?? '')}</p>
+      )}
     </div>
   );
 }
@@ -76,6 +83,7 @@ export function BatchItem({
   isLocked: boolean;
   availableQuestionnaires?: QuestionnaireOption[];
 }>) {
+  const t = useTranslations('research');
   const hasQuestionnaires = availableQuestionnaires.length > 0;
 
   const handleQuestionnaireSelect = (ids: string[]) => {
@@ -89,9 +97,9 @@ export function BatchItem({
     <div className='space-y-2 rounded-lg border p-4'>
       <div className='flex items-center justify-between'>
         <h3 className='text-sm font-medium'>
-          Batch {index + 1}
+          {t('batch_number', { index: index + 1 })}
           {isLocked && (
-            <span className='ml-2 text-xs text-gray-500'>(locked)</span>
+            <span className='ml-2 text-xs text-gray-500'>{t('locked')}</span>
           )}
         </h3>
         {index > 0 && !isLocked && (
@@ -103,7 +111,7 @@ export function BatchItem({
               onRemoveBatch(index);
             }}
           >
-            Remove
+            {t('remove')}
           </Button>
         )}
       </div>
@@ -127,7 +135,7 @@ export function BatchItem({
       </div>
       {hasQuestionnaires && (
         <div className='space-y-1'>
-          <Label>Questionnaires</Label>
+          <Label>{t('questionnaires_label')}</Label>
           {isLocked ? (
             <p className='text-sm text-gray-700'>
               {batchValues.questionnaireIds
@@ -135,7 +143,7 @@ export function BatchItem({
                   id =>
                     availableQuestionnaires.find(q => q.code === id)?.name ?? id
                 )
-                .join(', ') || 'None assigned'}
+                .join(', ') || t('none_assigned')}
             </p>
           ) : (
             <Combobox
@@ -143,9 +151,9 @@ export function BatchItem({
               options={availableQuestionnaires}
               value={batchValues.questionnaireIds}
               onSelect={handleQuestionnaireSelect}
-              placeholder='Add questionnaire...'
-              searchPlaceholder='Search...'
-              emptyMessage='No questionnaires found.'
+              placeholder={t('add_questionnaire_placeholder')}
+              searchPlaceholder={t('combobox_search_placeholder')}
+              emptyMessage={t('no_questionnaires')}
               renderOptionLabel={renderOptionWithMetadata}
             />
           )}

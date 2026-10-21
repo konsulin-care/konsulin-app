@@ -1,4 +1,5 @@
 import { RouteGate } from '@/components/route-gate';
+import { LocaleProvider } from '@/i18n/locale-provider';
 import '@/styles/globals.css';
 import '@/styles/index.scss';
 import type { Metadata, Viewport } from 'next';
@@ -64,11 +65,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en'>
+    <html lang='id'>
       <body className={inter.className} suppressHydrationWarning>
         <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
         <Script src='/js/sw-register.js' strategy='beforeInteractive' />
-        <RouteGate>{children}</RouteGate>
+        <LocaleProvider>
+          <RouteGate>{children}</RouteGate>
+        </LocaleProvider>
       </body>
     </html>
   );

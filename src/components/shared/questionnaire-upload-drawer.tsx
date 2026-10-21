@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ASSESSMENT_CATEGORIES } from '@/constants/assessment-categories';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { getAPI } from '@/services/api';
 import { setQuestionnaireDuration } from '@/utils/fhir/duration';
 import { setFee } from '@/utils/fhir/fee';
@@ -105,6 +106,8 @@ export default function QuestionnaireUploadDrawer({
   resolvePublisher
 }: QuestionnaireUploadDrawerProps) {
   const { state: authState } = useAuth();
+  const t = useTranslations('common');
+  const toastT = useTranslations('toast');
   const [form, setForm] = useState<FormState>({
     questionnaire: null,
     imageUrl: '',
@@ -168,14 +171,16 @@ export default function QuestionnaireUploadDrawer({
 
       toast.success(
         context === 'research'
-          ? 'Questionnaire uploaded successfully'
-          : 'Assessment added successfully'
+          ? toastT('questionnaire_uploaded')
+          : toastT('assessment_added')
       );
       onUploaded(saved);
       onClose();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Failed to upload questionnaire';
+        err instanceof Error
+          ? err.message
+          : toastT('questionnaire_upload_failed');
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -192,15 +197,18 @@ export default function QuestionnaireUploadDrawer({
     authState?.userInfo,
     context,
     onUploaded,
-    onClose
+    onClose,
+    toastT
   ]);
 
   const title =
-    context === 'research' ? 'Upload Questionnaire' : 'Add Assessment';
+    context === 'research'
+      ? t('questionnaire_upload.research_title')
+      : t('questionnaire_upload.assessment_title');
   const description =
     context === 'research'
-      ? 'Upload a questionnaire and set its metadata for research use.'
-      : 'Upload a questionnaire and set its display metadata.';
+      ? t('questionnaire_upload.research_description')
+      : t('questionnaire_upload.assessment_description');
 
   return (
     <AppDrawer
@@ -208,7 +216,7 @@ export default function QuestionnaireUploadDrawer({
       onClose={onClose}
       title={title}
       description={description}
-      ctaLabel='Submit'
+      ctaLabel={t('questionnaire_upload.submit')}
       onCtaClick={() => {
         handleSubmit().catch(() => {
           /* handled in handleSubmit */
@@ -219,7 +227,7 @@ export default function QuestionnaireUploadDrawer({
     >
       <div className='space-y-4'>
         <div className='space-y-2'>
-          <Label>Upload Questionnaire</Label>
+          <Label>{t('questionnaire_upload.upload_label')}</Label>
           <QuestionnaireUploader
             value={form.questionnaire}
             onChange={q => {
@@ -230,7 +238,9 @@ export default function QuestionnaireUploadDrawer({
 
         {showImage && (
           <div className='space-y-2'>
-            <Label htmlFor='upload-image'>Image URL (optional)</Label>
+            <Label htmlFor='upload-image'>
+              {t('questionnaire_upload.image_url')}
+            </Label>
             <Input
               id='upload-image'
               type='url'
@@ -240,13 +250,15 @@ export default function QuestionnaireUploadDrawer({
               }}
               placeholder='https://example.com/image.webp'
               className='bg-white'
-              aria-label='Image URL (optional)'
+              aria-label={t('questionnaire_upload.image_url')}
             />
           </div>
         )}
 
         <div className='space-y-2'>
-          <Label htmlFor='upload-duration'>Estimated Duration (minutes)</Label>
+          <Label htmlFor='upload-duration'>
+            {t('questionnaire_upload.estimated_duration')}
+          </Label>
           <Input
             id='upload-duration'
             type='number'
@@ -257,13 +269,13 @@ export default function QuestionnaireUploadDrawer({
             }}
             placeholder='10'
             className='bg-white'
-            aria-label='Estimated Duration (minutes)'
+            aria-label={t('questionnaire_upload.estimated_duration')}
           />
         </div>
 
         {showFee && (
           <div className='space-y-2'>
-            <Label htmlFor='upload-fee'>Fee</Label>
+            <Label htmlFor='upload-fee'>{t('questionnaire_upload.fee')}</Label>
             <FeeInput
               id='upload-fee'
               value={form.fee}
@@ -272,13 +284,15 @@ export default function QuestionnaireUploadDrawer({
               }}
               placeholder='0'
               className='bg-white'
-              aria-label='Fee'
+              aria-label={t('questionnaire_upload.fee')}
             />
           </div>
         )}
 
         <div className='space-y-2'>
-          <Label htmlFor='upload-category'>Category</Label>
+          <Label htmlFor='upload-category'>
+            {t('questionnaire_upload.category')}
+          </Label>
           <select
             id='upload-category'
             value={form.category}
@@ -286,10 +300,10 @@ export default function QuestionnaireUploadDrawer({
               setForm(prev => ({ ...prev, category: e.target.value }));
             }}
             className='focus:ring-primary block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:outline-none'
-            aria-label='Category'
+            aria-label={t('questionnaire_upload.category')}
           >
             <option value='' disabled>
-              Select category
+              {t('questionnaire_upload.select_category')}
             </option>
             {ASSESSMENT_CATEGORIES.map(cat => (
               <option key={cat.code} value={cat.code}>

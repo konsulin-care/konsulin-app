@@ -3,6 +3,7 @@
 import LocationFormFields from '@/components/shared/location-form-fields';
 import AppDrawer from '@/components/ui/app-drawer';
 import { useLocationFormState } from '@/hooks/useLocationFormState';
+import { useTranslations } from '@/i18n';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import { setLocationImageUrl } from '@/utils/fhir/location-image';
@@ -63,6 +64,8 @@ async function submitNewLocation(params: {
  * Drawer for adding a new Location to the selected clinic.
  */
 export default function AddLocationDrawer({ open, onClose }: Props) {
+  const t = useTranslations('common');
+  const toastT = useTranslations('toast');
   const queryClient = useQueryClient();
 
   const {
@@ -130,7 +133,7 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
         imageUrl,
         orgId
       });
-      toast.success('Location added successfully');
+      toast.success(toastT('location_added'));
       queryClient
         .invalidateQueries({
           queryKey: ['clinic-locations']
@@ -161,16 +164,17 @@ export default function AddLocationDrawer({ open, onClose }: Props) {
     imageUrl,
     queryClient,
     onClose,
-    setIsSubmitting
+    setIsSubmitting,
+    toastT
   ]);
 
   return (
     <AppDrawer
       open={open}
       onClose={onClose}
-      title='Add Location'
-      description='Add a new location for your clinic.'
-      ctaLabel='Add Location'
+      title={t('location.add_title')}
+      description={t('location.add_description')}
+      ctaLabel={t('location.add_cta')}
       onCtaClick={() => {
         handleSubmit().catch(() => {
           /* handled in handleSubmit */

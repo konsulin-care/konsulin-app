@@ -1,56 +1,51 @@
-import { createQueryClient } from '@/__tests__/react-test-utils';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  runRouterBackFallbackTest,
+  setupMockRouter
+} from '@/__tests__/mocks/page-header';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
+import { screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../components/page-header';
 
-// Hoisted mocks — must be at module root
-vi.mock('next/navigation', () => ({
-  usePathname: vi.fn().mockReturnValue('/'),
-  useSearchParams: vi.fn().mockReturnValue(new URLSearchParams()),
-  useRouter: vi
-    .fn()
-    .mockReturnValue({ push: vi.fn(), back: vi.fn(), replace: vi.fn() })
+// Hoisted mocks — shared factories from @/__tests__/mocks/page-header
+vi.mock('@/i18n', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderI18nMock
 }));
 
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn()
+vi.mock('next/navigation', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderNavigationMock
 }));
 
-vi.mock('@/hooks/useUpcomingEvents', () => ({
-  useUpcomingEvents: vi.fn().mockReturnValue({
-    appointmentData: null,
-    sessionData: null,
-    isAuthLoading: false
-  })
+vi.mock('@/context/auth/authContext', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderAuthMock
 }));
 
-vi.mock('@/lib/indexeddb', () => ({
-  STORES: { uiPreferences: 'ui_preferences' },
-  dbGet: vi.fn().mockResolvedValue(null)
+vi.mock('@/hooks/useUpcomingEvents', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).upcomingEventsMock
 }));
 
-vi.mock('@/services/api', () => ({
-  getAPI: vi.fn()
+vi.mock('@/lib/indexeddb', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).indexedDbMock
 }));
 
-vi.mock('@/components/general/avatar', () => ({
-  default: () => <div data-testid='mock-avatar'>Avatar</div>
+vi.mock('@/services/api', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).apiMock
+}));
+
+vi.mock('@/components/general/avatar', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).avatarMock
 }));
 
 import { useAuth } from '@/context/auth/authContext';
 import { dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import type { AxiosInstance } from 'axios';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 const mockAxiosInstance: { get: ReturnType<typeof vi.fn> } = { get: vi.fn() };
 
 describe('PageHeader - admin clinic card', () => {
-  let queryClient: ReturnType<typeof createQueryClient>;
-
   beforeEach(() => {
-    queryClient = createQueryClient();
     vi.clearAllMocks();
     // Re-establish default mock implementations after clearAllMocks
     vi.mocked(dbGet).mockResolvedValue(null);
@@ -59,14 +54,6 @@ describe('PageHeader - admin clinic card', () => {
     );
     vi.mocked(usePathname).mockReturnValue('/');
   });
-
-  afterEach(() => {
-    queryClient.clear();
-  });
-
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
 
   function mockAuthState(overrides: Record<string, unknown> = {}) {
     vi.mocked(useAuth).mockReturnValue({
@@ -94,7 +81,7 @@ describe('PageHeader - admin clinic card', () => {
       data: { name: 'Konsulin HQ' }
     });
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     await waitFor(() => {
       expect(screen.getByText('Currently Managing')).toBeDefined();
@@ -111,7 +98,7 @@ describe('PageHeader - admin clinic card', () => {
       data: { name: 'Konsulin HQ' }
     });
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     await waitFor(() => {
       expect(screen.getByText('Currently Managing')).toBeDefined();
@@ -134,7 +121,7 @@ describe('PageHeader - admin clinic card', () => {
       dispatch: vi.fn()
     });
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     await waitFor(() => {
       expect(screen.queryByText('Currently Managing')).toBeNull();
@@ -151,7 +138,7 @@ describe('PageHeader - admin clinic card', () => {
       dispatch: vi.fn()
     });
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     await waitFor(() => {
       expect(screen.queryByText('Currently Managing')).toBeNull();
@@ -163,7 +150,7 @@ describe('PageHeader - admin clinic card', () => {
     // dbGet returns null — clinic_organization not stored
     // No API mocks needed — query stays disabled
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     await waitFor(() => {
       expect(screen.queryByText('Currently Managing')).toBeNull();
@@ -172,10 +159,7 @@ describe('PageHeader - admin clinic card', () => {
 });
 
 describe('PageHeader - back navigation', () => {
-  let queryClient: ReturnType<typeof createQueryClient>;
-
   beforeEach(() => {
-    queryClient = createQueryClient();
     vi.clearAllMocks();
     vi.mocked(usePathname).mockReturnValue('/clinic');
     vi.mocked(useSearchParams).mockReturnValue(
@@ -187,32 +171,10 @@ describe('PageHeader - back navigation', () => {
     );
   });
 
-  afterEach(() => {
-    queryClient.clear();
-  });
-
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-
-  function setupMockRouter() {
-    const router = {
-      push: vi.fn(),
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn(),
-      bfcacheId: '0'
-    };
-    vi.mocked(useRouter).mockReturnValue(router);
-    return router;
-  }
-
   it('renders anchor with correct href for cross-route back (/clinic → /)', () => {
     setupMockRouter();
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     const link = document.querySelector('a[aria-label="Go back"]');
     expect(link).not.toBeNull();
@@ -221,9 +183,8 @@ describe('PageHeader - back navigation', () => {
 
   it('renders anchor for same-route back (/clinic?id=xxx → /clinic)', () => {
     setupMockRouter();
-    render(
-      <PageHeader pageIndicator='Check Out Clinic' backRoute='/clinic' />,
-      { wrapper }
+    renderWithQuery(
+      <PageHeader pageIndicator='Check Out Clinic' backRoute='/clinic' />
     );
 
     const link = document.querySelector('a[aria-label="Go back"]');
@@ -231,29 +192,16 @@ describe('PageHeader - back navigation', () => {
     expect(link).toHaveAttribute('href', '/clinic');
   });
 
-  it('calls router.back when no backAction is available', () => {
+  it('calls router.back when no backAction is available', async () => {
     const router = setupMockRouter();
-    vi.mocked(usePathname).mockReturnValue('/some-unknown-page');
-
-    render(<PageHeader />, { wrapper });
-
-    // No anchor for unknown routes
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toBeNull();
-
-    // Button calls router.back
-    const button = document.querySelector('button[aria-label="Go back"]');
-    expect(button).not.toBeNull();
-    fireEvent.click(button as HTMLElement);
-    expect(router.back).toHaveBeenCalledTimes(1);
-    expect(router.push).not.toHaveBeenCalled();
+    await runRouterBackFallbackTest(router);
   });
 
   it('handles trailing slash — /clinic/ renders anchor to /', () => {
     vi.mocked(usePathname).mockReturnValue('/clinic/');
     setupMockRouter();
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     const link = document.querySelector('a[aria-label="Go back"]');
     expect(link).toHaveAttribute('href', '/');
@@ -266,7 +214,7 @@ describe('PageHeader - back navigation', () => {
     );
     setupMockRouter();
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     const link = document.querySelector('a[aria-label="Go back"]');
     expect(link).toHaveAttribute('href', '/');
@@ -280,7 +228,7 @@ describe('PageHeader - back navigation', () => {
     );
     setupMockRouter();
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     const link = document.querySelector('a[aria-label="Go back"]');
     expect(link).toHaveAttribute('href', '/record');
@@ -294,7 +242,7 @@ describe('PageHeader - back navigation', () => {
     );
     setupMockRouter();
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     const link = document.querySelector('a[aria-label="Go back"]');
     expect(link).toHaveAttribute('href', '/assessments');
@@ -303,7 +251,7 @@ describe('PageHeader - back navigation', () => {
   it('does not render back chevron on the home page', () => {
     vi.mocked(usePathname).mockReturnValue('/');
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     const chevron = document.querySelector('.lucide-chevron-left');
     expect(chevron).toBeNull();

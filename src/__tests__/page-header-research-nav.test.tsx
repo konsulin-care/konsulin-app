@@ -1,75 +1,47 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render } from '@testing-library/react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { setupMockRouter } from '@/__tests__/mocks/page-header';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../components/page-header';
 
-vi.mock('next/navigation', () => ({
-  usePathname: vi.fn().mockReturnValue('/'),
-  useSearchParams: vi.fn().mockReturnValue(new URLSearchParams()),
-  useRouter: vi.fn().mockReturnValue({ push: vi.fn(), back: vi.fn() })
+// Hoisted mocks — shared factories from @/__tests__/mocks/page-header
+vi.mock('@/i18n', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderI18nMock
 }));
 
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn().mockReturnValue({
-    isLoading: false,
-    state: {
-      isAuthenticated: true,
-      userInfo: { role_name: 'Patient', fhirId: 'patient-1' }
-    }
-  })
+vi.mock('next/navigation', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderNavigationMock
 }));
 
-vi.mock('@/hooks/useUpcomingEvents', () => ({
-  useUpcomingEvents: vi.fn().mockReturnValue({
-    appointmentData: null,
-    sessionData: null
-  })
+vi.mock('@/context/auth/authContext', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderAuthMock
 }));
 
-vi.mock('@/lib/indexeddb', () => ({
-  STORES: { uiPreferences: 'ui_preferences' },
-  dbGet: vi.fn().mockResolvedValue(null)
+vi.mock('@/hooks/useUpcomingEvents', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).upcomingEventsMock
 }));
 
-vi.mock('@/services/api', () => ({
-  getAPI: vi.fn()
+vi.mock('@/lib/indexeddb', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).indexedDbMock
 }));
 
-vi.mock('@/components/general/avatar', () => ({
-  default: () => <div>Avatar</div>
+vi.mock('@/services/api', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).apiMock
 }));
+
+vi.mock('@/components/general/avatar', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).avatarMock
+}));
+
+import { usePathname, useSearchParams } from 'next/navigation';
 
 describe('PageHeader - research form page navigation', () => {
-  let queryClient: QueryClient;
-
   beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } }
-    });
     vi.clearAllMocks();
     vi.mocked(usePathname).mockReturnValue('/research/register');
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
     );
   });
-
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
-
-  function setupMockRouter() {
-    const router = {
-      push: vi.fn(),
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn()
-    };
-    vi.mocked(useRouter).mockReturnValue(router as never);
-    return router;
-  }
 
   it.each([
     [
@@ -104,27 +76,15 @@ describe('PageHeader - research form page navigation', () => {
         >
       );
 
-      render(<PageHeader />, { wrapper });
+      renderWithQuery(<PageHeader />);
 
       const link = document.querySelector('a[aria-label="Go back"]');
       expect(link).toHaveAttribute('href', expectedHref);
     }
   );
 
-  it('falls back to router.back button for unknown routes', () => {
-    const router = setupMockRouter();
-    vi.mocked(usePathname).mockReturnValue('/some-unknown-page');
-
-    render(<PageHeader />, { wrapper });
-
-    const link = document.querySelector('a[aria-label="Go back"]');
-    expect(link).toBeNull();
-
-    const button = document.querySelector('button[aria-label="Go back"]');
-    expect(button).not.toBeNull();
-    fireEvent.click(button as HTMLElement);
-    expect(router.back).toHaveBeenCalledTimes(1);
-  });
+  // The "falls back to router.back button for unknown routes" behavior is
+  // asserted in page-header.test.tsx via the shared runRouterBackFallbackTest.
 
   it('chevron icon is hidden from assistive technology', () => {
     setupMockRouter();
@@ -134,7 +94,7 @@ describe('PageHeader - research form page navigation', () => {
       >
     );
 
-    render(<PageHeader />, { wrapper });
+    renderWithQuery(<PageHeader />);
 
     const icon = document.querySelector('.lucide-chevron-left');
     expect(icon).toHaveAttribute('aria-hidden', 'true');

@@ -7,6 +7,11 @@ import BookingCalendar from '../booking-calendar';
 
 let triggerMonthChange: ((month: Date) => void) | null = null;
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/components/ui/calendar-base', () => ({
   CalendarBase: ({ components, onSelect, onMonthChange, disabled }: any) => {
     const DayButtonCustom = components?.DayButton;

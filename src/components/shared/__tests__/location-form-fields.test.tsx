@@ -1,94 +1,34 @@
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { renderLocationFormFields } from './location-form-fields-test-fixtures';
 
-// Mock the expensive geometry/cascade dependencies
-vi.mock('@/services/api/cities', () => ({
-  useGetProvinces: () => ({ data: [], isLoading: false }),
-  useGetCities: () => ({ data: [], isLoading: false }),
-  useGetDistricts: () => ({ data: [], isLoading: false })
-}));
+// Geometry/cascade and translation mocks live in the shared mocks file.
+vi.mock('@/services/api/cities', async () =>
+  (await import('./location-form-fields-test-mocks')).citiesApiMockFactory()
+);
 
-import LocationFormFields from '@/components/shared/location-form-fields';
-import { DayOfWeek, TimeRange } from '@/types/availability';
-
-function defaultHours(): Record<DayOfWeek, TimeRange[]> {
-  return { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
-}
+vi.mock('@/i18n', async () =>
+  (
+    await import('./location-form-fields-test-mocks')
+  ).locationFormFieldsI18nMockFactory()
+);
 
 describe('LocationFormFields image uploader', () => {
   it('renders LocationImageUploader as the first child', () => {
-    render(
-      <LocationFormFields
-        status='active'
-        name=''
-        addressLine=''
-        provinceCode=''
-        cityCode=''
-        districtCode=''
-        longitude=''
-        latitude=''
-        listProvinces={[]}
-        listCities={[]}
-        listDistricts={[]}
-        provinceLoading={false}
-        cityLoading={false}
-        districtLoading={false}
-        hours={defaultHours()}
-        onStatusChange={vi.fn()}
-        onNameChange={vi.fn()}
-        onAddressLineChange={vi.fn()}
-        onProvinceSelect={vi.fn()}
-        onCitySelect={vi.fn()}
-        onDistrictSelect={vi.fn()}
-        onLongitudeChange={vi.fn()}
-        onLatitudeChange={vi.fn()}
-        onAddTimeRange={vi.fn()}
-        onUpdateTimeRange={vi.fn()}
-        onDeleteTimeRange={vi.fn()}
-        imageUrl='https://example.com/image.webp'
-        onImageUrlChange={vi.fn()}
-      />
-    );
+    renderLocationFormFields({
+      imageUrl: 'https://example.com/image.webp'
+    });
 
-    // The uploader preview img should exist
-    expect(screen.getByRole('img')).toBeInTheDocument();
+    // The uploader preview img should exist with a translated alt
+    const img = screen.getByRole('img');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('alt', 'Location preview');
   });
 });
 
 describe('LocationFormFields status toggle', () => {
   it('renders SwitchField for status instead of tab buttons', () => {
-    render(
-      <LocationFormFields
-        status='active'
-        name=''
-        addressLine=''
-        provinceCode=''
-        cityCode=''
-        districtCode=''
-        longitude=''
-        latitude=''
-        listProvinces={[]}
-        listCities={[]}
-        listDistricts={[]}
-        provinceLoading={false}
-        cityLoading={false}
-        districtLoading={false}
-        hours={defaultHours()}
-        onStatusChange={vi.fn()}
-        onNameChange={vi.fn()}
-        onAddressLineChange={vi.fn()}
-        onProvinceSelect={vi.fn()}
-        onCitySelect={vi.fn()}
-        onDistrictSelect={vi.fn()}
-        onLongitudeChange={vi.fn()}
-        onLatitudeChange={vi.fn()}
-        onAddTimeRange={vi.fn()}
-        onUpdateTimeRange={vi.fn()}
-        onDeleteTimeRange={vi.fn()}
-        imageUrl=''
-        onImageUrlChange={vi.fn()}
-      />
-    );
+    renderLocationFormFields();
 
     // Should render a switch with label "Open" (checked = active)
     const switchEl = screen.getByRole('switch');
@@ -102,42 +42,19 @@ describe('LocationFormFields status toggle', () => {
   });
 
   it('shows offLabel when status is inactive', () => {
-    render(
-      <LocationFormFields
-        status='inactive'
-        name=''
-        addressLine=''
-        provinceCode=''
-        cityCode=''
-        districtCode=''
-        longitude=''
-        latitude=''
-        listProvinces={[]}
-        listCities={[]}
-        listDistricts={[]}
-        provinceLoading={false}
-        cityLoading={false}
-        districtLoading={false}
-        hours={defaultHours()}
-        onStatusChange={vi.fn()}
-        onNameChange={vi.fn()}
-        onAddressLineChange={vi.fn()}
-        onProvinceSelect={vi.fn()}
-        onCitySelect={vi.fn()}
-        onDistrictSelect={vi.fn()}
-        onLongitudeChange={vi.fn()}
-        onLatitudeChange={vi.fn()}
-        onAddTimeRange={vi.fn()}
-        onUpdateTimeRange={vi.fn()}
-        onDeleteTimeRange={vi.fn()}
-        imageUrl=''
-        onImageUrlChange={vi.fn()}
-      />
-    );
+    renderLocationFormFields({ status: 'inactive' });
 
     const switchEl = screen.getByRole('switch');
     expect(switchEl).not.toBeChecked();
     expect(screen.getByText('Close')).toBeInTheDocument();
     expect(screen.queryByText('Open')).not.toBeInTheDocument();
+  });
+});
+
+describe('LocationFormFields address placeholder', () => {
+  it('uses the translated address placeholder', () => {
+    renderLocationFormFields();
+
+    expect(screen.getByPlaceholderText('Street address')).toBeInTheDocument();
   });
 });

@@ -41,6 +41,10 @@ export const frontendConfig = (
         en: {
           AUTH_PAGE_HEADER_TITLE_SIGN_IN_AND_UP: 'Wellness Starts Here',
           PWLESS_SIGN_IN_UP_CONTINUE_BUTTON: 'Sign In'
+        },
+        id: {
+          AUTH_PAGE_HEADER_TITLE_SIGN_IN_AND_UP: 'Kesehatan Dimulai di Sini',
+          PWLESS_SIGN_IN_UP_CONTINUE_BUTTON: 'Masuk'
         }
       }
     },

@@ -21,6 +21,8 @@ export interface RedFlag {
   isEmergency: boolean;
   /** User-facing screening question, e.g. "Are you currently safe?". */
   label: string;
+  /** Message key (namespace `interview`) resolving the localised question. */
+  labelKey?: string;
   /** Hotlines shown when the user answers positively (never blocks booking). */
   resources: EmergencyResource[];
 }
@@ -29,6 +31,8 @@ export interface RedFlag {
 export interface ChiefComplaintOption {
   id: string;
   label: string;
+  /** Message key (namespace `interview`) resolving the localised label. */
+  labelKey?: string;
   /** Marks the catch-all "Other" option; must sit last when present. */
   isOther?: boolean;
 }
@@ -37,6 +41,8 @@ export interface ChiefComplaintOption {
 export interface ChiefComplaint {
   id: string;
   label: string;
+  /** Message key (namespace `interview`) resolving the localised label. */
+  labelKey?: string;
   /** Search tokens (English + Indonesian) matched by the complaint search. */
   synonyms: string[];
   /** ICF domain feature keywords aligned with the ontology interview map. */
@@ -53,6 +59,8 @@ export interface ChiefComplaint {
 export interface DecisionDomain {
   code: DomainCode;
   label: string;
+  /** Message key (namespace `interview`) resolving the localised label. */
+  labelKey?: string;
   complaints: ChiefComplaint[];
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import AppDrawer from '@/components/ui/app-drawer';
+import { useTranslations } from '@/i18n';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -20,6 +21,7 @@ export default function JournalSuccessDrawer({
   viewRoute
 }: Props) {
   const router = useRouter();
+  const t = useTranslations('common');
 
   return (
     <AppDrawer
@@ -37,12 +39,12 @@ export default function JournalSuccessDrawer({
             />
           </div>
           <div className='mb-2 text-center text-2xl font-bold'>
-            Stay Motivated Today!
+            {t('journal.success_title')}
           </div>
         </>
       }
-      description='Writing a journal is an important step to understand yourself and maintain your mental health.'
-      ctaLabel='Back'
+      description={t('journal.success_description')}
+      ctaLabel={t('journal.back')}
       onCtaClick={() => router.push(viewRoute ?? '/record')}
     />
   );

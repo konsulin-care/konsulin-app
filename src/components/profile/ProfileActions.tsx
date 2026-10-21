@@ -1,4 +1,5 @@
 import AppDrawer from '@/components/ui/app-drawer';
+import { useTranslations } from '@/i18n';
 import { ChevronRightIcon } from 'lucide-react';
 import { Fragment } from 'react';
 import {
@@ -64,11 +65,12 @@ export default function ProfileActions({
   menus
 }: {
   readonly menus: readonly {
-    readonly name: string;
+    readonly nameKey: string;
     readonly link: string;
     readonly icon?: IconKey;
   }[];
 }) {
+  const t = useTranslations('profile');
   const {
     drawerState,
     confirmText,
@@ -83,8 +85,8 @@ export default function ProfileActions({
         <ul>
           {menus.map((item, index) => (
             <MenuItem
-              key={item.name}
-              name={item.name}
+              key={item.nameKey}
+              name={t(item.nameKey)}
               icon={item.icon}
               index={index}
               total={menus.length}

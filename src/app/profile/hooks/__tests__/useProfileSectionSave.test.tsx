@@ -4,41 +4,41 @@ import type { Bundle, HumanName, Patient, Practitioner } from 'fhir/r4';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/services/profile', () => ({
-  getProfileById: vi.fn(),
-  modifyProfile: vi.fn(),
-  uploadAvatar: vi.fn(),
-  useUpdateProfile: vi.fn()
-}));
+vi.mock('@/i18n', async () =>
+  (await import('./profile-hook-mocks')).i18nMockFactory()
+);
 
-vi.mock('@/services/api/fhir-bundle', () => ({
-  submitFhirBundle: vi.fn()
-}));
+vi.mock('@/services/profile', async () =>
+  (await import('./profile-hook-mocks')).profileServiceMockFactory()
+);
 
-vi.mock('@/context/auth/authContext', () => ({
-  useAuth: vi.fn()
-}));
+vi.mock('@/services/api/fhir-bundle', async () =>
+  (await import('./profile-hook-mocks')).fhirBundleMockFactory()
+);
 
-vi.mock('supertokens-auth-react/recipe/session', () => ({
-  getClaimValue: vi.fn()
-}));
+vi.mock('@/context/auth/authContext', async () =>
+  (await import('./profile-hook-mocks')).authContextMockFactory()
+);
 
-vi.mock('supertokens-web-js/recipe/userroles', () => ({
-  UserRoleClaim: 'user-role'
-}));
+vi.mock('supertokens-auth-react/recipe/session', async () =>
+  (await import('./profile-hook-mocks')).sessionMockFactory()
+);
 
-vi.mock('@/lib/indexeddb', () => ({
-  STORES: { userProfile: 'user_profile' },
-  dbSet: vi.fn()
-}));
+vi.mock('supertokens-web-js/recipe/userroles', async () =>
+  (await import('./profile-hook-mocks')).userRolesMockFactory()
+);
 
-vi.mock('react-toastify', () => ({
-  toast: { success: vi.fn(), error: vi.fn() }
-}));
+vi.mock('@/lib/indexeddb', async () =>
+  (await import('./profile-hook-mocks')).indexeddbMockFactory()
+);
 
-vi.mock('@/utils/profileCompleteness', () => ({
-  isProfileCompleteFromFHIR: vi.fn(() => true)
-}));
+vi.mock('react-toastify', async () =>
+  (await import('./profile-hook-mocks')).toastMockFactory()
+);
+
+vi.mock('@/utils/profileCompleteness', async () =>
+  (await import('./profile-hook-mocks')).profileCompletenessMockFactory()
+);
 
 import { useAuth } from '@/context/auth/authContext';
 import type { IActionLogin, IStateUserInfo } from '@/context/auth/authTypes';
@@ -343,7 +343,7 @@ describe('useProfileSectionSave', () => {
     ]);
   });
 
-  it('applies mergeOtherRoles to other roles (language stays on the active role)', async () => {
+  it('applies the same merge to all roles (language is synced)', async () => {
     setupAuth({
       role_name: 'Patient',
       roles: ['Patient', 'Practitioner'],
@@ -386,8 +386,7 @@ describe('useProfileSectionSave', () => {
               }
             ]
           };
-        },
-        mergeOtherRoles: latest => ({ ...latest, gender: 'female' as const })
+        }
       });
     });
 
@@ -396,7 +395,7 @@ describe('useProfileSectionSave', () => {
     const patient = bundle.entry?.[0]?.resource as Patient;
     const practitioner = bundle.entry?.[1]?.resource as Practitioner;
     expect(patient.communication).toHaveLength(1);
-    expect(practitioner.communication).toBeUndefined();
+    expect(practitioner.communication).toHaveLength(1);
     // Practitioner qualifications are never overwritten by the sync
     expect(practitioner.qualification).toEqual(
       practitionerFixture.qualification

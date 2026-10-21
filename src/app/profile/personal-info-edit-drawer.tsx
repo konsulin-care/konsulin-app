@@ -3,10 +3,12 @@
 import DobInput from '@/components/profile/dob-input';
 import AppDrawer from '@/components/ui/app-drawer';
 import { genderList, languageOptions } from '@/constants/profile';
+import { useTranslations } from '@/i18n';
+import { updateLocale, type Locale } from '@/lib/locale';
 import type { FhirResourceType } from '@/utils/role-fhir';
 import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react';
 import { useProfileSectionSave } from './hooks/useProfileSectionSave';
-import { mergePersonalInfo, mergePersonalInfoSync } from './section-merge';
+import { mergePersonalInfo } from './section-merge';
 
 type Props = {
   /** Whether the drawer is open. */
@@ -83,6 +85,9 @@ export default function PersonalInfoEditDrawer({
   languageCode,
   supportsLanguage
 }: Readonly<Props>) {
+  const t = useTranslations('profile');
+  const tCommon = useTranslations('common');
+  const tProfileKey = useTranslations();
   const [genderValue, setGenderValue] = useState(gender);
   const [dobValue, setDobValue] = useState(birthDate);
   const [languageValue, setLanguageValue] = useState(languageCode ?? '');
@@ -113,17 +118,16 @@ export default function PersonalInfoEditDrawer({
           ...(supportsLanguage && selected
             ? {
                 languageCode: selected.code,
-                languageLabel: selected.label
+                languageLabel: tProfileKey(selected.labelKey)
               }
             : {})
         }),
-      // Language stays per role: other roles receive gender/DOB only.
-      mergeOtherRoles: latest =>
-        mergePersonalInfoSync(latest, {
-          gender: genderValue,
-          birthDate: dobValue
-        }),
-      onSuccess: onClose
+      onSuccess: () => {
+        if (supportsLanguage && languageValue) {
+          updateLocale(languageValue as Locale);
+        }
+        onClose();
+      }
     });
   };
 
@@ -133,16 +137,16 @@ export default function PersonalInfoEditDrawer({
     <AppDrawer
       open={open}
       onClose={onClose}
-      title='Personal Information'
-      description='Gender, date of birth and preferred language.'
-      ctaLabel='Save'
+      title={t('personal_info')}
+      description={t('personal_info_desc')}
+      ctaLabel={tCommon('save')}
       ctaDisabled={isSaving || !isValid}
       ctaLoading={isSaving}
       onCtaClick={handleSave}
     >
       <div className='space-y-5'>
         <SelectField
-          label='Gender'
+          label={t('gender')}
           value={genderValue}
           testId='gender-select'
           onChange={event => {
@@ -150,22 +154,22 @@ export default function PersonalInfoEditDrawer({
           }}
         >
           <option value='' disabled>
-            Select gender
+            {t('select_gender')}
           </option>
           {genderList.map(option => (
             <option key={option.code} value={option.code}>
-              {option.name}
+              {tProfileKey(option.nameKey)}
             </option>
           ))}
         </SelectField>
 
-        <Field label='Date of Birth'>
+        <Field label={t('birth_date')}>
           <DobInput value={dobValue} onChange={setDobValue} />
         </Field>
 
         {supportsLanguage && (
           <SelectField
-            label='Language'
+            label={t('language')}
             value={languageValue}
             testId='language-select'
             onChange={event => {
@@ -173,11 +177,11 @@ export default function PersonalInfoEditDrawer({
             }}
           >
             <option value='' disabled>
-              Select language
+              {t('select_language')}
             </option>
             {languageOptions.map(option => (
               <option key={option.code} value={option.code}>
-                {option.label}
+                {tProfileKey(option.labelKey)}
               </option>
             ))}
           </SelectField>

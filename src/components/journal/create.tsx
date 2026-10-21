@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
+import { useTranslations } from '@/i18n';
 import { useSubmitJournal } from '@/services/api/record';
 import { addDays, subDays } from 'date-fns';
 import {
@@ -25,6 +26,7 @@ const today = new Date();
  *
  */
 export default function CreateJournal() {
+  const t = useTranslations('common');
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(today);
@@ -88,7 +90,7 @@ export default function CreateJournal() {
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Save Journal',
+          label: t('journal.save'),
           icon: SavePen,
           onAction: () => handleSubmitJournal(),
           isSaving: isSubmitLoading,
@@ -100,7 +102,14 @@ export default function CreateJournal() {
     }
 
     return () => dispatch({ type: 'SET_ACTION', config: null });
-  }, [journalTitle, response, isSubmitLoading, dispatch, handleSubmitJournal]);
+  }, [
+    journalTitle,
+    response,
+    isSubmitLoading,
+    dispatch,
+    handleSubmitJournal,
+    t
+  ]);
 
   /** Increment selected date by one day. */
   const nextDay = () => {
@@ -138,7 +147,7 @@ export default function CreateJournal() {
       <div className='card flex border'>
         <NotepadTextIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
         <input
-          placeholder='Journal Title'
+          placeholder={t('journal.title_placeholder')}
           value={journalTitle}
           onChange={e => setJournalTitle(e.target.value)}
           type='text'
@@ -161,9 +170,11 @@ export default function CreateJournal() {
     <>
       <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
         <div>
-          <div className='text-muted text-center font-bold'>Journal Entry</div>
+          <div className='text-muted text-center font-bold'>
+            {t('journal.entry_heading')}
+          </div>
           <div className='text-muted text-center'>
-            To help you write with some thought if you need references
+            {t('journal.entry_hint')}
           </div>
         </div>
 

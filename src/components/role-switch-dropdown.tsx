@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator as DropdownSeparator,
   DropdownMenuTrigger as DropdownTrigger
 } from '@/components/ui/dropdown-menu';
+import { useTranslations } from '@/i18n';
 import { fetchCSRFToken } from '@/services/auth';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
@@ -20,7 +21,7 @@ import { roleIcon, roleLabel } from '@/components/role-avatar-popup-utils';
 import { StackedCircles } from '@/components/stacked-circles';
 
 /** Switches the active user role via API call and navigates home. */
-async function switchRole(role: string): Promise<void> {
+async function switchRole(role: string, errorMessage: string): Promise<void> {
   try {
     const token = await fetchCSRFToken();
     const res = await fetch('/auth/role/switch', {
@@ -42,9 +43,9 @@ async function switchRole(role: string): Promise<void> {
     }
     // The BFF fails closed (502) when the backend claim sync fails; the
     // cookie keeps the previous role, so the UI must stay put and surface it.
-    toast.error('Unable to switch role. Please try again.');
+    toast.error(errorMessage);
   } catch {
-    toast.error('Unable to switch role. Please try again.');
+    toast.error(errorMessage);
   }
 }
 
@@ -54,6 +55,7 @@ function RoleSwitchMenuItems({
 }: Readonly<{
   otherRoles: string[];
 }>) {
+  const t = useTranslations('common');
   if (otherRoles.length === 0) return null;
   return (
     <>
@@ -64,7 +66,9 @@ function RoleSwitchMenuItems({
           <DropdownItem
             key={role}
             className='cursor-pointer'
-            onClick={() => switchRole(role)}
+            onClick={() =>
+              switchRole(role, t('practitioner.switch_role_error'))
+            }
           >
             <Icon className='mr-3 h-4 w-4 text-[#2c2f35]' />
             <span className='text-sm font-medium text-[#2c2f35]'>

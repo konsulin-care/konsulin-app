@@ -49,6 +49,12 @@ function makeItems(ids: string[]): MockScheduleItem[] {
 }
 
 // Mock child components
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('@/components/general/empty-state', () => ({
   default: ({ title, subtitle }: { title?: string; subtitle?: string }) => (
     <div data-testid='mock-empty-state'>

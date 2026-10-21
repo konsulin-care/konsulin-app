@@ -2,6 +2,18 @@ import LocationCombobox from '@/components/shared/location-combobox';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      common: {
+        loading: 'Loading...',
+        no_results_found: 'No results found.'
+      }
+    };
+    return translations[namespace]?.[key] ?? key;
+  })
+}));
+
 describe('LocationCombobox', () => {
   it('renders without crashing when options is undefined', () => {
     expect(() =>

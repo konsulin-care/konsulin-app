@@ -25,6 +25,22 @@ vi.mock('@/utils/clipboard', () => ({
   writeClipboard: vi.fn(() => Promise.resolve())
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      common: {
+        'qr.copy_link': 'Copy Link',
+        'qr.show': 'Show QR'
+      },
+      toast: {
+        qr_copy_success: 'Link copied to clipboard',
+        qr_copy_error: 'Error copying to clipboard'
+      }
+    };
+    return translations[namespace]?.[key] ?? key;
+  })
+}));
+
 import { writeClipboard } from '@/utils/clipboard';
 import { toast } from 'react-toastify';
 import ModalQr from '../modal-qr';

@@ -1,3 +1,10 @@
+import {
+  CONTENT_CUSTOM,
+  CONTENT_DEFAULT,
+  filterContentListRecordDate,
+  localizeDatePresets,
+  today
+} from '@/components/shared/date-filter-presets';
 import DatePresetFilter from '@/components/shared/date-preset-filter';
 import FilterActions from '@/components/shared/filter-actions';
 import FilterCalendar from '@/components/shared/filter-calendar';
@@ -6,52 +13,19 @@ import type { ComboboxOption } from '@/components/shared/location-combobox';
 import LocationCombobox from '@/components/shared/location-combobox';
 import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
-import {
-  addDays,
-  endOfMonth,
-  endOfWeek,
-  startOfMonth,
-  startOfWeek
-} from 'date-fns';
+import { useDateFilter } from '@/hooks/useDateFilter';
+import { useTranslations } from '@/i18n';
+import { addDays } from 'date-fns';
 import { useState } from 'react';
 
-const CONTENT_DEFAULT = 0;
-const CONTENT_CUSTOM = 1;
-
-const today = new Date();
-
-const filterContentListDate = [
-  {
-    label: 'Today',
-    value: {
-      start: today,
-      end: today
-    }
-  },
-  {
-    label: 'This Week',
-    value: {
-      start: addDays(startOfWeek(today), 1),
-      end: addDays(endOfWeek(today), 1)
-    }
-  },
-  {
-    label: 'This Month',
-    value: {
-      start: startOfMonth(today),
-      end: endOfMonth(today)
-    }
-  }
-];
-
 /** Record type options for the multi-select combobox. */
-const RECORD_TYPE_OPTIONS: ComboboxOption[] = [
-  { code: 'QuestionnaireResponse', name: 'Assessment' },
-  { code: 'PractitionerNote', name: 'Practitioner Note' },
-  { code: 'SOAP Notes', name: 'SOAP' },
-  { code: 'PatientNote', name: 'Self Journal' },
-  { code: 'Condition', name: 'Condition' },
-  { code: 'Encounter', name: 'Encounter' }
+const RECORD_TYPE_OPTIONS: { code: string; nameKey: string }[] = [
+  { code: 'QuestionnaireResponse', nameKey: 'record.record_type.assessment' },
+  { code: 'PractitionerNote', nameKey: 'record.record_type.practitioner_note' },
+  { code: 'SOAP Notes', nameKey: 'record.record_type.soap' },
+  { code: 'PatientNote', nameKey: 'record.record_type.self_journal' },
+  { code: 'Condition', nameKey: 'record.record_type.condition' },
+  { code: 'Encounter', nameKey: 'record.record_type.encounter' }
 ];
 
 export type IRecordParams = {
@@ -73,11 +47,12 @@ export default function RecordFilter({
 }: Readonly<{
   onChange: (filter: IRecordParams) => void;
 }>) {
+  const t = useTranslations('common');
+  const dateOptions = localizeDatePresets(t, filterContentListRecordDate);
+  const recordTypeOptions: ComboboxOption[] = RECORD_TYPE_OPTIONS.map(
+    option => ({ code: option.code, name: t(option.nameKey) })
+  );
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [whichContent, setWhichContent] = useState<
-    typeof CONTENT_DEFAULT | typeof CONTENT_CUSTOM
-  >(CONTENT_DEFAULT);
-  const [isUseCustomDate, setIsUseCustomDate] = useState<boolean>(false);
   const [filter, setFilter] = useState<IRecordParams>({
     start_date: undefined,
     end_date: undefined,
@@ -101,6 +76,40 @@ export default function RecordFilter({
     }));
   };
 
+  /** Apply a chosen date range and clear the custom-date flag. */
+  const handlePresetSelect = (start: Date, end: Date) => {
+    handleFilterChange('start_date', start);
+    handleFilterChange('end_date', end);
+    handleFilterChange('isUseCustomDate', false);
+  };
+
+  /** Apply a chosen calendar range to the record filter. */
+  const applyCalendarRange = (from?: Date, to?: Date) => {
+    handleFilterChange('start_date', from);
+    handleFilterChange('end_date', to);
+  };
+
+  /** Seed the default 7-day custom date range. */
+  const seedCustomDefaults = () => {
+    handleFilterChange('start_date', today);
+    handleFilterChange('end_date', addDays(today, 7));
+    handleFilterChange('isUseCustomDate', true);
+  };
+
+  const {
+    whichContent,
+    isUseCustomDate,
+    openDefaultPane,
+    handleCustomOpen,
+    handleCalendarSelect,
+    setIsUseCustomDate
+  } = useDateFilter({
+    isInitialState: true,
+    onCustomOpenSeed: seedCustomDefaults,
+    onPresetSelect: handlePresetSelect,
+    onCalendarSelect: applyCalendarRange
+  });
+
   /** Reset all filter fields and custom date mode. */
   const resetFilter = () => {
     setFilter({
@@ -112,15 +121,6 @@ export default function RecordFilter({
     handleFilterChange('isUseCustomDate', false);
   };
 
-  /** Open custom date picker with default 7-day range. */
-  const handleCustomFilterOpen = () => {
-    handleFilterChange('start_date', today);
-    handleFilterChange('end_date', addDays(today, 7));
-    setIsUseCustomDate(true);
-    handleFilterChange('isUseCustomDate', true);
-    setWhichContent(CONTENT_CUSTOM);
-  };
-
   /** Render default filter content or custom calendar filter based on whichContent. */
   const renderDrawerContent = () => {
     switch (whichContent) {
@@ -128,30 +128,25 @@ export default function RecordFilter({
         return (
           <div className='flex flex-col'>
             <DatePresetFilter
-              presets={filterContentListDate}
+              presets={dateOptions}
               activeStart={filter.start_date}
               activeEnd={filter.end_date}
               isCustom={isUseCustomDate}
-              onPresetSelect={(start, end) => {
-                handleFilterChange('start_date', start);
-                handleFilterChange('end_date', end);
-                handleFilterChange('isUseCustomDate', false);
-                setIsUseCustomDate(false);
-              }}
-              onCustomOpen={handleCustomFilterOpen}
+              onPresetSelect={handlePresetSelect}
+              onCustomOpen={handleCustomOpen}
             />
 
             {/* Multi-select record types */}
             <div className='card mt-4 border-0 bg-[#F9F9F9]'>
-              <div className='mb-4 font-bold'>Show By</div>
+              <div className='mb-4 font-bold'>{t('record.show_by')}</div>
               <LocationCombobox
                 multiple
-                options={RECORD_TYPE_OPTIONS}
+                options={recordTypeOptions}
                 value={filter.type ?? []}
                 onSelect={(codes: string[]) =>
                   handleFilterChange('type', codes)
                 }
-                placeholder='All types'
+                placeholder={t('record.all_types')}
               />
             </div>
 
@@ -171,22 +166,15 @@ export default function RecordFilter({
                   from: filter.start_date,
                   to: filter.end_date
                 }}
-                onSelect={date => {
-                  handleFilterChange('start_date', date?.from);
-                  handleFilterChange(
-                    'end_date',
-                    date?.to ? date.to : date?.from
-                  );
-                  setIsUseCustomDate(true);
-                }}
+                onSelect={handleCalendarSelect}
               />
             </div>
             <Button
               type='button'
-              onClick={() => setWhichContent(CONTENT_DEFAULT)}
+              onClick={openDefaultPane}
               className='bg-secondary mt-4 rounded-xl text-white'
             >
-              Kembali
+              {t('back')}
             </Button>
           </div>
         );
@@ -202,12 +190,12 @@ export default function RecordFilter({
     <AppDrawer
       open={isOpen}
       onClose={() => {
-        setWhichContent(CONTENT_DEFAULT);
+        openDefaultPane();
         setIsOpen(false);
       }}
       trigger={<FilterDrawerTrigger onClick={() => setIsOpen(true)} />}
-      title='Filter & Sort'
-      ctaLabel='Terapkan Filter'
+      title={t('filter_title')}
+      ctaLabel={t('apply_filter')}
       onCtaClick={() => {
         setIsOpen(false);
         onChange(filter);

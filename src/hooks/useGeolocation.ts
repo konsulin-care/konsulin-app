@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { useCallback, useState } from 'react';
 
 interface GeolocationState {
@@ -18,6 +19,7 @@ interface GeolocationState {
  * @returns GeolocationState with lat, lon, loading, error
  */
 export function useGeolocation(): GeolocationState & { request: () => void } {
+  const t = useTranslations('common');
   const [state, setState] = useState<GeolocationState>({
     lat: null,
     lon: null,
@@ -28,7 +30,10 @@ export function useGeolocation(): GeolocationState & { request: () => void } {
   const request = useCallback(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Codacy FP: guard for non-secure contexts where navigator.geolocation may be absent
     if (!navigator.geolocation) {
-      setState(prev => ({ ...prev, error: 'Geolocation not supported' }));
+      setState(prev => ({
+        ...prev,
+        error: t('geolocation.not_supported')
+      }));
       return;
     }
 
@@ -46,11 +51,11 @@ export function useGeolocation(): GeolocationState & { request: () => void } {
         });
       },
       error => {
-        let errorMessage = 'Location unavailable';
+        let errorMessage = t('geolocation.unavailable');
         if (error.code === error.PERMISSION_DENIED) {
-          errorMessage = 'Location permission denied';
+          errorMessage = t('geolocation.permission_denied');
         } else if (error.code === error.TIMEOUT) {
-          errorMessage = 'Location request timed out';
+          errorMessage = t('geolocation.timeout');
         }
         setState({
           lat: null,
@@ -65,7 +70,7 @@ export function useGeolocation(): GeolocationState & { request: () => void } {
         maximumAge: 300_000 // 5min cache
       }
     );
-  }, []);
+  }, [t]);
 
   return { ...state, request };
 }

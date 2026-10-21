@@ -13,6 +13,11 @@ const { availabilitySave, servicesSave, specialtySave } = vi.hoisted(() => ({
 const mockDispatch = vi.fn<(action: FabAction) => void>();
 const mockRefetch = vi.fn<() => Promise<unknown>>();
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/context/fabContext', async importOriginal => {
   const actual = await importOriginal<typeof import('@/context/fabContext')>();
   return { ...actual, useFab: () => ({ dispatch: mockDispatch }) };

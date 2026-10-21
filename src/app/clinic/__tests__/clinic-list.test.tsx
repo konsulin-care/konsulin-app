@@ -9,6 +9,12 @@ import { type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ClinicList from '../clinic-list';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 // ---------------------------------------------------------------------------
 // Mocks — heavy dependencies to keep component test focused
 // ---------------------------------------------------------------------------

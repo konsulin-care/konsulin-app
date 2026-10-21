@@ -1,32 +1,34 @@
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockF, mockSwipe, mockToast, mockStyles } = vi.hoisted(() => ({
-  mockF: vi.fn<() => any>(),
-  mockSwipe: vi.fn<() => any>(),
-  mockToast: { error: vi.fn() } as Record<string, (...args: any[]) => any>,
-  mockStyles: vi.fn().mockReturnValue(vi.fn())
-}));
-
-vi.mock('@/hooks/useQuestionFocus', () => ({ useQuestionFocus: mockF }));
-vi.mock('@/hooks/useCardSwipe', () => ({ useCardSwipe: mockSwipe }));
-vi.mock('../card-dom-mapper', () => ({ CardDomMapper: () => null }));
-vi.mock('react-toastify', () => ({ toast: mockToast }));
-vi.mock('@/lib/injectCardStyles', () => ({ injectCardStyles: mockStyles }));
+vi.mock('@/hooks/useQuestionFocus', async () =>
+  (await import('./card-stack-test-fixtures')).questionFocusMockFactory()
+);
+vi.mock('@/hooks/useCardSwipe', async () =>
+  (await import('./card-stack-test-fixtures')).cardSwipeMockFactory()
+);
+vi.mock('../card-dom-mapper', async () =>
+  (await import('./card-stack-test-fixtures')).cardDomMapperMockFactory()
+);
+vi.mock('@/i18n', async () =>
+  (await import('./card-stack-test-fixtures')).cardStackI18nMockFactory()
+);
+vi.mock('react-toastify', async () =>
+  (await import('./card-stack-test-fixtures')).toastMockFactory()
+);
+vi.mock('@/lib/injectCardStyles', async () =>
+  (await import('./card-stack-test-fixtures')).injectCardStylesMockFactory()
+);
 
 import { CardStackContainer } from '../card-stack-container';
-
-const BASE = {
-  activeCardIndex: 0,
-  setIdx: vi.fn(),
-  totalFocusable: 3,
-  totalAnswerable: 3,
-  cardStates: { q1: 'active', q2: 'future', q3: 'future' },
-  displayItemLinkIds: [],
-  focusableLinkIds: ['q1', 'q2', 'q3'],
-  isRequired: vi.fn().mockReturnValue(false),
-  isAnswered: vi.fn().mockReturnValue(false)
-};
+import {
+  BASE,
+  defaultSwipeResult,
+  mockF,
+  mockSwipe,
+  mockToast,
+  renderCards
+} from './card-stack-test-fixtures';
 
 function withCards(classes: Record<string, string>) {
   return (
@@ -53,12 +55,7 @@ describe('click-to-navigate', () => {
       isRequired: vi.fn().mockReturnValue(false),
       isAnswered: vi.fn().mockReturnValue(false)
     });
-    mockSwipe.mockReturnValue({
-      swipeDirection: null,
-      onTouchStart: vi.fn(),
-      onTouchMove: vi.fn(),
-      onTouchEnd: vi.fn()
-    });
+    mockSwipe.mockReturnValue(defaultSwipeResult());
   });
 
   function click(cls: string) {
@@ -66,13 +63,13 @@ describe('click-to-navigate', () => {
   }
 
   it('navigates to answered card', () => {
-    render(withCards({ q1: 'card-answered', q2: 'card-active' }));
+    renderCards(withCards({ q1: 'card-answered', q2: 'card-active' }));
     click('card-answered');
     expect(set).toHaveBeenCalledWith(0);
   });
 
   it('navigates to future card', () => {
-    render(
+    renderCards(
       withCards({ q1: 'card-answered', q2: 'card-active', q3: 'card-future' })
     );
     click('card-future');
@@ -80,7 +77,7 @@ describe('click-to-navigate', () => {
   });
 
   it('ignores click on active card', () => {
-    render(withCards({ q1: 'card-answered', q2: 'card-active' }));
+    renderCards(withCards({ q1: 'card-answered', q2: 'card-active' }));
     click('card-active');
     expect(set).not.toHaveBeenCalled();
   });
@@ -94,7 +91,7 @@ describe('click-to-navigate', () => {
       isRequired: vi.fn().mockReturnValue(true),
       isAnswered: vi.fn().mockReturnValue(false)
     });
-    render(
+    renderCards(
       withCards({ q1: 'card-answered', q2: 'card-active', q3: 'card-future' })
     );
     click('card-future');
@@ -118,7 +115,7 @@ describe('click-to-navigate', () => {
       focusableLinkIds: ['q1', 'q2', 'q3', 'q4'],
       totalFocusable: 4
     });
-    render(
+    renderCards(
       withCards({
         q1: 'card-answered',
         q2: 'card-skipped',
@@ -140,7 +137,7 @@ describe('click-to-navigate', () => {
       isAnswered: vi.fn().mockReturnValue(false)
     };
     mockF.mockReturnValue(def);
-    const { rerender } = render(
+    const { rerender } = renderCards(
       withCards({ q1: 'card-answered', q2: 'card-active', q3: 'card-future' })
     );
     click('card-future');
@@ -172,7 +169,7 @@ describe('click-to-navigate', () => {
       isAnswered: vi.fn().mockReturnValue(true)
     };
     mockF.mockReturnValue(base);
-    const { rerender } = render(
+    const { rerender } = renderCards(
       withCards({ q1: 'card-answered', q2: 'card-active', q3: 'card-future' })
     );
     click('card-answered');

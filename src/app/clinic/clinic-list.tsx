@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { useAuth } from '@/context/auth/authContext';
 import { useSearchWithFallback } from '@/hooks/useSearchWithFallback';
+import { useTranslations } from '@/i18n';
 import { IUseClinicParams } from '@/services/clinic';
 import { useClinicLocations } from '@/services/clinic-locations';
 import ClinicFilter from './clinic-filter';
@@ -51,6 +52,7 @@ function LocationGrid({
  * Practitioner:  assigned locations (via PractitionerRole _include)
  */
 export default function ClinicList() {
+  const t = useTranslations('common');
   const router = useRouter();
   const { state: authState, isLoading: authLoading } = useAuth();
   const role = authLoading ? '' : (authState.userInfo.role_name ?? 'Patient');
@@ -105,8 +107,8 @@ export default function ClinicList() {
       return (
         <EmptyState
           className='py-16'
-          title='No clinics found'
-          subtitle='Try a different location or search term.'
+          title={t('clinic.no_clinics_title')}
+          subtitle={t('clinic.no_clinics_subtitle')}
         />
       );
     }
@@ -123,7 +125,7 @@ export default function ClinicList() {
             <InputWithIcon
               value={searchTerm}
               onChange={event => setSearchTerm(event.target.value)}
-              placeholder='Search'
+              placeholder={t('clinic.search')}
               className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
               startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
             />

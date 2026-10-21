@@ -10,6 +10,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', async () =>
+  (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
+);
+
 import HomeContentGuest from '../app/home-content-guest';
 
 const queryClient = new QueryClient();

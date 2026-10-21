@@ -5,6 +5,7 @@ import SoapLoadingSpinner from '@/components/shared/soap-loading-spinner';
 import SoapForm from '@/components/soap-report/soap-form';
 import { useAuth } from '@/context/auth/authContext';
 import { usePatientProfile } from '@/hooks/usePatientProfile';
+import { useTranslations } from '@/i18n';
 import { useQuestionnaireSoap } from '@/services/api/assessment';
 import { useGetSingleRecord } from '@/services/api/record';
 import { useEffect, useState } from 'react';
@@ -17,6 +18,7 @@ type Props = {
  *
  */
 export default function PractitionerRecordSoap({ soapId }: Props) {
+  const t = useTranslations('common');
   const { state: authState, isLoading: isAuthLoading } = useAuth();
 
   const [patientId, setPatientId] = useState('');
@@ -42,7 +44,7 @@ export default function PractitionerRecordSoap({ soapId }: Props) {
   const { displayName, isProfileLoading } = usePatientProfile(patientId);
 
   if (!patientId) {
-    return <EmptyState className='py-16' title='No Data Found' />;
+    return <EmptyState className='py-16' title={t('no_data_found')} />;
   }
 
   if (

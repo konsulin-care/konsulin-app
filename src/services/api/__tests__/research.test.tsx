@@ -7,7 +7,7 @@ import { wrapper } from '@/__tests__/react-test-utils';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { AxiosInstance } from 'axios';
 import type { Bundle } from 'fhir/r4';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../../api';
 import { useResearchProgress } from '../research';
 
@@ -81,7 +81,15 @@ function mockApi(
   return { mockPost, mockGet };
 }
 
+beforeEach(() => {
+  // Fixtures hardcode the batch window 2026-09-01..2026-09-30; freeze the
+  // clock inside it. Faking only 'Date' keeps setTimeout real for waitFor.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-09-15'));
+});
+
 afterEach(() => {
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 

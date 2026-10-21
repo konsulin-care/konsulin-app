@@ -72,7 +72,7 @@ describe('mergePersonalInfo', () => {
 });
 
 describe('mergePersonalInfoSync', () => {
-  it('writes gender and birthDate only (no language) for Patient', () => {
+  it('writes gender, birthDate, and language for Patient', () => {
     const merged = mergePersonalInfoSync(patientFixture, {
       gender: 'male',
       birthDate: '1990-03-12',
@@ -81,10 +81,18 @@ describe('mergePersonalInfoSync', () => {
     });
     expect(merged.gender).toBe('male');
     expect(merged.birthDate).toBe('1990-03-12');
-    expect('communication' in merged).toBe(false);
+    expect((merged as Patient).communication).toEqual([
+      {
+        language: {
+          coding: [
+            { system: 'urn:ietf:bcp:47', code: 'id', display: 'Indonesian' }
+          ]
+        }
+      }
+    ]);
   });
 
-  it('writes gender and birthDate only (no language) for Practitioner', () => {
+  it('writes gender, birthDate, and language for Practitioner', () => {
     const practitioner: Practitioner = {
       ...patientFixture,
       resourceType: 'Practitioner'
@@ -96,6 +104,18 @@ describe('mergePersonalInfoSync', () => {
       languageLabel: 'English'
     });
     expect(merged.gender).toBe('female');
+    expect((merged as Practitioner).communication).toEqual([
+      {
+        coding: [{ system: 'urn:ietf:bcp:47', code: 'en', display: 'English' }]
+      }
+    ]);
+  });
+
+  it('never writes language when none is provided', () => {
+    const merged = mergePersonalInfoSync(patientFixture, {
+      gender: 'other',
+      birthDate: '1978-11-20'
+    });
     expect('communication' in merged).toBe(false);
   });
 });

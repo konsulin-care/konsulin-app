@@ -8,6 +8,12 @@ import { ComplaintSearch } from '../complaint-search';
 import { EmergencyBanner } from '../emergency-banner';
 import { InterviewFlow } from '../interview-flow';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 const MOOD_COMPLAINT = searchChiefComplaints('low mood')[0];
 
 describe('EmergencyBanner', () => {

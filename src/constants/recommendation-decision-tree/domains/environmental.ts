@@ -1,8 +1,9 @@
 import type { DecisionDomain } from '@/types/recommendation-interview';
+import { defineDomain } from '../domain-builder';
 import { SEHAT_JIWA } from '../resources';
 
 /** Environmental & Contextual domain branches. */
-const environmental: DecisionDomain = {
+const environmental: DecisionDomain = defineDomain({
   code: 'environmental-contextual',
   label: 'Environmental & Contextual',
   complaints: [
@@ -10,7 +11,6 @@ const environmental: DecisionDomain = {
       id: 'caregiver-strain',
       label: 'Caregiver Stress & Strain',
       synonyms: ['perawat', 'mengurus', 'caregiver', 'merawat orang tua'],
-      icfDomain: 'environmental-contextual',
       keywords: [
         'caregiver',
         'caregiving',
@@ -47,7 +47,6 @@ const environmental: DecisionDomain = {
       id: 'financial-stress',
       label: 'Financial Stress & Worry',
       synonyms: ['keuangan', 'utang', 'finansial', 'financial', 'money'],
-      icfDomain: 'environmental-contextual',
       keywords: [
         'financial',
         'debt',
@@ -84,7 +83,6 @@ const environmental: DecisionDomain = {
         'culture',
         'adjustment'
       ],
-      icfDomain: 'environmental-contextual',
       keywords: [
         'relocation',
         'moving',
@@ -114,7 +112,6 @@ const environmental: DecisionDomain = {
       id: 'ergonomic-strain',
       label: 'Workplace & Ergonomic Strain',
       synonyms: ['ergonomi', 'postur', 'duduk', 'ergonomic', 'posture'],
-      icfDomain: 'environmental-contextual',
       keywords: [
         'ergonomic',
         'posture',
@@ -145,7 +142,6 @@ const environmental: DecisionDomain = {
       id: 'other-environmental',
       label: 'Other Environmental Concern',
       synonyms: ['lingkungan', 'environmental', 'lain'],
-      icfDomain: 'environmental-contextual',
       keywords: ['environmental', 'workplace', 'general'],
       serviceTypeCode: 'other-environmental-contextual',
       options: [
@@ -162,6 +158,6 @@ const environmental: DecisionDomain = {
       }
     }
   ]
-};
+});
 
 export default environmental;

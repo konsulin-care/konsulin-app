@@ -2,6 +2,7 @@
 
 import { PROFILE_CACHE_STALE_MS } from '@/constants/profile';
 import { useAuth } from '@/context/auth/authContext';
+import { getLocale, LOCALES, updateLocale, type Locale } from '@/lib/locale';
 import { collapseHumanName } from '@/utils/fhir/human-name';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import { roleToFhirResource } from '@/utils/role-fhir';
@@ -86,6 +87,22 @@ function conceptDisplay(concept?: CodeableConcept): string {
   return concept.text ?? '-';
 }
 
+/**
+ * Read the raw BCP-47 language code from a FHIR profile. Patient wraps the
+ * language in `PatientCommunication.language` while Practitioner stores the
+ * CodeableConcept directly.
+ */
+function readLanguageCode(
+  profile: ProfileResource | undefined
+): string | undefined {
+  if (!profile) return undefined;
+  const concept =
+    profile.resourceType === 'Practitioner'
+      ? profile.communication?.[0]
+      : profile.communication?.[0]?.language;
+  return concept?.coding?.[0]?.code;
+}
+
 /** Build the identity block (photo, initials, collapsed name parts). */
 function buildIdentity(
   profile: ProfileResource | undefined,
@@ -110,23 +127,27 @@ function buildIdentity(
   };
 }
 
+/** Translation function type for section building. */
+export type ProfileTranslationFn = (key: string) => string;
+
 /** Personal-info rows; every role supports the language row. */
 function buildPersonalRows(
   profile: ProfileResource | undefined,
-  supportsLanguage: boolean
+  supportsLanguage: boolean,
+  t: ProfileTranslationFn
 ): ProfileRow[] {
   const rows: ProfileRow[] = [
-    { id: 'gender', key: 'Gender', value: formatGender(profile?.gender) },
+    { id: 'gender', key: t('gender'), value: formatGender(profile?.gender) },
     {
       id: 'birthDate',
-      key: 'Date of Birth',
+      key: t('birth_date'),
       value: formatBirthDate(profile?.birthDate)
     }
   ];
   if (supportsLanguage) {
     rows.push({
       id: 'language',
-      key: 'Language',
+      key: t('language'),
       value: getCommunicationLanguage(profile)
     });
   }
@@ -134,35 +155,48 @@ function buildPersonalRows(
 }
 
 /** Contact rows from the telecom array. */
-function buildContactRows(profile: ProfileResource | undefined): ProfileRow[] {
+function buildContactRows(
+  profile: ProfileResource | undefined,
+  t: ProfileTranslationFn
+): ProfileRow[] {
   return [
-    { id: 'email', key: 'Email', value: findTelecom(profile, 'email') },
-    { id: 'phone', key: 'Phone', value: findTelecom(profile, 'phone') }
+    { id: 'email', key: t('email'), value: findTelecom(profile, 'email') },
+    { id: 'phone', key: t('phone'), value: findTelecom(profile, 'phone') }
   ];
 }
 
 /** Address rows from the first address entry. */
-function buildAddressRows(profile: ProfileResource | undefined): ProfileRow[] {
+function buildAddressRows(
+  profile: ProfileResource | undefined,
+  t: ProfileTranslationFn
+): ProfileRow[] {
   const address = profile?.address?.[0];
   return [
-    { id: 'line', key: 'Line', value: address?.line?.join(', ') ?? '-' },
-    { id: 'district', key: 'District', value: address?.district ?? '-' },
-    { id: 'city', key: 'City', value: address?.city ?? '-' },
-    { id: 'state', key: 'Province', value: address?.state ?? '-' },
-    { id: 'postalCode', key: 'Postal Code', value: address?.postalCode ?? '-' }
+    { id: 'line', key: t('line'), value: address?.line?.join(', ') ?? '-' },
+    { id: 'district', key: t('district'), value: address?.district ?? '-' },
+    { id: 'city', key: t('city'), value: address?.city ?? '-' },
+    { id: 'state', key: t('province'), value: address?.state ?? '-' },
+    {
+      id: 'postalCode',
+      key: t('postal_code'),
+      value: address?.postalCode ?? '-'
+    }
   ];
 }
 
 /** Build the uniform section list shared by every role. */
-function buildSections(profile: ProfileResource | undefined): ProfileSection[] {
+function buildSections(
+  profile: ProfileResource | undefined,
+  t: ProfileTranslationFn
+): ProfileSection[] {
   return [
     {
       id: 'personal-info',
-      title: 'Personal Information',
-      rows: buildPersonalRows(profile, true)
+      title: t('personal_info'),
+      rows: buildPersonalRows(profile, true, t)
     },
-    { id: 'contact', title: 'Contact', rows: buildContactRows(profile) },
-    { id: 'address', title: 'Address', rows: buildAddressRows(profile) }
+    { id: 'contact', title: t('contact'), rows: buildContactRows(profile, t) },
+    { id: 'address', title: t('address'), rows: buildAddressRows(profile, t) }
   ];
 }
 
@@ -183,7 +217,8 @@ function buildSections(profile: ProfileResource | undefined): ProfileSection[] {
 export function useProfileData(
   userId: string,
   roles: string[],
-  activeRole: string
+  activeRole: string,
+  t: ProfileTranslationFn
 ) {
   const { state: authState, refreshProfiles } = useAuth();
   const userInfo = authState.userInfo;
@@ -212,11 +247,23 @@ export function useProfileData(
     }
   }, [userId, userInfo?.cachedAt, roleProfiles, refreshProfiles]);
 
+  // The account language is the source of truth: once the profile loads,
+  // apply its preferred language over the cookie (default 'id' when the
+  // profile carries none or an unsupported code).
+  useEffect(() => {
+    const code = readLanguageCode(activeProfile);
+    if (!code || !(LOCALES as readonly string[]).includes(code)) return;
+    if (code !== getLocale()) updateLocale(code as Locale);
+  }, [activeProfile]);
+
   const identity = useMemo(
     () => buildIdentity(activeProfile, activeProfile?.id ?? userId),
     [activeProfile, userId]
   );
-  const sections = useMemo(() => buildSections(activeProfile), [activeProfile]);
+  const sections = useMemo(
+    () => buildSections(activeProfile, t),
+    [activeProfile, t]
+  );
 
   return {
     profileData: activeProfile,

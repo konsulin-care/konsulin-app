@@ -8,6 +8,7 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
@@ -19,6 +20,7 @@ type Props = {
 
 /** Calendar picker for journal date selection, renders trigger button and drawer. */
 export default function CalendarJournal({ onChange, value }: Props) {
+  const t = useTranslations('common');
   const [date, setDate] = useState<Date | undefined>(value);
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export default function CalendarJournal({ onChange, value }: Props) {
             />
           </div>
           <DrawerClose className='bg-secondary mt-4 w-full rounded-xl p-4 text-center text-white'>
-            Kembali
+            {t('back')}
           </DrawerClose>
         </div>
       </DrawerContent>

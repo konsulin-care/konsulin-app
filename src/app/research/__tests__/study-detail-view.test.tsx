@@ -62,6 +62,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 describe('StudyDetailView', () => {
   it('renders the full study content including untruncated description', () => {
     renderDetail();

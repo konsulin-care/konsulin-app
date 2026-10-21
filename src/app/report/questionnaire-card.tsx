@@ -1,6 +1,7 @@
 'use client';
 
 import { Progress } from '@/components/ui/progress';
+import { useTranslations } from '@/i18n';
 import { trendForQuestionnaire } from '@/utils/fhir/report';
 import { getScoreColor, parseDimensionScores } from '@/utils/fhir/scores';
 import type { QuestionnaireResponse } from 'fhir/r4';
@@ -26,6 +27,7 @@ export function QuestionnaireCard({
   trend: ReturnType<typeof trendForQuestionnaire>;
   hideAuthored?: boolean;
 }>) {
+  const t = useTranslations('common');
   const dimensions = useMemo(
     () =>
       [...parseDimensionScores(response)].toSorted(
@@ -49,13 +51,13 @@ export function QuestionnaireCard({
               data-testid='report-baseline-badge'
               className='rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600'
             >
-              Baseline
+              {t('report.baseline')}
             </span>
           )}
         </div>
         {authored && !hideAuthored && (
           <span className='text-[11px] text-gray-500'>
-            Completed {authored}
+            {t('report.completed', { date: authored })}
           </span>
         )}
       </div>
@@ -89,7 +91,7 @@ export function QuestionnaireCard({
           className='mt-4 border-t border-gray-100 pt-3'
         >
           <p className='mb-2 text-[11px] font-bold text-gray-500 uppercase'>
-            Score history
+            {t('report.score_history')}
           </p>
           {trend.rows[0].dimensions.map(dimension => (
             <div key={dimension.name} className='mb-2'>
