@@ -1,8 +1,9 @@
 import type { DecisionDomain } from '@/types/recommendation-interview';
+import { defineDomain } from '../domain-builder';
 import { ER, SEHAT_JIWA } from '../resources';
 
 /** Functional Capacity domain branches. */
-const functional: DecisionDomain = {
+const functional: DecisionDomain = defineDomain({
   code: 'functional-capacity',
   label: 'Functional Capacity',
   complaints: [
@@ -16,7 +17,6 @@ const functional: DecisionDomain = {
         'attention',
         'konsentrasi'
       ],
-      icfDomain: 'functional-capacity',
       keywords: [
         'attention',
         'focus',
@@ -43,7 +43,6 @@ const functional: DecisionDomain = {
       id: 'memory-decline',
       label: 'Memory Loss & Cognitive Decline',
       synonyms: ['memori', 'lupa', 'memory', 'pelupa', 'cognitive'],
-      icfDomain: 'functional-capacity',
       keywords: [
         'memory',
         'cognitive',
@@ -75,7 +74,6 @@ const functional: DecisionDomain = {
         'mandiri',
         'daily activities'
       ],
-      icfDomain: 'functional-capacity',
       keywords: [
         'daily',
         'self-care',
@@ -112,7 +110,6 @@ const functional: DecisionDomain = {
         'performance',
         'deadline'
       ],
-      icfDomain: 'functional-capacity',
       keywords: [
         'performance',
         'focus',
@@ -144,7 +141,6 @@ const functional: DecisionDomain = {
       id: 'mobility-balance',
       label: 'Mobility & Balance Limitations',
       synonyms: ['jalan', 'keseimbangan', 'mobility', 'balance', 'jatuh'],
-      icfDomain: 'functional-capacity',
       keywords: [
         'mobility',
         'balance',
@@ -173,7 +169,6 @@ const functional: DecisionDomain = {
       id: 'other-functional',
       label: 'Other Functional Concern',
       synonyms: ['fungsi', 'functional', 'lain'],
-      icfDomain: 'functional-capacity',
       keywords: ['function', 'daily', 'general'],
       serviceTypeCode: 'other-functional-capacity',
       options: [
@@ -190,6 +185,6 @@ const functional: DecisionDomain = {
       }
     }
   ]
-};
+});
 
 export default functional;

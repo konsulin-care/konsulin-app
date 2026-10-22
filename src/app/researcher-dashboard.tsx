@@ -3,6 +3,7 @@
 import CardLoader from '@/components/general/card-loader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { useResearcherDashboard } from '@/services/api/researcher';
 import { FlaskConical } from 'lucide-react';
 
@@ -27,6 +28,7 @@ function StatCard({
 
 /** Researcher home dashboard showing managed studies and stats. */
 export default function ResearcherDashboard() {
+  const t = useTranslations('home');
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const practitionerId = authState?.userInfo?.fhirId;
 
@@ -52,17 +54,17 @@ export default function ResearcherDashboard() {
       {/* Stat cards */}
       <div className='flex flex-col gap-4 p-4'>
         <StatCard
-          label='Ongoing Studies'
+          label={t('ongoing_studies')}
           value={studies.length}
           isError={isError}
         />
         <StatCard
-          label='Total Participants'
+          label={t('total_participants')}
           value={totalParticipants}
           isError={isError}
         />
         <StatCard
-          label='Active Batches'
+          label={t('active_batches')}
           value={activeBatches}
           isError={isError}
         />

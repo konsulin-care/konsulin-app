@@ -3,6 +3,12 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import SessionCard from '../session-card';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('@/utils/gradientAvatar', () => ({
   generateAvatarSvgDataUrl: vi.fn(() => 'data:image/svg+xml;base64,test')
 }));

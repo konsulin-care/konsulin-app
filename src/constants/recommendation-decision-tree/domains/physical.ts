@@ -1,8 +1,9 @@
 import type { DecisionDomain } from '@/types/recommendation-interview';
+import { defineDomain } from '../domain-builder';
 import { ER, SEHAT_JIWA } from '../resources';
 
 /** Physical Health domain branches. */
-const physical: DecisionDomain = {
+const physical: DecisionDomain = defineDomain({
   code: 'physical-health',
   label: 'Physical Health',
   complaints: [
@@ -10,7 +11,6 @@ const physical: DecisionDomain = {
       id: 'pain-musculoskeletal',
       label: 'Musculoskeletal & Joint Pain',
       synonyms: ['nyeri', 'sakit', 'back pain', 'joint', 'otot', 'sendi'],
-      icfDomain: 'physical-health',
       keywords: [
         'musculoskeletal',
         'joint',
@@ -41,7 +41,6 @@ const physical: DecisionDomain = {
       id: 'headache-migraine',
       label: 'Headache & Migraine',
       synonyms: ['sakit kepala', 'migrain', 'headache', 'migraine', 'pusing'],
-      icfDomain: 'physical-health',
       keywords: [
         'headache',
         'migraine',
@@ -70,7 +69,6 @@ const physical: DecisionDomain = {
       id: 'respiratory-airway',
       label: 'Cough & Breathing Issues',
       synonyms: ['batuk', 'sesak', 'cough', 'breath', 'napas', 'tenggorokan'],
-      icfDomain: 'physical-health',
       keywords: [
         'respiratory',
         'breath',
@@ -111,7 +109,6 @@ const physical: DecisionDomain = {
         'maag',
         'diare'
       ],
-      icfDomain: 'physical-health',
       keywords: [
         'gastrointestinal',
         'stomach',
@@ -143,7 +140,6 @@ const physical: DecisionDomain = {
       id: 'sleep-fatigue',
       label: 'Sleep & Fatigue Problems',
       synonyms: ['tidur', 'insomnia', 'lelah', 'sleep', 'fatigue', 'lemas'],
-      icfDomain: 'physical-health',
       keywords: ['sleep', 'insomnia', 'fatigue', 'exhaustion', 'tiredness'],
       serviceTypeCode: 'sleep-care',
       options: [
@@ -163,7 +159,6 @@ const physical: DecisionDomain = {
       id: 'fever-malaise',
       label: 'Fever & General Malaise',
       synonyms: ['demam', 'lemah', 'pusing', 'fever', 'weakness', 'dizziness'],
-      icfDomain: 'physical-health',
       keywords: [
         'fever',
         'weakness',
@@ -190,7 +185,6 @@ const physical: DecisionDomain = {
       id: 'other-physical',
       label: 'Other Physical Concern',
       synonyms: ['physical', 'fisik', 'lain', 'other'],
-      icfDomain: 'physical-health',
       keywords: ['physical', 'general', 'illness'],
       serviceTypeCode: 'other-physical-health',
       options: [
@@ -207,6 +201,6 @@ const physical: DecisionDomain = {
       }
     }
   ]
-};
+});
 
 export default physical;

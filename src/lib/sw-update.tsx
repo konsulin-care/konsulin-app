@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
 
@@ -22,22 +23,46 @@ export function applySwUpdate(registration: ServiceWorkerRegistration): void {
   }
 }
 
-/** Shows the update-available toast with a reload action. */
-function notifyUpdate(registration: ServiceWorkerRegistration): void {
-  const toastId = toast.info(
+/**
+ * Update-available toast body. Translates its labels via t() and
+ * dismisses the toast before applying the update.
+ */
+function SwUpdateToastContent({
+  registration,
+  onDismiss
+}: {
+  readonly registration: ServiceWorkerRegistration;
+  readonly onDismiss: () => void;
+}) {
+  const t = useTranslations('common');
+  return (
     <div className='flex items-center gap-3'>
-      <span>Update available</span>
+      <span>{t('sw.update_available')}</span>
       <button
         type='button'
         className='cursor-pointer font-semibold text-teal-600 underline'
         onClick={() => {
-          toast.dismiss(toastId);
+          onDismiss();
           applySwUpdate(registration);
         }}
       >
-        Reload
+        {t('sw.reload')}
       </button>
-    </div>,
+    </div>
+  );
+}
+
+/** Shows the update-available toast with a reload action. */
+function notifyUpdate(registration: ServiceWorkerRegistration): void {
+  // Toast id is only known after toast.info returns; hold it for dismissal.
+  const toastIdRef: { current?: string | number } = {};
+  toastIdRef.current = toast.info(
+    <SwUpdateToastContent
+      registration={registration}
+      onDismiss={() => {
+        if (toastIdRef.current !== undefined) toast.dismiss(toastIdRef.current);
+      }}
+    />,
     { autoClose: false, closeOnClick: false }
   );
 }

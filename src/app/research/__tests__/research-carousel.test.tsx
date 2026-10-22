@@ -10,6 +10,12 @@ import {
   TITLE_MAP
 } from './research-fixtures';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('next/link', () => ({
   __esModule: true,
   default: ({

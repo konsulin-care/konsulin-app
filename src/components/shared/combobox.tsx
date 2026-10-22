@@ -18,6 +18,7 @@ import {
   PopoverTrigger
 } from '@/components/ui/popover';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { Check, ChevronDown, Loader2 } from 'lucide-react';
 import {
@@ -242,6 +243,7 @@ function OptionList({
  */
 export default function Combobox(props: ComboboxProps) {
   const { multiple = false, options = [], placeholder, loading } = props;
+  const t = useTranslations('common');
   const [open, setOpen] = useState(false);
   const isMobile = useMediaQuery(MOBILE_QUERY);
   const host = useAppDrawerHost();
@@ -299,7 +301,7 @@ export default function Combobox(props: ComboboxProps) {
     renderOptionLabel: props.renderOptionLabel,
     value: multiple ? multiValue : singleValue,
     placeholder: props.searchPlaceholder ?? placeholder,
-    emptyMessage: props.emptyMessage ?? 'No results found.',
+    emptyMessage: props.emptyMessage ?? t('no_results_found'),
     onSelect: handleSelect,
     onPick: () => {
       if (!multiple) setOpen(false);
@@ -309,7 +311,7 @@ export default function Combobox(props: ComboboxProps) {
   const triggerContent: ReactNode = loading ? (
     <span className='flex items-center gap-2'>
       <Loader2 className='h-4 w-4 animate-spin' />
-      Loading...
+      {t('loading')}
     </span>
   ) : (
     <span

@@ -1,6 +1,8 @@
-import { render } from '@testing-library/react';
+import { renderAsync } from '@/__tests__/mocks/render-async';
+import { screen } from '@testing-library/react';
 import fs from 'node:fs';
 import path from 'node:path';
+import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 // Mock every import that layout.tsx pulls in
@@ -90,6 +92,21 @@ vi.mock('@/lib/pwa-install', () => ({
   setupInstallPrompt: vi.fn(() => vi.fn())
 }));
 
+vi.mock('next-intl/server', () => ({
+  getMessages: vi.fn().mockResolvedValue({})
+}));
+
+vi.mock('@/i18n/locale-provider', () => ({
+  LocaleProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid='locale-provider'>{children}</div>
+  )
+}));
+
+vi.mock('next-intl', () => ({
+  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) =>
+    children
+}));
+
 vi.mock('react-toastify', () => ({
   ToastContainer: () => <div data-testid='toast-container' />
 }));
@@ -105,26 +122,29 @@ vi.mock('react-international-phone/style.css', () => ({}));
 import RootLayout from '../layout';
 
 describe('RootLayout', () => {
-  it('renders html and body wrappers', () => {
-    render(<RootLayout>test content</RootLayout>);
-    // React 19 renders <html>/<body> into the document, not inside the container div
+  it('renders html and body wrappers', async () => {
+    await renderAsync(<RootLayout>test content</RootLayout>);
     expect(document.querySelector('html')).toBeInTheDocument();
     expect(document.querySelector('body')).toBeInTheDocument();
   });
 
-  it('renders child content via the route gate', () => {
-    const { container } = render(<RootLayout>hello world</RootLayout>);
+  it('renders child content via the route gate inside the locale provider', async () => {
+    const { container } = await renderAsync(
+      <RootLayout>hello world</RootLayout>
+    );
     expect(container.textContent).toContain('hello world');
+    expect(screen.getByTestId('locale-provider')).toContainElement(
+      screen.getByText('hello world')
+    );
   });
 
-  it('keeps the route gate in the tree (branching covered by its own test)', () => {
-    render(<RootLayout>test</RootLayout>);
+  it('keeps the route gate in the tree (branching covered by its own test)', async () => {
+    await renderAsync(<RootLayout>test</RootLayout>);
     expect(document.querySelector('body')).toBeInTheDocument();
   });
 
-  it('renders font class on body', () => {
-    render(<RootLayout>test</RootLayout>);
-    // React 19 renders <html>/<body> into the document, not inside the container div
+  it('renders font class on body', async () => {
+    await renderAsync(<RootLayout>test</RootLayout>);
     expect(document.querySelector('body.mock-font')).toBeInTheDocument();
   });
 
@@ -138,5 +158,14 @@ describe('RootLayout', () => {
       'utf-8'
     );
     expect(layoutSrc).toContain('suppressHydrationWarning');
+  });
+
+  it('wraps children in LocaleProvider for locale-aware translations', () => {
+    const layoutSrc = fs.readFileSync(
+      path.resolve(__dirname, '../layout.tsx'),
+      'utf-8'
+    );
+    expect(layoutSrc).toContain('LocaleProvider');
+    expect(layoutSrc).not.toContain('getMessages');
   });
 });

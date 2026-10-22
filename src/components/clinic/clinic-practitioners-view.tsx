@@ -4,6 +4,7 @@ import CardLoader from '@/components/general/card-loader';
 import EmptyState from '@/components/general/empty-state';
 import { PractitionerCard } from '@/components/practitioner/practitioner-card';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
+import { useTranslations } from '@/i18n';
 import { buildHoursList, formatAddress } from '@/utils/fhir/location-format';
 import { getLocationImageUrl } from '@/utils/fhir/location-image';
 import { mapToCardData } from '@/utils/fhir/practitioner-format';
@@ -138,6 +139,7 @@ export default function ClinicPractitionersView({
   isFetching: boolean;
   isLoading: boolean;
 }>) {
+  const t = useTranslations('common');
   const [keyword, setKeyword] = useState('');
   const location = useMemo((): Location | undefined => {
     if (!entries) return undefined;
@@ -188,7 +190,7 @@ export default function ClinicPractitionersView({
           onChange={e => {
             setKeyword(e.target.value);
           }}
-          placeholder='Search'
+          placeholder={t('location.search')}
           className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
           startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
         />
@@ -197,8 +199,8 @@ export default function ClinicPractitionersView({
       {filteredCards.length === 0 ? (
         <EmptyState
           className='py-16'
-          title='No Practitioners Found'
-          subtitle='Try Another Clinic.'
+          title={t('location.no_practitioners_title')}
+          subtitle={t('location.no_practitioners_subtitle')}
         />
       ) : (
         <div className='mt-4 flex flex-col gap-4'>

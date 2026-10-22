@@ -1,10 +1,14 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import type {
   ChiefComplaint,
   InterviewResult
 } from '@/types/recommendation-interview';
-import { resolveInterviewResult } from '@/utils/recommendation-interview';
+import {
+  resolveInterviewResult,
+  resolveLabel
+} from '@/utils/recommendation-interview';
 import { ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import { EmergencyBanner } from './emergency-banner';
@@ -40,6 +44,7 @@ export function InterviewFlow({
   onComplete,
   onClose
 }: Readonly<InterviewFlowProps>) {
+  const t = useTranslations('interview');
   const [step, setStep] = useState<Step>('options');
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [flagged, setFlagged] = useState(false);
@@ -69,13 +74,13 @@ export function InterviewFlow({
       <div className='w-full max-w-md rounded-t-3xl bg-white p-5 pb-8 shadow-lg'>
         <div className='mb-2 flex items-center justify-between'>
           <span className='text-[12px] font-medium text-gray-400'>
-            {complaint.label} · {step === 'options' ? '1/2' : '2/2'}
+            {resolveLabel(complaint, t)} · {step === 'options' ? '1/2' : '2/2'}
           </span>
           {onClose && (
             <button
               type='button'
               onClick={onClose}
-              aria-label='Close interview'
+              aria-label={t('close_interview')}
               className='text-[12px] text-gray-400'
             >
               ✕
@@ -86,7 +91,7 @@ export function InterviewFlow({
         {step === 'options' && (
           <>
             <h2 className='mb-4 text-[16px] font-bold text-gray-900'>
-              Which best describes your concern?
+              {t('which_describes')}
             </h2>
             <ul className='flex flex-col gap-2'>
               {complaint.options.map(option => (
@@ -98,7 +103,7 @@ export function InterviewFlow({
                     }}
                     className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] text-gray-800 hover:border-[var(--secondary)]'
                   >
-                    {option.label}
+                    {resolveLabel(option, t)}
                   </button>
                 </li>
               ))}
@@ -113,14 +118,14 @@ export function InterviewFlow({
               onClick={() => {
                 setStep('options');
               }}
-              aria-label='Back'
+              aria-label={t('back')}
               className='mb-3 flex items-center gap-1 text-[12px] text-gray-500'
             >
               <ChevronLeft className='h-3.5 w-3.5' aria-hidden='true' />
-              Back
+              {t('back')}
             </button>
             <h2 className='mb-4 text-[16px] font-bold text-gray-900'>
-              {complaint.redFlag.label}
+              {resolveLabel(complaint.redFlag, t)}
             </h2>
             <div className='flex flex-col gap-2'>
               <button
@@ -130,7 +135,7 @@ export function InterviewFlow({
                 }}
                 className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] text-gray-800 hover:border-[var(--secondary)]'
               >
-                No, I&apos;m safe
+                {t('safe_answer')}
               </button>
               <button
                 type='button'
@@ -139,7 +144,7 @@ export function InterviewFlow({
                 }}
                 className='w-full rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-left text-[14px] text-amber-900 hover:border-amber-400'
               >
-                Yes, that&apos;s me
+                {t('flagged_answer')}
               </button>
             </div>
 
@@ -151,7 +156,7 @@ export function InterviewFlow({
                   onClick={finish}
                   className='mt-4 w-full rounded-full bg-[var(--secondary)] py-3 text-[14px] font-semibold text-white'
                 >
-                  Show me recommendations
+                  {t('show_recommendations')}
                 </button>
               </>
             )}

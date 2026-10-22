@@ -3,6 +3,7 @@
 import AppDrawer from '@/components/ui/app-drawer';
 import { Button } from '@/components/ui/button';
 import { CalendarBase } from '@/components/ui/calendar-base';
+import { useTranslations } from '@/i18n';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -12,7 +13,7 @@ interface DatePickerButtonProps {
   readonly value: Date | undefined;
   /** Called when the user picks a date. */
   readonly onChange: (date: Date) => void;
-  /** Placeholder shown when no date is selected. */
+  /** Placeholder shown when no date is selected. Defaults to the localized pick-a-date label. */
   readonly placeholder?: string;
   /** Disables the trigger button. */
   readonly disabled?: boolean;
@@ -28,12 +29,15 @@ interface DatePickerButtonProps {
 export default function DatePickerButton({
   value,
   onChange,
-  placeholder = 'Pick a date',
+  placeholder,
   disabled = false
 }: DatePickerButtonProps) {
+  const t = useTranslations('common');
   const [open, setOpen] = useState(false);
 
-  const displayText = value ? format(value, 'dd MMM yyyy') : placeholder;
+  const displayText = value
+    ? format(value, 'dd MMM yyyy')
+    : (placeholder ?? t('date_picker.pick_a_date'));
 
   /** Apply the selected date and close the picker. */
   const handleSelect = (date: Date | undefined) => {
@@ -63,7 +67,7 @@ export default function DatePickerButton({
         onClose={() => {
           setOpen(false);
         }}
-        title='Select Date'
+        title={t('date_picker.select_date')}
       >
         <CalendarBase mode='single' selected={value} onSelect={handleSelect} />
       </AppDrawer>

@@ -12,6 +12,12 @@ const { mockPush, mockPathname, mockSave, mockOnComplete, mockOnClose } =
     mockOnClose: vi.fn()
   }));
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
   useRouter: () => ({ push: mockPush })

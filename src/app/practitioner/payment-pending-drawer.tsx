@@ -1,4 +1,5 @@
 import AppDrawer from '@/components/ui/app-drawer';
+import { useTranslations } from '@/i18n';
 import { format } from 'date-fns';
 import type { Invoice } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
@@ -36,6 +37,7 @@ export default function PaymentPendingDrawer({
   bookingState,
   invoice
 }: Readonly<Props>) {
+  const t = useTranslations('common');
   const router = useRouter();
 
   /** Navigates to the schedule page and closes the drawer. */
@@ -55,9 +57,9 @@ export default function PaymentPendingDrawer({
       onClose={() => {
         setPendingOpen(false);
       }}
-      title='Payment in process'
-      description='Your payment is being processed in the opened tab. You will see this session in your schedule once it is confirmed.'
-      ctaLabel='View Schedule'
+      title={t('practitioner.payment_pending_title')}
+      description={t('practitioner.payment_pending_description')}
+      ctaLabel={t('practitioner.view_schedule')}
       onCtaClick={handleViewSchedule}
     >
       <AppointmentSummary

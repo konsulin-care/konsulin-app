@@ -7,6 +7,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ----- global mock factories (hoisted before imports) -----
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      search: 'Search Assessment',
+      clear_all: 'Clear all',
+      results_n: 'Results ({n})',
+      all_instruments_n: 'All Instruments ({n})',
+      no_instruments: 'No instruments found',
+      no_instruments_filter: 'No instruments match the selected filters.',
+      try_different: 'Try a different search term or clear filters.',
+      loading: 'Loading...',
+      editors_picks: "Editor's Picks",
+      filter: 'Filter',
+      apply: 'Apply',
+      category: 'Category',
+      sort: 'Sort'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));

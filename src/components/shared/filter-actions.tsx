@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/i18n';
 
 type Props = {
   readonly showReset: boolean;
@@ -12,6 +13,7 @@ type Props = {
  * drawer's footer CTA (AppDrawer), not here.
  */
 export default function FilterActions({ showReset, onReset }: Props) {
+  const t = useTranslations('common');
   if (!showReset) return null;
   return (
     <Button
@@ -20,7 +22,7 @@ export default function FilterActions({ showReset, onReset }: Props) {
       className='mt-4 w-min border-0 text-[12px]'
       onClick={onReset}
     >
-      Reset Filter
+      {t('filter.reset')}
     </Button>
   );
 }

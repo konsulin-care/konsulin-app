@@ -2,6 +2,18 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Combobox, { type ComboboxOption } from '../combobox';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      common: {
+        loading: 'Loading...',
+        no_results_found: 'No results found.'
+      }
+    };
+    return translations[namespace]?.[key] ?? key;
+  })
+}));
+
 const OPTIONS: readonly ComboboxOption[] = [
   { code: 'a', name: 'Option A' },
   { code: 'b', name: 'Option B' }

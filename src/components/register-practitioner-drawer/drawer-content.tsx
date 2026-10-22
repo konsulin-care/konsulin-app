@@ -3,6 +3,7 @@
 import PractitionerLocationCombobox from '@/components/shared/practitioner-location-combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/i18n';
 
 interface LocationOption {
   readonly id: string;
@@ -29,10 +30,11 @@ export default function RegisterPractitionerDrawerContent({
   onEmailChange,
   onLocationSelect
 }: RegisterPractitionerDrawerContentProps) {
+  const t = useTranslations('common');
   return (
     <div className='space-y-4'>
       <div>
-        <Label>Location</Label>
+        <Label>{t('practitioner.location_label')}</Label>
         <PractitionerLocationCombobox
           locations={locations}
           selectedId={selectedLocationId}
@@ -41,21 +43,21 @@ export default function RegisterPractitionerDrawerContent({
       </div>
 
       <div>
-        <Label htmlFor='prac-name'>Name</Label>
+        <Label htmlFor='prac-name'>{t('practitioner.service_name')}</Label>
         <Input
           id='prac-name'
           value={name}
           onChange={e => {
             onNameChange(e.target.value);
           }}
-          placeholder='Full Name'
+          placeholder={t('practitioner.full_name')}
           className='bg-white'
-          aria-label='Name'
+          aria-label={t('practitioner.full_name')}
         />
       </div>
 
       <div>
-        <Label htmlFor='prac-email'>Email</Label>
+        <Label htmlFor='prac-email'>{t('practitioner.email')}</Label>
         <Input
           id='prac-email'
           type='email'
@@ -63,9 +65,9 @@ export default function RegisterPractitionerDrawerContent({
           onChange={e => {
             onEmailChange(e.target.value);
           }}
-          placeholder='email@clinic.com'
+          placeholder={t('practitioner.email_placeholder')}
           className='bg-white'
-          aria-label='Email'
+          aria-label={t('practitioner.email')}
         />
       </div>
     </div>

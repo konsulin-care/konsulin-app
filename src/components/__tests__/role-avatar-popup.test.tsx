@@ -38,6 +38,12 @@ vi.mock('next/image', () => ({
   }
 }));
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 import RoleAvatarPopup from '@/components/role-avatar-popup';
 
 const multiRoleBase = {

@@ -1,6 +1,7 @@
 'use client';
 
 import AppDrawer from '@/components/ui/app-drawer';
+import { useTranslations } from '@/i18n';
 import ConsentDrawerContent from './consent-drawer-content';
 
 interface ConsentDrawerProps {
@@ -18,13 +19,14 @@ export default function ConsentDrawer({
   onClose,
   onAgree
 }: ConsentDrawerProps) {
+  const t = useTranslations('research');
   return (
     <AppDrawer
       open={open}
       onClose={onClose}
-      title='Informed Consent'
-      description='Your participation in this research study.'
-      ctaLabel='Agree to Participate'
+      title={t('consent_title')}
+      description={t('consent_description')}
+      ctaLabel={t('consent_cta')}
       onCtaClick={onAgree}
     >
       <ConsentDrawerContent />

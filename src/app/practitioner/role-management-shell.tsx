@@ -9,6 +9,7 @@ import {
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useFab } from '@/context/fabContext';
+import { useTranslations } from '@/i18n';
 import { useDetailPractitioner } from '@/services/clinic-practitioners';
 import { PractitionerRole } from 'fhir/r4';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -62,11 +63,12 @@ function enhanceWithOrgDisplay(
 
 /** Dirty indicator dot rendered on accordion triggers. */
 function DirtyDot({ sectionId }: { readonly sectionId: string }) {
+  const t = useTranslations('common');
   return (
     <span
       className='bg-primary ml-1 inline-block h-2 w-2 rounded-full'
       data-testid={`dirty-dot-${sectionId}`}
-      aria-label='Unsaved changes'
+      aria-label={t('practitioner.unsaved_changes')}
     />
   );
 }
@@ -102,6 +104,7 @@ function RoleAccordion({
   onServicesDirty,
   onSpecialtyDirty
 }: AccordionProps) {
+  const t = useTranslations('common');
   const availabilityDirty = sections.availability?.dirty ?? false;
   const servicesDirty = sections.services?.dirty ?? false;
   const specialtyDirty = sections.specialty?.dirty ?? false;
@@ -117,7 +120,7 @@ function RoleAccordion({
       <AccordionItem value='availability' className='border-b-0'>
         <AccordionTrigger>
           <SectionTrigger
-            label='Availability'
+            label={t('practitioner.tab_availability')}
             sectionId='availability'
             dirty={availabilityDirty}
           />
@@ -136,7 +139,7 @@ function RoleAccordion({
       <AccordionItem value='services' className='border-b-0'>
         <AccordionTrigger>
           <SectionTrigger
-            label='Services'
+            label={t('practitioner.tab_services')}
             sectionId='services'
             dirty={servicesDirty}
           />
@@ -153,7 +156,7 @@ function RoleAccordion({
       <AccordionItem value='specialty' className='border-b-0'>
         <AccordionTrigger>
           <SectionTrigger
-            label='Specialty'
+            label={t('practitioner.tab_specialty')}
             sectionId='specialty'
             dirty={specialtyDirty}
           />
@@ -182,6 +185,7 @@ function RoleAccordion({
  * section's save then refetches the role.
  */
 export default function PractitionerRoleManagementShell(props: Props) {
+  const t = useTranslations('common');
   const { newData: detail, refetch } = useDetailPractitioner(
     props.practitionerRoleId
   );
@@ -240,7 +244,7 @@ export default function PractitionerRoleManagementShell(props: Props) {
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Save Changes',
+          label: t('practitioner.save_changes'),
           onAction: () => handleFabSave(),
           isSaving: anySaving,
           variant: 'primary'
@@ -249,7 +253,7 @@ export default function PractitionerRoleManagementShell(props: Props) {
     } else {
       dispatch({ type: 'SET_ACTION', config: null });
     }
-  }, [anyDirty, anySaving, handleFabSave, dispatch]);
+  }, [anyDirty, anySaving, handleFabSave, dispatch, t]);
 
   // Stable prop reference — prevents the availability editor from
   // re-computing its initial availability after save when the shell

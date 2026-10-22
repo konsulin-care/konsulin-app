@@ -1,8 +1,10 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import type { ChiefComplaint } from '@/types/recommendation-interview';
 import {
   getQuickComplaints,
+  resolveLabel,
   searchChiefComplaints
 } from '@/utils/recommendation-interview';
 import { SearchIcon, X } from 'lucide-react';
@@ -22,6 +24,7 @@ interface ComplaintSearchProps {
  * @param props.onSelect - Emits the complaint the user picks
  */
 export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
+  const t = useTranslations('interview');
   const [query, setQuery] = useState('');
 
   const suggestions = useMemo(() => searchChiefComplaints(query), [query]);
@@ -42,14 +45,14 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
           onChange={event => {
             setQuery(event.target.value);
           }}
-          placeholder='Search your concern (Indonesian or English)'
-          aria-label='Search concern'
+          placeholder={t('search_placeholder')}
+          aria-label={t('search_label')}
           className='w-full rounded-full border border-gray-200 bg-white py-2.5 pr-10 pl-10 text-[14px] outline-none focus:border-[var(--secondary)]'
         />
         {searching && (
           <button
             type='button'
-            aria-label='Clear search'
+            aria-label={t('clear_search')}
             onClick={() => {
               setQuery('');
             }}
@@ -62,8 +65,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
 
       {deadEnd && (
         <p className='mt-3 rounded-lg bg-[#F9F9F9] p-3 text-center text-[12px] text-gray-500'>
-          No matching concern found. Try a keyword like pain, mood, sleep, or
-          breath.
+          {t('no_match_hint')}
         </p>
       )}
 
@@ -78,7 +80,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
                 }}
                 className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] hover:border-[var(--secondary)]'
               >
-                {complaint.label}
+                {resolveLabel(complaint, t)}
               </button>
             </li>
           ))}
@@ -88,7 +90,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
       {!searching && (
         <div className='mt-3'>
           <p className='mb-2 text-[12px] font-semibold text-gray-500'>
-            Popular concerns
+            {t('popular_concerns')}
           </p>
           <div className='flex flex-wrap gap-2'>
             {quickChips.map(complaint => (
@@ -100,7 +102,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
                 }}
                 className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[12px] text-gray-700 hover:border-[var(--secondary)] hover:text-[var(--secondary)]'
               >
-                {complaint.label}
+                {resolveLabel(complaint, t)}
               </button>
             ))}
           </div>

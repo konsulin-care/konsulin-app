@@ -14,6 +14,15 @@ vi.mock('@/lib/pwa-install', () => ({
   })
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      common: { 'pwa.install_app': 'Install app' }
+    };
+    return translations[namespace]?.[key] ?? key;
+  })
+}));
+
 describe('InstallButton', () => {
   beforeEach(() => {
     mockOnChangeCallback = undefined;

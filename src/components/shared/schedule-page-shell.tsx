@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { InputWithIcon } from '@/components/ui/input-with-icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTranslations } from '@/i18n';
 import { IUseClinicParams } from '@/services/clinic';
 import { format } from 'date-fns';
 import { SearchIcon } from 'lucide-react';
@@ -97,6 +98,7 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
   hasMore,
   isLoadingMore
 }: Props<T>) {
+  const t = useTranslations('common');
   return (
     // skipcq: JS-0415 — nesting inherent to shell layout
     <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
@@ -105,7 +107,7 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
           <InputWithIcon
             value={keyword}
             onChange={event => onKeywordChange(event.target.value)}
-            placeholder='Search'
+            placeholder={t('schedule.search')}
             className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
             startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
           />
@@ -142,13 +144,13 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
               className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
               value='upcoming'
             >
-              Upcoming Session
+              {t('schedule.upcoming_session')}
             </TabsTrigger>
             <TabsTrigger
               className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
               value='past'
             >
-              Past Session
+              {t('schedule.past_session')}
             </TabsTrigger>
           </TabsList>
           {isLoading ? (
@@ -162,8 +164,8 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
                 {upcoming.length === 0 ? (
                   <EmptyState
                     className='py-16'
-                    title='No Upcoming Sessions'
-                    subtitle='You have no scheduled sessions at the moment'
+                    title={t('schedule.no_upcoming_title')}
+                    subtitle={t('schedule.no_upcoming_subtitle')}
                   />
                 ) : (
                   upcoming.map(item => (
@@ -177,8 +179,8 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
                 {past.length === 0 ? (
                   <EmptyState
                     className='py-16'
-                    title='No Past Sessions'
-                    subtitle="You haven't completed any sessions yet"
+                    title={t('schedule.no_past_title')}
+                    subtitle={t('schedule.no_past_subtitle')}
                   />
                 ) : (
                   past.map(item => (

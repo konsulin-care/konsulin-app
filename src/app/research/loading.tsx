@@ -1,4 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
+import { useTranslations } from '@/i18n';
 
 /**
  * Route-level loading fallback for /research. Covers the blank-screen gap
@@ -8,11 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton';
  * @returns Skeleton blocks matching the page's main sections.
  */
 export default function Loading() {
+  const t = useTranslations('research');
   return (
     <output
       data-testid='research-route-loading'
       aria-busy='true'
-      aria-label='Loading research'
+      aria-label={t('loading_label')}
       className='flex flex-col gap-4 px-4 pt-4'
     >
       {/* Header bar placeholder. */}

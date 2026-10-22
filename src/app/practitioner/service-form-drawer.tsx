@@ -5,6 +5,7 @@ import AppDrawer from '@/components/ui/app-drawer';
 import { Input } from '@/components/ui/input';
 import { SwitchField } from '@/components/ui/switch-field';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslations } from '@/i18n';
 import { getFee, setFee } from '@/utils/fhir/fee';
 import {
   getServiceDuration,
@@ -46,18 +47,19 @@ function FormFields({
   readonly active: boolean;
   readonly onActiveChange: (v: boolean) => void;
 }) {
+  const t = useTranslations('common');
   return (
     <div className='space-y-4'>
       <SwitchField
         checked={active}
         onCheckedChange={onActiveChange}
-        label='Active'
-        offLabel='Inactive'
+        label={t('practitioner.service_active')}
+        offLabel={t('practitioner.service_inactive')}
       />
 
       <div>
         <label htmlFor='service-name' className='text-sm font-medium'>
-          Name
+          {t('practitioner.service_name')}
         </label>
         <Input
           id='service-name'
@@ -65,14 +67,14 @@ function FormFields({
           onChange={e => {
             onNameChange(e.target.value);
           }}
-          placeholder='General Consultation'
+          placeholder={t('practitioner.service_name_placeholder')}
           className='bg-white'
         />
       </div>
 
       <div>
         <label htmlFor='service-fee' className='text-sm font-medium'>
-          Fee
+          {t('practitioner.service_fee')}
         </label>
         <FeeInput
           id='service-fee'
@@ -85,7 +87,7 @@ function FormFields({
 
       <div>
         <label htmlFor='service-duration' className='text-sm font-medium'>
-          Duration (minutes)
+          {t('practitioner.service_duration')}
         </label>
         <Input
           id='service-duration'
@@ -99,7 +101,7 @@ function FormFields({
 
       <div>
         <label htmlFor='service-extra-details' className='text-sm font-medium'>
-          Extra Details
+          {t('practitioner.service_extra_details')}
         </label>
         <Textarea
           id='service-extra-details'
@@ -191,6 +193,7 @@ export default function ServiceFormDrawer({
   providedBy,
   location
 }: Props) {
+  const t = useTranslations('common');
   const [name, setName] = useState(initStr(service?.name));
   const [extraDetails, setExtraDetails] = useState(
     initStr(service?.extraDetails)
@@ -234,9 +237,11 @@ export default function ServiceFormDrawer({
     <AppDrawer
       open={open}
       onClose={onClose}
-      title={service ? 'Edit Service' : 'Add Service'}
-      description='Configure a healthcare service for this practitioner.'
-      ctaLabel='Save'
+      title={
+        service ? t('practitioner.edit_service') : t('practitioner.add_service')
+      }
+      description={t('practitioner.service_description')}
+      ctaLabel={t('practitioner.save')}
       onCtaClick={handleSave}
       ctaDisabled={!name.trim()}
     >

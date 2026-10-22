@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { TimeRange } from '@/types/availability';
 import { Trash2 } from 'lucide-react';
@@ -26,20 +27,23 @@ export default function TimeRangeInput({
   showRemoveButton,
   error
 }: TimeRangeInputProps) {
+  const t = useTranslations('common');
   return (
     <div className='flex items-center gap-2'>
       <div className='flex flex-1 items-center gap-2'>
-        <span className='text-xs text-gray-500'>From</span>
+        <span className='text-xs text-gray-500'>
+          {t('location.from_label')}
+        </span>
         <Input
           type='time'
           value={timeRange.from}
           onChange={e => onFromChange(e.target.value)}
           className='h-9 text-sm'
-          aria-label='Start time'
+          aria-label={t('location.start_time')}
         />
       </div>
       <div className='flex flex-1 items-center gap-2'>
-        <span className='text-xs text-gray-500'>To</span>
+        <span className='text-xs text-gray-500'>{t('location.to_label')}</span>
         <Input
           type='time'
           value={timeRange.to}
@@ -48,7 +52,7 @@ export default function TimeRangeInput({
             'h-9 text-sm',
             error && 'border-destructive focus-visible:ring-destructive'
           )}
-          aria-label='End time'
+          aria-label={t('location.end_time')}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `error-${timeRange.id}` : undefined}
         />
@@ -60,7 +64,7 @@ export default function TimeRangeInput({
           size='icon'
           onClick={onRemove}
           className='hover:text-destructive h-9 w-9 text-gray-500'
-          aria-label='Remove time range'
+          aria-label={t('location.remove_time_range')}
         >
           <Trash2 className='h-4 w-4' />
         </Button>

@@ -18,9 +18,17 @@ const B2: ResearchBatch = {
 };
 
 describe('batchTitle', () => {
+  /** Mirrors the en message report.batch_prefix: "Batch {index}". */
+  const prefix = (index: number): string => `Batch ${index}`;
+
   it('compacts a same-month window into a single month label', () => {
-    expect(batchTitle(B2, [B1, B2])).toBe('Batch 2: 01 - 30 Sep 2026');
-    expect(batchTitle(B1, [B1, B2])).toBe('Batch 1: 01 - 31 Aug 2026');
+    expect(batchTitle(B2, [B1, B2], prefix)).toBe('Batch 2: 01 - 30 Sep 2026');
+    expect(batchTitle(B1, [B1, B2], prefix)).toBe('Batch 1: 01 - 31 Aug 2026');
+  });
+
+  it('uses the caller-supplied translated prefix', () => {
+    const idPrefix = (index: number): string => `Batch ${index}`;
+    expect(batchTitle(B1, [B1, B2], idPrefix)).toContain('Batch 1');
   });
 
   it('falls back to a full range when the window crosses months', () => {
@@ -30,7 +38,7 @@ describe('batchTitle', () => {
       end: '2026-09-30',
       questionnaireIds: ['phq2']
     };
-    expect(batchTitle(crossMonth, [B1, B2, crossMonth])).toBe(
+    expect(batchTitle(crossMonth, [B1, B2, crossMonth], prefix)).toBe(
       'Batch 3: 01 Aug 2026 - 30 Sep 2026'
     );
   });

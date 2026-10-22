@@ -5,6 +5,11 @@ import { FhirExtensionUrls } from '@/utils/fhir/extensions';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { type BundleEntry } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/image', () => ({
   default: (props: React.ComponentPropsWithoutRef<'img'>) => (

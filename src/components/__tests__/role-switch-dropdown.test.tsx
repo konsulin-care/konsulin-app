@@ -10,6 +10,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { routerPush } = vi.hoisted(() => ({ routerPush: vi.fn() }));
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: routerPush })
 }));

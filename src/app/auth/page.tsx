@@ -34,7 +34,7 @@ const whatsappButton = (
   >
     <div data-supertokens='providerButtonLeft'>{whatsappLogo}</div>
     <div data-supertokens='providerButtonText'>
-      <span>Continue with WhatsApp</span>
+      <span data-i18n-key='auth.continue_whatsapp'>Continue with WhatsApp</span>
     </div>
   </button>
 );
@@ -42,7 +42,9 @@ const whatsappButton = (
 const orDivider = (
   <div data-supertokens='dividerWithOr'>
     <div data-supertokens='divider' />
-    <div data-supertokens='dividerText'>or</div>
+    <div data-supertokens='dividerText' data-i18n-key='auth.or'>
+      or
+    </div>
     <div data-supertokens='divider' />
   </div>
 );

@@ -5,6 +5,7 @@ import Avatar from '@/components/general/avatar';
 import EmptyState from '@/components/general/empty-state';
 import { LoadingSpinnerIcon } from '@/components/icons';
 import PageHeader from '@/components/page-header';
+import { useTranslations } from '@/i18n';
 import { useAppointment } from '@/services/hooks/useAppointment';
 import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
 import { capitalizeFirstLetter } from '@/utils/validation';
@@ -55,6 +56,7 @@ function SessionDetailInfo({
   appointmentType: string | null;
   appointmentStatus: string | null;
 }>) {
+  const t = useTranslations('common');
   const isProcessing =
     appointmentStatus === 'proposed' || appointmentStatus === 'pending';
   return (
@@ -62,29 +64,31 @@ function SessionDetailInfo({
       <div className='flex items-center justify-between'>
         <div className='flex items-center'>
           <HospitalIcon size={24} color='#13C2C2' className='mr-2' />
-          <span className='text-[12px] font-bold'>Detail Session</span>
+          <span className='text-[12px] font-bold'>
+            {t('schedule.detail_session')}
+          </span>
         </div>
         {isProcessing && (
           <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
-            Processing
+            {t('processing')}
           </span>
         )}
       </div>
       <div className='mt-4 flex flex-col space-y-2'>
         <div className='flex justify-between text-[12px]'>
-          <span className='mr-2'>Time</span>
+          <span className='mr-2'>{t('schedule.time')}</span>
           <span className='font-bold'>{time}</span>
         </div>
         <div className='flex justify-between text-[12px]'>
-          <span className='mr-2'>Date</span>
+          <span className='mr-2'>{t('schedule.date')}</span>
           <span className='font-bold'>{date}</span>
         </div>
         <div className='flex justify-between text-[12px]'>
-          <span className='mr-2'>Session Type</span>
+          <span className='mr-2'>{t('schedule.session_type')}</span>
           <span className='font-bold'>
             {appointmentType
               ? capitalizeFirstLetter(appointmentType)
-              : 'Session'}
+              : t('session')}
           </span>
         </div>
       </div>
@@ -96,6 +100,7 @@ function SessionDetailInfo({
  *
  */
 export default function ScheduleDetail() {
+  const t = useTranslations('common');
   const searchParams = useSearchParams();
   const id = searchParams.get('id') ?? '';
 
@@ -160,8 +165,8 @@ export default function ScheduleDetail() {
       return (
         <EmptyState
           className='py-16'
-          title='Appointment Not Found'
-          subtitle='Please return to the appointment page and select an appointment.'
+          title={t('schedule.not_found_title')}
+          subtitle={t('schedule.not_found_subtitle')}
         />
       );
     }

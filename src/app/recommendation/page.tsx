@@ -10,6 +10,7 @@ import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useRecommendationResult } from '@/context/recommendationContext';
 import { SPECIALTY_LABELS } from '@/data/specialty-resolution';
+import { useTranslations } from '@/i18n';
 import { useRecommendations } from '@/services/recommendations';
 import type { InterviewResult } from '@/types/recommendation-interview';
 import {
@@ -28,6 +29,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 function NoRecommendationsPrompt({
   onOpenDrawer
 }: Readonly<{ onOpenDrawer: () => void }>) {
+  const t = useTranslations('common');
   return (
     <div className='flex min-h-[300px] flex-col items-center justify-center gap-3 px-6 text-center'>
       <Sparkles
@@ -35,18 +37,17 @@ function NoRecommendationsPrompt({
         aria-hidden='true'
       />
       <p className='text-sm font-medium text-gray-800'>
-        Start a screening to see recommendations
+        {t('recommendation.screening_title')}
       </p>
       <p className='text-xs text-gray-500'>
-        Complete a short assessment and we&apos;ll match you with the right
-        practitioner.
+        {t('recommendation.screening_hint')}
       </p>
       <Button
         variant='default'
         onClick={onOpenDrawer}
         className='bg-[var(--secondary)] text-white'
       >
-        Start Screening
+        {t('recommendation.start_screening')}
       </Button>
     </div>
   );
@@ -87,8 +88,8 @@ export default function RecommendationPage() {
   // result already published to the shared context by the FAB).
   useEffect(() => {
     let active = true;
-    void (async () => {
-      // skipcq: JS-0098 — void correctly marks unawaited promise
+    // prettier-ignore
+    void (async () => { // skipcq: JS-0098 — void correctly marks unawaited promise
       try {
         const stored = await readLastInterviewResult();
         if (active && !latestResultRef.current && stored) setResult(stored);

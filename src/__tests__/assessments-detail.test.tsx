@@ -2,6 +2,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const translations: Record<string, string> = {
+      not_found: 'Questionnaire not found',
+      select_patient: 'Select patient'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));

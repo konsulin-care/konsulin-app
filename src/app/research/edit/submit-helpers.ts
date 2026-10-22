@@ -1,3 +1,4 @@
+import enToast from '@/messages/en/toast.json';
 import { getAPI } from '@/services/api';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
 import type { QueryClient } from '@tanstack/react-query';
@@ -160,6 +161,18 @@ interface SubmitEditStudyParams {
   data: FormData;
   router: ReturnType<typeof useRouter>;
   queryClient: QueryClient;
+  /** Optional translator for toast keys; falls back to the en messages. */
+  tToast?: (key: string) => string;
+}
+
+/** Toast messages keyed by translation key; avoids variable-key indexing. */
+const TOAST_MESSAGES = new Map<string, string>(
+  Object.entries(enToast as Record<string, string>)
+);
+
+/** Resolves a toast key against the built-in English messages. */
+function defaultToast(key: string): string {
+  return TOAST_MESSAGES.get(key) ?? key;
 }
 
 /** Submits the edit form as a FHIR transaction bundle. */
@@ -171,7 +184,8 @@ export async function submitEditStudy({
   planDefinitions,
   data,
   router,
-  queryClient
+  queryClient,
+  tToast
 }: SubmitEditStudyParams) {
   try {
     const API = await getAPI();
@@ -188,11 +202,11 @@ export async function submitEditStudy({
       type: 'transaction',
       entry: entries
     });
-    toast.success('Study updated successfully');
+    toast.success((tToast ?? defaultToast)('study_update_success'));
     await queryClient.invalidateQueries({ queryKey: ['researcher-dashboard'] });
     router.push('/research');
   } catch (error) {
     console.error('Failed to update study:', error);
-    toast.error('Failed to update study. Please try again.');
+    toast.error((tToast ?? defaultToast)('study_update_failed'));
   }
 }

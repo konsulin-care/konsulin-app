@@ -22,6 +22,18 @@ vi.mock('@/components/ui/command', () => ({
   )
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      common: {
+        loading: 'Loading...',
+        no_results_found: 'No results found.'
+      }
+    };
+    return translations[namespace]?.[key] ?? key;
+  })
+}));
+
 import PractitionerLocationCombobox from '../practitioner-location-combobox';
 
 const defaultLocations = [

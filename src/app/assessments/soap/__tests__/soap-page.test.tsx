@@ -9,6 +9,11 @@ const mockPractitionerRoute = vi.fn(
   )
 );
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/components/auth/practitioner-route', () => ({
   PractitionerRoute: (props: { children: React.ReactNode }) =>
     mockPractitionerRoute(props)

@@ -44,23 +44,23 @@ export const medalLists = [
 ];
 
 export const settingMenus = [
-  { name: 'Delete Account', link: '/remove-account', icon: 'trash2' },
-  { name: 'Log out', link: '/logout', icon: 'logout' }
+  { nameKey: 'delete_account', link: '/remove-account', icon: 'trash2' },
+  { nameKey: 'log_out', link: '/logout', icon: 'logout' }
 ] as const;
 
 export const genderList = [
   {
-    name: 'Male',
+    nameKey: 'profile.gender_male',
     code: 'male'
   },
 
   {
-    name: 'Female',
+    nameKey: 'profile.gender_female',
     code: 'female'
   }
-];
+] as const;
 
 export const languageOptions = [
-  { code: 'id', label: 'Indonesian' },
-  { code: 'en', label: 'English' }
+  { code: 'id', labelKey: 'profile.lang_id' },
+  { code: 'en', labelKey: 'profile.lang_en' }
 ] as const;

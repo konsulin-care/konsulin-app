@@ -15,6 +15,21 @@ vi.mock('@/services/auth', () => ({
   fetchCSRFToken: vi.fn()
 }));
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      common: {
+        'location.image_alt': 'Location preview'
+      },
+      toast: {
+        location_image_upload_failed:
+          'Failed to upload image. Please try again.'
+      }
+    };
+    return translations[namespace]?.[key] ?? key;
+  })
+}));
+
 const mockAxiosInstance = { post: vi.fn() };
 
 describe('LocationImageUploader', () => {
@@ -92,6 +107,7 @@ describe('LocationImageUploader', () => {
 
       const img = screen.getByRole('img');
       expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute('alt', 'Location preview');
       expect(img).toHaveAttribute(
         'src',
         'https://res.cloudinary.com/test/image/upload/v1/sample.webp'

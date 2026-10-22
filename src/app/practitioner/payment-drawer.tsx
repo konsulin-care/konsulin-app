@@ -1,5 +1,6 @@
 import AppDrawer from '@/components/ui/app-drawer';
 import type { IStateBooking } from '@/context/booking/bookingTypes';
+import { useTranslations } from '@/i18n';
 import type { QueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import type { Invoice, PractitionerRole } from 'fhir/r4';
@@ -84,6 +85,7 @@ export default function PaymentDrawer({
   handleFilterChange,
   setIsOpen
 }: Readonly<Props>) {
+  const t = useTranslations('common');
   const isPaymentDisabled =
     isPaying ||
     !patientId ||
@@ -135,7 +137,7 @@ export default function PaymentDrawer({
     <AppDrawer
       open={paymentOpen}
       onClose={() => setPaymentOpen(false)}
-      ctaLabel='Pay Now'
+      ctaLabel={t('practitioner.pay_now')}
       onCtaClick={() => {
         handlePayOnline().catch(console.error);
       }}

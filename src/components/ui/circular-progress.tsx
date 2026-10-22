@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 
 interface CircularProgressProps {
@@ -31,6 +32,7 @@ export default function CircularProgress({
   strokeWidth = 8,
   className
 }: Readonly<CircularProgressProps>) {
+  const t = useTranslations('common');
   const clamped = Math.min(1, Math.max(0, value));
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -39,7 +41,7 @@ export default function CircularProgress({
   return (
     <div className={cn('relative shrink-0', className)}>
       <progress
-        aria-label='Questionnaire completion'
+        aria-label={t('progress.questionnaire_completion')}
         max={100}
         value={percentage}
         className='sr-only'

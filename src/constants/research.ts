@@ -340,6 +340,8 @@ export interface ResearcherLevel {
   icon: LucideIcon;
   /** Intrinsic reward unlocked at this level. */
   reward: string;
+  /** i18n message key for the reward copy in the research namespace. */
+  rewardKey: string;
 }
 
 export const RESEARCHER_LEVELS: readonly ResearcherLevel[] = [
@@ -347,31 +349,36 @@ export const RESEARCHER_LEVELS: readonly ResearcherLevel[] = [
     threshold: 0,
     label: 'Trailblazer',
     icon: Footprints,
-    reward: 'Share studies to grow your research impact'
+    reward: 'Share studies to grow your research impact',
+    rewardKey: 'researcher_reward.trailblazer'
   },
   {
     threshold: 50,
     label: 'Pathfinder',
     icon: Compass,
-    reward: 'Enhanced analytics for your studies'
+    reward: 'Enhanced analytics for your studies',
+    rewardKey: 'researcher_reward.pathfinder'
   },
   {
     threshold: 150,
     label: 'Torchbearer',
     icon: Flame,
-    reward: 'Early access to batch results + cohort insights'
+    reward: 'Early access to batch results + cohort insights',
+    rewardKey: 'researcher_reward.torchbearer'
   },
   {
     threshold: 300,
     label: 'Vanguard',
     icon: ShieldCheck,
-    reward: 'Featured study badge + priority listing'
+    reward: 'Featured study badge + priority listing',
+    rewardKey: 'researcher_reward.vanguard'
   },
   {
     threshold: 500,
     label: 'Pioneer',
     icon: Crown,
-    reward: 'Co-design research questions + first access to new studies'
+    reward: 'Co-design research questions + first access to new studies',
+    rewardKey: 'researcher_reward.pioneer'
   }
 ];
 
@@ -412,16 +419,24 @@ export function getImpactInLevel(impactPoints: number): number {
   return Math.max(0, impactPoints) % LEVEL_XP;
 }
 
+/** Localizable mission line for a researcher: message key plus gap count. */
+export interface ResearcherMissionCopy {
+  /** research-namespace message key for the mission line. */
+  key: string;
+  /** Participants still needed to hit the next milestone. */
+  gap: number;
+}
+
 /**
- * Builds the mission line for a researcher: the nearest participant milestone.
+ * Builds the localizable mission copy for a researcher: message key plus gap.
  *
  * @param opts - Impact points and total participants across all studies.
- * @returns The mission text.
+ * @returns The mission message key and the remaining participant gap.
  */
-export function buildResearcherMission(opts: {
+export function buildResearcherMissionCopy(opts: {
   impactPoints: number;
   totalParticipants: number;
-}): string {
+}): ResearcherMissionCopy {
   const { totalParticipants } = opts;
 
   // Find nearest unhit milestone using total participants
@@ -431,9 +446,33 @@ export function buildResearcherMission(opts: {
 
   if (nearestMilestone) {
     const gap = nearestMilestone.participantCount - totalParticipants;
-    return `Enroll ${gap} participant${gap === 1 ? '' : 's'} to hit the next milestone.`;
+    return {
+      key:
+        gap === 1
+          ? 'researcher_mission.enroll_gap_singular'
+          : 'researcher_mission.enroll_gap',
+      gap
+    };
   }
 
   // All milestones hit — show zero gap
-  return 'Enroll 0 participants to hit the next milestone.';
+  return { key: 'researcher_mission.enroll_zero', gap: 0 };
+}
+
+/**
+ * Builds the English mission line for a researcher: the nearest milestone.
+ *
+ * @param opts - Impact points and total participants across all studies.
+ * @returns The mission text.
+ */
+export function buildResearcherMission(opts: {
+  impactPoints: number;
+  totalParticipants: number;
+}): string {
+  const copy = buildResearcherMissionCopy(opts);
+  if (copy.key === 'researcher_mission.enroll_zero') {
+    return 'Enroll 0 participants to hit the next milestone.';
+  }
+  const noun = copy.gap === 1 ? 'participant' : 'participants';
+  return `Enroll ${copy.gap} ${noun} to hit the next milestone.`;
 }

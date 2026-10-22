@@ -1,8 +1,9 @@
 import type { DecisionDomain } from '@/types/recommendation-interview';
+import { defineDomain } from '../domain-builder';
 import { ER, SEHAT_JIWA } from '../resources';
 
 /** Health Behaviours & Lifestyle domain branches. */
-const lifestyle: DecisionDomain = {
+const lifestyle: DecisionDomain = defineDomain({
   code: 'health-behaviours-lifestyle',
   label: 'Health Behaviours & Lifestyle',
   complaints: [
@@ -10,7 +11,6 @@ const lifestyle: DecisionDomain = {
       id: 'smoking-cessation',
       label: 'Quitting Smoking & Vaping',
       synonyms: ['merokok', 'rokok', 'vape', 'smoking', 'nicotine', 'berhenti'],
-      icfDomain: 'health-behaviours-lifestyle',
       keywords: [
         'smoking',
         'tobacco',
@@ -37,7 +37,6 @@ const lifestyle: DecisionDomain = {
       id: 'alcohol-substance',
       label: 'Alcohol or Substance Use',
       synonyms: ['alkohol', 'minuman keras', 'narkoba', 'alcohol', 'substance'],
-      icfDomain: 'health-behaviours-lifestyle',
       keywords: [
         'alcohol',
         'drinking',
@@ -76,7 +75,6 @@ const lifestyle: DecisionDomain = {
         'weight',
         'pola makan'
       ],
-      icfDomain: 'health-behaviours-lifestyle',
       keywords: [
         'eating',
         'diet',
@@ -111,7 +109,6 @@ const lifestyle: DecisionDomain = {
         'exercise',
         'habit'
       ],
-      icfDomain: 'health-behaviours-lifestyle',
       keywords: [
         'sedentary',
         'exercise',
@@ -138,7 +135,6 @@ const lifestyle: DecisionDomain = {
       id: 'other-lifestyle',
       label: 'Other Lifestyle Concern',
       synonyms: ['lifestyle', 'gaya hidup', 'lain'],
-      icfDomain: 'health-behaviours-lifestyle',
       keywords: ['lifestyle', 'routine', 'habits'],
       serviceTypeCode: 'other-health-behaviours-lifestyle',
       options: [
@@ -155,6 +151,6 @@ const lifestyle: DecisionDomain = {
       }
     }
   ]
-};
+});
 
 export default lifestyle;

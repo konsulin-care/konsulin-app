@@ -2,6 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AssessmentsErrorPage from '../app/assessments/error';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 function createChunkError(msg?: string): Error {
   const err = new Error(
     msg ?? 'Loading chunk test.js failed.\n(missing: http://localhost/test.js)'

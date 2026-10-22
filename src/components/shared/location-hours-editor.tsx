@@ -2,6 +2,7 @@
 
 import TimeRangeInput from '@/components/availability/time-range-input';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { DayOfWeek, TimeRange } from '@/types/availability';
 import {
@@ -47,6 +48,7 @@ export default function LocationHoursEditor({
   onUpdateTimeRange,
   onDeleteTimeRange
 }: LocationHoursEditorProps) {
+  const t = useTranslations('common');
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(0);
   const dayHours = getHoursForDay(hours, selectedDay);
 
@@ -100,7 +102,7 @@ export default function LocationHoursEditor({
           className='h-7 gap-1 text-xs'
         >
           <Plus className='h-3 w-3' />
-          Add Time
+          {t('location.add_time')}
         </Button>
       </div>
 
@@ -108,7 +110,7 @@ export default function LocationHoursEditor({
       <div className='space-y-3'>
         {dayHours.length === 0 ? (
           <p className='py-4 text-center text-xs text-gray-500'>
-            No hours set for this day
+            {t('location.no_hours')}
           </p>
         ) : (
           dayHours.map(timeRange => {

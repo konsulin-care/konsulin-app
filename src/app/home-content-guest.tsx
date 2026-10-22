@@ -7,6 +7,7 @@ import ScreeningDrawer from '@/components/screening-drawer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSavedRecommendation } from '@/hooks/useSavedRecommendation';
+import { useTranslations } from '@/i18n';
 import { useRecommendations } from '@/services/recommendations';
 import { buildRecommendationParams } from '@/utils/recommendation-interview';
 import { Building2, Sparkles } from 'lucide-react';
@@ -14,8 +15,9 @@ import { useRouter } from 'next/navigation';
 
 /** Empty-state prompting the guest to start the screening interview. */
 function EmptyRecommendationState({
-  onStart
-}: Readonly<{ onStart: () => void }>) {
+  onStart,
+  t
+}: Readonly<{ onStart: () => void; t: (key: string) => string }>) {
   return (
     <div className='p-4'>
       <div className='rounded-2xl border border-dashed border-gray-300 bg-[#F9F9F9] p-6 text-center'>
@@ -24,18 +26,17 @@ function EmptyRecommendationState({
           aria-hidden='true'
         />
         <p className='mb-1 text-[14px] font-bold text-gray-800'>
-          Get matched to the right care
+          {t('get_matched')}
         </p>
         <p className='mb-4 text-[12px] text-gray-500'>
-          Answer a few quick questions and we&apos;ll recommend practitioners
-          for your concern.
+          {t('start_assessment')}
         </p>
         <Button
           variant='default'
           onClick={onStart}
           className='bg-[var(--secondary)] text-white'
         >
-          Start Assessment
+          {t('start_assessment')}
         </Button>
       </div>
     </div>
@@ -47,6 +48,7 @@ function EmptyRecommendationState({
  * (driven by the saved IndexedDB screening result) plus login CTA.
  */
 export default function HomeContentGuest() {
+  const t = useTranslations('home');
   const router = useRouter();
 
   const {
@@ -76,7 +78,7 @@ export default function HomeContentGuest() {
   /** Renders the live recommendation stack, loading, or empty variants. */
   const renderRecommendations = () => {
     if (!savedResult) {
-      return <EmptyRecommendationState onStart={openDrawer} />;
+      return <EmptyRecommendationState onStart={openDrawer} t={t} />;
     }
     if (isRecLoading) {
       return (
@@ -93,9 +95,7 @@ export default function HomeContentGuest() {
         <div className='p-4'>
           <div className='rounded-2xl border border-dashed border-gray-300 bg-[#F9F9F9] p-6 text-center'>
             <p className='text-[12px] text-gray-500'>
-              {isRecError
-                ? 'Could not load recommendations right now.'
-                : 'No practitioners found for this concern yet.'}
+              {isRecError ? t('no_recommendations') : t('no_practitioners')}
             </p>
           </div>
         </div>
@@ -130,8 +130,8 @@ export default function HomeContentGuest() {
       <div className='px-4 pb-4'>
         <ActionCard
           icon={<Building2 className='h-5 w-5 text-gray-600' />}
-          title='Show All Clinics'
-          description='Login to browse clinics'
+          title={t('show_clinics')}
+          description={t('login_browse')}
           href='/clinic'
         />
       </div>

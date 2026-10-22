@@ -4,10 +4,15 @@ import {
 } from '@/utils/recommendation-interview';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  ChiefComplaintCombobox,
-  COMBOBOX_PLACEHOLDER
-} from '../chief-complaint-combobox';
+import { ChiefComplaintCombobox } from '../chief-complaint-combobox';
+
+const COMBOBOX_PLACEHOLDER = 'Select or search concern';
+
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 
 const ALL_OPTIONS = getAllChiefComplaints();
 const MOOD_COMPLAINT = searchChiefComplaints('low mood')[0];

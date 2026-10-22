@@ -6,6 +6,7 @@ import LocationImageUploader from '@/components/shared/location-image-uploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SwitchField } from '@/components/ui/switch-field';
+import { useTranslations } from '@/i18n';
 import { DayOfWeek, TimeRange } from '@/types/availability';
 import { IWilayahResponse } from '@/types/wilayah';
 
@@ -83,6 +84,7 @@ export default function LocationFormFields({
   onUpdateTimeRange,
   onDeleteTimeRange
 }: LocationFormFieldsProps) {
+  const t = useTranslations('common');
   return (
     <div className='space-y-4'>
       <LocationImageUploader
@@ -95,13 +97,13 @@ export default function LocationFormFields({
         onCheckedChange={(checked: boolean) => {
           onStatusChange(checked ? 'active' : 'inactive');
         }}
-        label='Open'
-        offLabel='Close'
+        label={t('location.open')}
+        offLabel={t('location.close')}
       />
 
       {/* Name */}
       <div>
-        <Label htmlFor='loc-name'>Location Name</Label>
+        <Label htmlFor='loc-name'>{t('location.name')}</Label>
         <Input
           id='loc-name'
           type='text'
@@ -109,16 +111,16 @@ export default function LocationFormFields({
           onChange={e => {
             onNameChange(e.target.value);
           }}
-          placeholder='Main Clinic'
+          placeholder={t('location.name_placeholder')}
           className='bg-white'
-          aria-label='Location Name'
+          aria-label={t('location.name')}
           maxLength={30}
         />
       </div>
 
       {/* Address line */}
       <div>
-        <Label htmlFor='loc-address'>Address</Label>
+        <Label htmlFor='loc-address'>{t('location.address')}</Label>
         <Input
           id='loc-address'
           type='text'
@@ -126,9 +128,9 @@ export default function LocationFormFields({
           onChange={e => {
             onAddressLineChange(e.target.value);
           }}
-          placeholder='Jl. Example No. 1'
+          placeholder={t('location.address_placeholder')}
           className='bg-white'
-          aria-label='Address'
+          aria-label={t('location.address')}
         />
       </div>
 
@@ -137,7 +139,7 @@ export default function LocationFormFields({
         options={listProvinces}
         value={provinceCode}
         onSelect={onProvinceSelect}
-        placeholder='Select Province'
+        placeholder={t('location.select_province')}
         loading={provinceLoading}
       />
 
@@ -146,7 +148,7 @@ export default function LocationFormFields({
           options={listCities}
           value={cityCode}
           onSelect={onCitySelect}
-          placeholder='Select City'
+          placeholder={t('location.select_city')}
           loading={cityLoading}
         />
       )}
@@ -156,7 +158,7 @@ export default function LocationFormFields({
           options={listDistricts}
           value={districtCode}
           onSelect={onDistrictSelect}
-          placeholder='Select District'
+          placeholder={t('location.select_district')}
           loading={districtLoading}
         />
       )}
@@ -164,7 +166,7 @@ export default function LocationFormFields({
       {/* Position */}
       <div className='flex gap-2'>
         <div className='flex-1'>
-          <Label htmlFor='loc-longitude'>Longitude</Label>
+          <Label htmlFor='loc-longitude'>{t('location.longitude')}</Label>
           <Input
             id='loc-longitude'
             type='number'
@@ -174,12 +176,12 @@ export default function LocationFormFields({
             }}
             placeholder='106.846'
             className='bg-white'
-            aria-label='Longitude'
+            aria-label={t('location.longitude')}
             step='any'
           />
         </div>
         <div className='flex-1'>
-          <Label htmlFor='loc-latitude'>Latitude</Label>
+          <Label htmlFor='loc-latitude'>{t('location.latitude')}</Label>
           <Input
             id='loc-latitude'
             type='number'
@@ -189,7 +191,7 @@ export default function LocationFormFields({
             }}
             placeholder='-6.305'
             className='bg-white'
-            aria-label='Latitude'
+            aria-label={t('location.latitude')}
             step='any'
           />
         </div>

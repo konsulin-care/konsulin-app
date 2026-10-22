@@ -1,6 +1,7 @@
 'use client';
 
 import Avatar from '@/components/general/avatar';
+import { useTranslations } from '@/i18n';
 import type { MergedSession } from '@/types/appointment';
 import { generateAvatarPlaceholder, mergeNames } from '@/utils/helper';
 import { capitalizeFirstLetter } from '@/utils/validation';
@@ -19,6 +20,7 @@ export default function SessionCard({
   locationColor,
   locationName
 }: Readonly<Props>) {
+  const t = useTranslations('common');
   const sessionStartTime = session.slotStart
     ? format(parseISO(session.slotStart), 'HH:mm')
     : '-:-';
@@ -53,7 +55,7 @@ export default function SessionCard({
         <div className='flex items-center gap-2'>
           {isProcessing && (
             <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
-              Processing
+              {t('processing')}
             </span>
           )}
           {locationName && (
@@ -79,8 +81,10 @@ export default function SessionCard({
         <div className='mr-auto text-[12px] font-bold'>{displayName}</div>
         <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
           {session.appointmentType
-            ? `${capitalizeFirstLetter(session.appointmentType)} Session`
-            : 'Session'}
+            ? t('session_type', {
+                type: `${capitalizeFirstLetter(session.appointmentType)}`
+              })
+            : t('session')}
         </div>
       </div>
     </Link>

@@ -7,6 +7,61 @@ import { mockAuth } from '@/__tests__/react-test-utils';
 // Mocks
 // ---------------------------------------------------------------------------
 
+const { mockLocale, mockToastError } = vi.hoisted(() => ({
+  mockLocale: { current: 'id' },
+  mockToastError: vi.fn()
+}));
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => {
+    const locale = mockLocale.current;
+    const translations: Record<string, string> = {
+      personal_info: 'Personal Information',
+      contact: 'Contact',
+      address: 'Address',
+      gender: 'Gender',
+      birth_date: 'Date of Birth',
+      language: 'Language',
+      email: 'Email',
+      phone: 'Phone',
+      line: 'Line',
+      district: 'District',
+      city: 'City',
+      province: 'Province',
+      postal_code: 'Postal Code',
+      incomplete: 'Your profile is incomplete.',
+      incomplete_desc:
+        'Please update your information to complete registration.',
+      dismiss: 'Dismiss',
+      update_photo: 'Update Photo',
+      profile_photo: 'Profile photo',
+      professional: 'Professional',
+      additional: 'Additional',
+      delete_account: 'Delete Account',
+      log_out: 'Log out',
+      edit_name: locale === 'id' ? 'Ubah nama' : 'Edit name',
+      select_option: locale === 'id' ? 'Pilih opsi' : 'Select option',
+      photo_update_failed:
+        locale === 'id'
+          ? 'Gagal memperbarui foto profil'
+          : 'Failed to update profile photo'
+    };
+    return translations[key] ?? key;
+  })
+}));
+
+vi.mock('react-toastify', () => ({
+  toast: { error: mockToastError, success: vi.fn() }
+}));
+
+vi.mock('@/services/profile', () => ({
+  uploadAvatar: vi.fn()
+}));
+
+vi.mock('@/utils/image-processing', () => ({
+  processImageForAvatar: vi.fn()
+}));
+
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: vi.fn()
 }));
@@ -66,10 +121,13 @@ vi.mock('next/image', async () => {
 });
 
 import CompletenessBanner from '@/components/profile/completeness-banner';
+import DropdownProfile from '@/components/profile/dropdown-profile';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
+import { uploadAvatar } from '@/services/profile';
 import type { RoleProfile } from '@/services/role-profiles';
 import type { Patient } from 'fhir/r4';
+import { useAvatarUpload } from '../hooks/useAvatarUpload';
 import { useProfileData } from '../hooks/useProfileData';
 import { useProfilePhotoSave } from '../hooks/useProfilePhotoSave';
 import ProfileDisplay from '../profile-display';
@@ -145,6 +203,7 @@ function mockProfileHooks(
 describe('Profile page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLocale.current = 'id';
   });
 
   afterEach(() => {
@@ -234,6 +293,12 @@ describe('Profile page', () => {
     it('does not render when show is false', () => {
       const { container } = render(<CompletenessBanner show={false} />);
       expect(container.firstChild).toBeNull();
+    });
+
+    it('marks the dismiss icon as decorative for screen readers', () => {
+      render(<CompletenessBanner show />);
+      const icon = screen.getByLabelText('Dismiss').querySelector('svg');
+      expect(icon?.getAttribute('aria-hidden')).toBe('true');
     });
 
     it('dismisses on the dismiss button', () => {
@@ -379,6 +444,95 @@ describe('Profile page', () => {
       );
       expect(duplicateKeyCall).toBeUndefined();
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Profile strings per locale', () => {
+    /** Render the composed page with a fixed Patient auth state. */
+    function renderProfilePage() {
+      mockAuth(vi.mocked(useAuth), {
+        role_name: 'Patient',
+        fhirId: 'pat-1',
+        profile_complete: true
+      });
+      mockProfileHooks('Patient');
+      render(<ProfileDisplay />);
+    }
+
+    it('shows the edit-name aria-label in Indonesian under id', () => {
+      mockLocale.current = 'id';
+      renderProfilePage();
+      expect(screen.getByTestId('edit-name')).toHaveAttribute(
+        'aria-label',
+        'Ubah nama'
+      );
+    });
+
+    it('shows the edit-name aria-label in English under en', () => {
+      mockLocale.current = 'en';
+      renderProfilePage();
+      expect(screen.getByTestId('edit-name')).toHaveAttribute(
+        'aria-label',
+        'Edit name'
+      );
+    });
+
+    it('shows the select option placeholder in Indonesian under id', () => {
+      mockLocale.current = 'id';
+      render(
+        <DropdownProfile
+          options={[]}
+          value=''
+          placeholder=''
+          labelPlaceholder=''
+          onSelect={vi.fn()}
+        />
+      );
+      expect(screen.getByText('Pilih opsi')).toBeDefined();
+    });
+
+    it('shows the select option placeholder in English under en', () => {
+      mockLocale.current = 'en';
+      render(
+        <DropdownProfile
+          options={[]}
+          value=''
+          placeholder=''
+          labelPlaceholder=''
+          onSelect={vi.fn()}
+        />
+      );
+      expect(screen.getByText('Select option')).toBeDefined();
+    });
+
+    /** Trigger a failed avatar upload and assert the shown toast text. */
+    async function expectAvatarFailureToast(expected: string) {
+      vi.mocked(uploadAvatar).mockRejectedValue(new Error('upload failed'));
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        // skipcq: JS-0321 — intentional: suppress console noise in test
+        .mockImplementation(() => {});
+      const { result } = renderHook(() =>
+        useAvatarUpload({
+          photo: 'data:image/png;base64,AAAA',
+          fhirId: 'fhir-1',
+          setIsUploadingPhoto: vi.fn()
+        })
+      );
+      const url = await result.current.resolvePhotoUrl('', 'cw-1', () => false);
+      expect(url).toBe('');
+      expect(mockToastError).toHaveBeenCalledWith(expected);
+      consoleSpy.mockRestore();
+    }
+
+    it('shows the avatar failure toast in Indonesian under id', async () => {
+      mockLocale.current = 'id';
+      await expectAvatarFailureToast('Gagal memperbarui foto profil');
+    });
+
+    it('shows the avatar failure toast in English under en', async () => {
+      mockLocale.current = 'en';
+      await expectAvatarFailureToast('Failed to update profile photo');
     });
   });
 });

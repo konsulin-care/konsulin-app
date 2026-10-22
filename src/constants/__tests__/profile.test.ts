@@ -1,11 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { languageOptions, settingMenus } from '../profile';
+import {
+  genderList,
+  languageOptions,
+  medalLists,
+  settingMenus
+} from '../profile';
+
+describe('medalLists', () => {
+  it('keeps role titles in English as brand copy, not i18n keys', () => {
+    expect(medalLists.length).toBeGreaterThan(0);
+    for (const medal of medalLists) {
+      expect(medal.title).toBe('Survivor');
+    }
+  });
+});
 
 describe('languageOptions', () => {
-  it('offers exactly Indonesian and English', () => {
+  it('offers exactly Indonesian and English via translation keys', () => {
     expect(languageOptions).toEqual([
-      { code: 'id', label: 'Indonesian' },
-      { code: 'en', label: 'English' }
+      { code: 'id', labelKey: 'profile.lang_id' },
+      { code: 'en', labelKey: 'profile.lang_en' }
+    ]);
+  });
+});
+
+describe('genderList', () => {
+  it('offers male and female via translation keys, not display text', () => {
+    expect(genderList).toEqual([
+      { nameKey: 'profile.gender_male', code: 'male' },
+      { nameKey: 'profile.gender_female', code: 'female' }
     ]);
   });
 });
@@ -16,15 +39,15 @@ describe('settingMenus', () => {
   });
 
   it('does not contain Settings', () => {
-    const names = settingMenus.map(m => m.name);
-    expect(names).not.toContain('Settings');
+    const nameKeys = settingMenus.map(m => m.nameKey);
+    expect(nameKeys).not.toContain('settings');
   });
 
   it.each([
-    { name: 'Delete Account', link: '/remove-account', icon: 'trash2' },
-    { name: 'Log out', link: '/logout', icon: 'logout' }
-  ])('$name has link $link and icon $icon', item => {
-    const found = settingMenus.find(m => m.name === item.name);
+    { nameKey: 'delete_account', link: '/remove-account', icon: 'trash2' },
+    { nameKey: 'log_out', link: '/logout', icon: 'logout' }
+  ])('$nameKey has link $link and icon $icon', item => {
+    const found = settingMenus.find(m => m.nameKey === item.nameKey);
     expect(found?.link).toBe(item.link);
     expect(found?.icon).toBe(item.icon);
   });

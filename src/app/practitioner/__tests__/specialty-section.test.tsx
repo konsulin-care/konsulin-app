@@ -19,6 +19,11 @@ type DirtyHandler = (
   saving: boolean
 ) => void;
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 vi.mock('@/services/clinicians', () => ({
   useUpdatePractitionerInfo: () => ({ mutateAsync: mockMutateAsync })
 }));

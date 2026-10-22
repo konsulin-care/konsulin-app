@@ -2,6 +2,7 @@
 
 import { LoadingSpinnerIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/i18n';
 import { FloatingSaveButtonProps } from '@/types/availability';
 
 /**
@@ -14,6 +15,7 @@ export default function FloatingSaveButton({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onCancel
 }: FloatingSaveButtonProps) {
+  const t = useTranslations('common');
   return (
     <div className='fixed right-6 bottom-6 z-50 flex gap-2'>
       <Button
@@ -33,7 +35,7 @@ export default function FloatingSaveButton({
             Saving...
           </>
         ) : (
-          'Save Changes'
+          t('practitioner.save_changes')
         )}
       </Button>
     </div>

@@ -1,6 +1,13 @@
 import { DayOfWeek, TimeRange } from '@/types/availability';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 import LocationHoursEditor from '../location-hours-editor';
 
 const emptyHours: Record<DayOfWeek, TimeRange[]> = {

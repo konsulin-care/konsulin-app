@@ -2,6 +2,18 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ShareResearchButton from '../share-research-button';
 
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn((namespace: string) => (key: string) => {
+    const translations: Record<string, Record<string, string>> = {
+      research: {
+        share_default_label: 'Tap to share this survey',
+        share_copied: 'Link copied!'
+      }
+    };
+    return translations[namespace]?.[key] ?? key;
+  })
+}));
+
 describe('ShareResearchButton', () => {
   const TITLE = 'Sleep Cohort';
   const ORIGIN = 'https://konsulin.care';

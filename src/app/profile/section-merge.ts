@@ -56,20 +56,10 @@ export function mergePersonalInfo(
 }
 
 /**
- * Sync-safe personal-info merge for the other roles of a multi-role user:
- * gender and birthDate only. The communication language stays per role, so
- * it is never written into another role's resource.
+ * Personal-info merge for the other roles of a multi-role user. Language
+ * is synced across all roles so the user sees a consistent UI.
  */
-export function mergePersonalInfoSync(
-  latest: ProfileResource,
-  values: PersonalInfoValues
-): ProfileResource {
-  return {
-    ...latest,
-    gender: values.gender,
-    birthDate: values.birthDate
-  } as ProfileResource;
-}
+export const mergePersonalInfoSync = mergePersonalInfo;
 
 /** Merge contact fields into a fresh telecom array. */
 export function mergeContact(

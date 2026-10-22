@@ -2,6 +2,7 @@
 import LocationFormFields from '@/components/shared/location-form-fields';
 import AppDrawer from '@/components/ui/app-drawer';
 import { useLocationFormState } from '@/hooks/useLocationFormState';
+import { useTranslations } from '@/i18n';
 import { STORES, dbGet } from '@/lib/indexeddb';
 import { getAPI } from '@/services/api';
 import {
@@ -53,6 +54,8 @@ type Props = {
 
 /** Drawer for editing a full FHIR Location resource. */
 export default function EditLocationDrawer({ locationId, onClose }: Props) {
+  const t = useTranslations('common');
+  const toastT = useTranslations('toast');
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const {
@@ -234,9 +237,9 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
       })
       .catch((err: unknown) => {
         console.error('Failed to submit location:', err);
-        toast.error('Failed to save location. Please try again.');
+        toast.error(toastT('location_save_failed'));
       });
-  }, [isValid, isSubmitting, doSubmit, onClose, setIsSubmitting]);
+  }, [isValid, isSubmitting, doSubmit, onClose, setIsSubmitting, toastT]);
 
   const content =
     isLoading || !isDataLoaded ? (
@@ -280,9 +283,9 @@ export default function EditLocationDrawer({ locationId, onClose }: Props) {
     <AppDrawer
       open
       onClose={onClose}
-      title='Edit Location'
-      description='Update location details.'
-      ctaLabel='Save'
+      title={t('location.edit_title')}
+      description={t('location.edit_description')}
+      ctaLabel={t('location.save_cta')}
       onCtaClick={handleSubmit}
       ctaDisabled={!isValid || isSubmitting}
       ctaLoading={isSubmitting}
