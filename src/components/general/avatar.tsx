@@ -1,58 +1,67 @@
+'use client';
+
 import { cn } from '@/lib/utils';
+import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type Props = {
   photoUrl?: string;
   height?: number;
   width?: number;
   initials: string;
-  backgroundColor: string;
+  backgroundColor?: string; // NOSONAR: kept for API compat; fallback uses brand color (post-RC follow-up to wire prop)
   className?: string;
   imageClassName?: string;
   isRadiusIcon?: boolean;
+  seed?: string;
 };
 
+/**
+ *
+ */
 export default function Avatar({
   photoUrl,
   initials,
-  backgroundColor,
   height = 100,
   width = 100,
   className = '',
   imageClassName = '',
-  isRadiusIcon = true
+  isRadiusIcon = true,
+  seed
 }: Props) {
   const [fallback, setFallback] = useState(false);
 
-  return (
-    <>
-      {photoUrl && !fallback ? (
-        <Image
-          className={cn(
-            isRadiusIcon
-              ? `h-[${height}px] w-[${width}px] rounded-full object-cover`
-              : '',
-            imageClassName
-          )}
-          src={photoUrl}
-          alt='practitioner'
-          width={width}
-          height={height}
-          unoptimized
-          onError={() => setFallback(true)}
-        />
-      ) : (
-        <div
-          className={cn(
-            `flex h-[${height}px] w-[${width}px] items-center justify-center rounded-full font-bold text-white`,
-            className
-          )}
-          style={{ backgroundColor }}
-        >
-          {initials}
-        </div>
+  const generatedUrl = useMemo(() => {
+    if (photoUrl || !seed) return null;
+    return generateAvatarSvgDataUrl(seed, initials);
+  }, [photoUrl, seed, initials]);
+
+  const displayUrl = photoUrl || generatedUrl;
+
+  return displayUrl && !fallback ? (
+    <Image
+      className={cn(
+        isRadiusIcon ? 'rounded-full object-cover' : '',
+        imageClassName
       )}
-    </>
+      src={displayUrl}
+      alt='practitioner'
+      width={width}
+      height={height}
+      style={{ height, width }}
+      unoptimized
+      onError={() => setFallback(true)}
+    />
+  ) : (
+    <div
+      className={cn(
+        'flex items-center justify-center rounded-full font-bold text-white',
+        className
+      )}
+      style={{ backgroundColor: '#13c2c2', height, width }}
+    >
+      {initials}
+    </div>
   );
 }

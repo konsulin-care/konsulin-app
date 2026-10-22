@@ -1,0 +1,20 @@
+{
+  "Allopathic & Osteopathic Physicians": "physical-health",
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers": "functional-capacity",
+  "Technologists, Technicians & Other Technical Service Providers": "physical-health",
+  "Nursing Service Providers": "physical-health",
+  "Physician Assistants & Advanced Practice Nursing Providers": "physical-health",
+  "Behavioral Health & Social Service Providers": "mental-emotional-health",
+  "Other Service Providers": "functional-capacity",
+  "Dental Providers": "physical-health",
+  "Pharmacy Service Providers": "physical-health",
+  "Eye and Vision Services Providers": "physical-health.sensory",
+  "Dietary & Nutritional Service Providers": "health-behaviours-lifestyle.eating-weight",
+  "Nursing Service Related Providers": "physical-health",
+  "Chiropractic Providers": "physical-health.musculoskeletal",
+  "Podiatric Medicine & Surgery Service Providers": "physical-health.musculoskeletal",
+  "Speech, Language and Hearing Service Providers": "functional-capacity",
+  "Emergency Medical Service Providers": "physical-health",
+  "Group": "physical-health",
+  "Student, Health Care": "physical-health"
+}

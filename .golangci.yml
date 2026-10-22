@@ -1,0 +1,44 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - gocyclo
+    - ineffassign
+    - staticcheck
+    - unused
+    - dupl
+    - gosec
+    - usetesting
+    - gocritic
+
+  settings:
+    gocyclo:
+      min-complexity: 15
+    errcheck:
+      check-type-assertions: true
+    staticcheck:
+      checks:
+        - all
+    dupl:
+      threshold: 100
+    gocritic:
+      disable-all: true
+      enabled-checks:
+        - httpNoBody
+        - exitAfterDefer
+        - singleCaseSwitch
+
+  exclusions:
+    paths:
+      - node_modules
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gocyclo
+          - gosec
+      - linters:
+          - usetesting
+        text: "os\\.Setenv"

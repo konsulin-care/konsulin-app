@@ -1,9 +1,7 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 
-import {
-  ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY,
-  ANONYMOUS_SESSION_IDENTIFIER_SYSTEM
-} from '@/constants/anonymous-session';
+import { ANONYMOUS_SESSION_IDENTIFIER_SYSTEM } from '@/constants/anonymous-session';
 import { getAPI } from '@/services/api';
 import { Identifier } from 'fhir/r4';
 
@@ -12,6 +10,7 @@ type AnonymousSessionResponse = {
   guest_id?: string;
 };
 
+/** Decodes the payload of a JWT token without verification. */
 export const decodeJwtPayload = (
   token: string
 ): Record<string, unknown> | null => {
@@ -30,24 +29,12 @@ export const decodeJwtPayload = (
   }
 };
 
-export const getCachedGuestId = (): string | null => {
-  try {
-    return localStorage.getItem(ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-};
-
-export const cacheGuestId = (guestId: string) => {
-  try {
-    localStorage.setItem(ANONYMOUS_SESSION_GUEST_ID_STORAGE_KEY, guestId);
-  } catch {
-    // ignore storage errors
-  }
-};
-
+/**
+ * Ensures an anonymous session exists, creating one if needed.
+ * Returns the resolved guest ID from the session token or response body.
+ */
 export const ensureAnonymousSession = async (
-  forceNew: boolean = false
+  forceNew = false
 ): Promise<string> => {
   const API = await getAPI();
   const url = '/api/v1/auth/anonymous-session';
@@ -79,10 +66,10 @@ export const ensureAnonymousSession = async (
     throw new Error('Failed to resolve guest_id from anonymous session');
   }
 
-  cacheGuestId(guestId);
   return guestId;
 };
 
+/** Builds a FHIR Identifier for the anonymous session guest ID. */
 export const buildAnonymousIdentifier = (guestId: string): Identifier => {
   return {
     system: ANONYMOUS_SESSION_IDENTIFIER_SYSTEM,

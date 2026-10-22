@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable sonarjs/no-commented-code */
 
 import React, { ReactNode, createContext, useContext, useReducer } from 'react';
 import { initialState, reducer } from './profileReducer';
@@ -22,6 +23,7 @@ const ProfileContext = createContext<
   | undefined
 >(undefined);
 
+/** Profile context provider wrapping children with profile state. */
 export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
   children
 }) => {
@@ -34,6 +36,7 @@ export const ProfileProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
+/** Hook to access profile context; throws if used outside provider. */
 export const useProfile = (): ProfileContextProps => {
   const context = useContext(ProfileContext);
   if (!context) {

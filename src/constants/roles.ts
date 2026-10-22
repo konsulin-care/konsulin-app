@@ -4,5 +4,7 @@
 export const Roles = {
   Practitioner: 'Practitioner',
   Patient: 'Patient',
-  Guest: 'Guest'
+  Guest: 'Guest',
+  ClinicAdmin: 'Clinic Admin',
+  Researcher: 'Researcher'
 } as const;

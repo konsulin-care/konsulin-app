@@ -5,6 +5,7 @@ import {
   DropdownMenuItem as DropdownItem,
   DropdownMenuTrigger as DropdownTrigger
 } from '@/components/ui/dropdown-menu';
+import { useTranslations } from '@/i18n';
 import { Check, ChevronDown } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { LoadingSpinnerIcon } from '../icons';
@@ -24,6 +25,38 @@ type DropdownProps = {
   onSelect: (value: DropdownOption) => void;
 };
 
+type TriggerValueProps = Omit<DropdownProps, 'onSelect'>;
+
+/**
+ * Trigger button display: loading spinner or resolved option/placeholder text.
+ */
+function TriggerValue({
+  options,
+  value,
+  placeholder,
+  labelPlaceholder,
+  loading
+}: Readonly<TriggerValueProps>) {
+  const tCommon = useTranslations('common');
+  return (
+    <span className='text-sm font-normal text-[#2C2F35]'>
+      {loading ? (
+        <LoadingSpinnerIcon
+          width={20}
+          height={20}
+          className='w-full animate-spin'
+        />
+      ) : (
+        options?.find(option => option.code === value)?.name ||
+        (!value && labelPlaceholder) ||
+        placeholder ||
+        tCommon('select_option')
+      )}
+    </span>
+  );
+}
+
+/** Profile dropdown selector with search and keyboard navigation. */
 const DropdownProfile: React.FC<DropdownProps> = ({
   options,
   value,
@@ -51,21 +84,13 @@ const DropdownProfile: React.FC<DropdownProps> = ({
             className='h-[56px] w-full justify-between bg-white'
             disabled={loading}
           >
-            <span className='text-sm font-normal text-[#2C2F35]'>
-              {loading ? (
-                <LoadingSpinnerIcon
-                  width={20}
-                  height={20}
-                  className='w-full animate-spin'
-                />
-              ) : (
-                (options &&
-                  options.find(option => option.code === value)?.name) ||
-                (!value && labelPlaceholder) ||
-                placeholder ||
-                'Select Option'
-              )}
-            </span>
+            <TriggerValue
+              options={options}
+              value={value}
+              placeholder={placeholder}
+              labelPlaceholder={labelPlaceholder}
+              loading={loading}
+            />
             <ChevronDown
               className='ml-2 h-4 w-4 shrink-0 opacity-50'
               color='#18AAA1'
@@ -76,23 +101,22 @@ const DropdownProfile: React.FC<DropdownProps> = ({
           style={{ minWidth: triggerWidth }}
           className='max-h-60 overflow-y-auto bg-white'
         >
-          {options &&
-            options.map(item => (
-              <DropdownItem
-                key={item.code}
-                onSelect={() => onSelect(item)}
-                className={`w-full bg-white hover:bg-gray-50 focus:bg-gray-100 ${
-                  value === item.code ? 'bg-secondary text-white' : ''
-                }`}
-              >
-                <div className='flex w-full items-center justify-between px-4 py-2'>
-                  <span>{item.name}</span>
-                  {value === item.code && (
-                    <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
-                  )}
-                </div>
-              </DropdownItem>
-            ))}
+          {options?.map(item => (
+            <DropdownItem
+              key={item.code}
+              onSelect={() => onSelect(item)}
+              className={`w-full bg-white hover:bg-gray-50 focus:bg-gray-100 ${
+                value === item.code ? 'bg-secondary text-white' : ''
+              }`}
+            >
+              <div className='flex w-full items-center justify-between px-4 py-2'>
+                <span>{item.name}</span>
+                {value === item.code && (
+                  <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
+                )}
+              </div>
+            </DropdownItem>
+          ))}
         </DropdownContent>
       </Dropdown>
     </div>

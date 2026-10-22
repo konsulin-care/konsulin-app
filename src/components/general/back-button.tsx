@@ -8,6 +8,7 @@ type Props = {
   route?: string;
 };
 
+/** Navigate back with optional route override. */
 const BackButton = ({ size = 32, route }: Props) => {
   const router = useRouter();
 

@@ -4,27 +4,45 @@ on:
   pull_request:
     branches:
       - develop
+      - rc
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [24.x]
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+      - name: Install mise-managed tools (Go, Node)
+        uses: jdx/mise-action@7a4e45a543138629540c9a1616d08632b893e492 # v5.0.1
+
+      - name: Cache Go modules
+        uses: actions/cache@v6
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
+          path: |
+            ~/.cache/go
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-      - name: Install dependencies
+      - name: Run Go tests
+        run: make test-go
+
+      - name: Build Go binary
+        run: go build ./cmd/konsulin-app
+
+      - name: Install npm dependencies
         run: npm ci
 
-      - name: Run build
+      - name: Lint JS/TS
+        uses: reviewdog/action-eslint@3ee2a450da17e060b9dfa4bffd53976906c6b2b0 # v1.36.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-check
+          eslint_flags: "src/"
+          fail_level: error
+
+      - name: Run Next.js build
         run: npm run build

@@ -1,15 +1,16 @@
+/* eslint-disable max-lines */
 import { IBundleResponse, IJournal } from '@/types/record';
+import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
 import { getUtcDayRange } from '@/utils/helper';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Bundle } from 'fhir/r4';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Bundle, Observation } from 'fhir/r4';
 import { getAPI } from '../api';
-
 type IFilterRecord = {
   patientId: string;
   startDate: string;
   endDate: string;
 };
-
+/** Fetch record summaries for a patient within a date range. */
 export const useRecordSummary = () => {
   return useMutation<IBundleResponse[], Error, { patientId: string }>({
     mutationKey: ['record-summary-patient'],
@@ -39,11 +40,10 @@ export const useRecordSummary = () => {
           }
         ]
       };
-
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
-        return response.data.entry;
+        const response = await API.post<Bundle>('/fhir', payload);
+        return (response.data.entry ?? []) as unknown as IBundleResponse[];
       } catch (error) {
         console.error('Error fetching record summary:', error);
         throw error;
@@ -51,7 +51,51 @@ export const useRecordSummary = () => {
     }
   });
 };
-
+/** Build a FHIR batch bundle for fetching patient records. */
+function buildRecordBatchPayload(patientId: string) {
+  return {
+    type: 'batch',
+    resourceType: 'Bundle',
+    id: 'search-record-for-patient',
+    entry: [
+      {
+        request: {
+          method: 'GET',
+          url: `/QuestionnaireResponse?patient=${patientId}&author=Patient/${patientId}&_sorted=-_lastUpdated`
+        }
+      },
+      {
+        request: {
+          method: 'GET',
+          url: `/Observation?patient=${patientId}&code=http://loinc.org|51855-5&_sorted=-_lastUpdated`
+        }
+      },
+      {
+        request: {
+          method: 'GET',
+          url: `/Observation?patient=${patientId}&code=http://loinc.org|67855-7&_sorted=-_lastUpdated`
+        }
+      }
+    ]
+  };
+}
+/** Query patient record summary (QuestionnaireResponse + Observations). */
+export const useRecordSummaryQuery = (patientId: string) => {
+  return useQuery({
+    queryKey: ['patient-records', patientId],
+    queryFn: async () => {
+      const API = await getAPI();
+      const response = await API.post<Bundle>(
+        '/fhir',
+        buildRecordBatchPayload(patientId)
+      );
+      return (response.data.entry ?? []) as IBundleResponse[];
+    },
+    enabled: Boolean(patientId),
+    staleTime: 60 * 1000
+  });
+};
+/** Filter patient records by date range. */
 export const useFilterRecordByDate = () => {
   return useMutation<IBundleResponse[], Error, IFilterRecord>({
     mutationKey: ['filtered-record-summary-patient'],
@@ -60,7 +104,6 @@ export const useFilterRecordByDate = () => {
         new Date(startDate),
         new Date(endDate)
       );
-
       const payload = {
         type: 'batch',
         resourceType: 'Bundle',
@@ -86,11 +129,10 @@ export const useFilterRecordByDate = () => {
           }
         ]
       };
-
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
-        return response.data.entry;
+        const response = await API.post<Bundle>('/fhir', payload);
+        return (response.data.entry ?? []) as unknown as IBundleResponse[];
       } catch (error) {
         console.error('Error fetching record summary:', error);
         throw error;
@@ -98,7 +140,7 @@ export const useFilterRecordByDate = () => {
     }
   });
 };
-
+/** Fetch patient records from a practitioner perspective. */
 export const useRecordSummaryPractitioner = () => {
   return useMutation<Bundle, Error, { patientId: string }>({
     mutationKey: ['record-summary-practitioner'],
@@ -123,15 +165,14 @@ export const useRecordSummaryPractitioner = () => {
           {
             request: {
               method: 'GET',
-              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=Questionnaire/soap&_sorted=-_lastUpdated`
+              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=${toCanonicalQuestionnaireUrl('soap')}&_sorted=-_lastUpdated`
             }
           }
         ]
       };
-
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
+        const response = await API.post<Bundle>('/fhir', payload);
         return response.data;
       } catch (error) {
         console.error('Error fetching record summary:', error);
@@ -140,7 +181,7 @@ export const useRecordSummaryPractitioner = () => {
     }
   });
 };
-
+/** Filter practitioner-view records by date range. */
 export const useFilterRecordPractitionerByDate = () => {
   return useMutation<Bundle, Error, IFilterRecord>({
     mutationKey: ['filtered-record-summary-practitioner'],
@@ -149,7 +190,6 @@ export const useFilterRecordPractitionerByDate = () => {
         new Date(startDate),
         new Date(endDate)
       );
-
       const payload = {
         type: 'batch',
         resourceType: 'Bundle',
@@ -170,15 +210,14 @@ export const useFilterRecordPractitionerByDate = () => {
           {
             request: {
               method: 'GET',
-              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=Questionnaire/soap&authored=le${utcEnd}&date=ge${utcStart}&_sorted=-_lastUpdated`
+              url: `/QuestionnaireResponse?patient=${patientId}&questionnaire=${toCanonicalQuestionnaireUrl('soap')}&authored=le${utcEnd}&date=ge${utcStart}&_sorted=-_lastUpdated`
             }
           }
         ]
       };
-
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir', payload);
+        const response = await API.post<Bundle>('/fhir', payload);
         return response.data;
       } catch (error) {
         console.error('Error fetching record summary:', error);
@@ -187,13 +226,13 @@ export const useFilterRecordPractitionerByDate = () => {
     }
   });
 };
-
+/** Fetch a single record by ID and resource type. */
 export const useGetSingleRecord = ({
   id,
   resourceType
 }: {
   id: string;
-  resourceType: 'Observation' | 'QuestionnaireResponse';
+  resourceType: 'Observation' | 'QuestionnaireResponse' | 'Condition';
 }) => {
   return useQuery({
     queryKey: ['single-record', id],
@@ -203,13 +242,15 @@ export const useGetSingleRecord = ({
       return response;
     },
     select: response => {
-      return response.data || null;
+      return response.data || null; // eslint-disable-line @typescript-eslint/no-unsafe-return
     },
-    enabled: !!id && !!resourceType
+    enabled: Boolean(id) && Boolean(resourceType)
   });
 };
-
+/** Submit a new journal entry (Observation). */
 export const useSubmitJournal = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['journal'],
     mutationFn: async (journalData: IJournal) => {
@@ -217,23 +258,31 @@ export const useSubmitJournal = () => {
 
       try {
         const API = await getAPI();
-        const response = await API.post('/fhir/Observation', payload);
+        const response = await API.post<Observation>(
+          '/fhir/Observation',
+          payload
+        );
         return response.data;
       } catch (error) {
         console.error('Error fetching record summary:', error);
         throw error;
       }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['journals'] });
     }
   });
 };
-
+/** Update an existing journal entry (Observation). */
 export const useUpdateJournal = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationKey: ['journal-update'],
     mutationFn: async (journalData: IJournal) => {
       try {
         const API = await getAPI();
-        const response = await API.put(
+        const response = await API.put<Observation>(
           `/fhir/Observation/${journalData.id}`,
           journalData
         );
@@ -242,6 +291,37 @@ export const useUpdateJournal = () => {
         console.error('Error fetching record summary:', error);
         throw error;
       }
+    },
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['journals'] });
+      if (variables.id) {
+        await queryClient.invalidateQueries({
+          queryKey: ['single-record', variables.id]
+        });
+      }
+    }
+  });
+};
+/** Delete a journal entry (Observation). */
+export const useDeleteJournal = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: ['journal-delete'],
+    mutationFn: async (id: string) => {
+      try {
+        const API = await getAPI();
+        await API.delete(`/fhir/Observation/${id}`);
+      } catch (error) {
+        console.error('Error deleting journal:', error);
+        throw error;
+      }
+    },
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['journals'] });
+      await queryClient.invalidateQueries({
+        queryKey: ['single-record', variables]
+      });
     }
   });
 };

@@ -1,0 +1,96 @@
+import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
+
+const FHIR_ID_MAP_PREFIX = 'fhirId_map_';
+
+/** Keys that could cause prototype pollution if used as dynamic object keys. */
+const BANNED_KEYS = new Set([
+  '__proto__',
+  'constructor',
+  'prototype',
+  'toString',
+  'valueOf',
+  'hasOwnProperty',
+  'toLocaleString',
+  'isPrototypeOf',
+  'propertyIsEnumerable'
+]);
+
+/** Check if a role key is safe to use as an object property. */
+function isValidRoleKey(key: string): boolean {
+  return !BANNED_KEYS.has(key) && !key.startsWith('__');
+}
+
+/** Safely read a role key from the map, guarding against prototype pollution. */
+function getRoleValue(
+  map: Record<string, string>,
+  role: string
+): string | undefined {
+  // Allow banned keys that already exist (backward compat for stored data).
+  if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
+    throw new TypeError(`Invalid role key: ${role}`);
+  }
+  // skipcq: JS-0376 - guarded by isValidRoleKey() + BANNED_KEYS above
+  return map[role];
+}
+
+/** Safely set a role key in the map, guarding against prototype pollution. */
+function setRoleValue(
+  map: Record<string, string>,
+  role: string,
+  value: string
+): void {
+  // Allow overwriting banned keys that already exist.
+  if (!Object.hasOwn(map, role) && !isValidRoleKey(role)) {
+    throw new TypeError(`Invalid role key: ${role}`);
+  }
+  // skipcq: JS-0376 - guarded by isValidRoleKey() + BANNED_KEYS above
+  map[role] = value;
+}
+
+/** Build the compound key for a user's fhirId map in uiPreferences. */
+function mapKey(userId: string): string {
+  return `${FHIR_ID_MAP_PREFIX}${userId}`;
+}
+
+/** Read the full fhirId map for a user from IndexedDB. */
+export async function getFhirIdMap(
+  userId: string
+): Promise<Record<string, string>> {
+  const entry = await dbGet<{ value: Record<string, string> }>(
+    STORES.uiPreferences,
+    ['', mapKey(userId)]
+  );
+  return entry?.value ?? {};
+}
+
+/** Persist a full fhirId map for a user. */
+export async function storeFhirIdMap(
+  userId: string,
+  map: Record<string, string>
+): Promise<void> {
+  await dbSet(STORES.uiPreferences, {
+    ownerId: '',
+    prefKey: mapKey(userId),
+    value: map
+  });
+}
+
+/** Store the fhirId for one role, preserving existing entries. */
+export async function storeFhirIdForRole(
+  userId: string,
+  role: string,
+  fhirId: string
+): Promise<void> {
+  const existing = await getFhirIdMap(userId);
+  setRoleValue(existing, role, fhirId);
+  await storeFhirIdMap(userId, existing);
+}
+
+/** Look up the fhirId for a specific role. Returns undefined if unset. */
+export async function getFhirIdForRole(
+  userId: string,
+  role: string
+): Promise<string | undefined> {
+  const map = await getFhirIdMap(userId);
+  return getRoleValue(map, role);
+}

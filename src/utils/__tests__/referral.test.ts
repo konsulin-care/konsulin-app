@@ -1,0 +1,152 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildResearchShareMessage,
+  buildShareUrl,
+  captureReferralRef,
+  clearReferralLocalState,
+  isReferralWritten,
+  markReferralWritten,
+  parseReferralRef,
+  readRefFromUrl,
+  readStoredReferralRef
+} from '../referral';
+
+const ORIGIN = 'https://konsulin.care';
+
+describe('buildShareUrl', () => {
+  it('builds a patient link carrying ref=p_<fhirId>', () => {
+    expect(
+      buildShareUrl({
+        origin: ORIGIN,
+        isPatient: true,
+        fhirId: 'DG3F3STPYZ6HX25A'
+      })
+    ).toBe('https://konsulin.care/research?ref=p_DG3F3STPYZ6HX25A');
+  });
+
+  it('builds a plain link for guests without a ref', () => {
+    expect(buildShareUrl({ origin: ORIGIN, isPatient: false })).toBe(
+      'https://konsulin.care/research'
+    );
+    expect(buildShareUrl({ origin: ORIGIN, isPatient: true })).toBe(
+      'https://konsulin.care/research'
+    );
+  });
+
+  it('builds a study-scoped patient link carrying view and ref', () => {
+    expect(
+      buildShareUrl({
+        origin: ORIGIN,
+        isPatient: true,
+        fhirId: 'DG3F3STPYZ6HX25A',
+        studyId: 'study-x'
+      })
+    ).toBe(
+      'https://konsulin.care/research?view=study-x&ref=p_DG3F3STPYZ6HX25A'
+    );
+  });
+
+  it('builds a study-scoped plain link for guests without a ref', () => {
+    expect(
+      buildShareUrl({ origin: ORIGIN, isPatient: false, studyId: 'study-x' })
+    ).toBe('https://konsulin.care/research?view=study-x');
+    expect(
+      buildShareUrl({ origin: ORIGIN, isPatient: true, studyId: 'study-x' })
+    ).toBe('https://konsulin.care/research?view=study-x');
+  });
+});
+
+describe('parseReferralRef', () => {
+  it('parses a patient ref', () => {
+    expect(parseReferralRef('p_DG3F3STPYZ6HX25A')).toEqual({
+      kind: 'patient',
+      fhirId: 'DG3F3STPYZ6HX25A'
+    });
+  });
+
+  it('returns null for absent, empty, or malformed refs', () => {
+    expect(parseReferralRef(null)).toBeNull();
+    expect(parseReferralRef()).toBeNull();
+    expect(parseReferralRef('')).toBeNull();
+    expect(parseReferralRef('DG3F3STPYZ6HX25A')).toBeNull();
+    expect(parseReferralRef('g_DG3F3STPYZ6HX25A')).toBeNull();
+    expect(parseReferralRef('p_')).toBeNull();
+  });
+});
+
+describe('buildResearchShareMessage', () => {
+  it('builds the English citizen-scientist invite with a trailing newline', () => {
+    expect(buildResearchShareMessage('PHQ-9 Study')).toBe(
+      'Join me as a citizen scientist through PHQ-9 Study in Konsulin.\n'
+    );
+  });
+
+  it('interpolates any study title', () => {
+    expect(buildResearchShareMessage('Sleep Cohort 2026')).toBe(
+      'Join me as a citizen scientist through Sleep Cohort 2026 in Konsulin.\n'
+    );
+  });
+});
+
+describe('referral ref capture and storage', () => {
+  function fakeStorage(): Storage {
+    const store = new Map<string, string>();
+    return {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+      key: (index: number) => [...store.keys()][index] ?? null,
+      get length() {
+        return store.size;
+      }
+    } as unknown as Storage;
+  }
+
+  it('captures only patient refs and reads them back', () => {
+    const storage = fakeStorage();
+    captureReferralRef('p_DG3F3STPYZ6HX25A', storage);
+    expect(readStoredReferralRef(storage)).toBe('p_DG3F3STPYZ6HX25A');
+  });
+
+  it('ignores absent or guest refs', () => {
+    const storage = fakeStorage();
+    captureReferralRef('g_guest-1', storage);
+    expect(readStoredReferralRef(storage)).toBeNull();
+    captureReferralRef(null, storage);
+    expect(readStoredReferralRef(storage)).toBeNull();
+  });
+
+  it('reads the ref from a landing url', () => {
+    expect(
+      readRefFromUrl('https://konsulin.care/research?ref=p_DG3F3STPYZ6HX25A')
+    ).toBe('p_DG3F3STPYZ6HX25A');
+    expect(readRefFromUrl('https://konsulin.care/research')).toBeNull();
+  });
+
+  it('tracks written batches per batch id', () => {
+    const storage = fakeStorage();
+    expect(isReferralWritten(storage, 'batch-1')).toBe(false);
+    markReferralWritten(storage, 'batch-1');
+    expect(isReferralWritten(storage, 'batch-1')).toBe(true);
+    expect(isReferralWritten(storage, 'batch-2')).toBe(false);
+  });
+
+  it('clears referral ref and written flags on erasure', () => {
+    const storage = fakeStorage();
+    captureReferralRef('p_DG3F3STPYZ6HX25A', storage);
+    markReferralWritten(storage, 'batch-1');
+    markReferralWritten(storage, 'batch-3');
+    storage.setItem('unrelated-key', 'keep');
+
+    clearReferralLocalState(storage);
+
+    expect(storage.getItem('konsulin_ref')).toBeNull();
+    expect(storage.getItem('konsulin_referral_written_batch-1')).toBeNull();
+    expect(storage.getItem('konsulin_referral_written_batch-3')).toBeNull();
+    expect(storage.getItem('unrelated-key')).toBe('keep');
+  });
+});

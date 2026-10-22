@@ -1,0 +1,259 @@
+import {
+  runRouterBackFallbackTest,
+  setupMockRouter
+} from '@/__tests__/mocks/page-header';
+import { renderWithQuery } from '@/__tests__/react-test-utils';
+import { screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import PageHeader from '../components/page-header';
+
+// Hoisted mocks — shared factories from @/__tests__/mocks/page-header
+vi.mock('@/i18n', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderI18nMock
+}));
+
+vi.mock('next/navigation', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderNavigationMock
+}));
+
+vi.mock('@/context/auth/authContext', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).pageHeaderAuthMock
+}));
+
+vi.mock('@/hooks/useUpcomingEvents', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).upcomingEventsMock
+}));
+
+vi.mock('@/lib/indexeddb', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).indexedDbMock
+}));
+
+vi.mock('@/services/api', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).apiMock
+}));
+
+vi.mock('@/components/general/avatar', async () => ({
+  ...(await import('@/__tests__/mocks/page-header')).avatarMock
+}));
+
+import { useAuth } from '@/context/auth/authContext';
+import { dbGet } from '@/lib/indexeddb';
+import { getAPI } from '@/services/api';
+import type { AxiosInstance } from 'axios';
+import { usePathname, useSearchParams } from 'next/navigation';
+
+const mockAxiosInstance: { get: ReturnType<typeof vi.fn> } = { get: vi.fn() };
+
+describe('PageHeader - admin clinic card', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Re-establish default mock implementations after clearAllMocks
+    vi.mocked(dbGet).mockResolvedValue(null);
+    vi.mocked(getAPI).mockResolvedValue(
+      mockAxiosInstance as unknown as AxiosInstance
+    );
+    vi.mocked(usePathname).mockReturnValue('/');
+  });
+
+  function mockAuthState(overrides: Record<string, unknown> = {}) {
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          role_name: 'Clinic Admin',
+          fhirId: 'admin-1',
+          fullname: 'Admin User',
+          email: 'admin@clinic.com',
+          ...overrides
+        }
+      },
+      dispatch: vi.fn()
+    });
+  }
+
+  it('renders clinic name card for admin from Organization resource', async () => {
+    mockAuthState();
+    // Return a clinic ID from IndexedDB so the query fires
+    vi.mocked(dbGet).mockResolvedValueOnce({ value: 'org-123' });
+    // Mock Organization query returning the org name
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { name: 'Konsulin HQ' }
+    });
+
+    renderWithQuery(<PageHeader />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Currently Managing')).toBeDefined();
+    });
+    expect(screen.getByText('Konsulin HQ')).toBeDefined();
+  });
+
+  it('queries Organization directly with correct URL', async () => {
+    mockAuthState();
+    // Return a clinic ID so the query fires
+    vi.mocked(dbGet).mockResolvedValueOnce({ value: 'org-456' });
+    // Single Organization query returns the org name
+    mockAxiosInstance.get.mockResolvedValueOnce({
+      data: { name: 'Konsulin HQ' }
+    });
+
+    renderWithQuery(<PageHeader />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Currently Managing')).toBeDefined();
+    });
+    expect(screen.getByText('Konsulin HQ')).toBeDefined();
+
+    // Should make exactly one API call — to Organization, not Location
+    expect(mockAxiosInstance.get).toHaveBeenCalledTimes(1);
+    const calledUrl = mockAxiosInstance.get.mock.calls[0][0] as string;
+    expect(calledUrl).toBe('/fhir/Organization/org-456?_elements=name');
+  });
+
+  it('does NOT render clinic card for patient role', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Patient', fhirId: 'patient-1' }
+      },
+      dispatch: vi.fn()
+    });
+
+    renderWithQuery(<PageHeader />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Currently Managing')).toBeNull();
+    });
+  });
+
+  it('does NOT render clinic card for practitioner role', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Practitioner', fhirId: 'practitioner-1' }
+      },
+      dispatch: vi.fn()
+    });
+
+    renderWithQuery(<PageHeader />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Currently Managing')).toBeNull();
+    });
+  });
+
+  it('does NOT render clinic card when admin has no selected clinic', async () => {
+    mockAuthState();
+    // dbGet returns null — clinic_organization not stored
+    // No API mocks needed — query stays disabled
+
+    renderWithQuery(<PageHeader />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Currently Managing')).toBeNull();
+    });
+  });
+});
+
+describe('PageHeader - back navigation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(usePathname).mockReturnValue('/clinic');
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
+    );
+    vi.mocked(dbGet).mockResolvedValue(null);
+    vi.mocked(getAPI).mockResolvedValue(
+      mockAxiosInstance as unknown as AxiosInstance
+    );
+  });
+
+  it('renders anchor with correct href for cross-route back (/clinic → /)', () => {
+    setupMockRouter();
+
+    renderWithQuery(<PageHeader />);
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute('href', '/');
+  });
+
+  it('renders anchor for same-route back (/clinic?id=xxx → /clinic)', () => {
+    setupMockRouter();
+    renderWithQuery(
+      <PageHeader pageIndicator='Check Out Clinic' backRoute='/clinic' />
+    );
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute('href', '/clinic');
+  });
+
+  it('calls router.back when no backAction is available', async () => {
+    const router = setupMockRouter();
+    await runRouterBackFallbackTest(router);
+  });
+
+  it('handles trailing slash — /clinic/ renders anchor to /', () => {
+    vi.mocked(usePathname).mockReturnValue('/clinic/');
+    setupMockRouter();
+
+    renderWithQuery(<PageHeader />);
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/');
+  });
+
+  it('renders anchor href / for /record (no params)', () => {
+    vi.mocked(usePathname).mockReturnValue('/record');
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
+    );
+    setupMockRouter();
+
+    renderWithQuery(<PageHeader />);
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/');
+  });
+
+  it('renders anchor href /record for /record?edit=xxx', () => {
+    vi.mocked(usePathname).mockReturnValue('/record');
+    const params = new URLSearchParams('edit=Observation/test-id-123');
+    vi.mocked(useSearchParams).mockReturnValue(
+      params as unknown as ReturnType<typeof useSearchParams>
+    );
+    setupMockRouter();
+
+    renderWithQuery(<PageHeader />);
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/record');
+  });
+
+  it('renders anchor href /assessments for /assessments?id=phq2', () => {
+    vi.mocked(usePathname).mockReturnValue('/assessments');
+    const params = new URLSearchParams('id=phq2');
+    vi.mocked(useSearchParams).mockReturnValue(
+      params as unknown as ReturnType<typeof useSearchParams>
+    );
+    setupMockRouter();
+
+    renderWithQuery(<PageHeader />);
+
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/assessments');
+  });
+
+  it('does not render back chevron on the home page', () => {
+    vi.mocked(usePathname).mockReturnValue('/');
+
+    renderWithQuery(<PageHeader />);
+
+    const chevron = document.querySelector('.lucide-chevron-left');
+    expect(chevron).toBeNull();
+  });
+});

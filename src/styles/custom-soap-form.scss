@@ -1,3 +1,5 @@
+@use 'fab-mui';
+
 .custom-soap-form {
   [data-test='q-item-group-box'] {
     margin: 5px 0 !important;
@@ -64,19 +66,7 @@
     margin-left: 0px !important;
   }
 
-  .MuiFab-root {
-    background-color: #0abdc3 !important;
-    color: white !important;
-    border-radius: 50% !important;
-  }
-
-  .MuiFab-root:hover {
-    filter: brightness(0.9);
-  }
-
-  .MuiFab-root.Mui-disabled {
-    background-color: rgba(158, 158, 158, 0.24) !important;
-  }
+  @include fab-mui.fab-mui-overrides;
 
   /* [data-test='q-item-quantity-box'] { */
   /*   margin-top: 14px !important; */

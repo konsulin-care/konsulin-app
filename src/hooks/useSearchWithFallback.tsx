@@ -1,13 +1,14 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import { useEffect, useMemo, useReducer, useRef } from 'react';
 
-export interface SearchField<T> {
+export interface SearchField {
   path: string;
-  transform?: (value: any) => string;
+  transform?: (value: unknown) => string;
 }
 
 export interface UseSearchWithFallbackParams<T> {
   data: T[] | undefined;
-  searchFields: Array<keyof T | SearchField<T>>;
+  searchFields: Array<keyof T | SearchField>;
   serverSearchFunction: (searchTerm: string) => Promise<T[]>;
   searchTerm: string;
   debounceDelay?: number;
@@ -33,7 +34,7 @@ function serverReducer<T>(
   action: ServerAction<T>
 ): ServerState<T> {
   switch (action.type) {
-    case 'RESET':
+    case 'RESET': {
       return {
         isServerSearching: false,
         showServerResults: false,
@@ -41,13 +42,15 @@ function serverReducer<T>(
         serverData: undefined,
         serverSearchCompleted: false
       };
-    case 'START_SEARCH':
+    }
+    case 'START_SEARCH': {
       return {
         ...state,
         isServerSearching: true,
         showServerResults: false
       };
-    case 'SEARCH_SUCCESS':
+    }
+    case 'SEARCH_SUCCESS': {
       return {
         isServerSearching: false,
         showServerResults: true,
@@ -55,7 +58,8 @@ function serverReducer<T>(
         serverData: action.results,
         serverSearchCompleted: true
       };
-    case 'SEARCH_ERROR':
+    }
+    case 'SEARCH_ERROR': {
       return {
         isServerSearching: false,
         showServerResults: false,
@@ -63,11 +67,88 @@ function serverReducer<T>(
         serverData: undefined,
         serverSearchCompleted: true
       };
-    default:
+    }
+    default: {
       return state;
+    }
   }
 }
 
+/** Convert a value to a searchable string, avoiding [object Object]. */
+function toSearchString(value: unknown): string {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '';
+  }
+}
+
+/** Safely traverse a dot-delimited path into an object. */
+function getNestedValue(item: unknown, path: string): unknown {
+  const parts = path.split('.');
+  let current: unknown = item;
+  for (const part of parts) {
+    if (
+      current &&
+      typeof current === 'object' &&
+      Object.hasOwn(current, part)
+    ) {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      current = undefined;
+      break;
+    }
+  }
+  return current;
+}
+
+/** Check if an item field matches the lowercased search term. */
+function matchesField<T>(
+  item: T,
+  field: keyof T | SearchField,
+  lowerSearchTerm: string
+): boolean {
+  if (
+    typeof field === 'string' ||
+    typeof field === 'number' ||
+    typeof field === 'symbol'
+  ) {
+    try {
+      const value = (item as Record<string, unknown>)[field as string];
+      return (
+        value != null &&
+        toSearchString(value).toLowerCase().includes(lowerSearchTerm)
+      );
+    } catch {
+      return false;
+    }
+  }
+  try {
+    const rawValue = getNestedValue(item, field.path);
+    let finalValue = rawValue;
+    if (field.transform && rawValue !== undefined) {
+      try {
+        finalValue = field.transform(rawValue);
+      } catch {
+        finalValue = rawValue;
+      }
+    }
+    return (
+      finalValue != null &&
+      toSearchString(finalValue).toLowerCase().includes(lowerSearchTerm)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ *
+ */
 export function useSearchWithFallback<T>({
   data,
   searchFields,
@@ -96,64 +177,9 @@ export function useSearchWithFallback<T>({
       // Skip null/undefined items
       if (!item) return false;
 
-      return searchFields.some(field => {
-        if (
-          typeof field === 'string' ||
-          typeof field === 'number' ||
-          typeof field === 'symbol'
-        ) {
-          // Simple field access with validation
-          try {
-            const value = (item as any)[field];
-            return (
-              value != null &&
-              String(value).toLowerCase().includes(lowerSearchTerm)
-            );
-          } catch (error) {
-            console.warn('Field access error:', field, error);
-            return false;
-          }
-        } else {
-          // Complex field with path and optional transform
-          try {
-            const pathParts = field.path.split('.');
-            let currentValue: any = item;
-
-            // Navigate through nested path with validation
-            for (const part of pathParts) {
-              if (
-                currentValue &&
-                typeof currentValue === 'object' &&
-                currentValue.hasOwnProperty(part)
-              ) {
-                currentValue = currentValue[part];
-              } else {
-                currentValue = undefined;
-                break;
-              }
-            }
-
-            // Apply transform if provided with error handling
-            let finalValue = currentValue;
-            if (field.transform && currentValue !== undefined) {
-              try {
-                finalValue = field.transform(currentValue);
-              } catch (transformError) {
-                console.warn('Transform function error:', transformError);
-                finalValue = currentValue;
-              }
-            }
-
-            return (
-              finalValue != null &&
-              String(finalValue).toLowerCase().includes(lowerSearchTerm)
-            );
-          } catch (error) {
-            console.warn('Nested path resolution error:', field.path, error);
-            return false;
-          }
-        }
-      });
+      return searchFields.some(field =>
+        matchesField(item, field, lowerSearchTerm)
+      );
     });
   }, [data, searchFields, searchTerm]);
 
@@ -196,67 +222,22 @@ export function useSearchWithFallback<T>({
 
       // Check condition for client-side results using ref
       const lowerSearchTerm = searchTerm.toLowerCase();
-      const clientResults =
-        dataRef.current?.filter(item => {
-          if (!item) return false;
-
-          return searchFieldsRef.current.some(field => {
-            if (
-              typeof field === 'string' ||
-              typeof field === 'number' ||
-              typeof field === 'symbol'
-            ) {
-              try {
-                const value = (item as any)[field];
-                return (
-                  value != null &&
-                  String(value).toLowerCase().includes(lowerSearchTerm)
-                );
-              } catch (error) {
-                return false;
-              }
-            } else {
-              try {
-                const pathParts = field.path.split('.');
-                let currentValue: any = item;
-
-                for (const part of pathParts) {
-                  if (
-                    currentValue &&
-                    typeof currentValue === 'object' &&
-                    currentValue.hasOwnProperty(part)
-                  ) {
-                    currentValue = currentValue[part];
-                  } else {
-                    currentValue = undefined;
-                    break;
-                  }
-                }
-
-                let finalValue = currentValue;
-                if (field.transform && currentValue !== undefined) {
-                  try {
-                    finalValue = field.transform(currentValue);
-                  } catch (transformError) {
-                    finalValue = currentValue;
-                  }
-                }
-
-                return (
-                  finalValue != null &&
-                  String(finalValue).toLowerCase().includes(lowerSearchTerm)
-                );
-              } catch (error) {
-                return false;
-              }
-            }
-          });
-        }) || [];
+      const currentData = dataRef.current || [];
+      let clientMatchCount = 0;
+      for (const item of currentData) {
+        if (!item) continue;
+        for (const field of searchFieldsRef.current) {
+          if (matchesField(item, field, lowerSearchTerm)) {
+            clientMatchCount++;
+            break;
+          }
+        }
+      }
 
       // Only trigger server search if no client results and criteria met
       if (
         searchTerm.length >= minCharsForServerSearch &&
-        clientResults.length === 0
+        clientMatchCount === 0
       ) {
         // Mark that we're searching for this term
         serverSearchExecutedRef.current = searchKey;

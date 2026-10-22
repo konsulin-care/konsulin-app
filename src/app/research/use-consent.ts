@@ -1,0 +1,92 @@
+'use client';
+
+import { useTranslations } from '@/i18n';
+import { useConsentToStudy } from '@/services/api/research';
+import { readConsentFlag, writeConsentFlag } from '@/utils/consent';
+import type { StudyProgress } from '@/utils/fhir/research';
+import { useCallback, useMemo } from 'react';
+import { toast } from 'react-toastify';
+
+interface PendingConsent {
+  studyId: string;
+  questionnaireId?: string;
+}
+
+interface UseConsentParams {
+  isPatient: boolean;
+  studies: StudyProgress[];
+  consentedStudyIds: string[];
+  pendingConsent: PendingConsent | null;
+  setPendingConsent: (consent: PendingConsent | null) => void;
+  router: { push: (url: string) => void };
+}
+
+/** Returns consent-related state and handlers. */
+export function useConsent({
+  isPatient,
+  studies,
+  consentedStudyIds: serverConsentedStudyIds,
+  pendingConsent,
+  setPendingConsent,
+  router
+}: UseConsentParams) {
+  const tToast = useTranslations('toast');
+  const consentedStudyIds = useMemo(() => {
+    if (isPatient) return new Set(serverConsentedStudyIds);
+    // For non-patients, read from localStorage
+    const ids = new Set<string>();
+    for (const study of studies) {
+      if (readConsentFlag(window.localStorage, study.study.id)) {
+        ids.add(study.study.id);
+      }
+    }
+    return ids;
+  }, [isPatient, serverConsentedStudyIds, studies]);
+
+  const isConsented = useCallback(
+    (studyId: string) =>
+      isPatient
+        ? consentedStudyIds.has(studyId)
+        : readConsentFlag(window.localStorage, studyId),
+    [consentedStudyIds, isPatient]
+  );
+
+  const pendingStudyId = pendingConsent?.studyId ?? '';
+  const consentMutation = useConsentToStudy(pendingStudyId);
+
+  const handleAgree = useCallback(() => {
+    if (!pendingConsent) return;
+    const { studyId, questionnaireId } = pendingConsent;
+    const study = studies.find(entry => entry.study.id === studyId);
+    const target =
+      questionnaireId ?? study?.firstUncompletedQuestionnaireId ?? null;
+    /** Clear pending consent and navigate to the target questionnaire. */
+    const finish = () => {
+      setPendingConsent(null);
+      if (target) router.push(`/assessments?id=${target}&study=${studyId}`);
+    };
+    if (isPatient) {
+      consentMutation.mutate(undefined, {
+        onSuccess: finish,
+        onError: () => toast.error(tToast('consent_record_failed'))
+      });
+      return;
+    }
+    writeConsentFlag(window.localStorage, studyId);
+    finish();
+  }, [
+    isPatient,
+    pendingConsent,
+    router,
+    studies,
+    consentMutation,
+    setPendingConsent,
+    tToast
+  ]);
+
+  return {
+    consentedStudyIds,
+    isConsented,
+    handleAgree
+  };
+}

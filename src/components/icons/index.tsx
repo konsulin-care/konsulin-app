@@ -1,4 +1,3 @@
-export { default as ExerciseIcon } from './exercise-icon';
 export { default as FilterIcon } from './filter-icon';
 export { default as HouseIcon } from './house-icon';
 export { default as LiteratureIcon } from './literature-icon';

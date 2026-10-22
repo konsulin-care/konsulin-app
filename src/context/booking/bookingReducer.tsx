@@ -11,19 +11,23 @@ export const initialState: IStateBooking = {
   isBookingSubmitted: false
 };
 
+/** Booking state reducer handling appointment flow actions. */
 export const reducer = (
   state: IStateBooking,
   action: IActionBooking
 ): IStateBooking => {
   switch (action.type) {
-    case 'UPDATE_BOOKING_INFO':
+    case 'UPDATE_BOOKING_INFO': {
       return {
         ...state,
         ...action.payload
       };
-    case 'RESET_BOOKING_INFO':
+    }
+    case 'RESET_BOOKING_INFO': {
       return initialState;
-    default:
+    }
+    default: {
       return state;
+    }
   }
 };

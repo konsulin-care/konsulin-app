@@ -1,0 +1,221 @@
+/* eslint-disable max-params */
+import { Roles } from '@/constants/roles';
+import { createProfile, getProfileByIdentifier } from '@/services/profile';
+import type { FHIRProfile } from '@/types/fhir';
+import { mergeNames } from '@/utils/helper';
+import { extractSafeRedirectPath } from '@/utils/redirect-guard';
+import {
+  clearRedirectIntent,
+  getIntent,
+  getRedirectIntent,
+  hasPendingAssessmentClaimIntent
+} from '@/utils/redirect-intent';
+import { roleToFhirResource } from '@/utils/role-fhir';
+type RolesParam = string[] | undefined;
+
+/** Fetches a CSRF token from the server for use in POST /auth/cookie requests. */
+async function fetchCSRFToken(): Promise<string | null> {
+  try {
+    const res = await fetch('/auth/cookie/csrf-token');
+    if (!res.ok) return null;
+    const data = (await res.json()) as { token?: string };
+    return data.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Posts auth cookie data to the server with CSRF protection. */
+async function postAuthCookie(
+  body: Record<string, unknown>
+): Promise<Response> {
+  const token = await fetchCSRFToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (token) headers['X-CSRF-Token'] = token;
+  try {
+    const res = await fetch('/auth/cookie', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    });
+    return res;
+  } catch (err) {
+    console.error('[auth:cookie] fetch failed', err);
+    return new Response(null, { status: 502 });
+  }
+}
+
+/**
+ *
+ */
+async function postAuthCookieForUser(
+  role: string,
+  userId: string,
+  roles: RolesParam,
+  emails: string[],
+  phoneNumbers: string[],
+  profile: FHIRProfile
+): Promise<void> {
+  if (!role || !userId) {
+    console.error('[auth:cookie] missing required params', { role, userId });
+    throw new Error('Missing required auth cookie parameters');
+  }
+  const cookieData = {
+    userId,
+    roles,
+    role_name: role,
+    email: emails[0] || '',
+    phoneNumber: phoneNumbers[0] || '',
+    profile_picture: profile?.photo?.[0]?.url ?? '',
+    fullname: mergeNames(profile?.name),
+    fhirId: profile?.id ?? ''
+  };
+  const cookieRes = await postAuthCookie(cookieData);
+  if (!cookieRes.ok) {
+    const body = await cookieRes.text().catch(() => '');
+    throw new Error(`auth cookie server error: ${cookieRes.status} ${body}`);
+  }
+}
+
+/** Resolves the highest-priority role from the roles array. */
+function resolveLoginRole(roles: RolesParam): string {
+  let role: string = Roles.Patient;
+  if (Array.isArray(roles)) {
+    if (roles.includes(Roles.Practitioner)) {
+      role = Roles.Practitioner;
+    } else if (roles.includes(Roles.ClinicAdmin)) {
+      role = Roles.ClinicAdmin;
+    }
+  }
+  // A guest claiming an assessment result must be linked to the Patient
+  // resource, even when the default priority would pick another role.
+  if (
+    role !== Roles.Patient &&
+    Array.isArray(roles) &&
+    roles.includes(Roles.Patient) &&
+    hasPendingAssessmentClaimIntent()
+  ) {
+    role = Roles.Patient;
+  }
+  return role;
+}
+
+/** Handles login for new users — creates FHIR profile if missing, sets auth cookie. */
+async function handleNewUserLogin(
+  roles: RolesParam,
+  userId: string,
+  emails: string[],
+  phoneNumbers: string[]
+): Promise<void> {
+  if (!userId) {
+    console.error('[auth:login] missing userId');
+    throw new Error('Missing userId for new user login');
+  }
+  const role = resolveLoginRole(roles);
+  const fhirType = roleToFhirResource(role);
+  let profileData: FHIRProfile = null;
+  try {
+    profileData = await getProfileByIdentifier({ userId, type: fhirType });
+  } catch (err) {
+    console.error('[auth:login] getProfileByIdentifier failed', err);
+  }
+
+  if (!profileData && role !== Roles.ClinicAdmin) {
+    try {
+      await createProfile({
+        userId,
+        email: emails[0] || '',
+        phoneNumber: phoneNumbers[0] || '',
+        type: fhirType
+      });
+    } catch (err) {
+      console.error('[auth:login] createProfile failed', err);
+      throw new Error('Failed to create profile after login');
+    }
+    try {
+      profileData = await getProfileByIdentifier({ userId, type: fhirType });
+    } catch (err) {
+      console.error('[auth:login] re-fetch profile failed', err);
+    }
+    if (!profileData) throw new Error('Failed to create profile');
+  }
+
+  await postAuthCookieForUser(
+    role,
+    userId,
+    roles,
+    emails,
+    phoneNumbers,
+    profileData
+  );
+}
+
+/** Handles login for returning users — fetches FHIR profile and sets auth cookie. */
+async function handleReturningUserLogin(
+  roles: RolesParam,
+  userId: string,
+  emails: string[],
+  phoneNumbers: string[]
+): Promise<void> {
+  if (!userId) {
+    console.error('[auth:login] missing userId for returning user');
+    throw new Error('Missing userId for returning user login');
+  }
+  const role = resolveLoginRole(roles);
+  const fhirType = roleToFhirResource(role);
+  let profile: FHIRProfile = null;
+  try {
+    profile = await getProfileByIdentifier({
+      userId,
+      type: fhirType
+    });
+  } catch (err) {
+    console.error(
+      '[auth:login] getProfileByIdentifier failed for returning user',
+      err
+    );
+  }
+
+  await postAuthCookieForUser(
+    role,
+    userId,
+    roles,
+    emails,
+    phoneNumbers,
+    profile
+  );
+}
+
+/** Resolves post-login redirect URL from stored intent or query params. */
+function resolvePostLoginRedirect(): string | null {
+  const redirectUrl = getRedirectIntent();
+  if (redirectUrl) {
+    clearRedirectIntent();
+    return extractSafeRedirectPath(
+      `?redirectToPath=${encodeURIComponent(redirectUrl)}`
+    );
+  }
+  const intent = getIntent();
+  if (intent) {
+    clearRedirectIntent();
+    // A pending assessmentResult claim must complete on the homepage before
+    // navigating to /record; landing directly on /record would skip the claim
+    // and race the login redirect against the in-flight PATCH.
+    return intent.kind === 'assessmentResult'
+      ? '/'
+      : (intent.payload?.path ?? '/');
+  }
+  return extractSafeRedirectPath(globalThis.location.search);
+}
+
+export {
+  fetchCSRFToken,
+  handleNewUserLogin,
+  handleReturningUserLogin,
+  postAuthCookie,
+  postAuthCookieForUser,
+  resolveLoginRole,
+  resolvePostLoginRedirect
+};

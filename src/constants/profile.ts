@@ -4,6 +4,9 @@ export const DRAWER_STATE = {
   SUCCESS: 'success'
 };
 
+/** Full-profile cache freshness window for the profile page. */
+export const PROFILE_CACHE_STALE_MS = 5 * 60 * 1000;
+
 export const subtitle_success_updated =
   'Your profile is updated, looking sharp!';
 
@@ -41,19 +44,23 @@ export const medalLists = [
 ];
 
 export const settingMenus = [
-  { name: 'Settings', link: '/settings' },
-  { name: 'Delete Account', link: '/remove-account' },
-  { name: 'Log out', link: '/logout' }
-];
+  { nameKey: 'delete_account', link: '/remove-account', icon: 'trash2' },
+  { nameKey: 'log_out', link: '/logout', icon: 'logout' }
+] as const;
 
 export const genderList = [
   {
-    name: 'Male',
+    nameKey: 'profile.gender_male',
     code: 'male'
   },
 
   {
-    name: 'Female',
+    nameKey: 'profile.gender_female',
     code: 'female'
   }
-];
+] as const;
+
+export const languageOptions = [
+  { code: 'id', labelKey: 'profile.lang_id' },
+  { code: 'en', labelKey: 'profile.lang_en' }
+] as const;

@@ -1,19 +1,26 @@
-import { cn } from '@/lib/utils'
-import Image from 'next/image'
+import { useTranslations } from '@/i18n';
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 interface IEmptyStateProps {
-  title?: string
-  subtitle?: string
-  size?: number
-  className?: string
+  title?: string;
+  subtitle?: string;
+  size?: number;
+  className?: string;
 }
 
+/**
+ *
+ */
 export default function EmptyState({
-  title = 'No results',
-  subtitle = 'Try a different search or filter.',
+  title,
+  subtitle,
   size = 90,
   className
 }: IEmptyStateProps) {
+  const t = useTranslations('common');
+  const resolvedTitle = title ?? t('no_results');
+  const resolvedSubtitle = subtitle ?? t('try_different');
   return (
     <div
       className={cn(
@@ -27,8 +34,8 @@ export default function EmptyState({
         width={size}
         height={size}
       />
-      <div className='mt-4 font-bold text-muted'>{title}</div>
-      <div className='mt-1 text-muted'>{subtitle}</div>
+      <div className='text-muted mt-4 font-bold'>{resolvedTitle}</div>
+      <div className='text-muted mt-1'>{resolvedSubtitle}</div>
     </div>
-  )
+  );
 }

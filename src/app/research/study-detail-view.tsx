@@ -1,0 +1,135 @@
+'use client';
+
+import ShareResearchButton from '@/components/research/share-research-button';
+import AppDrawer from '@/components/ui/app-drawer';
+import { Roles } from '@/constants/roles';
+import { useTranslations } from '@/i18n';
+import type { QuestionnaireInfo } from '@/services/api/research';
+import type { StudyProgress } from '@/utils/fhir/research';
+import { FlaskConical } from 'lucide-react';
+import {
+  BatchProgress,
+  QuestionnaireList,
+  TimelineStrip
+} from './study-sections';
+
+interface StudyDetailViewProps {
+  progress: StudyProgress | null;
+  overlapMap: Map<string, string[]>;
+  open: boolean;
+  onClose: () => void;
+  onParticipate: (progress: StudyProgress) => void;
+  onSeeReport: (studyId: string) => void;
+  onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
+  onManageStudy?: (studyId: string) => void;
+  isPatient: boolean;
+  fhirId?: string;
+  /** User's role name for conditional rendering. */
+  roleName?: string;
+  /** Resolved id → questionnaire info map (title + estimated duration). */
+  titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
+  /** True while questionnaire titles are being fetched. */
+  isTitlesLoading?: boolean;
+  /** Per-questionnaire completion counts for researcher view. */
+  completionCounts?: Map<string, number>;
+}
+
+/**
+ * Study detail drawer opened by tapping a carousel card.
+ *
+ * Shows the untruncated description, batch progress, batch timeline, and the
+ * full questionnaire list with a sticky Participate CTA at the footer.
+ */
+export default function StudyDetailView({
+  progress,
+  overlapMap,
+  open,
+  onClose,
+  onParticipate,
+  onSeeReport,
+  onQuestionnaireClick,
+  onManageStudy,
+  isPatient,
+  fhirId,
+  roleName,
+  titleMap,
+  isTitlesLoading,
+  completionCounts
+}: Readonly<StudyDetailViewProps>) {
+  const t = useTranslations('research');
+  const isResearcher = roleName === Roles.Researcher;
+  const isComplete = progress?.isComplete ?? false;
+  let ctaLabel = t('participate');
+  if (isResearcher) ctaLabel = t('manage_study');
+  else if (isComplete) ctaLabel = t('see_report');
+
+  return (
+    <AppDrawer
+      open={open}
+      onClose={onClose}
+      title={
+        progress && (
+          <span className='flex items-center gap-2'>
+            <FlaskConical className='h-5 w-5 shrink-0 text-black' />
+            {progress.study.title}
+          </span>
+        )
+      }
+      description={
+        progress ? (
+          <span className='block text-left text-gray-600'>
+            {progress.study.description}
+          </span>
+        ) : undefined
+      }
+      ctaLabel={ctaLabel}
+      onCtaClick={() => {
+        if (!progress) return;
+        if (isResearcher) {
+          onManageStudy?.(progress.study.id);
+          return;
+        }
+        if (progress.isComplete) {
+          onSeeReport(progress.study.id);
+        } else {
+          onParticipate(progress);
+        }
+      }}
+      ctaDisabled={!progress}
+    >
+      {progress && (
+        <div className='flex flex-col gap-4'>
+          <BatchProgress
+            progress={progress}
+            completionCounts={completionCounts}
+          />
+          <TimelineStrip progress={progress} />
+          <QuestionnaireList
+            progress={progress}
+            overlapMap={overlapMap}
+            onQuestionnaireClick={onQuestionnaireClick}
+            titleMap={titleMap}
+            isTitlesLoading={isTitlesLoading}
+            showOverlapHints
+          />
+          {roleName === Roles.Researcher && (
+            <div className='rounded-lg bg-gray-50 p-3 text-xs text-gray-600'>
+              <p className='font-medium text-gray-700'>
+                {t('researcher_view')}
+              </p>
+              <p className='mt-1'>{t('participant_data_note')}</p>
+            </div>
+          )}
+          <ShareResearchButton
+            title={progress.study.title}
+            isPatient={isPatient}
+            fhirId={fhirId}
+            studyId={progress.study.id}
+            dataTestId={`research-share-${progress.study.id}`}
+            className='flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-3 text-[10px] text-black'
+          />
+        </div>
+      )}
+    </AppDrawer>
+  );
+}

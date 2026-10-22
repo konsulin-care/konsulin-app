@@ -1,0 +1,5 @@
+{
+  "files": ["src"],
+  "exclude": ["**/__tests__/**", "**/*.test.*"],
+  "severity": "warning"
+}

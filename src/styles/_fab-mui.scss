@@ -1,0 +1,16 @@
+// Shared MUI FAB overrides — used by SOAP form and smart form
+@mixin fab-mui-overrides {
+  .MuiFab-root {
+    background-color: #00838f !important;
+    color: white !important;
+    border-radius: 50% !important;
+  }
+
+  .MuiFab-root:hover {
+    filter: brightness(0.9);
+  }
+
+  .MuiFab-root.Mui-disabled {
+    background-color: rgba(158, 158, 158, 0.24) !important;
+  }
+}

@@ -1,13 +1,17 @@
 'use client';
+/* eslint-disable sonarjs/no-redundant-jump, consistent-return */
 
 import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 const PROFILE_ROUTE_PREFIX = '/profile';
 const MODAL_DELAY_MS = 3000;
 
+/** Modal prompting user to complete their profile. */
 const ProfileCompletenessModal = () => {
+  const t = useTranslations('profile');
   const { isLoading, state: authState } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -18,34 +22,18 @@ const ProfileCompletenessModal = () => {
   const isProfileRoute = pathname.startsWith(PROFILE_ROUTE_PREFIX);
 
   useEffect(() => {
+    if (
+      !isLoading &&
+      authState.isAuthenticated &&
+      !isProfileRoute &&
+      authState.userInfo?.profile_complete !== true &&
+      !dismissed
+    ) {
+      const timer = setTimeout(() => setIsOpen(true), MODAL_DELAY_MS);
+      return () => clearTimeout(timer);
+    }
     setIsOpen(false);
-    setDismissed(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    if (!authState.isAuthenticated) {
-      setIsOpen(false);
-      return;
-    }
-    if (isProfileRoute) {
-      setIsOpen(false);
-      return;
-    }
-    if (authState.userInfo?.profile_complete === true) {
-      setIsOpen(false);
-      return;
-    }
-    if (dismissed) {
-      setIsOpen(false);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setIsOpen(true);
-    }, MODAL_DELAY_MS);
-
-    return () => clearTimeout(timer);
+    return;
   }, [
     isLoading,
     authState.isAuthenticated,
@@ -81,8 +69,8 @@ const ProfileCompletenessModal = () => {
         <button
           ref={closeBtnRef}
           type='button'
-          className='absolute right-3 top-3 text-gray-500 hover:text-gray-700'
-          aria-label='Close profile completeness prompt'
+          className='absolute top-3 right-3 text-gray-500 hover:text-gray-700'
+          aria-label={t('close_completeness_prompt')}
           onClick={() => {
             setIsOpen(false);
             setDismissed(true);
@@ -94,13 +82,13 @@ const ProfileCompletenessModal = () => {
           id='profile-completeness-title'
           className='mb-2 text-lg font-semibold'
         >
-          Your profile is incomplete
+          {t('incomplete_modal_title')}
         </h2>
         <p
           id='profile-completeness-description'
           className='mb-4 text-sm text-gray-600'
         >
-          Fill out your details to fully utilize Konsulin features.
+          {t('incomplete_modal_desc')}
         </p>
         <button
           type='button'
@@ -110,7 +98,7 @@ const ProfileCompletenessModal = () => {
             router.push('/profile');
           }}
         >
-          Complete profile
+          {t('complete_profile')}
         </button>
       </div>
     </div>

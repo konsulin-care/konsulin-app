@@ -1,0 +1,218 @@
+import { fireEvent, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/hooks/useQuestionFocus', async () =>
+  (await import('./card-stack-test-fixtures')).questionFocusMockFactory()
+);
+vi.mock('@/hooks/useCardSwipe', async () =>
+  (await import('./card-stack-test-fixtures')).cardSwipeMockFactory()
+);
+vi.mock('../card-dom-mapper', async () =>
+  (await import('./card-stack-test-fixtures')).cardDomMapperMockFactory()
+);
+vi.mock('@/i18n', async () =>
+  (await import('./card-stack-test-fixtures')).cardStackI18nMockFactory()
+);
+vi.mock('react-toastify', async () =>
+  (await import('./card-stack-test-fixtures')).toastMockFactory()
+);
+vi.mock('@/lib/injectCardStyles', async () =>
+  (await import('./card-stack-test-fixtures')).injectCardStylesMockFactory()
+);
+
+import { CardStackContainer } from '../card-stack-container';
+import {
+  BASE,
+  defaultSwipeResult,
+  mockF,
+  mockSwipe,
+  mockToast,
+  renderCards
+} from './card-stack-test-fixtures';
+
+const ANSWERED_ACTIVE = {
+  ...BASE,
+  activeCardIndex: 1,
+  cardStates: { q1: 'answered', q2: 'active', q3: 'future' }
+};
+
+function withCards(classes: Record<string, string>) {
+  return (
+    <CardStackContainer>
+      {Object.entries(classes).map(([id, cls]) => (
+        <div key={id} className={cls} data-link-id={id}>
+          {id}
+        </div>
+      ))}
+    </CardStackContainer>
+  );
+}
+
+describe('keyboard navigation', () => {
+  let set: ReturnType<typeof vi.fn>;
+  beforeEach(() => {
+    vi.clearAllMocks();
+    set = vi.fn();
+    mockF.mockReturnValue({ ...ANSWERED_ACTIVE, setActiveCardIndex: set });
+    mockSwipe.mockReturnValue(defaultSwipeResult());
+  });
+
+  function keyDown(cls: string, key: string) {
+    const el = document.querySelector<HTMLElement>(`.${cls}`);
+    if (!el) throw new Error(`card ${cls} not found`);
+    el.focus();
+    fireEvent.keyDown(el, { key });
+  }
+
+  it('makes non-active cards tabbable with role=button, active card not', () => {
+    renderCards(
+      withCards({
+        q1: 'card-answered',
+        q2: 'card-active',
+        q3: 'card-future'
+      })
+    );
+    const answered = document.querySelector('.card-answered');
+    const future = document.querySelector('.card-future');
+    const active = document.querySelector('.card-active');
+    expect(answered?.getAttribute('tabindex')).toBe('0');
+    expect(answered?.getAttribute('role')).toBe('button');
+    expect(future?.getAttribute('tabindex')).toBe('0');
+    expect(active?.getAttribute('tabindex')).toBe('-1');
+    expect(active?.hasAttribute('role')).toBe(false);
+  });
+
+  it('marks future cards aria-disabled when active card is required and unanswered', () => {
+    mockF.mockReturnValue({
+      ...ANSWERED_ACTIVE,
+      setActiveCardIndex: set,
+      isRequired: vi.fn().mockReturnValue(true),
+      isAnswered: vi.fn().mockReturnValue(false)
+    });
+    renderCards(
+      withCards({
+        q1: 'card-answered',
+        q2: 'card-active',
+        q3: 'card-future'
+      })
+    );
+    expect(
+      document.querySelector('.card-future')?.getAttribute('aria-disabled')
+    ).toBe('true');
+    expect(
+      document.querySelector('.card-answered')?.hasAttribute('aria-disabled')
+    ).toBe(false);
+  });
+
+  it('navigates to a future card on Enter', () => {
+    renderCards(
+      withCards({
+        q1: 'card-answered',
+        q2: 'card-active',
+        q3: 'card-future'
+      })
+    );
+    keyDown('card-future', 'Enter');
+    expect(set).toHaveBeenCalledWith(2);
+  });
+
+  it('navigates to an answered card on Enter', () => {
+    renderCards(
+      withCards({
+        q1: 'card-answered',
+        q2: 'card-active',
+        q3: 'card-future'
+      })
+    );
+    keyDown('card-answered', 'Enter');
+    expect(set).toHaveBeenCalledWith(0);
+  });
+
+  it('navigates to a future card on Space', () => {
+    renderCards(
+      withCards({
+        q1: 'card-answered',
+        q2: 'card-active',
+        q3: 'card-future'
+      })
+    );
+    keyDown('card-future', ' ');
+    expect(set).toHaveBeenCalledWith(2);
+  });
+
+  it('blocks Enter on future card when active card is required', () => {
+    mockF.mockReturnValue({
+      ...ANSWERED_ACTIVE,
+      setActiveCardIndex: set,
+      isRequired: vi.fn().mockReturnValue(true),
+      isAnswered: vi.fn().mockReturnValue(false)
+    });
+    renderCards(
+      withCards({
+        q1: 'card-answered',
+        q2: 'card-active',
+        q3: 'card-future'
+      })
+    );
+    keyDown('card-future', 'Enter');
+    expect(set).not.toHaveBeenCalled();
+    expect(mockToast.error).toHaveBeenCalledWith(
+      expect.stringContaining('skip')
+    );
+  });
+
+  it('ignores Enter on the active card', () => {
+    renderCards(
+      withCards({
+        q1: 'card-answered',
+        q2: 'card-active',
+        q3: 'card-future'
+      })
+    );
+    keyDown('card-active', 'Enter');
+    expect(set).not.toHaveBeenCalled();
+  });
+
+  it('advances on ArrowDown and moves focus to the next card', () => {
+    renderCards(
+      withCards({
+        q1: 'card-answered',
+        q2: 'card-active',
+        q3: 'card-future'
+      })
+    );
+    keyDown('card-active', 'ArrowDown');
+    expect(set).toHaveBeenCalledWith(2);
+    expect(document.activeElement).toBe(document.querySelector('.card-future'));
+  });
+
+  it('retreats on ArrowUp and moves focus to the previous card', () => {
+    renderCards(
+      withCards({
+        q1: 'card-answered',
+        q2: 'card-active',
+        q3: 'card-future'
+      })
+    );
+    keyDown('card-active', 'ArrowUp');
+    expect(set).toHaveBeenCalledWith(0);
+    expect(document.activeElement).toBe(
+      document.querySelector('.card-answered')
+    );
+  });
+
+  it('does not hijack arrow keys when focus is inside a form input', () => {
+    renderCards(
+      <CardStackContainer>
+        <div data-link-id='q2' className='card-active'>
+          <input data-testid='inner-input' />
+        </div>
+      </CardStackContainer>
+    );
+    screen.getByTestId('inner-input').focus();
+    fireEvent.keyDown(screen.getByTestId('inner-input'), {
+      key: 'ArrowDown'
+    });
+    expect(set).not.toHaveBeenCalled();
+  });
+});

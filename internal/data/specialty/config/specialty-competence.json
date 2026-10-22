@@ -1,0 +1,573 @@
+{
+  "Allopathic & Osteopathic Physicians|Allergy & Immunology": [
+    "physical-health.cardio-respiratory",
+    "physical-health.dermatologic"
+  ],
+  "Allopathic & Osteopathic Physicians|Anesthesiology": [
+    "physical-health.cardio-respiratory",
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Clinical Pharmacology": [
+    "physical-health.general",
+    "health-behaviours-lifestyle.substance-use"
+  ],
+  "Allopathic & Osteopathic Physicians|Colon & Rectal Surgery": [
+    "physical-health.digestive"
+  ],
+  "Allopathic & Osteopathic Physicians|Dermatology": [
+    "physical-health.dermatologic"
+  ],
+  "Allopathic & Osteopathic Physicians|Electrodiagnostic Medicine": [
+    "physical-health.neurological"
+  ],
+  "Allopathic & Osteopathic Physicians|Emergency Medicine": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Family Medicine": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|General Practice": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Hospitalist": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Independent Medical Examiner": [
+    "functional-capacity.work-capacity",
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Integrative Medicine": [
+    "physical-health.general",
+    "health-behaviours-lifestyle.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Internal Medicine": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Legal Medicine": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Medical Genetics": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Neurological Surgery": [
+    "physical-health.neurological"
+  ],
+  "Allopathic & Osteopathic Physicians|Neuromusculoskeletal Medicine & OMM": [
+    "physical-health.musculoskeletal"
+  ],
+  "Allopathic & Osteopathic Physicians|Neuromusculoskeletal Medicine, Sports Medicine": [
+    "physical-health.musculoskeletal"
+  ],
+  "Allopathic & Osteopathic Physicians|Nuclear Medicine": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Obstetrics & Gynecology": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Ophthalmology": [
+    "physical-health.sensory"
+  ],
+  "Allopathic & Osteopathic Physicians|Oral & Maxillofacial Surgery": [
+    "physical-health.musculoskeletal",
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Orthopaedic Surgery": [
+    "physical-health.musculoskeletal",
+    "environmental-contextual.ergonomics"
+  ],
+  "Allopathic & Osteopathic Physicians|Otolaryngology": [
+    "physical-health.sensory",
+    "physical-health.cardio-respiratory"
+  ],
+  "Allopathic & Osteopathic Physicians|Pain Medicine": [
+    "physical-health.musculoskeletal",
+    "physical-health.neurological"
+  ],
+  "Allopathic & Osteopathic Physicians|Pathology": ["physical-health.general"],
+  "Allopathic & Osteopathic Physicians|Pediatrics": ["physical-health.general"],
+  "Allopathic & Osteopathic Physicians|Phlebology": [
+    "physical-health.cardio-respiratory",
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Physical Medicine & Rehabilitation": [
+    "functional-capacity.mobility",
+    "functional-capacity.daily-living",
+    "physical-health.musculoskeletal"
+  ],
+  "Allopathic & Osteopathic Physicians|Plastic Surgery": [
+    "physical-health.dermatologic",
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Preventive Medicine": [
+    "physical-health.general",
+    "health-behaviours-lifestyle.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Psychiatry & Neurology": [
+    "mental-emotional-health.mood-disorders",
+    "mental-emotional-health.anxiety-stress",
+    "mental-emotional-health.trauma-grief",
+    "mental-emotional-health.cognitive-behavioral",
+    "mental-emotional-health.addiction",
+    "mental-emotional-health.psychosis",
+    "mental-emotional-health.general",
+    "physical-health.neurological",
+    "health-behaviours-lifestyle.substance-use"
+  ],
+  "Allopathic & Osteopathic Physicians|Radiology": ["physical-health.general"],
+  "Allopathic & Osteopathic Physicians|Surgery": ["physical-health.general"],
+  "Allopathic & Osteopathic Physicians|Thoracic Surgery (Cardiothoracic Vascular Surgery)": [
+    "physical-health.cardio-respiratory"
+  ],
+  "Allopathic & Osteopathic Physicians|Transplant Surgery": [
+    "physical-health.general"
+  ],
+  "Allopathic & Osteopathic Physicians|Urology": ["physical-health.general"],
+  "Behavioral Health & Social Service Providers|Assistant Behavior Analyst": [
+    "mental-emotional-health.cognitive-behavioral"
+  ],
+  "Behavioral Health & Social Service Providers|Behavior Analyst": [
+    "mental-emotional-health.cognitive-behavioral"
+  ],
+  "Behavioral Health & Social Service Providers|Behavior Technician": [
+    "mental-emotional-health.cognitive-behavioral"
+  ],
+  "Behavioral Health & Social Service Providers|Clinical Neuropsychologist": [
+    "functional-capacity.attention-cognition",
+    "functional-capacity.memory",
+    "mental-emotional-health.cognitive-behavioral",
+    "physical-health.neurological"
+  ],
+  "Behavioral Health & Social Service Providers|Counselor": [
+    "mental-emotional-health.cognitive-behavioral",
+    "mental-emotional-health.anxiety-stress",
+    "mental-emotional-health.trauma-grief",
+    "social-health-relationships.couple-family",
+    "social-health-relationships.work-relations",
+    "social-health-relationships.communication",
+    "social-health-relationships.loneliness",
+    "meaning-purpose-fulfilment.self-esteem",
+    "meaning-purpose-fulfilment.life-transitions"
+  ],
+  "Behavioral Health & Social Service Providers|Drama Therapist": [
+    "mental-emotional-health.trauma-grief",
+    "mental-emotional-health.cognitive-behavioral"
+  ],
+  "Behavioral Health & Social Service Providers|Marriage & Family Therapist": [
+    "social-health-relationships.couple-family",
+    "mental-emotional-health.cognitive-behavioral"
+  ],
+  "Behavioral Health & Social Service Providers|Poetry Therapist": [
+    "mental-emotional-health.cognitive-behavioral",
+    "mental-emotional-health.trauma-grief"
+  ],
+  "Behavioral Health & Social Service Providers|Psychoanalyst": [
+    "mental-emotional-health.mood-disorders",
+    "mental-emotional-health.cognitive-behavioral",
+    "mental-emotional-health.anxiety-stress"
+  ],
+  "Behavioral Health & Social Service Providers|Psychologist": [
+    "mental-emotional-health.mood-disorders",
+    "mental-emotional-health.anxiety-stress",
+    "mental-emotional-health.trauma-grief",
+    "mental-emotional-health.cognitive-behavioral",
+    "mental-emotional-health.psychosis",
+    "mental-emotional-health.addiction",
+    "mental-emotional-health.general",
+    "health-behaviours-lifestyle.substance-use",
+    "meaning-purpose-fulfilment.career",
+    "meaning-purpose-fulfilment.existential",
+    "meaning-purpose-fulfilment.life-transitions",
+    "meaning-purpose-fulfilment.self-esteem",
+    "social-health-relationships.couple-family",
+    "social-health-relationships.communication",
+    "social-health-relationships.loneliness",
+    "social-health-relationships.general"
+  ],
+  "Behavioral Health & Social Service Providers|Social Worker": [
+    "social-health-relationships.general",
+    "mental-emotional-health.cognitive-behavioral",
+    "environmental-contextual.caregiving",
+    "environmental-contextual.financial",
+    "meaning-purpose-fulfilment.life-transitions"
+  ],
+  "Chiropractic Providers|Chiropractor": [
+    "physical-health.musculoskeletal",
+    "environmental-contextual.ergonomics"
+  ],
+  "Dental Providers|Advanced Practice Dental Therapist": [
+    "physical-health.general"
+  ],
+  "Dental Providers|Dental Assistant": ["physical-health.general"],
+  "Dental Providers|Dental Hygienist": [
+    "physical-health.general",
+    "health-behaviours-lifestyle.general"
+  ],
+  "Dental Providers|Dental Laboratory Technician": ["physical-health.general"],
+  "Dental Providers|Dental Therapist": ["physical-health.general"],
+  "Dental Providers|Dentist": ["physical-health.general"],
+  "Dental Providers|Denturist": ["physical-health.general"],
+  "Dietary & Nutritional Service Providers|Dietary Manager": [
+    "health-behaviours-lifestyle.eating-weight"
+  ],
+  "Dietary & Nutritional Service Providers|Dietetic Technician, Registered": [
+    "health-behaviours-lifestyle.eating-weight"
+  ],
+  "Dietary & Nutritional Service Providers|Dietitian, Registered": [
+    "health-behaviours-lifestyle.eating-weight"
+  ],
+  "Dietary & Nutritional Service Providers|Nutritionist": [
+    "health-behaviours-lifestyle.eating-weight"
+  ],
+  "Emergency Medical Service Providers|Community Paramedic": [
+    "physical-health.general"
+  ],
+  "Emergency Medical Service Providers|Emergency Medical Technician, Basic": [
+    "physical-health.general"
+  ],
+  "Emergency Medical Service Providers|Emergency Medical Technician, Intermediate": [
+    "physical-health.general"
+  ],
+  "Emergency Medical Service Providers|Emergency Medical Technician, Paramedic": [
+    "physical-health.general"
+  ],
+  "Emergency Medical Service Providers|Personal Emergency Response Attendant": [
+    "physical-health.general"
+  ],
+  "Eye and Vision Services Providers|Optometrist": ["physical-health.sensory"],
+  "Eye and Vision Services Providers|Technician/Technologist": [
+    "physical-health.sensory"
+  ],
+  "Group|Multi-Specialty": [
+    "physical-health.general",
+    "mental-emotional-health.general",
+    "social-health-relationships.general",
+    "functional-capacity.general",
+    "meaning-purpose-fulfilment.general",
+    "health-behaviours-lifestyle.general",
+    "environmental-contextual.general"
+  ],
+  "Group|Single Specialty": [
+    "physical-health.general",
+    "mental-emotional-health.general",
+    "social-health-relationships.general",
+    "functional-capacity.general",
+    "meaning-purpose-fulfilment.general",
+    "health-behaviours-lifestyle.general",
+    "environmental-contextual.general"
+  ],
+  "Nursing Service Providers|Licensed Practical Nurse": [
+    "physical-health.general",
+    "functional-capacity.daily-living"
+  ],
+  "Nursing Service Providers|Licensed Psychiatric Technician": [
+    "mental-emotional-health.general"
+  ],
+  "Nursing Service Providers|Licensed Vocational Nurse": [
+    "physical-health.general",
+    "functional-capacity.daily-living"
+  ],
+  "Nursing Service Providers|Registered Nurse": [
+    "physical-health.general",
+    "functional-capacity.daily-living"
+  ],
+  "Nursing Service Related Providers|Adult Companion": [
+    "social-health-relationships.loneliness",
+    "environmental-contextual.caregiving"
+  ],
+  "Nursing Service Related Providers|Chore Provider": [
+    "environmental-contextual.caregiving",
+    "functional-capacity.daily-living"
+  ],
+  "Nursing Service Related Providers|Day Training/Habilitation Specialist": [
+    "functional-capacity.daily-living",
+    "functional-capacity.work-capacity"
+  ],
+  "Nursing Service Related Providers|Doula": [
+    "environmental-contextual.caregiving"
+  ],
+  "Nursing Service Related Providers|Home Health Aide": [
+    "environmental-contextual.caregiving",
+    "functional-capacity.daily-living"
+  ],
+  "Nursing Service Related Providers|Homemaker": [
+    "functional-capacity.daily-living"
+  ],
+  "Nursing Service Related Providers|Nurse's Aide": [
+    "functional-capacity.daily-living"
+  ],
+  "Nursing Service Related Providers|Nursing Home Administrator": [
+    "environmental-contextual.caregiving"
+  ],
+  "Nursing Service Related Providers|Religious Nonmedical Nursing Personnel": [
+    "meaning-purpose-fulfilment.existential",
+    "environmental-contextual.caregiving"
+  ],
+  "Nursing Service Related Providers|Religious Nonmedical Practitioner": [
+    "meaning-purpose-fulfilment.existential"
+  ],
+  "Nursing Service Related Providers|Technician": [
+    "physical-health.general",
+    "functional-capacity.daily-living"
+  ],
+  "Other Service Providers|Acupuncturist": ["physical-health.musculoskeletal"],
+  "Other Service Providers|Case Manager/Care Coordinator": [
+    "social-health-relationships.general",
+    "functional-capacity.general",
+    "environmental-contextual.caregiving"
+  ],
+  "Other Service Providers|Clinical Ethicist": [
+    "meaning-purpose-fulfilment.existential",
+    "social-health-relationships.general"
+  ],
+  "Other Service Providers|Community Health Worker": [
+    "health-behaviours-lifestyle.general",
+    "social-health-relationships.general"
+  ],
+  "Other Service Providers|Contractor": ["physical-health.musculoskeletal"],
+  "Other Service Providers|Driver": [
+    "functional-capacity.daily-living",
+    "environmental-contextual.general"
+  ],
+  "Other Service Providers|Funeral Director": [
+    "environmental-contextual.general",
+    "meaning-purpose-fulfilment.existential"
+  ],
+  "Other Service Providers|Genetic Counselor, MS": ["physical-health.general"],
+  "Other Service Providers|Health & Wellness Coach": [
+    "health-behaviours-lifestyle.physical-activity",
+    "health-behaviours-lifestyle.eating-weight",
+    "health-behaviours-lifestyle.general"
+  ],
+  "Other Service Providers|Health Educator": [
+    "health-behaviours-lifestyle.general"
+  ],
+  "Other Service Providers|Homeopath": ["physical-health.general"],
+  "Other Service Providers|Interpreter": [
+    "social-health-relationships.communication"
+  ],
+  "Other Service Providers|Lactation Consultant, Non-RN": [
+    "health-behaviours-lifestyle.eating-weight",
+    "environmental-contextual.caregiving"
+  ],
+  "Other Service Providers|Legal Medicine": ["physical-health.general"],
+  "Other Service Providers|Mechanotherapist": [
+    "physical-health.musculoskeletal"
+  ],
+  "Other Service Providers|Medical Genetics, Ph.D. Medical Genetics": [
+    "physical-health.general"
+  ],
+  "Other Service Providers|Midwife": [
+    "environmental-contextual.caregiving",
+    "physical-health.general"
+  ],
+  "Other Service Providers|Midwife, Lay": [
+    "environmental-contextual.caregiving"
+  ],
+  "Other Service Providers|Military Health Care Provider": [
+    "physical-health.general"
+  ],
+  "Other Service Providers|Naprapath": ["physical-health.musculoskeletal"],
+  "Other Service Providers|Naturopath": [
+    "physical-health.general",
+    "health-behaviours-lifestyle.general"
+  ],
+  "Other Service Providers|Peer Specialist": [
+    "mental-emotional-health.cognitive-behavioral",
+    "social-health-relationships.general",
+    "meaning-purpose-fulfilment.life-transitions"
+  ],
+  "Other Service Providers|Prevention Professional": [
+    "health-behaviours-lifestyle.general"
+  ],
+  "Other Service Providers|Reflexologist": ["physical-health.musculoskeletal"],
+  "Other Service Providers|Sleep Specialist, PhD": ["physical-health.sleep"],
+  "Other Service Providers|Specialist": ["physical-health.general"],
+  "Other Service Providers|Veterinarian": ["physical-health.general"],
+  "Pharmacy Service Providers|Pharmacist": [
+    "physical-health.general",
+    "health-behaviours-lifestyle.substance-use"
+  ],
+  "Pharmacy Service Providers|Pharmacy Technician": ["physical-health.general"],
+  "Physician Assistants & Advanced Practice Nursing Providers|Advanced Practice Midwife": [
+    "environmental-contextual.caregiving",
+    "physical-health.general"
+  ],
+  "Physician Assistants & Advanced Practice Nursing Providers|Anesthesiologist Assistant": [
+    "physical-health.general"
+  ],
+  "Physician Assistants & Advanced Practice Nursing Providers|Clinical Nurse Specialist": [
+    "physical-health.general",
+    "mental-emotional-health.general",
+    "functional-capacity.general"
+  ],
+  "Physician Assistants & Advanced Practice Nursing Providers|Nurse Anesthetist, Certified Registered": [
+    "physical-health.general"
+  ],
+  "Physician Assistants & Advanced Practice Nursing Providers|Nurse Practitioner": [
+    "physical-health.general",
+    "mental-emotional-health.general"
+  ],
+  "Physician Assistants & Advanced Practice Nursing Providers|Physician Assistant": [
+    "physical-health.general"
+  ],
+  "Podiatric Medicine & Surgery Service Providers|Assistant, Podiatric": [
+    "physical-health.musculoskeletal"
+  ],
+  "Podiatric Medicine & Surgery Service Providers|Podiatrist": [
+    "physical-health.musculoskeletal"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Anaplastologist": [
+    "physical-health.dermatologic"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Art Therapist": [
+    "mental-emotional-health.trauma-grief",
+    "mental-emotional-health.cognitive-behavioral"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Clinical Exercise Physiologist": [
+    "health-behaviours-lifestyle.physical-activity",
+    "physical-health.cardio-respiratory"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Dance Therapist": [
+    "mental-emotional-health.cognitive-behavioral",
+    "physical-health.musculoskeletal"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Developmental Therapist": [
+    "functional-capacity.general"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Kinesiotherapist": [
+    "physical-health.musculoskeletal",
+    "functional-capacity.mobility"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Massage Therapist": [
+    "physical-health.musculoskeletal"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Mastectomy Fitter": [
+    "physical-health.general"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Music Therapist": [
+    "mental-emotional-health.cognitive-behavioral",
+    "mental-emotional-health.trauma-grief"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Occupational Therapist": [
+    "functional-capacity.daily-living",
+    "functional-capacity.mobility",
+    "functional-capacity.work-capacity",
+    "physical-health.musculoskeletal",
+    "environmental-contextual.ergonomics"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Occupational Therapy Assistant": [
+    "functional-capacity.daily-living",
+    "functional-capacity.mobility",
+    "environmental-contextual.ergonomics"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Orthotic Fitter": [
+    "physical-health.musculoskeletal"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Orthotist": [
+    "physical-health.musculoskeletal"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Pedorthist": [
+    "physical-health.musculoskeletal"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Physical Therapist": [
+    "functional-capacity.mobility",
+    "physical-health.musculoskeletal",
+    "environmental-contextual.ergonomics"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Physical Therapy Assistant": [
+    "functional-capacity.mobility",
+    "physical-health.musculoskeletal",
+    "environmental-contextual.ergonomics"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Prosthetist": [
+    "functional-capacity.mobility"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Pulmonary Function Technologist": [
+    "physical-health.cardio-respiratory"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Recreation Therapist": [
+    "mental-emotional-health.cognitive-behavioral",
+    "social-health-relationships.general",
+    "functional-capacity.daily-living"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Recreational Therapist Assistant": [
+    "mental-emotional-health.cognitive-behavioral",
+    "functional-capacity.daily-living"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Rehabilitation Counselor": [
+    "functional-capacity.work-capacity",
+    "mental-emotional-health.cognitive-behavioral",
+    "social-health-relationships.general"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Rehabilitation Practitioner": [
+    "functional-capacity.general"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Respiratory Therapist, Certified": [
+    "physical-health.cardio-respiratory"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Respiratory Therapist, Registered": [
+    "physical-health.cardio-respiratory"
+  ],
+  "Respiratory, Developmental, Rehabilitative and Restorative Service Providers|Specialist/Technologist": [
+    "physical-health.cardio-respiratory"
+  ],
+  "Speech, Language and Hearing Service Providers|Audiologist": [
+    "physical-health.sensory",
+    "social-health-relationships.communication"
+  ],
+  "Speech, Language and Hearing Service Providers|Audiologist-Hearing Aid Fitter": [
+    "physical-health.sensory"
+  ],
+  "Speech, Language and Hearing Service Providers|Hearing Instrument Specialist": [
+    "physical-health.sensory"
+  ],
+  "Speech, Language and Hearing Service Providers|Specialist/Technologist": [
+    "physical-health.sensory",
+    "social-health-relationships.communication"
+  ],
+  "Speech, Language and Hearing Service Providers|Speech-Language Pathologist": [
+    "social-health-relationships.communication",
+    "functional-capacity.attention-cognition",
+    "physical-health.sensory"
+  ],
+  "Student, Health Care|Student in an Organized Health Care Education/Training Program": [
+    "physical-health.general",
+    "mental-emotional-health.general",
+    "social-health-relationships.general",
+    "functional-capacity.general"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Perfusionist": [
+    "physical-health.cardio-respiratory"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Radiologic Technologist": [
+    "physical-health.general"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Radiology Practitioner Assistant": [
+    "physical-health.general"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Specialist/Technologist Cardiovascular": [
+    "physical-health.cardio-respiratory"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Specialist/Technologist, Health Information": [
+    "physical-health.general",
+    "functional-capacity.general"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Specialist/Technologist, Other": [
+    "physical-health.general"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Specialist/Technologist, Pathology": [
+    "physical-health.general"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Technician, Cardiology": [
+    "physical-health.cardio-respiratory"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Technician, Health Information": [
+    "physical-health.general"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Technician, Other": [
+    "physical-health.general"
+  ],
+  "Technologists, Technicians & Other Technical Service Providers|Technician, Pathology": [
+    "physical-health.general"
+  ]
+}

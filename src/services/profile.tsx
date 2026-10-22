@@ -7,6 +7,8 @@ type IProfileRequest = {
   payload: Patient | Practitioner;
 };
 
+type ProfileResource = Patient | Practitioner;
+
 type EmailExistenceResponse = {
   exists: boolean;
   patientIds: string[];
@@ -20,7 +22,18 @@ type ModifyProfileResponseItem = {
   phone_number?: string;
 };
 
-export const createProfile = async ({ userId, email, phoneNumber, type }) => {
+/** Create a new FHIR profile for the given user and role type. */
+export const createProfile = ({
+  userId,
+  email,
+  phoneNumber,
+  type
+}: {
+  userId: string;
+  email: string;
+  phoneNumber: string;
+  type: string;
+}) => {
   const telecom = [];
 
   if (email && typeof email === 'string' && email.trim() !== '') {
@@ -57,56 +70,48 @@ export const createProfile = async ({ userId, email, phoneNumber, type }) => {
     ...(telecom.length > 0 && { telecom })
   };
 
-  try {
-    const response = await apiRequest<Patient | Practitioner>(
-      'POST',
-      `/fhir/${type}`,
-      payload
-    );
-    return response;
-  } catch (error) {
-    throw error;
-  }
+  return apiRequest<Patient | Practitioner>('POST', `/fhir/${type}`, payload);
 };
 
-export const getProfileByIdentifier = async ({ userId, type }) => {
-  try {
-    const bundle = await apiRequest<Bundle>(
-      'GET',
-      `/fhir/${type}?identifier=https://login.konsulin.care/userid|${userId}`
-    );
+/** Look up a FHIR profile by user ID and role type. */
+export const getProfileByIdentifier = async ({
+  userId,
+  type
+}: {
+  userId: string;
+  type: string;
+}): Promise<Patient | Practitioner | null> => {
+  const bundle = await apiRequest<Bundle>(
+    'GET',
+    `/fhir/${type}?identifier=https://login.konsulin.care/userid|${userId}`
+  );
 
-    const entries = bundle?.entry;
+  const entries = bundle?.entry;
 
-    if (Array.isArray(entries) && entries.length > 0) {
-      return entries[0]?.resource;
-    }
-
-    return null;
-  } catch (error) {
-    throw error;
+  if (Array.isArray(entries) && entries.length > 0 && entries[0]?.resource) {
+    return entries[0].resource as Patient | Practitioner;
   }
+
+  return null;
 };
 
+/** Fetch a FHIR profile by its resource ID and type. */
 export const getProfileById = async (
   id: string,
   type: 'Patient' | 'Practitioner'
-) => {
-  try {
-    if (!id) throw new Error('Missing FHIR id');
+): Promise<ProfileResource> => {
+  if (!id) throw new Error('Missing FHIR id');
 
-    const response = await apiRequest<Patient | Practitioner>(
-      'GET',
-      `/fhir/${type}/${id}`
-    );
+  const response = await apiRequest<ProfileResource>(
+    'GET',
+    `/fhir/${type}/${id}`
+  );
 
-    return response;
-  } catch (error) {
-    throw error;
-  }
+  return response;
 };
 
-export const checkEmailExists = async (email: string) => {
+/** Check whether an email is already registered. */
+export const checkEmailExists = (email: string) => {
   const encodedEmail = encodeURIComponent(email);
   return apiRequest<EmailExistenceResponse>(
     'GET',
@@ -114,7 +119,8 @@ export const checkEmailExists = async (email: string) => {
   );
 };
 
-export const signupByEmail = async (email: string) => {
+/** Sign up a new user via email (returns JWT or verification token). */
+export const signupByEmail = (email: string) => {
   if (!email) throw new Error('Missing email');
 
   return apiRequest('POST', '/api/v1/auth/signinup/code', {
@@ -123,14 +129,18 @@ export const signupByEmail = async (email: string) => {
   });
 };
 
+/** Mutation hook to update user profile via PATCH. */
 export const useUpdateProfile = () => {
-  return useMutation<Patient | Practitioner, Error, IProfileRequest>({
+  return useMutation<ProfileResource, Error, IProfileRequest>({
     mutationKey: ['update-profile'],
     mutationFn: async ({ payload }) => {
       const { id, resourceType } = payload;
       try {
         const API = await getAPI();
-        const response = await API.put(`/fhir/${resourceType}/${id}`, payload);
+        const response = await API.put<ProfileResource>(
+          `/fhir/${resourceType}/${id}`,
+          payload
+        );
         return response.data;
       } catch (error) {
         console.error(`Error updating profile ${resourceType} : `, error);
@@ -140,6 +150,13 @@ export const useUpdateProfile = () => {
   });
 };
 
+/** Strip non-digit characters and leading '0' or '62' prefix, return last 11+ digits. */
+function normalizePhone(phone: string): string {
+  if (!phone) return '';
+  return phone.startsWith('+') ? phone.replace(/^\++/, '+') : `+${phone}`;
+}
+
+/** Create or update a FHIR Practitioner/Patient profile resource. */
 export const modifyProfile = async ({
   email,
   phoneNumber,
@@ -152,16 +169,12 @@ export const modifyProfile = async ({
   chatwootId: string;
   email?: string;
   phoneNumber?: string;
+  // eslint-disable-next-line complexity
 }> => {
   const trimmedName = (name || '').trim();
   const trimmedEmail = (email ?? '').trim();
   const trimmedPhone = (phoneNumber ?? '').trim();
-  // Ensure phone sent upstream always has a single leading plus sign
-  const phoneForRequest = trimmedPhone
-    ? trimmedPhone.startsWith('+')
-      ? trimmedPhone.replace(/^\++/, '+')
-      : `+${trimmedPhone}`
-    : '';
+  const phoneForRequest = normalizePhone(trimmedPhone);
 
   if (!trimmedName) {
     throw new Error('Missing name for modify-profile');
@@ -183,13 +196,16 @@ export const modifyProfile = async ({
 
   const API = await getAPI();
 
-  const response = await API.post(
-    '/api/v1/hook/synchronous/modify-profile',
-    body
-  );
+  const response = await API.post<
+    Array<{
+      chatwoot_id: string;
+      email?: string;
+      phone_number?: string;
+    }>
+  >('/api/v1/hook/synchronous/modify-profile', body);
 
-  const isOk = response?.status >= 200 && response?.status < 300;
-  const data = response?.data;
+  const isOk = response.status >= 200 && response.status < 300;
+  const data = response.data;
   const first: ModifyProfileResponseItem | null =
     Array.isArray(data) && data.length > 0 ? data[0] : null;
   const chatwootId = first?.chatwoot_id;
@@ -206,6 +222,7 @@ export const modifyProfile = async ({
   };
 };
 
+/** Upload a user avatar image to Chatwoot. */
 export const uploadAvatar = async (
   chatwootId: string,
   file: File | Blob
@@ -217,24 +234,19 @@ export const uploadAvatar = async (
   formData.append('avatar', file);
 
   const API = await getAPI();
-  let response;
-  try {
-    response = await API.post(
-      '/api/v1/hook/synchronous/update-avatar',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+  const response = await API.post<Array<{ avatar_url?: string }>>(
+    '/api/v1/hook/synchronous/update-avatar',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data'
       }
-    );
-  } catch (error: any) {
-    throw new Error('Failed to upload avatar');
-  }
+    }
+  );
 
-  const isOk = response?.status >= 200 && response?.status < 300;
+  const isOk = response.status >= 200 && response.status < 300;
   const url =
-    Array.isArray(response?.data) && response.data.length > 0
+    Array.isArray(response.data) && response.data.length > 0
       ? response.data[0]?.avatar_url
       : null;
 

@@ -1,0 +1,23 @@
+{
+  "dashboard": "Selamat Datang di Konsulin",
+  "book_session": "Jadwalkan Sesi",
+  "assessment_center": "Pusat Asesmen",
+  "user_profile": "Profil Pengguna",
+  "recommended": "Rekomendasi untuk Anda",
+  "research": "Penelitian",
+  "go_back": "Kembali",
+  "close_menu": "Tutup menu",
+  "pill_register_survey": "Daftar Survei",
+  "pill_my_survey": "Survei Saya",
+  "pill_self_checkup": "Cek Kesehatan Mandiri",
+  "pill_write_journal": "Tulis Jurnal",
+  "pill_view_schedule": "Lihat Jadwal",
+  "pill_join_research": "Ikut Penelitian",
+  "pill_get_recommendation": "Dapatkan Rekomendasi",
+  "pill_set_availability": "Atur Ketersediaan",
+  "pill_health_screening": "Skrining Kesehatan",
+  "pill_soap": "S.O.A.P.",
+  "pill_register_practitioner": "Daftarkan Praktisi",
+  "pill_add_location": "Tambah Lokasi",
+  "pill_add_assessments": "Tambah Asesmen"
+}

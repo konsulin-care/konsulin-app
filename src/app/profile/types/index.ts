@@ -10,8 +10,6 @@ export type FormData = {
   times: TimeRange[];
 };
 
-export type FormsState = {
-  [key: string]: FormData[];
-};
+export type FormsState = Record<string, FormData[]>;
 
 export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';

@@ -1,0 +1,100 @@
+'use client';
+
+import EmptyState from '@/components/general/empty-state';
+import ReferralNotice from '@/components/research/referral-notice';
+import { useTranslations } from '@/i18n';
+import type { QuestionnaireInfo } from '@/services/api/questionnaire-info';
+import type { ResearchStudyWithBatches } from '@/services/api/researcher';
+import type { StudyProgress } from '@/utils/fhir/research';
+import ContributionDashboard from './contribution-dashboard';
+import ResearchCarousel from './research-carousel';
+import ResearchSkeleton from './research-skeleton';
+import ResearcherContent from './researcher-content';
+
+export interface ResearchContentProps {
+  isResearcher: boolean;
+  researcherLoading: boolean;
+  researcherStudies: ResearchStudyWithBatches[];
+  isLoading: boolean;
+  progress: import('@/utils/fhir/research').ResearchProgress | undefined;
+  studies: StudyProgress[];
+  activeStudyId: string;
+  activeStudy: StudyProgress | null;
+  titleMap: ReadonlyMap<string, QuestionnaireInfo>;
+  titlesPending: boolean;
+  fhirId?: string;
+  practitionerId?: string;
+  onSlideChange: (studyId: string) => void;
+  onResearcherStudyClick: (studyId: string) => void;
+  onStudyClick: (studyId: string) => void;
+  onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
+}
+
+/** Renders the appropriate content based on user role and data state. */
+export default function ResearchContent({
+  isResearcher,
+  researcherLoading,
+  researcherStudies,
+  isLoading,
+  progress,
+  studies,
+  activeStudyId,
+  activeStudy,
+  titleMap,
+  titlesPending,
+  fhirId,
+  practitionerId,
+  onSlideChange,
+  onResearcherStudyClick,
+  onStudyClick,
+  onQuestionnaireClick
+}: Readonly<ResearchContentProps>) {
+  const t = useTranslations('research');
+  if (isResearcher) {
+    return (
+      <ResearcherContent
+        isLoading={researcherLoading}
+        studies={researcherStudies}
+        activeId={activeStudyId}
+        onSlideChange={onSlideChange}
+        onStudyClick={onResearcherStudyClick}
+        practitionerId={practitionerId}
+        activeStudyId={activeStudyId}
+      />
+    );
+  }
+
+  if (isLoading) return <ResearchSkeleton />;
+
+  if (!progress || progress.studies.length === 0) {
+    return (
+      <EmptyState
+        className='py-16'
+        title={t('no_research_title')}
+        subtitle={t('no_research_subtitle')}
+      />
+    );
+  }
+
+  return (
+    <>
+      <ReferralNotice />
+      <ResearchCarousel
+        studies={studies}
+        activeId={activeStudyId}
+        onSlideChange={onSlideChange}
+        onStudyClick={onStudyClick}
+        onQuestionnaireClick={onQuestionnaireClick}
+        isPatient={Boolean(fhirId)}
+        fhirId={fhirId}
+        titleMap={titleMap}
+        isTitlesLoading={titlesPending}
+      />
+      <ContributionDashboard
+        progress={progress}
+        activeStudy={activeStudy}
+        questionnaireInfo={titleMap}
+      />
+    </>
+  );
+}

@@ -1,5 +1,6 @@
 import { format, isValid, parseISO } from 'date-fns';
 
+/** Format a start/end date range into a human-readable string. */
 export const formatDateRange = (start?: string, end?: string): string => {
   if (!start || !end) return '';
 
