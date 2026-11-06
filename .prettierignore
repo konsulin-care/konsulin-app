@@ -16,3 +16,6 @@ node_modules/
 
 # Ignore version control directories
 .git/
+
+# Ignore Pi extension
+.pi/**
