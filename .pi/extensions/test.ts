@@ -17,9 +17,8 @@
 
 /** Detected test suites (label + argv + routing scope/cwd), frozen at generation time. */
 const SUITES = [
-  { label: 'javascript (vitest run)', argv: ['vitest', 'run'] },
-  { label: 'go (go test ./...)', argv: ['go', 'test', './...'] },
-  { label: 'make (make test)', argv: ['make', 'test'] }
+  { label: 'config (make test-go)', argv: ['make', 'test-go'], scope: 'full' },
+  { label: 'config (make test-js)', argv: ['make', 'test-js'], scope: 'full' }
 ];
 
 /** Per-suite wall clock budget: PI_TEST_TIMEOUT_MS, 300000ms default. */
