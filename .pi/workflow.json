@@ -1,0 +1,8 @@
+{
+  "implement": {
+    "testCommands": [
+      ["make", "test-go"],
+      ["make", "test-js"]
+    ]
+  }
+}

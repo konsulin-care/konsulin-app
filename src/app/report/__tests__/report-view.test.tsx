@@ -576,9 +576,9 @@ describe('ReportView', () => {
     });
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    // Stats still count all responses
+    // Stats count the de-duplicated responses: phq2 in b1 counted once
     expect(screen.getByTestId('report-stat-assessments')).toHaveTextContent(
-      '3'
+      '2'
     );
     // Trend should show exactly 2 rows (not 3)
     const trendRows = screen.getAllByTestId('report-trend-row');

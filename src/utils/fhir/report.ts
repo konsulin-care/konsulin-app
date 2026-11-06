@@ -1,10 +1,12 @@
 import { format, parseISO } from 'date-fns';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import {
+  computeConsecutiveBatches,
   computeQuestionnaireXp,
   extractQuestionnaireId,
   isDateInRange,
   sortBatches,
+  type BatchHistoryEntry,
   type ResearchBatch,
   type StudyProgress
 } from './research';
@@ -98,9 +100,7 @@ export interface TrendRow {
 
 /** Trend availability for one questionnaire across the study's batches. */
 export type TrendState =
-  | { kind: 'none' }
-  | { kind: 'baseline' }
-  | { kind: 'trend'; rows: TrendRow[] };
+  { kind: 'none' } | { kind: 'baseline' } | { kind: 'trend'; rows: TrendRow[] };
 
 /**
  * Human batch label, e.g. "Batch 2 (Sep)", using the batch's position.
@@ -178,8 +178,11 @@ export interface ParticipationStats {
 /**
  * Computes the participation statistics for a study report.
  *
- * XP counts each questionnaire once per batch period, mirroring the global
- * research progress semantics so repeated submissions cannot farm XP.
+ * All completion metrics derive from the de-duplicated response buckets:
+ * participation, streak, assessment counts and time invested ignore
+ * `study.history` and raw duplicate submissions. XP still counts each
+ * questionnaire once per batch period, mirroring the global research
+ * progress semantics so repeated submissions cannot farm XP.
  *
  * @param study - The study being reported on.
  * @param responses - Completed responses across the study's batches.
@@ -191,32 +194,39 @@ export function computeParticipationStats(
   responses: readonly ReportResponse[],
   durationByQuestionnaire: ReadonlyMap<string, number | null>
 ): ParticipationStats {
-  const buckets = bucketResponsesByBatch(responses, study.batches);
+  const deduped = deduplicateBuckets(
+    bucketResponsesByBatch(responses, study.batches)
+  );
+
+  const bucketHistory: BatchHistoryEntry[] = sortBatches([
+    ...study.batches
+  ]).map(batch => ({
+    batchId: batch.id,
+    start: batch.start,
+    end: batch.end,
+    participated: (deduped.get(batch.id)?.length ?? 0) > 0
+  }));
 
   const scopedIds: string[] = [];
-  for (const batchResponses of buckets.values()) {
-    const distinct = new Set<string>();
+  let assessmentsCompleted = 0;
+  let timeInvested = 0;
+
+  for (const batchResponses of deduped.values()) {
+    assessmentsCompleted += batchResponses.length;
     for (const response of batchResponses) {
       const questionnaireId = extractQuestionnaireId(response.questionnaire);
-      if (questionnaireId) distinct.add(questionnaireId);
+      if (!questionnaireId) continue;
+      scopedIds.push(questionnaireId);
+      const duration = durationByQuestionnaire.get(questionnaireId);
+      if (duration) timeInvested += duration;
     }
-    scopedIds.push(...distinct);
-  }
-
-  let timeInvested = 0;
-  for (const response of responses) {
-    const questionnaireId = extractQuestionnaireId(response.questionnaire);
-    const duration = questionnaireId
-      ? durationByQuestionnaire.get(questionnaireId)
-      : null;
-    if (duration) timeInvested += duration;
   }
 
   return {
-    assessmentsCompleted: responses.length,
-    batchesCompleted: study.history.filter(entry => entry.participated).length,
+    assessmentsCompleted,
+    batchesCompleted: bucketHistory.filter(entry => entry.participated).length,
     totalBatches: study.batches.length,
-    consecutiveBatches: study.consecutiveBatches,
+    consecutiveBatches: computeConsecutiveBatches(bucketHistory),
     xp: computeQuestionnaireXp(scopedIds, durationByQuestionnaire),
     timeInvestedMinutes: timeInvested
   };
