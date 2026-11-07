@@ -17,8 +17,8 @@
 
 /** Detected test suites (label + argv + routing scope/cwd), frozen at generation time. */
 const SUITES = [
-  { label: 'config (make test-go)', argv: ['make', 'test-go'], scope: 'full' },
-  { label: 'config (make test-js)', argv: ['make', 'test-js'], scope: 'full' }
+  { "label": "config (make test-go)", "argv": ["make","test-go"], "scope": "full" },
+  { "label": "config (make test-js)", "argv": ["make","test-js"], "scope": "full" }
 ];
 
 /** Per-suite wall clock budget: PI_TEST_TIMEOUT_MS, 300000ms default. */
@@ -29,7 +29,7 @@ function suiteTimeoutMs() {
 
 /** Cap a suite's combined output to its last 4000 characters. */
 function tail(text) {
-  return text.length > 4000 ? '\u2026' + text.slice(-4000) : text;
+  return text.length > 4000 ? "\u2026" + text.slice(-4000) : text;
 }
 
 /**
@@ -43,10 +43,10 @@ async function readUnitPayload() {
   try {
     const file = process.env.PI_UNIT_FILE || process.env.PI_CONTRACT_GUARD_FILE;
     if (!file) return null;
-    const { readFileSync } = await import('node:fs');
-    const parsed = JSON.parse(readFileSync(file, 'utf8'));
-    if (!parsed || typeof parsed !== 'object') return null;
-    if (!parsed.unit || typeof parsed.unit !== 'object') return null;
+    const { readFileSync } = await import("node:fs");
+    const parsed = JSON.parse(readFileSync(file, "utf8"));
+    if (!parsed || typeof parsed !== "object") return null;
+    if (!parsed.unit || typeof parsed.unit !== "object") return null;
     return parsed;
   } catch (err) {
     return null;
@@ -56,10 +56,10 @@ async function readUnitPayload() {
 /** True when a scope entry is a safe repo-relative path (T7). */
 function validScopeEntry(entry) {
   return (
-    typeof entry === 'string' &&
+    typeof entry === "string" &&
     /^[a-zA-Z0-9._/-]+$/.test(entry) &&
-    !entry.startsWith('-') &&
-    entry.indexOf('..') === -1
+    !entry.startsWith("-") &&
+    entry.indexOf("..") === -1
   );
 }
 
@@ -67,91 +67,89 @@ const JS_EXT = /\.(ts|tsx|js|jsx)$/;
 
 /** Repo-relative POSIX-style normalize for routing inputs (no imports). */
 function normPath(p) {
-  const absolute = p.charAt(0) === '/';
+  const absolute = p.charAt(0) === "/";
   const parts = [];
-  for (const seg of p.split('/')) {
-    if (seg === '' || seg === '.') continue;
-    if (seg === '..') {
-      if (parts.length > 0 && parts[parts.length - 1] !== '..') parts.pop();
-      else if (!absolute) parts.push('..');
+  for (const seg of p.split("/")) {
+    if (seg === "" || seg === ".") continue;
+    if (seg === "..") {
+      if (parts.length > 0 && parts[parts.length - 1] !== "..") parts.pop();
+      else if (!absolute) parts.push("..");
       continue;
     }
     parts.push(seg);
   }
-  const joined = parts.join('/');
-  if (absolute) return '/' + joined;
-  return joined === '' ? '.' : joined;
+  const joined = parts.join("/");
+  if (absolute) return "/" + joined;
+  return joined === "" ? "." : joined;
 }
 
 /** posix.relative(from, to) for normalized repo-relative inputs. */
 function relPath(from, to) {
-  const f = from === '.' ? [] : from.split('/');
-  const t = to.split('/');
+  const f = from === "." ? [] : from.split("/");
+  const t = to.split("/");
   let i = 0;
   while (i < f.length && i < t.length && f[i] === t[i]) i++;
   const parts = [];
-  for (let k = 0; k < f.length - i; k++) parts.push('..');
+  for (let k = 0; k < f.length - i; k++) parts.push("..");
   for (let k = i; k < t.length; k++) parts.push(t[k]);
-  return parts.join('/');
+  return parts.join("/");
 }
 
 /** Routing scope of a suite: explicit, else packages for go test, else full. */
 function effectiveScope(suite) {
   if (suite.scope) return suite.scope;
-  return suite.argv[0] === 'go' && suite.argv[1] === 'test'
-    ? 'packages'
-    : 'full';
+  return suite.argv[0] === "go" && suite.argv[1] === "test" ? "packages" : "full";
 }
 
 /** Language a suite runs (python/js/go), or null when it never routes. */
 function suiteLang(suite) {
   const a = suite.argv;
-  if (a.some(p => p === 'pytest' || p.endsWith('/pytest'))) return 'python';
-  if (a.some(p => p === 'vitest' || p === 'jest')) return 'js';
-  if (a[0] === 'go') return 'go';
+  if (a.some((p) => p === "pytest" || p.endsWith("/pytest"))) return "python";
+  if (a.some((p) => p === "vitest" || p === "jest")) return "js";
+  if (a[0] === "go") return "go";
   return null;
 }
 
 /** Language of a routed path (py/go/js extension), or null. */
 function pathLang(path) {
-  if (path.endsWith('.py')) return 'python';
-  if (path.endsWith('.go')) return 'go';
-  if (JS_EXT.test(path)) return 'js';
+  if (path.endsWith(".py")) return "python";
+  if (path.endsWith(".go")) return "go";
+  if (JS_EXT.test(path)) return "js";
   return null;
 }
 
 /** Normalized suite cwd ("." default, no trailing slash). */
 function normCwd(cwd) {
-  const n = normPath(cwd || '.').replace(/\/+$/, '');
-  return n === '' ? '.' : n;
+  const n = normPath(cwd || ".").replace(/\/+$/, "");
+  return n === "" ? "." : n;
 }
 
 /** True when cwd is "." or an ancestor of path. */
 function contains(cwd, path) {
-  return cwd === '.' || path === cwd || path.startsWith(cwd + '/');
+  return cwd === "." || path === cwd || path.startsWith(cwd + "/");
 }
 
 /** Cwd depth for the deepest-ancestor tie-break ("." = 0). */
 function depth(cwd) {
-  return cwd === '.' ? 0 : cwd.split('/').length;
+  return cwd === "." ? 0 : cwd.split("/").length;
 }
 
 /** Drop the {tests}/{pkgs} placeholders (full-suite argv). */
 function stripPlaceholders(argv) {
-  return argv.filter(p => p !== '{tests}' && p !== '{pkgs}');
+  return argv.filter((p) => p !== "{tests}" && p !== "{pkgs}");
 }
 
 /** Files-suite argv: insert routed rel paths at {tests} (append when absent). */
 function filesArgv(argv, files) {
-  const i = argv.indexOf('{tests}');
+  const i = argv.indexOf("{tests}");
   if (i < 0) return argv.concat(files);
   return argv.slice(0, i).concat(files, argv.slice(i + 1));
 }
 
 /** Packages-suite argv: replace {pkgs} (or ./...) with routed ./<dir>/... . */
 function pkgsArgv(argv, pkgs) {
-  let i = argv.indexOf('{pkgs}');
-  if (i < 0) i = argv.indexOf('./...');
+  let i = argv.indexOf("{pkgs}");
+  if (i < 0) i = argv.indexOf("./...");
   if (i < 0) return stripPlaceholders(argv.concat(pkgs));
   return stripPlaceholders(argv.slice(0, i).concat(pkgs, argv.slice(i + 1)));
 }
@@ -169,49 +167,43 @@ function pkgsArgv(argv, pkgs) {
 function routeSuites(suites, paths) {
   const routed = new Map();
   for (const entry of paths) {
-    if (entry.status === 'D') continue;
+    if (entry.status === "D") continue;
     const p = normPath(entry.path);
     const lang = pathLang(p);
     if (!lang) continue;
     let best = -1;
     suites.forEach((s, idx) => {
-      if (effectiveScope(s) === 'full' || suiteLang(s) !== lang) return;
+      if (effectiveScope(s) === "full" || suiteLang(s) !== lang) return;
       const cwd = normCwd(s.cwd);
       if (!contains(cwd, p)) return;
       if (best < 0 || depth(cwd) > depth(normCwd(suites[best].cwd))) best = idx;
     });
     if (best < 0) continue;
-    if (lang === 'go' && !p.endsWith('_test.go')) continue;
+    if (lang === "go" && !p.endsWith("_test.go")) continue;
     routed.set(best, (routed.get(best) || []).concat([p]));
   }
   return suites.map((suite, idx) => {
     const scope = effectiveScope(suite);
-    if (scope === 'full')
-      return {
-        suite: suite,
-        skipped: false,
-        argv: stripPlaceholders(suite.argv)
-      };
+    if (scope === "full") return { suite: suite, skipped: false, argv: stripPlaceholders(suite.argv) };
     const list = routed.get(idx) || [];
     if (list.length === 0) return { suite: suite, skipped: true, argv: [] };
     const cwd = normCwd(suite.cwd);
-    const rel = list.map(p => (cwd === '.' ? p : relPath(cwd, p)));
-    if (scope === 'files')
-      return { suite: suite, skipped: false, argv: filesArgv(suite.argv, rel) };
+    const rel = list.map((p) => (cwd === "." ? p : relPath(cwd, p)));
+    if (scope === "files") return { suite: suite, skipped: false, argv: filesArgv(suite.argv, rel) };
     const dirs = [];
     for (const r of rel) {
-      const d = r.lastIndexOf('/') < 0 ? '.' : r.slice(0, r.lastIndexOf('/'));
+      const d = r.lastIndexOf("/") < 0 ? "." : r.slice(0, r.lastIndexOf("/"));
       if (dirs.indexOf(d) < 0) dirs.push(d);
     }
-    const pkgs = dirs.map(d => (d === '.' ? './...' : './' + d + '/...'));
+    const pkgs = dirs.map((d) => (d === "." ? "./..." : "./" + d + "/..."));
     return { suite: suite, skipped: false, argv: pkgsArgv(suite.argv, pkgs) };
   });
 }
 
 /** Insert -run into a routed go test argv (structured run filter, T7). */
 function withRun(argv, run) {
-  if (!run || argv[0] !== 'go' || argv[1] !== 'test') return argv;
-  return [argv[0], argv[1], '-run', run].concat(argv.slice(2));
+  if (!run || argv[0] !== "go" || argv[1] !== "test") return argv;
+  return [argv[0], argv[1], "-run", run].concat(argv.slice(2));
 }
 
 /**
@@ -221,54 +213,46 @@ function withRun(argv, run) {
  */
 export default function testToolExtension(pi) {
   pi.registerTool({
-    name: 'test',
-    label: 'Run tests',
+    name: "test",
+    label: "Run tests",
     description:
       "Run the project's test suites sequentially and report pass/fail with a " +
-      'labeled output tail. The optional scope/run filters are iteration only — ' +
-      'a filtered run never satisfies the done criteria. Errors when any suite fails.',
+      "labeled output tail. The optional scope/run filters are iteration only — " +
+      "a filtered run never satisfies the done criteria. Errors when any suite fails.",
     parameters: {
-      type: 'object',
+      type: "object",
       properties: {
         scope: {
-          type: 'array',
-          items: { type: 'string' },
+          type: "array",
+          items: { type: "string" },
           description:
-            'Repo-relative path filter: routed per suite by language and ' +
-            'deepest-ancestor cwd; suites with no routed paths are skipped.'
+            "Repo-relative path filter: routed per suite by language and " +
+            "deepest-ancestor cwd; suites with no routed paths are skipped.",
         },
         run: {
-          type: 'string',
-          description:
-            'Test-name regex for go test suites, passed as -run <regex>.'
-        }
+          type: "string",
+          description: "Test-name regex for go test suites, passed as -run <regex>.",
+        },
       },
-      additionalProperties: false
+      additionalProperties: false,
     },
     async execute(toolCallId, params, signal, onUpdate, ctx) {
-      const scope =
-        params && Array.isArray(params.scope) ? params.scope : undefined;
-      const run =
-        params && typeof params.run === 'string' && params.run
-          ? params.run
-          : undefined;
+      const scope = params && Array.isArray(params.scope) ? params.scope : undefined;
+      const run = params && typeof params.run === "string" && params.run ? params.run : undefined;
       // Structured params only (T7): a malformed scope entry rejects the whole
       // call before anything runs — no free-form argv smuggling.
       if (scope) {
         for (const entry of scope) {
           if (!validScopeEntry(entry)) {
             return {
-              content: [
-                {
-                  type: 'text',
-                  text:
-                    'invalid scope entry: ' +
-                    JSON.stringify(entry) +
-                    ' — scope entries must be repo-relative paths matching ' +
-                    "[a-zA-Z0-9._/-], with no leading '-' and no '..'. Nothing was run."
-                }
-              ],
-              isError: true
+              content: [{
+                type: "text",
+                text:
+                  "invalid scope entry: " + JSON.stringify(entry) +
+                  " — scope entries must be repo-relative paths matching " +
+                  "[a-zA-Z0-9._/-], with no leading '-' and no '..'. Nothing was run.",
+              }],
+              isError: true,
             };
           }
         }
@@ -282,13 +266,10 @@ export default function testToolExtension(pi) {
           : payload && payload.unit && Array.isArray(payload.unit.testFiles)
             ? payload.unit.testFiles
             : [];
-      const runs = routeSuites(
-        SUITES,
-        paths.map(p => ({ path: p }))
-      );
+      const runs = routeSuites(SUITES, paths.map((p) => ({ path: p })));
       // Per-suite cwd: payload repoRoot joined with the suite cwd, falling
       // back to the tool-context cwd when no payload is present.
-      const { join } = await import('node:path');
+      const { join } = await import("node:path");
       const repoRoot = (payload && payload.repoRoot) || ctx.cwd;
       const timeout = suiteTimeoutMs();
       const sections = [];
@@ -298,12 +279,9 @@ export default function testToolExtension(pi) {
         const suite = item.suite;
         if (item.skipped) {
           sections.push(
-            '## ' +
-              suite.label +
-              "\nsuite '" +
-              suite.label +
+            "## " + suite.label + "\nsuite '" + suite.label +
               "' skipped (no routed paths)" +
-              (filtered ? ' — filtered iteration run, not verification' : '')
+              (filtered ? " — filtered iteration run, not verification" : ""),
           );
           continue;
         }
@@ -312,59 +290,41 @@ export default function testToolExtension(pi) {
         let result;
         try {
           result = await pi.exec(argv[0], argv.slice(1), {
-            cwd: join(repoRoot, suite.cwd || '.'),
-            timeout
+            cwd: join(repoRoot, suite.cwd || "."),
+            timeout,
           });
         } catch (err) {
           failures.push(suite.label);
           sections.push(
-            '## ' +
-              suite.label +
-              '\nspawn failed: ' +
-              String((err && err.message) || err)
+            "## " + suite.label + "\nspawn failed: " + String((err && err.message) || err),
           );
           continue;
         }
         const ok = result.code === 0 && !result.killed;
         if (!ok) failures.push(suite.label);
         const out =
-          tail([result.stdout, result.stderr].filter(Boolean).join('\n')) ||
-          '(no output)';
+          tail([result.stdout, result.stderr].filter(Boolean).join("\n")) || "(no output)";
         sections.push(
-          '## ' +
-            suite.label +
-            '\nexit ' +
-            result.code +
-            (result.killed ? ' (killed)' : '') +
-            '\n' +
-            out
+          "## " + suite.label +
+            "\nexit " + result.code +
+            (result.killed ? " (killed)" : "") +
+            "\n" + out,
         );
       }
       const summary =
         failures.length === 0
-          ? 'all ' + ran + ' suite(s) passed'
-          : failures.length +
-            '/' +
-            ran +
-            ' suite(s) failed: ' +
-            failures.join('; ');
+          ? "all " + ran + " suite(s) passed"
+          : failures.length + "/" + ran + " suite(s) failed: " + failures.join("; ");
       // Every filtered result carries the header first: n = suites run,
       // m = total suites known at generation time.
       const header = filtered
-        ? 'filtered run — ' +
-          ran +
-          '/' +
-          SUITES.length +
-          ' suites — does not satisfy the done criteria'
-        : '';
-      const text =
-        (header ? header + '\n' : '') +
-        summary +
-        '\n\n' +
-        sections.join('\n\n');
+        ? "filtered run — " + ran + "/" + SUITES.length +
+          " suites — does not satisfy the done criteria"
+        : "";
+      const text = (header ? header + "\n" : "") + summary + "\n\n" + sections.join("\n\n");
       return failures.length === 0
-        ? { content: [{ type: 'text', text: text }] }
-        : { content: [{ type: 'text', text: text }], isError: true };
-    }
+        ? { content: [{ type: "text", text: text }] }
+        : { content: [{ type: "text", text: text }], isError: true };
+    },
   });
 }
