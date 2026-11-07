@@ -1,6 +1,5 @@
 'use client';
 
-import ClaimReportFab from '@/components/assessment/claim-report-fab';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
 import { useResearchXp } from '@/hooks/useResearchXp';
@@ -26,6 +25,7 @@ import type { QuestionnaireResponse } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 
+import { ReportFab } from './report-fab';
 import { ReportHero } from './report-hero';
 import { BatchSection, ParticipationCard } from './report-sections';
 
@@ -44,8 +44,9 @@ const EMPTY_PROGRESS: ResearchProgress = {
  *
  * Renders the hero (completion headline or study title, level bar, timeline,
  * next-batch line), the participation summary, reverse-chronological batch
- * sections with per-questionnaire score cards, and a disclaimer. Guests get
- * a claim nudge in the hero with the shared Claim Report FAB.
+ * sections with per-questionnaire score cards, and a disclaimer. The
+ * contextual Report FAB owns the guest claim passthrough and the patient
+ * action priority (continue, remind, share).
  */
 export default function ReportView() {
   const t = useTranslations('common');
@@ -257,9 +258,14 @@ export default function ReportView() {
           {t('report.disclaimer')}
         </footer>
       </div>
-      <ClaimReportFab
-        path={`/report?id=${studyId}`}
-        visible={isGuest && responses.length > 0}
+      <ReportFab
+        study={study}
+        studyId={studyId}
+        today={today}
+        isGuest={isGuest}
+        hasResponses={responses.length > 0}
+        isPatient={isPatient}
+        fhirId={authState.userInfo?.fhirId}
       />
     </>
   );

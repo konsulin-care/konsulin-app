@@ -275,16 +275,20 @@ function seedDefaultMocks() {
   });
 }
 
-function findClaimAction(
-  calls: readonly unknown[][]
+function findActionByLabel(
+  calls: readonly unknown[][],
+  label: string
 ): Extract<FabAction, { type: 'SET_ACTION' }> | undefined {
   return calls.find(([action]) => {
     const fabAction = action as FabAction;
-    return (
-      fabAction.type === 'SET_ACTION' &&
-      fabAction.config?.label === 'Simpan Laporan'
-    );
+    return fabAction.type === 'SET_ACTION' && fabAction.config?.label === label;
   })?.[0] as Extract<FabAction, { type: 'SET_ACTION' }> | undefined;
+}
+
+function findClaimAction(
+  calls: readonly unknown[][]
+): Extract<FabAction, { type: 'SET_ACTION' }> | undefined {
+  return findActionByLabel(calls, 'Simpan Laporan');
 }
 
 describe('ReportView', () => {
@@ -594,7 +598,7 @@ describe('ReportView', () => {
     expect(screen.getByTestId('report-disclaimer')).toBeInTheDocument();
   });
 
-  it('offers guests the claim nudge and Claim Report FAB', async () => {
+  it("offers guests the claim nudge through ReportFab's guest branch", async () => {
     mockUseAuth.mockReturnValue({
       state: { isAuthenticated: false, userInfo: {} },
       isLoading: false
@@ -606,10 +610,50 @@ describe('ReportView', () => {
         'Claim this report within 24 hours to unlock score history record'
       )
     ).toBeInTheDocument();
+    // ReportFab owns the guest passthrough and renders ClaimReportFab with
+    // visible set from the loaded responses.
     const claimAction = findClaimAction(mockFabDispatch.mock.calls);
     expect(claimAction).toBeDefined();
     expect(claimAction?.config.label).toBe('Simpan Laporan');
     expect(claimAction?.config.variant).toBe('primary');
+  });
+
+  it("offers patients the 'Lanjutkan' action for an open incomplete batch", async () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: {
+        studies: [
+          makeStudy({
+            currentBatch: BATCH_1,
+            firstUncompletedQuestionnaireId: 'phq2'
+          })
+        ],
+        cumulativeResponses: 3,
+        questionnaireResponses: [],
+        questionnaireXp: 0,
+        completedQuestionnaireIds: [],
+        consentedStudyIds: []
+      },
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    // Only ReportFab's priority machine dispatches a patient action; the
+    // superseded direct ClaimReportFab dispatched null for authenticated users.
+    const action = findActionByLabel(mockFabDispatch.mock.calls, 'Lanjutkan');
+    expect(action).toBeDefined();
+    expect(action?.config.label).toBe('Lanjutkan');
+    expect(findClaimAction(mockFabDispatch.mock.calls)).toBeUndefined();
+  });
+
+  it('dispatches SET_ACTION with a null config when the report page unmounts', async () => {
+    const { unmount } = render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    mockFabDispatch.mockClear();
+    unmount();
+    expect(mockFabDispatch).toHaveBeenCalledWith({
+      type: 'SET_ACTION',
+      config: null
+    });
   });
 
   it('does not offer the claim FAB to authenticated users', async () => {
