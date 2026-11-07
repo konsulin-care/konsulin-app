@@ -270,6 +270,8 @@
     "next_batch_opens": "Batch berikutnya dibuka {date}",
     "last_batch": "Ini batch terakhir",
     "claim_nudge": "Klaim laporan ini dalam 24 jam untuk membuka riwayat skor",
+    "fab_claim": "Simpan Laporan",
+    "fab_continue": "Lanjutkan",
     "disclaimer": "Skor ini adalah hasil skrining untuk keperluan penelitian saja dan bukan diagnosis medis. Jika Anda merasa terbebani, silakan hubungi tenaga profesional yang berkualifikasi."
   },
   "schedule": {
