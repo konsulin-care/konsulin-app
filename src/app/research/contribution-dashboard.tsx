@@ -8,12 +8,11 @@ import {
 } from '@/components/ui/popover';
 import {
   GUEST_TITLE,
-  LEVEL_XP,
   RESEARCH_LEVELS,
   buildMission,
   getResearchLevel,
+  getResearchLevelFraction,
   getResearchLevelNumber,
-  getXpInLevel,
   type MissionQuestionnaire
 } from '@/constants/research';
 import { useAuth } from '@/context/auth/authContext';
@@ -38,8 +37,8 @@ interface AvatarData {
 }
 
 /**
- * Halo ring around the profile picture: the ring arc is the XP earned within
- * the current level, with a "Lv N" chip pinned to the bottom edge.
+ * Halo ring around the profile picture: the ring arc is the fraction of the
+ * current level's XP span earned, with a "Lv N" chip pinned to the bottom edge.
  */
 function LevelHalo({
   fraction,
@@ -301,7 +300,7 @@ export default function ContributionDashboard({
     >
       <div className='flex items-center gap-4'>
         <LevelHalo
-          fraction={getXpInLevel(totalXp) / LEVEL_XP}
+          fraction={getResearchLevelFraction(totalXp)}
           level={getResearchLevelNumber(totalXp)}
           avatar={avatar}
         />

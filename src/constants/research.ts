@@ -155,23 +155,26 @@ export function getResearchLevelProgress(xp: number): ResearchLevelProgress {
 }
 
 /**
- * Returns the numeric level for a total XP count (level 1 at 0-99 XP).
+ * Returns the 1-based position of the reached level in RESEARCH_LEVELS.
  *
  * @param xp - Total cumulative experience points.
- * @returns The level number, starting at 1.
+ * @returns The ladder level number, from 1 (Trailblazer) to 5 (Pioneer).
  */
 export function getResearchLevelNumber(xp: number): number {
-  return Math.floor(Math.max(0, xp) / LEVEL_XP) + 1;
+  return RESEARCH_LEVELS.indexOf(getResearchLevel(xp)) + 1;
 }
 
 /**
- * Returns the XP accumulated within the current level.
+ * Returns the fraction of the current level's XP span already earned.
  *
  * @param xp - Total cumulative experience points.
- * @returns XP within the current level, in [0, LEVEL_XP).
+ * @returns Progress within the level in [0, 1]; 1 at the top level.
  */
-export function getXpInLevel(xp: number): number {
-  return Math.max(0, xp) % LEVEL_XP;
+export function getResearchLevelFraction(xp: number): number {
+  const { intoNext, currentThreshold, nextThreshold } =
+    getResearchLevelProgress(xp);
+  if (nextThreshold === null) return 1;
+  return intoNext / (nextThreshold - currentThreshold);
 }
 
 /** A questionnaire the user can complete, with its XP basis when known. */
@@ -273,7 +276,7 @@ export function buildMission(opts: {
   isGuest: boolean;
 }): string {
   const { totalXp, questionnaires, isGuest } = opts;
-  const xpNeeded = LEVEL_XP - getXpInLevel(totalXp);
+  const xpNeeded = getResearchLevelProgress(totalXp).toNext;
   const next = getNextResearchLevel(totalXp);
 
   if (next === null) {
