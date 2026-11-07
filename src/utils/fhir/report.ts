@@ -102,20 +102,44 @@ export interface TrendRow {
 export type TrendState =
   { kind: 'none' } | { kind: 'baseline' } | { kind: 'trend'; rows: TrendRow[] };
 
+/** Direction of a raw-score change between two consecutive trend rows. */
+export type TrendDirection = 'up' | 'down' | 'same';
+
+/**
+ * Classifies how a raw score changed against the previous row.
+ *
+ * Pure comparison with no valence: 'up' when the current raw score exceeds
+ * the previous one, 'down' when it is lower, 'same' when both are equal.
+ *
+ * @param previous - Raw score of the earlier row.
+ * @param current - Raw score of the later row.
+ * @returns The neutral direction of change.
+ */
+export function trendDirection(
+  previous: number,
+  current: number
+): TrendDirection {
+  if (current > previous) return 'up';
+  if (current < previous) return 'down';
+  return 'same';
+}
+
 /**
  * Human batch label, e.g. "Batch 2 (Sep)", using the batch's position.
  *
  * @param batch - The batch to label.
  * @param sorted - All batches sorted by period start ascending.
+ * @param prefix - Translated label for the batch position, e.g. index => "Batch {index}".
  * @returns The label.
  */
 export function batchLabel(
   batch: ResearchBatch,
-  sorted: readonly ResearchBatch[]
+  sorted: readonly ResearchBatch[],
+  prefix: (index: number) => string
 ): string {
   const index = sorted.findIndex(item => item.id === batch.id) + 1;
   const month = format(parseISO(batch.start), 'MMM');
-  return `Batch ${index} (${month})`;
+  return `${prefix(index)} (${month})`;
 }
 
 /**
@@ -128,12 +152,14 @@ export function batchLabel(
  * @param questionnaireId - Bare questionnaire id to resolve.
  * @param buckets - Responses already bucketed per batch.
  * @param batches - The study's batches, any order.
+ * @param prefix - Translated label for the batch position, forwarded to batchLabel.
  * @returns The trend state for the questionnaire.
  */
 export function trendForQuestionnaire(
   questionnaireId: string,
   buckets: ReadonlyMap<string, ReadonlyArray<QuestionnaireResponse>>,
-  batches: readonly ResearchBatch[]
+  batches: readonly ResearchBatch[],
+  prefix: (index: number) => string
 ): TrendState {
   const sorted = sortBatches([...batches]);
   const deployments = sorted.filter(batch =>
@@ -149,7 +175,7 @@ export function trendForQuestionnaire(
       }
       rows.push({
         batchId: batch.id,
-        label: batchLabel(batch, sorted),
+        label: batchLabel(batch, sorted, prefix),
         authored: response.authored,
         dimensions: parseDimensionScores(response)
       });

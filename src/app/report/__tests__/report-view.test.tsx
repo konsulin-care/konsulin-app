@@ -11,6 +11,7 @@ vi.mock('@/i18n', async () => {
 
 import type { FabAction } from '@/context/fabContext';
 import type { QuestionnaireInfo } from '@/services/api/research';
+import { trendDirection } from '@/utils/fhir/report';
 import type {
   ResearchBatch,
   ResearchProgress,
@@ -366,6 +367,29 @@ describe('ReportView', () => {
     ]);
   });
 
+  it('renders every score bar with the neutral color regardless of dimension', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const bars = screen.getAllByTestId('report-progress');
+    expect(bars.length).toBeGreaterThan(0);
+    bars.forEach(bar => {
+      expect(bar).toHaveAttribute('data-color', '#94A3B8');
+    });
+  });
+
+  it('shows the dimension value as raw/reference without a percentage', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const b2Section = screen
+      .getAllByTestId('report-batch-section')
+      .find(section => section.dataset.batchId === 'b2');
+    const value = b2Section
+      ?.querySelector('[data-testid="report-questionnaire-card-phq2"]')
+      ?.querySelector('[data-testid="report-dimension-value"]');
+    expect(value).toHaveTextContent('3/6');
+    expect(value?.textContent).not.toContain('%');
+  });
+
   it('falls back to the all-caps questionnaire id when the title is missing', async () => {
     mockUseQuestionnaireTitles.mockReturnValue({
       data: new Map([['phq2', { title: 'PHQ-2', durationMinutes: 8 }]]),
@@ -391,6 +415,22 @@ describe('ReportView', () => {
     expect(rows[1]).toHaveTextContent('Batch 2 (Sep)');
   });
 
+  it('marks each non-first trend row with a neutral delta direction', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const rows = screen.getAllByTestId('report-trend-row');
+    expect(rows).toHaveLength(2);
+    expect(
+      rows[0]?.querySelector('[data-testid="report-trend-delta"]')
+    ).toBeNull();
+    const delta = rows[1]?.querySelector('[data-testid="report-trend-delta"]');
+    const expected = trendDirection(5, 3);
+    expect(expected).toBe('down');
+    expect(delta).toHaveAttribute('data-direction', expected);
+    expect(delta).toHaveAttribute('aria-label', 'Score down');
+    expect(rows[1]?.textContent).not.toContain('%');
+  });
+
   it('does not render a trend block in earlier batch cards of the repeated instrument', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
@@ -400,18 +440,31 @@ describe('ReportView', () => {
     expect(b1Section?.querySelector('[data-testid="report-trend"]')).toBeNull();
   });
 
-  it('shows a baseline badge and batch note for a repeated instrument with a single response', async () => {
+  it('shows a baseline badge with the comparison batch and no batch note', async () => {
     mockUseReportResponses.mockReturnValue({
       data: [PHQ2_AUG, OCEAN_AUG],
       isLoading: false
     });
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    expect(screen.getByTestId('report-baseline-badge')).toBeInTheDocument();
-    expect(screen.getByTestId('report-baseline-note')).toHaveTextContent(
-      'Baseline scores recorded for 1 assessment for future comparison'
+    expect(screen.getByTestId('report-baseline-badge')).toHaveTextContent(
+      'Baseline · compared in Batch 2 (Sep)'
     );
+    expect(screen.queryByTestId('report-baseline-note')).toBeNull();
     expect(screen.queryByTestId('report-trend')).toBeNull();
+  });
+
+  it('shows only the baseline label when no later batch repeats the questionnaire', async () => {
+    mockUseReportResponses.mockReturnValue({
+      data: [PHQ2_SEP, OCEAN_AUG],
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-baseline-badge')).toHaveTextContent(
+      /^Baseline$/
+    );
+    expect(screen.queryByTestId('report-baseline-note')).toBeNull();
   });
 
   it('renders no baseline badge or note when instruments show trends or are single-batch', async () => {
@@ -421,7 +474,7 @@ describe('ReportView', () => {
     expect(screen.queryByTestId('report-baseline-note')).toBeNull();
   });
 
-  it('shows the baseline note once per batch with the total baseline count', async () => {
+  it('shows a comparison badge per baseline card and no batch note', async () => {
     mockUseResearchProgress.mockReturnValue({
       data: {
         studies: [
@@ -456,11 +509,12 @@ describe('ReportView', () => {
     });
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    expect(screen.getAllByTestId('report-baseline-note')).toHaveLength(1);
-    expect(screen.getByTestId('report-baseline-note')).toHaveTextContent(
-      'Baseline scores recorded for 2 assessments for future comparison'
-    );
-    expect(screen.getAllByTestId('report-baseline-badge')).toHaveLength(2);
+    expect(screen.queryAllByTestId('report-baseline-note')).toHaveLength(0);
+    const badges = screen.getAllByTestId('report-baseline-badge');
+    expect(badges).toHaveLength(2);
+    badges.forEach(badge => {
+      expect(badge).toHaveTextContent('Baseline · compared in Batch 2 (Sep)');
+    });
   });
 
   it('shows a shared completion date once in the batch header, not per card', async () => {

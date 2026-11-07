@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  batchLabel,
   bucketResponsesByBatch,
   computeParticipationStats,
   deduplicateBuckets,
+  trendDirection,
   trendForQuestionnaire
 } from '../report';
 import type { ResearchBatch, StudyProgress } from '../research';
+
+/** Mirrors the en message report.batch_prefix: "Batch {index}". */
+const prefix = (index: number): string => `Batch ${index}`;
 
 const BATCHES: ResearchBatch[] = [
   {
@@ -170,7 +175,7 @@ describe('deduplicateBuckets', () => {
     const deduped = deduplicateBuckets(buckets);
     expect(deduped.get('b2')).toHaveLength(1);
     // Trend should now have exactly 2 rows from distinct batches
-    const trend = trendForQuestionnaire('phq2', deduped, batches);
+    const trend = trendForQuestionnaire('phq2', deduped, batches, prefix);
     expect(trend.kind).toBe('trend');
     if (trend.kind !== 'trend') return;
     expect(trend.rows).toHaveLength(2);
@@ -185,7 +190,7 @@ describe('trendForQuestionnaire', () => {
       [resp('r8', 'gad7', '2026-10-15T10:00:00Z')],
       BATCHES
     );
-    expect(trendForQuestionnaire('gad7', buckets, BATCHES)).toEqual({
+    expect(trendForQuestionnaire('gad7', buckets, BATCHES, prefix)).toEqual({
       kind: 'none'
     });
   });
@@ -195,7 +200,7 @@ describe('trendForQuestionnaire', () => {
       [resp('r9', 'phq2', '2026-08-15T10:00:00Z')],
       BATCHES
     );
-    expect(trendForQuestionnaire('phq2', buckets, BATCHES)).toEqual({
+    expect(trendForQuestionnaire('phq2', buckets, BATCHES, prefix)).toEqual({
       kind: 'baseline'
     });
   });
@@ -208,12 +213,45 @@ describe('trendForQuestionnaire', () => {
       ],
       BATCHES
     );
-    const trend = trendForQuestionnaire('phq2', buckets, BATCHES);
+    const trend = trendForQuestionnaire('phq2', buckets, BATCHES, prefix);
     expect(trend.kind).toBe('trend');
     if (trend.kind !== 'trend') return;
     expect(trend.rows.map(row => row.batchId)).toEqual(['b1', 'b2']);
     expect(trend.rows[0]?.label).toContain('Batch 1');
     expect(trend.rows[1]?.label).toContain('Batch 2');
+  });
+});
+
+describe('trendDirection', () => {
+  it('returns up when the current raw exceeds the previous', () => {
+    expect(trendDirection(3, 5)).toBe('up');
+  });
+
+  it('returns down when the current raw is lower than the previous', () => {
+    expect(trendDirection(5, 3)).toBe('down');
+  });
+
+  it('returns same when both raw scores are equal', () => {
+    expect(trendDirection(4, 4)).toBe('same');
+  });
+});
+
+describe('batchLabel', () => {
+  it('uses the provided translated prefix and the batch month', () => {
+    const first: ResearchBatch = {
+      id: 'x1',
+      start: '2026-08-01',
+      end: '2026-08-10',
+      questionnaireIds: ['phq2']
+    };
+    const second: ResearchBatch = {
+      id: 'x2',
+      start: '2026-08-11',
+      end: '2026-08-31',
+      questionnaireIds: ['phq2']
+    };
+    const label = (index: number): string => `Batch ${index}`;
+    expect(batchLabel(second, [first, second], label)).toBe('Batch 2 (Aug)');
   });
 });
 
