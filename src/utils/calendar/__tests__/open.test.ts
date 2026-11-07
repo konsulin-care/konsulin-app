@@ -32,12 +32,14 @@ function setNavigator(userAgent: string, maxTouchPoints: number): void {
 describe('addToCalendar', () => {
   let assignMock: ReturnType<typeof vi.fn<(url: string) => void>>;
   let openSpy: ReturnType<typeof vi.spyOn>;
+  let originalLocation: Window['location'];
   let createObjectURLMock: ReturnType<typeof vi.fn<(blob: Blob) => string>>;
   let revokeObjectURLMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     // jsdom marks Location#assign unforgeable (configurable: false), so the
     // location object itself is replaced — the repo-wide pattern for this.
+    originalLocation = window.location;
     assignMock = vi.fn<(url: string) => void>();
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -62,6 +64,10 @@ describe('addToCalendar', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: originalLocation
+    });
     Reflect.deleteProperty(URL, 'createObjectURL');
     Reflect.deleteProperty(URL, 'revokeObjectURL');
   });
