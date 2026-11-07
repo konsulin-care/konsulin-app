@@ -7,23 +7,17 @@ import {
   PopoverTrigger
 } from '@/components/ui/popover';
 import {
-  GUEST_TITLE,
   RESEARCH_LEVELS,
   buildMission,
-  getResearchLevel,
   getResearchLevelFraction,
   getResearchLevelNumber,
   type MissionQuestionnaire
 } from '@/constants/research';
 import { useAuth } from '@/context/auth/authContext';
-import { useCircleStats } from '@/services/api/circle';
+import { useResearchXp } from '@/hooks/useResearchXp';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
-import {
-  computeQuestionnaireXp,
-  type ResearchProgress,
-  type StudyProgress
-} from '@/utils/fhir/research';
+import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import { Check, Target, Trophy, Users, type LucideIcon } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
@@ -225,27 +219,10 @@ export default function ContributionDashboard({
   questionnaireInfo: ReadonlyMap<string, QuestionnaireInfo>;
 }>) {
   const { state: authState } = useAuth();
-  const fhirId = authState?.userInfo?.fhirId;
-  const isPatient = Boolean(fhirId);
-  const { data: circleStats } = useCircleStats(isPatient ? fhirId : undefined);
-  const converted = circleStats?.converted ?? 0;
-
-  const durationMap = useMemo(
-    () =>
-      new Map(
-        [...questionnaireInfo].map(([id, info]) => [id, info.durationMinutes])
-      ),
-    [questionnaireInfo]
+  const { totalXp, converted, isPatient, title } = useResearchXp(
+    progress,
+    questionnaireInfo
   );
-  const questionnaireXp = useMemo(
-    () => computeQuestionnaireXp(progress.questionnaireResponses, durationMap),
-    [progress.questionnaireResponses, durationMap]
-  );
-  const totalXp = questionnaireXp + converted;
-
-  const title: { label: string; icon: LucideIcon } = isPatient
-    ? getResearchLevel(totalXp)
-    : GUEST_TITLE;
 
   const missionQuestionnaires: MissionQuestionnaire[] = useMemo(() => {
     const completed = new Set(activeStudy?.completedQuestionnaireIds);
