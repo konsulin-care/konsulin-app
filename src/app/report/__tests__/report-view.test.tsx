@@ -44,6 +44,7 @@ const {
   mockUseReportResponses,
   mockFabDispatch,
   mockPush,
+  mockReplace,
   mockResearchProgressOptions,
   mockReportResponsesArgs
 } = vi.hoisted(() => ({
@@ -54,6 +55,7 @@ const {
   mockUseReportResponses: vi.fn<() => ResponsesHookResult>(),
   mockFabDispatch: vi.fn<Dispatch<FabAction>>(),
   mockPush: vi.fn(),
+  mockReplace: vi.fn(),
   mockResearchProgressOptions:
     vi.fn<(options?: { skipResponseSearch?: boolean }) => void>(),
   mockReportResponsesArgs:
@@ -63,12 +65,17 @@ const {
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, replace: vi.fn() }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   useSearchParams: () => mockSearchParams
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => mockUseAuth()
+}));
+
+// useResearchXp reads circle referrals for patients; keep the query mocked.
+vi.mock('@/services/api/circle', () => ({
+  useCircleStats: () => ({ data: { converted: 0, joined: 0 } })
 }));
 
 vi.mock('@/services/api/research', () => ({
@@ -79,6 +86,7 @@ vi.mock('@/services/api/research', () => ({
 }));
 
 vi.mock('@/services/api/questionnaire-info', () => ({
+  EMPTY_QUESTIONNAIRE_INFO_MAP: new Map(),
   useQuestionnaireTitles: () => mockUseQuestionnaireTitles()
 }));
 
@@ -283,14 +291,16 @@ describe('ReportView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSearchParams.delete('id');
+    mockSearchParams.delete('completed');
     seedDefaultMocks();
   });
 
-  it('requests structure-only progress and scopes responses to the study period', () => {
+  it('requests full progress and scopes responses to the study period', () => {
     render(<ReportView />);
-    // Progress: only the batch structure is needed; responses come from the
-    // dedicated single-query hook below.
-    expect(mockResearchProgressOptions).toHaveBeenCalledWith({
+    // Progress: the hero needs global XP data, so the full progress payload
+    // is fetched — no structure-only shortcut.
+    expect(mockResearchProgressOptions).toHaveBeenCalledWith(undefined);
+    expect(mockResearchProgressOptions).not.toHaveBeenCalledWith({
       skipResponseSearch: true
     });
     // Responses: one query over all batch questionnaires, bounded by the
@@ -592,7 +602,9 @@ describe('ReportView', () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
     expect(
-      screen.getByText('Claim this report to unlock score history record')
+      screen.getByText(
+        'Claim this report within 24 hours to unlock score history record'
+      )
     ).toBeInTheDocument();
     const claimAction = findClaimAction(mockFabDispatch.mock.calls);
     expect(claimAction).toBeDefined();
@@ -603,7 +615,9 @@ describe('ReportView', () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
     expect(
-      screen.queryByText('Claim this report to unlock score history record')
+      screen.queryByText(
+        'Claim this report within 24 hours to unlock score history record'
+      )
     ).toBeNull();
     expect(findClaimAction(mockFabDispatch.mock.calls)).toBeUndefined();
   });
@@ -655,5 +669,59 @@ describe('ReportView', () => {
     expect(mockPush).toHaveBeenCalledWith(
       '/auth?redirectToPath=/report?id=research'
     );
+  });
+
+  it('strips the completed flag with router.replace after the batch', async () => {
+    mockSearchParams.set('completed', '1');
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(mockReplace).toHaveBeenCalledWith('/report?id=research');
+  });
+
+  it('keeps the study title and never redirects without the flag', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-study-title')).toHaveTextContent(
+      'Mental Health Survey'
+    );
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('counts batches with responses out of the study total', async () => {
+    const fourBatches: ResearchBatch[] = [
+      BATCH_1,
+      BATCH_2,
+      {
+        id: 'b3',
+        start: '2026-10-01',
+        end: '2026-10-31',
+        questionnaireIds: ['phq2']
+      },
+      {
+        id: 'b4',
+        start: '2026-11-01',
+        end: '2026-11-30',
+        questionnaireIds: ['phq2']
+      }
+    ];
+    mockUseResearchProgress.mockReturnValue({
+      data: {
+        studies: [makeStudy({ batches: fourBatches })],
+        cumulativeResponses: 2,
+        questionnaireResponses: [],
+        questionnaireXp: 0,
+        completedQuestionnaireIds: [],
+        consentedStudyIds: []
+      },
+      isLoading: false
+    });
+    // Responses land in batches 1 and 2 only.
+    mockUseReportResponses.mockReturnValue({
+      data: [PHQ2_AUG, PHQ2_SEP],
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-stat-batches')).toHaveTextContent('2/4');
   });
 });

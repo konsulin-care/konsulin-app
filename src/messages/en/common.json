@@ -265,7 +265,11 @@
     "xp_earned": "XP earned",
     "time_invested": "Time invested",
     "minutes_invested": "~{minutes} min",
-    "claim_nudge": "Claim this report to unlock score history record",
+    "batch_done": "Batch {index} done! +{xp} XP",
+    "level_progress": "{xp} XP to {level}",
+    "next_batch_opens": "Next batch opens {date}",
+    "last_batch": "This is the last batch",
+    "claim_nudge": "Claim this report within 24 hours to unlock score history record",
     "disclaimer": "These scores are screening results for research purposes only and are not a medical diagnosis. If you are feeling distressed, please reach out to a qualified professional."
   },
   "schedule": {

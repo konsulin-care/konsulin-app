@@ -265,7 +265,11 @@
     "xp_earned": "XP diperoleh",
     "time_invested": "Waktu yang dihabiskan",
     "minutes_invested": "~{minutes} menit",
-    "claim_nudge": "Klaim laporan ini untuk membuka riwayat skor",
+    "batch_done": "Batch {index} selesai! +{xp} XP",
+    "level_progress": "{xp} XP menuju {level}",
+    "next_batch_opens": "Batch berikutnya dibuka {date}",
+    "last_batch": "Ini batch terakhir",
+    "claim_nudge": "Klaim laporan ini dalam 24 jam untuk membuka riwayat skor",
     "disclaimer": "Skor ini adalah hasil skrining untuk keperluan penelitian saja dan bukan diagnosis medis. Jika Anda merasa terbebani, silakan hubungi tenaga profesional yang berkualifikasi."
   },
   "schedule": {
