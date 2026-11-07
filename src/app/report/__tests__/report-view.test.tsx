@@ -282,7 +282,7 @@ function findClaimAction(
     const fabAction = action as FabAction;
     return (
       fabAction.type === 'SET_ACTION' &&
-      fabAction.config?.label === 'Claim Report'
+      fabAction.config?.label === 'Simpan Laporan'
     );
   })?.[0] as Extract<FabAction, { type: 'SET_ACTION' }> | undefined;
 }
@@ -608,6 +608,7 @@ describe('ReportView', () => {
     ).toBeInTheDocument();
     const claimAction = findClaimAction(mockFabDispatch.mock.calls);
     expect(claimAction).toBeDefined();
+    expect(claimAction?.config.label).toBe('Simpan Laporan');
     expect(claimAction?.config.variant).toBe('primary');
   });
 
