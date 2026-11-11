@@ -147,8 +147,8 @@ export function ReportHero({
   const showHeadline = completed && summary !== null;
   const headline = showHeadline
     ? t('report.batch_done', {
-        index: summary?.index ?? 0,
-        xp: summary?.xp ?? 0
+        index: summary.index,
+        xp: summary.xp
       })
     : studyTitle;
   const level = getResearchLevelProgress(totalXp);

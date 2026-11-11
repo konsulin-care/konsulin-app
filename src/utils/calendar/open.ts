@@ -18,7 +18,9 @@ function openIcsFile(event: CalendarEvent): void {
   });
   const objectUrl = URL.createObjectURL(blob);
   window.location.assign(objectUrl);
-  setTimeout(() => URL.revokeObjectURL(objectUrl), REVOKE_DELAY_MS);
+  setTimeout(() => {
+    URL.revokeObjectURL(objectUrl);
+  }, REVOKE_DELAY_MS);
 }
 
 /**
