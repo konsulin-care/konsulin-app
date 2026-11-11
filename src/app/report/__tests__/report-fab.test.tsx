@@ -165,6 +165,24 @@ describe('ReportFab patient actions', () => {
     );
   });
 
+  it('passes a date-only startDate when the next batch start is a timestamp', async () => {
+    renderFab(
+      makeStudy({
+        batches: [
+          AUGUST_BATCH,
+          { ...SEPTEMBER_BATCH, start: '2026-09-01T00:00:00+07:00' }
+        ],
+        currentBatch: AUGUST_BATCH
+      })
+    );
+    const action = dispatchedAction();
+    expect(action.label).toBe('Ingatkan Saya');
+    await action.onAction();
+    expect(mockAddToCalendar).toHaveBeenCalledWith(
+      expect.objectContaining({ startDate: '2026-09-01' })
+    );
+  });
+
   it("offers 'Ajak Teman' with Share2 when no next batch exists", async () => {
     renderFab(
       makeStudy({ batches: [AUGUST_BATCH], currentBatch: AUGUST_BATCH })

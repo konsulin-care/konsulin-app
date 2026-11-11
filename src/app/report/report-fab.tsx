@@ -105,7 +105,8 @@ export function ReportFab({
       uid: `${studyId}-${nextBatch.id}`,
       title: `${study.study.title} · ${t('report.batch_prefix', { index: nextBatchIndex })}`,
       description: `${nextBatch.start} - ${nextBatch.end} ${window.location.origin}/research?id=${studyId}`,
-      startDate: nextBatch.start
+      // FHIR Period.start may carry a time; both calendar outputs need yyyy-MM-dd.
+      startDate: nextBatch.start.slice(0, 10)
     });
   }, [study, nextBatch, nextBatchIndex, studyId, t]);
 
