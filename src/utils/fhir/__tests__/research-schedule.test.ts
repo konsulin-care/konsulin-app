@@ -40,9 +40,9 @@ describe('getNextBatch', () => {
   });
 
   it('returns null when today is after the last batch', () => {
-    expect(getNextBatch([BATCH_JAN, BATCH_FEB, BATCH_MAR], '2026-04-01')).toBe(
-      null
-    );
+    expect(
+      getNextBatch([BATCH_JAN, BATCH_FEB, BATCH_MAR], '2026-04-01')
+    ).toBeNull();
   });
 });
 
@@ -64,7 +64,7 @@ describe('nextBatchWithQuestionnaire', () => {
         'phq2',
         '2026-03-31'
       )
-    ).toBe(null);
+    ).toBeNull();
   });
 });
 

@@ -23,11 +23,11 @@ function pad2(value: number): string {
 function escapeText(value: string): string {
   return value
     .replaceAll('\\', '\\\\')
-    .replaceAll('\r\n', '\\n')
-    .replaceAll('\r', '\\n')
-    .replaceAll('\n', '\\n')
-    .replaceAll(';', '\\;')
-    .replaceAll(',', '\\,');
+    .replaceAll('\r\n', String.raw`\n`)
+    .replaceAll('\r', String.raw`\n`)
+    .replaceAll('\n', String.raw`\n`)
+    .replaceAll(';', String.raw`\;`)
+    .replaceAll(',', String.raw`\,`);
 }
 
 /**
