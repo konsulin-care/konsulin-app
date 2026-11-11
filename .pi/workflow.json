@@ -1,8 +1,36 @@
 {
   "implement": {
-    "testCommands": [
-      ["make", "test-go"],
-      ["make", "test-js"]
-    ]
+    "tests": {
+      "scoped": [
+        {
+          "argv": [
+            "go",
+            "test",
+            "{pkgs}",
+            "-count=1"
+          ],
+          "scope": "packages"
+        },
+        {
+          "argv": [
+            "npx",
+            "vitest",
+            "run",
+            "{tests}"
+          ],
+          "scope": "files"
+        }
+      ],
+      "full": [
+        [
+          "make",
+          "test-go"
+        ],
+        [
+          "make",
+          "test-js"
+        ]
+      ]
+    }
   }
 }
