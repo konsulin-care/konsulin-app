@@ -23,7 +23,7 @@ import {
 import { format } from 'date-fns';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { ReportFab } from './report-fab';
 import { ReportHero } from './report-hero';
@@ -65,10 +65,13 @@ export default function ReportView() {
     [progress, studyId]
   );
 
-  // Strips the batch-completion flag after the hero has announced it, so a
-  // reload shows the plain study title.
+  // The completion state is latched for the visit: the URL flag is stripped
+  // so a reload shows the plain study title, but the strip lands while the
+  // report is still loading and must not drop the hero's completion headline.
+  const [completedVisit, setCompletedVisit] = useState(completed);
   useEffect(() => {
     if (completed && studyId) {
+      setCompletedVisit(true);
       router.replace(`/report?id=${studyId}`);
     }
   }, [completed, studyId, router]);
@@ -222,7 +225,7 @@ export default function ReportView() {
       <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
         <ReportHero
           studyTitle={study.study.title}
-          completed={completed}
+          completed={completedVisit}
           today={today}
           batches={study.batches}
           buckets={buckets}

@@ -723,6 +723,23 @@ describe('ReportView', () => {
     expect(mockReplace).toHaveBeenCalledWith('/report?id=research');
   });
 
+  it('keeps the completion headline after the flag is stripped mid-load', async () => {
+    mockSearchParams.set('completed', '1');
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: true
+    });
+    const { rerender } = render(<ReportView />);
+    // The effect strips the flag on mount, before the data resolves.
+    expect(mockReplace).toHaveBeenCalledWith('/report?id=research');
+    // Next.js applies the replace: the flag leaves the URL while still loading.
+    mockSearchParams.delete('completed');
+    seedDefaultMocks();
+    rerender(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-hero-headline')).toBeInTheDocument();
+  });
+
   it('keeps the study title and never redirects without the flag', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
