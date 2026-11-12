@@ -11,6 +11,7 @@ vi.mock('@/i18n', async () => {
 
 import type { FabAction } from '@/context/fabContext';
 import type { QuestionnaireInfo } from '@/services/api/research';
+import { trendDirection } from '@/utils/fhir/report';
 import type {
   ResearchBatch,
   ResearchProgress,
@@ -43,6 +44,7 @@ const {
   mockUseReportResponses,
   mockFabDispatch,
   mockPush,
+  mockReplace,
   mockResearchProgressOptions,
   mockReportResponsesArgs
 } = vi.hoisted(() => ({
@@ -53,6 +55,7 @@ const {
   mockUseReportResponses: vi.fn<() => ResponsesHookResult>(),
   mockFabDispatch: vi.fn<Dispatch<FabAction>>(),
   mockPush: vi.fn(),
+  mockReplace: vi.fn(),
   mockResearchProgressOptions:
     vi.fn<(options?: { skipResponseSearch?: boolean }) => void>(),
   mockReportResponsesArgs:
@@ -62,12 +65,17 @@ const {
 }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush, replace: vi.fn() }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   useSearchParams: () => mockSearchParams
 }));
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => mockUseAuth()
+}));
+
+// useResearchXp reads circle referrals for patients; keep the query mocked.
+vi.mock('@/services/api/circle', () => ({
+  useCircleStats: () => ({ data: { converted: 0, joined: 0 } })
 }));
 
 vi.mock('@/services/api/research', () => ({
@@ -78,6 +86,7 @@ vi.mock('@/services/api/research', () => ({
 }));
 
 vi.mock('@/services/api/questionnaire-info', () => ({
+  EMPTY_QUESTIONNAIRE_INFO_MAP: new Map(),
   useQuestionnaireTitles: () => mockUseQuestionnaireTitles()
 }));
 
@@ -266,30 +275,36 @@ function seedDefaultMocks() {
   });
 }
 
-function findClaimAction(
-  calls: readonly unknown[][]
+function findActionByLabel(
+  calls: readonly unknown[][],
+  label: string
 ): Extract<FabAction, { type: 'SET_ACTION' }> | undefined {
   return calls.find(([action]) => {
     const fabAction = action as FabAction;
-    return (
-      fabAction.type === 'SET_ACTION' &&
-      fabAction.config?.label === 'Claim Report'
-    );
+    return fabAction.type === 'SET_ACTION' && fabAction.config?.label === label;
   })?.[0] as Extract<FabAction, { type: 'SET_ACTION' }> | undefined;
+}
+
+function findClaimAction(
+  calls: readonly unknown[][]
+): Extract<FabAction, { type: 'SET_ACTION' }> | undefined {
+  return findActionByLabel(calls, 'Simpan Laporan');
 }
 
 describe('ReportView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSearchParams.delete('id');
+    mockSearchParams.delete('completed');
     seedDefaultMocks();
   });
 
-  it('requests structure-only progress and scopes responses to the study period', () => {
+  it('requests full progress and scopes responses to the study period', () => {
     render(<ReportView />);
-    // Progress: only the batch structure is needed; responses come from the
-    // dedicated single-query hook below.
-    expect(mockResearchProgressOptions).toHaveBeenCalledWith({
+    // Progress: the hero needs global XP data, so the full progress payload
+    // is fetched — no structure-only shortcut.
+    expect(mockResearchProgressOptions).toHaveBeenCalledWith(undefined);
+    expect(mockResearchProgressOptions).not.toHaveBeenCalledWith({
       skipResponseSearch: true
     });
     // Responses: one query over all batch questionnaires, bounded by the
@@ -366,6 +381,29 @@ describe('ReportView', () => {
     ]);
   });
 
+  it('renders every score bar with the neutral color regardless of dimension', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const bars = screen.getAllByTestId('report-progress');
+    expect(bars.length).toBeGreaterThan(0);
+    bars.forEach(bar => {
+      expect(bar).toHaveAttribute('data-color', '#94A3B8');
+    });
+  });
+
+  it('shows the dimension value as raw/reference without a percentage', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const b2Section = screen
+      .getAllByTestId('report-batch-section')
+      .find(section => section.dataset.batchId === 'b2');
+    const value = b2Section
+      ?.querySelector('[data-testid="report-questionnaire-card-phq2"]')
+      ?.querySelector('[data-testid="report-dimension-value"]');
+    expect(value).toHaveTextContent('3/6');
+    expect(value?.textContent).not.toContain('%');
+  });
+
   it('falls back to the all-caps questionnaire id when the title is missing', async () => {
     mockUseQuestionnaireTitles.mockReturnValue({
       data: new Map([['phq2', { title: 'PHQ-2', durationMinutes: 8 }]]),
@@ -391,6 +429,22 @@ describe('ReportView', () => {
     expect(rows[1]).toHaveTextContent('Batch 2 (Sep)');
   });
 
+  it('marks each non-first trend row with a neutral delta direction', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const rows = screen.getAllByTestId('report-trend-row');
+    expect(rows).toHaveLength(2);
+    expect(
+      rows[0]?.querySelector('[data-testid="report-trend-delta"]')
+    ).toBeNull();
+    const delta = rows[1]?.querySelector('[data-testid="report-trend-delta"]');
+    const expected = trendDirection(5, 3);
+    expect(expected).toBe('down');
+    expect(delta).toHaveAttribute('data-direction', expected);
+    expect(delta).toHaveAttribute('aria-label', 'Score down');
+    expect(rows[1]?.textContent).not.toContain('%');
+  });
+
   it('does not render a trend block in earlier batch cards of the repeated instrument', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
@@ -400,18 +454,31 @@ describe('ReportView', () => {
     expect(b1Section?.querySelector('[data-testid="report-trend"]')).toBeNull();
   });
 
-  it('shows a baseline badge and batch note for a repeated instrument with a single response', async () => {
+  it('shows a baseline badge with the comparison batch and no batch note', async () => {
     mockUseReportResponses.mockReturnValue({
       data: [PHQ2_AUG, OCEAN_AUG],
       isLoading: false
     });
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    expect(screen.getByTestId('report-baseline-badge')).toBeInTheDocument();
-    expect(screen.getByTestId('report-baseline-note')).toHaveTextContent(
-      'Baseline scores recorded for 1 assessment for future comparison'
+    expect(screen.getByTestId('report-baseline-badge')).toHaveTextContent(
+      'Baseline · compared in Batch 2 (Sep)'
     );
+    expect(screen.queryByTestId('report-baseline-note')).toBeNull();
     expect(screen.queryByTestId('report-trend')).toBeNull();
+  });
+
+  it('shows only the baseline label when no later batch repeats the questionnaire', async () => {
+    mockUseReportResponses.mockReturnValue({
+      data: [PHQ2_SEP, OCEAN_AUG],
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-baseline-badge')).toHaveTextContent(
+      /^Baseline$/
+    );
+    expect(screen.queryByTestId('report-baseline-note')).toBeNull();
   });
 
   it('renders no baseline badge or note when instruments show trends or are single-batch', async () => {
@@ -421,7 +488,7 @@ describe('ReportView', () => {
     expect(screen.queryByTestId('report-baseline-note')).toBeNull();
   });
 
-  it('shows the baseline note once per batch with the total baseline count', async () => {
+  it('shows a comparison badge per baseline card and no batch note', async () => {
     mockUseResearchProgress.mockReturnValue({
       data: {
         studies: [
@@ -456,11 +523,12 @@ describe('ReportView', () => {
     });
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    expect(screen.getAllByTestId('report-baseline-note')).toHaveLength(1);
-    expect(screen.getByTestId('report-baseline-note')).toHaveTextContent(
-      'Baseline scores recorded for 2 assessments for future comparison'
-    );
-    expect(screen.getAllByTestId('report-baseline-badge')).toHaveLength(2);
+    expect(screen.queryAllByTestId('report-baseline-note')).toHaveLength(0);
+    const badges = screen.getAllByTestId('report-baseline-badge');
+    expect(badges).toHaveLength(2);
+    badges.forEach(badge => {
+      expect(badge).toHaveTextContent('Baseline · compared in Batch 2 (Sep)');
+    });
   });
 
   it('shows a shared completion date once in the batch header, not per card', async () => {
@@ -530,7 +598,7 @@ describe('ReportView', () => {
     expect(screen.getByTestId('report-disclaimer')).toBeInTheDocument();
   });
 
-  it('offers guests the claim nudge and Claim Report FAB', async () => {
+  it("offers guests the claim nudge through ReportFab's guest branch", async () => {
     mockUseAuth.mockReturnValue({
       state: { isAuthenticated: false, userInfo: {} },
       isLoading: false
@@ -538,18 +606,63 @@ describe('ReportView', () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
     expect(
-      screen.getByText('Claim this report to unlock score history record')
+      screen.getByText(
+        'Claim this report within 24 hours to unlock score history record'
+      )
     ).toBeInTheDocument();
+    // ReportFab owns the guest passthrough and renders ClaimReportFab with
+    // visible set from the loaded responses.
     const claimAction = findClaimAction(mockFabDispatch.mock.calls);
     expect(claimAction).toBeDefined();
+    expect(claimAction?.config.label).toBe('Simpan Laporan');
     expect(claimAction?.config.variant).toBe('primary');
+  });
+
+  it("offers patients the 'Lanjutkan' action for an open incomplete batch", async () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: {
+        studies: [
+          makeStudy({
+            currentBatch: BATCH_1,
+            firstUncompletedQuestionnaireId: 'phq2'
+          })
+        ],
+        cumulativeResponses: 3,
+        questionnaireResponses: [],
+        questionnaireXp: 0,
+        completedQuestionnaireIds: [],
+        consentedStudyIds: []
+      },
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    // Only ReportFab's priority machine dispatches a patient action; the
+    // superseded direct ClaimReportFab dispatched null for authenticated users.
+    const action = findActionByLabel(mockFabDispatch.mock.calls, 'Lanjutkan');
+    expect(action).toBeDefined();
+    expect(action?.config.label).toBe('Lanjutkan');
+    expect(findClaimAction(mockFabDispatch.mock.calls)).toBeUndefined();
+  });
+
+  it('dispatches SET_ACTION with a null config when the report page unmounts', async () => {
+    const { unmount } = render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    mockFabDispatch.mockClear();
+    unmount();
+    expect(mockFabDispatch).toHaveBeenCalledWith({
+      type: 'SET_ACTION',
+      config: null
+    });
   });
 
   it('does not offer the claim FAB to authenticated users', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
     expect(
-      screen.queryByText('Claim this report to unlock score history record')
+      screen.queryByText(
+        'Claim this report within 24 hours to unlock score history record'
+      )
     ).toBeNull();
     expect(findClaimAction(mockFabDispatch.mock.calls)).toBeUndefined();
   });
@@ -576,9 +689,9 @@ describe('ReportView', () => {
     });
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    // Stats still count all responses
+    // Stats count the de-duplicated responses: phq2 in b1 counted once
     expect(screen.getByTestId('report-stat-assessments')).toHaveTextContent(
-      '3'
+      '2'
     );
     // Trend should show exactly 2 rows (not 3)
     const trendRows = screen.getAllByTestId('report-trend-row');
@@ -601,5 +714,76 @@ describe('ReportView', () => {
     expect(mockPush).toHaveBeenCalledWith(
       '/auth?redirectToPath=/report?id=research'
     );
+  });
+
+  it('strips the completed flag with router.replace after the batch', async () => {
+    mockSearchParams.set('completed', '1');
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(mockReplace).toHaveBeenCalledWith('/report?id=research');
+  });
+
+  it('keeps the completion headline after the flag is stripped mid-load', async () => {
+    mockSearchParams.set('completed', '1');
+    mockUseResearchProgress.mockReturnValue({
+      data: undefined,
+      isLoading: true
+    });
+    const { rerender } = render(<ReportView />);
+    // The effect strips the flag on mount, before the data resolves.
+    expect(mockReplace).toHaveBeenCalledWith('/report?id=research');
+    // Next.js applies the replace: the flag leaves the URL while still loading.
+    mockSearchParams.delete('completed');
+    seedDefaultMocks();
+    rerender(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-hero-headline')).toBeInTheDocument();
+  });
+
+  it('keeps the study title and never redirects without the flag', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-study-title')).toHaveTextContent(
+      'Mental Health Survey'
+    );
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it('counts batches with responses out of the study total', async () => {
+    const fourBatches: ResearchBatch[] = [
+      BATCH_1,
+      BATCH_2,
+      {
+        id: 'b3',
+        start: '2026-10-01',
+        end: '2026-10-31',
+        questionnaireIds: ['phq2']
+      },
+      {
+        id: 'b4',
+        start: '2026-11-01',
+        end: '2026-11-30',
+        questionnaireIds: ['phq2']
+      }
+    ];
+    mockUseResearchProgress.mockReturnValue({
+      data: {
+        studies: [makeStudy({ batches: fourBatches })],
+        cumulativeResponses: 2,
+        questionnaireResponses: [],
+        questionnaireXp: 0,
+        completedQuestionnaireIds: [],
+        consentedStudyIds: []
+      },
+      isLoading: false
+    });
+    // Responses land in batches 1 and 2 only.
+    mockUseReportResponses.mockReturnValue({
+      data: [PHQ2_AUG, PHQ2_SEP],
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-stat-batches')).toHaveTextContent('2/4');
   });
 });

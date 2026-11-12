@@ -280,7 +280,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       if (buttonLabel === 'result' || !continuation?.nextQuestionnaireId) {
         // Final questionnaire of a batch: both roles land on the study report.
         if (isBatchComplete && continuation?.studyId) {
-          router.replace(`/report?id=${continuation.studyId}`);
+          router.replace(`/report?id=${continuation.studyId}&completed=1`);
         } else if (isAuthenticated) {
           const basePath = patientId
             ? `/record?id=${patientId}&view=QuestionnaireResponse/${responseId}`

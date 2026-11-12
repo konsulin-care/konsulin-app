@@ -68,28 +68,30 @@ export function sharedAuthoredDate(
  * Counts responses in a batch that establish a baseline for a repeated
  * instrument (deployed in ≥2 batches with exactly one recorded response).
  *
- * @param responses - Responses rendered within one batch section.
- * @param buckets - Responses already bucketed per batch.
+ * @param buckets - Responses already bucketed per batch; the entries for
+ *   batchId are the section's responses.
  * @param sortedBatches - All batches sorted by period start ascending.
  * @param batchId - The batch section being rendered.
  * @param latestBatchByQuestionnaire - Questionnaire id to newest batch id.
+ * @param prefix - Translated label for the batch position, forwarded to trendForQuestionnaire.
  * @returns Number of baseline cards in this batch.
  */
 export function baselineCardCount(
-  responses: readonly QuestionnaireResponse[],
   buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>,
   sortedBatches: readonly ResearchBatch[],
   batchId: string,
-  latestBatchByQuestionnaire: ReadonlyMap<string, string>
+  latestBatchByQuestionnaire: ReadonlyMap<string, string>,
+  prefix: (index: number) => string
 ): number {
   let count = 0;
-  for (const response of responses) {
+  for (const response of buckets.get(batchId) ?? []) {
     const questionnaireId = extractQuestionnaireId(response.questionnaire);
     if (!questionnaireId) continue;
     const trend = trendForQuestionnaire(
       questionnaireId,
       buckets,
-      sortedBatches
+      sortedBatches,
+      prefix
     );
     if (
       trend.kind === 'baseline' &&

@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FabAction } from '@/context/fabContext';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 // Mock ScoreDisplay
 vi.mock('@/components/assessment/score-display', () => ({
   default: ({
@@ -107,13 +113,13 @@ function sampleDraft(qrId = 'test-qr-id') {
 
 type SetAction = Extract<FabAction, { type: 'SET_ACTION' }>;
 
-/** Find the 'Claim Report' SET_ACTION call from the dispatched FAB actions. */
+/** Find the 'Simpan Laporan' SET_ACTION call from the dispatched FAB actions. */
 function findClaimAction(calls: readonly unknown[][]): SetAction | undefined {
   return calls.find(([action]) => {
     const fabAction = action as FabAction;
     return (
       fabAction.type === 'SET_ACTION' &&
-      fabAction.config?.label === 'Claim Report'
+      fabAction.config?.label === 'Simpan Laporan'
     );
   })?.[0] as SetAction | undefined;
 }
@@ -261,6 +267,7 @@ describe('ResultView', () => {
     await screen.findByTestId('score-display');
     const claimAction = findClaimAction(mockDispatch.mock.calls);
     expect(claimAction).toBeDefined();
+    expect(claimAction?.config.label).toBe('Simpan Laporan');
     expect(claimAction?.config.variant).toBe('primary');
     expect(typeof claimAction?.config.onAction).toBe('function');
   });

@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FabAction } from '@/context/fabContext';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush, replace: vi.fn() })
@@ -34,7 +40,7 @@ function findClaimAction(
     const fabAction = action as FabAction;
     return (
       fabAction.type === 'SET_ACTION' &&
-      fabAction.config?.label === 'Claim Report'
+      fabAction.config?.label === 'Simpan Laporan'
     );
   })?.[0] as Extract<FabAction, { type: 'SET_ACTION' }> | undefined;
 }
@@ -48,11 +54,12 @@ describe('ClaimReportFab', () => {
     });
   });
 
-  it('dispatches a primary BookCheck action labelled "Claim Report" when visible', () => {
+  it('dispatches a primary BookCheck action labelled "Simpan Laporan" when visible', () => {
     render(<ClaimReportFab path='/report?id=research' visible />);
 
     const action = findClaimAction(mockDispatch.mock.calls);
     expect(action).toBeDefined();
+    expect(action?.config.label).toBe('Simpan Laporan');
     expect(action?.config.variant).toBe('primary');
     expect(action?.config.icon).toBeDefined();
     expect(typeof action?.config.onAction).toBe('function');

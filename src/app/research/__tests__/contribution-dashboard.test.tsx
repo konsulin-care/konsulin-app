@@ -100,6 +100,25 @@ describe('ContributionDashboard', () => {
     expect(screen.getByTestId('dashboard-level').textContent).toContain('Lv 2');
   });
 
+  it('renders the ladder level number and fraction for a patient with 450 XP', () => {
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { fhirId: 'PAT-1', fullname: 'Ada Lovelace' } },
+      isLoading: false
+    });
+    mockUseCircleStats.mockReturnValue({
+      data: { converted: 450, joined: 450 }
+    });
+
+    renderDashboard({ questionnaireResponses: [] });
+
+    // 450 XP: Vanguard (threshold 400) with 50 of the 200 XP span earned.
+    expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
+      'data-fraction',
+      '0.25'
+    );
+    expect(screen.getByTestId('dashboard-level').textContent).toContain('Lv 4');
+  });
+
   it('shows the patient title from total XP and the converted count', () => {
     mockUseAuth.mockReturnValue({
       state: { userInfo: { fhirId: 'PAT-1', fullname: 'Ada Lovelace' } },

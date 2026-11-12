@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  batchLabel,
   bucketResponsesByBatch,
   computeParticipationStats,
   deduplicateBuckets,
+  trendDirection,
   trendForQuestionnaire
 } from '../report';
 import type { ResearchBatch, StudyProgress } from '../research';
+
+/** Mirrors the en message report.batch_prefix: "Batch {index}". */
+const prefix = (index: number): string => `Batch ${index}`;
 
 const BATCHES: ResearchBatch[] = [
   {
@@ -170,7 +175,7 @@ describe('deduplicateBuckets', () => {
     const deduped = deduplicateBuckets(buckets);
     expect(deduped.get('b2')).toHaveLength(1);
     // Trend should now have exactly 2 rows from distinct batches
-    const trend = trendForQuestionnaire('phq2', deduped, batches);
+    const trend = trendForQuestionnaire('phq2', deduped, batches, prefix);
     expect(trend.kind).toBe('trend');
     if (trend.kind !== 'trend') return;
     expect(trend.rows).toHaveLength(2);
@@ -185,7 +190,7 @@ describe('trendForQuestionnaire', () => {
       [resp('r8', 'gad7', '2026-10-15T10:00:00Z')],
       BATCHES
     );
-    expect(trendForQuestionnaire('gad7', buckets, BATCHES)).toEqual({
+    expect(trendForQuestionnaire('gad7', buckets, BATCHES, prefix)).toEqual({
       kind: 'none'
     });
   });
@@ -195,7 +200,7 @@ describe('trendForQuestionnaire', () => {
       [resp('r9', 'phq2', '2026-08-15T10:00:00Z')],
       BATCHES
     );
-    expect(trendForQuestionnaire('phq2', buckets, BATCHES)).toEqual({
+    expect(trendForQuestionnaire('phq2', buckets, BATCHES, prefix)).toEqual({
       kind: 'baseline'
     });
   });
@@ -208,12 +213,45 @@ describe('trendForQuestionnaire', () => {
       ],
       BATCHES
     );
-    const trend = trendForQuestionnaire('phq2', buckets, BATCHES);
+    const trend = trendForQuestionnaire('phq2', buckets, BATCHES, prefix);
     expect(trend.kind).toBe('trend');
     if (trend.kind !== 'trend') return;
     expect(trend.rows.map(row => row.batchId)).toEqual(['b1', 'b2']);
     expect(trend.rows[0]?.label).toContain('Batch 1');
     expect(trend.rows[1]?.label).toContain('Batch 2');
+  });
+});
+
+describe('trendDirection', () => {
+  it('returns up when the current raw exceeds the previous', () => {
+    expect(trendDirection(3, 5)).toBe('up');
+  });
+
+  it('returns down when the current raw is lower than the previous', () => {
+    expect(trendDirection(5, 3)).toBe('down');
+  });
+
+  it('returns same when both raw scores are equal', () => {
+    expect(trendDirection(4, 4)).toBe('same');
+  });
+});
+
+describe('batchLabel', () => {
+  it('uses the provided translated prefix and the batch month', () => {
+    const first: ResearchBatch = {
+      id: 'x1',
+      start: '2026-08-01',
+      end: '2026-08-10',
+      questionnaireIds: ['phq2']
+    };
+    const second: ResearchBatch = {
+      id: 'x2',
+      start: '2026-08-11',
+      end: '2026-08-31',
+      questionnaireIds: ['phq2']
+    };
+    const label = (index: number): string => `Batch ${index}`;
+    expect(batchLabel(second, [first, second], label)).toBe('Batch 2 (Aug)');
   });
 });
 
@@ -232,28 +270,24 @@ describe('computeParticipationStats', () => {
     isComplete: true,
     firstUncompletedQuestionnaireId: null,
     completedQuestionnaireIds: ['phq2', 'ocean'],
-    history: [
-      {
-        batchId: 'b1',
-        start: '2026-08-01',
-        end: '2026-08-31',
-        participated: true
-      },
-      {
-        batchId: 'b2',
-        start: '2026-09-01',
-        end: '2026-09-30',
-        participated: true
-      }
-    ],
-    consecutiveBatches: 2
+    // History disagrees with the responses on purpose: participation and
+    // streak must be derived from the response buckets, not from history.
+    history: BATCHES.map(batch => ({
+      batchId: batch.id,
+      start: batch.start,
+      end: batch.end,
+      participated: false
+    })),
+    consecutiveBatches: 0
   };
 
-  it('aggregates completion, streak, XP, and time invested', () => {
+  it('derives completion, streak, and time invested from de-duplicated buckets', () => {
     const responses = [
       resp('r12', 'phq2', '2026-08-15T10:00:00Z'),
       resp('r13', 'ocean', '2026-08-16T10:00:00Z'),
-      resp('r14', 'phq2', '2026-09-10T10:00:00Z')
+      resp('r14', 'phq2', '2026-09-10T10:00:00Z'),
+      // Second phq2 submission inside b2: de-duplicated away.
+      resp('r15', 'phq2', '2026-09-20T10:00:00Z')
     ];
     const stats = computeParticipationStats(
       study,
@@ -263,20 +297,43 @@ describe('computeParticipationStats', () => {
         ['ocean', 15]
       ])
     );
+    // One response per questionnaire per batch: 2 (b1) + 1 (b2), not 4 raw.
     expect(stats.assessmentsCompleted).toBe(3);
+    // Every history entry says participated=false; the buckets say b1, b2.
     expect(stats.batchesCompleted).toBe(2);
     expect(stats.totalBatches).toBe(3);
+    // Streak from buckets (b1, b2), not study.consecutiveBatches (0).
     expect(stats.consecutiveBatches).toBe(2);
     // Distinct questionnaire per batch: phq2+ocean (b1), phq2 (b2)
     // XP = duration × 5 → (8+15+8) × 5
     expect(stats.xp).toBe(155);
-    // Sum of durations across all completions: 8 + 15 + 8
+    // Durations over de-duplicated responses: 8 + 15 + 8, not 39.
     expect(stats.timeInvestedMinutes).toBe(31);
+  });
+
+  it('resets the streak when an inner batch has no responses', () => {
+    const responses = [
+      resp('r16', 'phq2', '2026-08-15T10:00:00Z'),
+      resp('r17', 'gad7', '2026-10-15T10:00:00Z')
+    ];
+    const stats = computeParticipationStats(
+      study,
+      responses,
+      new Map([
+        ['phq2', 8],
+        ['gad7', 10]
+      ])
+    );
+    expect(stats.batchesCompleted).toBe(2);
+    // b1 and b3 participated but b2 did not: run at the newest batch is 1.
+    expect(stats.consecutiveBatches).toBe(1);
   });
 
   it('returns zeroed stats for no responses', () => {
     const stats = computeParticipationStats(study, [], new Map());
     expect(stats.assessmentsCompleted).toBe(0);
+    expect(stats.batchesCompleted).toBe(0);
+    expect(stats.consecutiveBatches).toBe(0);
     expect(stats.xp).toBe(0);
     expect(stats.timeInvestedMinutes).toBe(0);
   });

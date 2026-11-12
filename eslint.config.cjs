@@ -21,7 +21,8 @@ module.exports = [
   {
     ignores: [
       '**/.next/**',
-      '**/__tests__/**'
+      '**/__tests__/**',
+      '.pi/**'
     ]
   },
 
