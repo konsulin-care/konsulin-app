@@ -368,7 +368,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     clickCta('See Results');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
-    expect(mockReplace.mock.calls[0][0]).toBe('/report?id=study-a');
+    expect(mockReplace.mock.calls[0][0]).toBe('/report?id=study-a&completed=1');
   });
 
   it('final-in-batch: CTA "See Results" replaces to the study report for guests', async () => {
@@ -386,7 +386,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     clickCta('See Results');
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
-    expect(mockReplace.mock.calls[0][0]).toBe('/report?id=study-a');
+    expect(mockReplace.mock.calls[0][0]).toBe('/report?id=study-a&completed=1');
   });
 
   it('navigates immediately after QR save without waiting for the interpret webhook', async () => {

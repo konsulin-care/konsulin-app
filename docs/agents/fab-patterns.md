@@ -1,104 +1,96 @@
 ---
 title: FAB Transformation Patterns
-description: Floating Action Button — three modes, dirty/selection state wiring, cleanup rules
+description: Floating Action Button — modes, action/selection state wiring, cleanup rules
 status: updated
 date: 2026-07-20
 ---
 
 # Architecture
 
-The FAB (QuickActionFab) is hierarchically wrapped by two providers:
+`QuickActionFab` reads one reducer context — `FabProvider` in
+`@/context/fabContext`, accessed via `useFab()`. Page content dispatches
+`FabAction` values (`SET_ACTION` / `SET_SELECTION` / `SET_MENU`).
 
-```
-FabDirtyProvider ── FabSelectionProvider ── QuickActionFab
-                      Page Content
-```
-
-Priority: **Selection (delete) > Dirty (save) > Speed-dial (navigation)**.
-Selection mode suppresses all other modes.
+Priority (`resolveMode`): **Selection (delete) > Action (save) > Menu >
+idle (speed-dial)**. Selection mode suppresses all other modes.
 
 # Three Modes
 
-| Mode       | Trigger             | UI                    |
-| ---------- | ------------------- | --------------------- |
-| Selection  | `useFabSelection()` | Red pill "Delete (N)" |
-| Dirty      | `useFabDirty()`     | Labeled teal button   |
-| Speed-dial | Default (no state)  | `+` icon → role pills |
+| Mode       | Dispatch                 | UI                    |
+| ---------- | ------------------------ | --------------------- |
+| Selection  | `SET_SELECTION`          | Red pill "Delete (N)" |
+| Action     | `SET_ACTION`             | Labeled teal button   |
+| Speed-dial | none (idle) / `SET_MENU` | `+` icon → role pills |
 
-# Wiring Dirty State
-
-Import and call `setDirtyState()`:
+# Wiring Action State
 
 ```tsx
-import { useFabDirty } from '@/context/fabDirtyContext';
+import { useFab } from '@/context/fabContext';
 
 function MyPage() {
-  const { setDirtyState } = useFabDirty();
-
+  const { dispatch } = useFab();
   useEffect(() => {
-    setDirtyState({
-      isDirty: true,
-      label: 'Book Now',
-      onSave: () => handleSubmit(),
-      isSaving: false
+    dispatch({
+      type: 'SET_ACTION',
+      config: { label: 'Book Now', onAction: () => handleSubmit() }
     });
-    return () => setDirtyState(null); // REQUIRED cleanup
-  }, [setDirtyState]);
+    return () => dispatch({ type: 'SET_ACTION', config: null }); // REQUIRED
+  }, [dispatch]);
 }
 ```
 
-The `return () => setDirtyState(null)` cleanup is required. Without it, the
-FAB stays in dirty mode after the page unmounts.
+The `config: null` cleanup is required — without it the FAB stays in action
+mode after the page unmounts.
 
-# Ref Pattern for onSave Closures
+# Ref Pattern for onAction Closures
 
-The `onSave` callback is captured when `setDirtyState` is called. To keep it
-fresh (avoid stale closures), store the handler in a ref (see
-`use-booking-form.ts`):
+`onAction` is captured when `SET_ACTION` fires. Store the handler in a ref
+(see `use-booking-form.ts`) to avoid stale closures:
 
 ```tsx
 const ref = useRef(handleSubmit);
 ref.current = handleSubmit;
 useEffect(() => {
   if (isFormValid) {
-    setDirtyState({
-      isDirty: true,
-      label: 'Book Now',
-      onSave: () => ref.current(),
-      isSaving: false
+    dispatch({
+      type: 'SET_ACTION',
+      config: { label: 'Book Now', onAction: () => ref.current() }
     });
   } else {
-    setDirtyState(null);
+    dispatch({ type: 'SET_ACTION', config: null });
   }
-  return () => setDirtyState(null);
-}, [isFormValid, setDirtyState]);
+  return () => dispatch({ type: 'SET_ACTION', config: null });
+}, [isFormValid, dispatch]);
 ```
 
 # Examples in Codebase
 
-| Page                      | Label          | Action                 | File                            |
-| ------------------------- | -------------- | ---------------------- | ------------------------------- |
-| Practitioner Availability | "Book Now"     | Submit booking form    | `practitioner-availability.tsx` |
-| Role Management Shell     | "Save Changes" | Save permissions       | `role-management-shell.tsx`     |
-| Record Assessment (auth)  | "Share Result" | Open QR drawer         | `record-assessment.tsx`         |
-| Record Assessment (guest) | "Save Result"  | Save intent + redirect | `record-assessment.tsx`         |
+| Page                      | Label          | Action              | File                        |
+| ------------------------- | -------------- | ------------------- | --------------------------- |
+| Practitioner Availability | "Book Now"     | Submit booking form | `use-fab-action-sync.ts`    |
+| Role Management Shell     | "Save Changes" | Save permissions    | `role-management-shell.tsx` |
+| Record Detail (own note)  | "Edit"         | Open editor         | `record-detail.tsx`         |
+| Record Detail (paid QR)   | "Get Report"   | Open payment drawer | `record-detail.tsx`         |
 
 # Wiring Selection State
 
 ```tsx
-import { useFabSelection } from '@/context/fabSelectionContext';
-
-function ServicesTab() {
-  const { setSelectionState } = useFabSelection();
-  useEffect(() => {
-    setSelectionState({
+const { dispatch } = useFab();
+useEffect(() => {
+  dispatch({
+    type: 'SET_SELECTION',
+    config: {
       count: selectedIds.length,
       onDelete: handleBulkDelete,
       onCancel: clearSelection
-    });
-    return () => setSelectionState(null);
-  }, [selectedIds, setSelectionState]);
-}
+    }
+  });
+  return () => dispatch({ type: 'SET_SELECTION', config: null });
+}, [selectedIds, dispatch]);
 ```
 
-Selection mode takes highest priority — overrides both dirty and speed-dial.
+Selection mode takes highest priority — overrides both action and speed-dial.
+
+# Report Page FAB
+
+Four `/report` states in priority order: see `@docs/agents/report-fab-states.md`.

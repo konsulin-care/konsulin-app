@@ -1,6 +1,7 @@
 'use client';
 
 import { useFab } from '@/context/fabContext';
+import { useTranslations } from '@/i18n';
 import { saveIntent } from '@/utils/redirect-intent';
 import { BookCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -32,6 +33,7 @@ export default function ClaimReportFab({
 }: Readonly<ClaimReportFabProps>) {
   const { dispatch } = useFab();
   const router = useRouter();
+  const t = useTranslations('common');
 
   const handleClaim = useCallback(() => {
     saveIntent('assessmentResult', qrId ? { path, qrId } : { path });
@@ -43,7 +45,7 @@ export default function ClaimReportFab({
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Claim Report',
+          label: t('report.fab_claim'),
           icon: BookCheck,
           variant: 'primary',
           onAction: handleClaim
@@ -53,7 +55,7 @@ export default function ClaimReportFab({
       dispatch({ type: 'SET_ACTION', config: null });
     }
     return () => dispatch({ type: 'SET_ACTION', config: null });
-  }, [visible, dispatch, handleClaim]);
+  }, [visible, dispatch, handleClaim, t]);
 
   return null;
 }

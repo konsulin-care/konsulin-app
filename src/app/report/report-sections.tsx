@@ -4,18 +4,16 @@ import { useTranslations } from '@/i18n';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import {
+  batchLabel,
   trendForQuestionnaire,
   type ParticipationStats
 } from '@/utils/fhir/report';
 import type { ResearchBatch } from '@/utils/fhir/research';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
+import { nextBatchWithQuestionnaire } from '@/utils/fhir/research-schedule';
 import type { QuestionnaireResponse } from 'fhir/r4';
 
-import {
-  baselineCardCount,
-  batchTitle,
-  sharedAuthoredDate
-} from './batch-meta';
+import { batchTitle, sharedAuthoredDate } from './batch-meta';
 import { QuestionnaireCard } from './questionnaire-card';
 
 /** Participation summary card with the aggregate stats. */
@@ -98,13 +96,7 @@ export function BatchSection({
 }>) {
   const t = useTranslations('common');
   const sharedDate = sharedAuthoredDate(responses);
-  const baselineCount = baselineCardCount(
-    responses,
-    buckets,
-    sortedBatches,
-    batch.id,
-    latestBatchByQuestionnaire
-  );
+  const prefix = (index: number): string => t('report.batch_prefix', { index });
 
   return (
     <section
@@ -114,9 +106,7 @@ export function BatchSection({
     >
       <div data-testid='report-batch-header' className='mb-2'>
         <p className='text-sm font-bold text-black'>
-          {batchTitle(batch, sortedBatches, index =>
-            t('report.batch_prefix', { index })
-          )}
+          {batchTitle(batch, sortedBatches, prefix)}
         </p>
         {sharedDate && (
           <p className='text-[11px] text-gray-500'>
@@ -124,20 +114,6 @@ export function BatchSection({
           </p>
         )}
       </div>
-
-      {baselineCount > 0 && (
-        <p
-          data-testid='report-baseline-note'
-          className='mb-2 rounded-lg bg-gray-50 px-3 py-2 text-[11px] text-gray-500'
-        >
-          {t(
-            baselineCount === 1
-              ? 'report.baseline_note_one'
-              : 'report.baseline_note_other',
-            { count: baselineCount }
-          )}
-        </p>
-      )}
 
       <div className='space-y-2'>
         {responses.map(response => {
@@ -148,7 +124,13 @@ export function BatchSection({
           const trend = trendForQuestionnaire(
             questionnaireId,
             buckets,
-            sortedBatches
+            sortedBatches,
+            prefix
+          );
+          const compareBatch = nextBatchWithQuestionnaire(
+            sortedBatches,
+            questionnaireId,
+            batch.start
           );
           return (
             <QuestionnaireCard
@@ -163,6 +145,11 @@ export function BatchSection({
               latestBatchId={latestBatchByQuestionnaire.get(questionnaireId)}
               trend={trend}
               hideAuthored={sharedDate !== null}
+              baselineCompareLabel={
+                compareBatch
+                  ? batchLabel(compareBatch, sortedBatches, prefix)
+                  : null
+              }
             />
           );
         })}

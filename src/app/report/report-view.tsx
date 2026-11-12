@@ -1,8 +1,8 @@
 'use client';
 
-import ClaimReportFab from '@/components/assessment/claim-report-fab';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
+import { useResearchXp } from '@/hooks/useResearchXp';
 import { useTranslations } from '@/i18n';
 import {
   EMPTY_QUESTIONNAIRE_INFO_MAP,
@@ -15,33 +15,66 @@ import {
   computeParticipationStats,
   deduplicateBuckets
 } from '@/utils/fhir/report';
-import { extractQuestionnaireId, sortBatches } from '@/utils/fhir/research';
+import {
+  extractQuestionnaireId,
+  sortBatches,
+  type ResearchProgress
+} from '@/utils/fhir/research';
+import { format } from 'date-fns';
 import type { QuestionnaireResponse } from 'fhir/r4';
-import { useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+
+import { ReportFab } from './report-fab';
+import { ReportHero } from './report-hero';
 import { BatchSection, ParticipationCard } from './report-sections';
+
+/** Progress placeholder before the query resolves; keeps useResearchXp total. */
+const EMPTY_PROGRESS: ResearchProgress = {
+  studies: [],
+  cumulativeResponses: 0,
+  questionnaireResponses: [],
+  questionnaireXp: 0,
+  completedQuestionnaireIds: [],
+  consentedStudyIds: []
+};
 
 /**
  * Research participation report for one study.
  *
- * Renders the study header, participation summary, reverse-chronological
- * batch sections with per-questionnaire score cards, and a disclaimer.
- * Guests get a claim nudge with the shared Claim Report FAB.
+ * Renders the hero (completion headline or study title, level bar, timeline,
+ * next-batch line), the participation summary, reverse-chronological batch
+ * sections with per-questionnaire score cards, and a disclaimer. The
+ * contextual Report FAB owns the guest claim passthrough and the patient
+ * action priority (continue, remind, share).
  */
 export default function ReportView() {
   const t = useTranslations('common');
   const searchParams = useSearchParams();
+  const router = useRouter();
   const studyId = searchParams.get('id');
+  const completed = searchParams.get('completed') === '1';
   const { state: authState } = useAuth();
   const isGuest = !authState.isAuthenticated;
 
-  const { data: progress, isLoading: progressLoading } = useResearchProgress({
-    skipResponseSearch: true
-  });
+  // The hero's global XP needs the full progress payload, so no
+  // structure-only shortcut here.
+  const { data: progress, isLoading: progressLoading } = useResearchProgress();
   const study = useMemo(
     () => progress?.studies.find(item => item.study.id === studyId) ?? null,
     [progress, studyId]
   );
+
+  // The completion state is latched for the visit: the URL flag is stripped
+  // so a reload shows the plain study title, but the strip lands while the
+  // report is still loading and must not drop the hero's completion headline.
+  const [completedVisit, setCompletedVisit] = useState(completed);
+  useEffect(() => {
+    if (completed && studyId) {
+      setCompletedVisit(true);
+      router.replace(`/report?id=${studyId}`);
+    }
+  }, [completed, studyId, router]);
 
   const questionnaireIds = useMemo(
     () =>
@@ -49,6 +82,17 @@ export default function ReportView() {
         ? [...new Set(study.batches.flatMap(batch => batch.questionnaireIds))]
         : [],
     [study]
+  );
+  // Titles cover the study's batch questionnaires plus every questionnaire
+  // the progress payload awarded XP for, so the hero's XP math resolves.
+  const titleIds = useMemo(
+    () => [
+      ...new Set([
+        ...questionnaireIds,
+        ...(progress?.questionnaireResponses ?? [])
+      ])
+    ],
+    [questionnaireIds, progress]
   );
   // Earliest batch start bounds the response search so pre-study responses
   // authored under the same identity are excluded from the payload.
@@ -73,12 +117,23 @@ export default function ReportView() {
     [study]
   );
   const { data: titleMap = EMPTY_QUESTIONNAIRE_INFO_MAP } =
-    useQuestionnaireTitles(questionnaireIds);
+    useQuestionnaireTitles(titleIds);
   const { data: responses, isLoading: responsesLoading } = useReportResponses(
     questionnaireIds,
     since,
     until
   );
+
+  const durationMap = useMemo(
+    () =>
+      new Map([...titleMap].map(([id, info]) => [id, info.durationMinutes])),
+    [titleMap]
+  );
+  const { totalXp, isPatient } = useResearchXp(
+    progress ?? EMPTY_PROGRESS,
+    titleMap
+  );
+  const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const buckets = useMemo(
     () =>
@@ -90,11 +145,8 @@ export default function ReportView() {
 
   const stats = useMemo(() => {
     if (!study || !responses) return null;
-    const durationMap = new Map(
-      [...titleMap].map(([id, info]) => [id, info.durationMinutes])
-    );
     return computeParticipationStats(study, responses, durationMap);
-  }, [study, responses, titleMap]);
+  }, [study, responses, durationMap]);
 
   /** Batch id of the newest response per questionnaire (trend anchor). */
   const latestBatchByQuestionnaire = useMemo(() => {
@@ -171,14 +223,17 @@ export default function ReportView() {
         backRoute={`/research?id=${studyId}`}
       />
       <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
-        <div className='mb-4'>
-          <h1
-            data-testid='report-study-title'
-            className='text-xl font-bold text-black'
-          >
-            {study.study.title}
-          </h1>
-        </div>
+        <ReportHero
+          studyTitle={study.study.title}
+          completed={completedVisit}
+          today={today}
+          batches={study.batches}
+          buckets={buckets}
+          durationByQuestionnaire={durationMap}
+          totalXp={totalXp}
+          isPatient={isPatient}
+          latestBatchByQuestionnaire={latestBatchByQuestionnaire}
+        />
 
         {stats && <ParticipationCard stats={stats} />}
 
@@ -199,17 +254,6 @@ export default function ReportView() {
             );
           })}
 
-        {isGuest && (
-          <div className='border-secondary/30 bg-secondary/5 mb-4 rounded-xl border p-4 text-center'>
-            <p
-              data-testid='report-claim-nudge'
-              className='text-xs text-gray-600'
-            >
-              {t('report.claim_nudge')}
-            </p>
-          </div>
-        )}
-
         <footer
           data-testid='report-disclaimer'
           className='mt-auto rounded-xl bg-gray-50 p-4 text-[11px] leading-relaxed text-gray-500'
@@ -217,9 +261,14 @@ export default function ReportView() {
           {t('report.disclaimer')}
         </footer>
       </div>
-      <ClaimReportFab
-        path={`/report?id=${studyId}`}
-        visible={isGuest && responses.length > 0}
+      <ReportFab
+        study={study}
+        studyId={studyId}
+        today={today}
+        isGuest={isGuest}
+        hasResponses={responses.length > 0}
+        isPatient={isPatient}
+        fhirId={authState.userInfo?.fhirId}
       />
     </>
   );

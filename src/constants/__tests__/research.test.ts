@@ -16,9 +16,9 @@ import {
   buildMission,
   getNextResearchLevel,
   getResearchLevel,
+  getResearchLevelFraction,
   getResearchLevelNumber,
   getResearchLevelProgress,
-  getXpInLevel,
   xpForDuration
 } from '../research';
 
@@ -141,17 +141,29 @@ describe('xpForDuration', () => {
   });
 });
 
-describe('getResearchLevelNumber and getXpInLevel', () => {
-  it('derives the level number and in-level XP from total XP', () => {
-    expect(getResearchLevelNumber(0)).toBe(1);
-    expect(getResearchLevelNumber(99)).toBe(1);
-    expect(getResearchLevelNumber(100)).toBe(2);
-    expect(getResearchLevelNumber(350)).toBe(4);
-    expect(getResearchLevelNumber(600)).toBe(7);
-    expect(getXpInLevel(0)).toBe(0);
-    expect(getXpInLevel(99)).toBe(99);
-    expect(getXpInLevel(100)).toBe(0);
-    expect(getXpInLevel(150)).toBe(50);
+describe('getResearchLevelNumber', () => {
+  it.each([
+    [0, 1],
+    [100, 2],
+    [200, 3],
+    [399, 3],
+    [400, 4],
+    [600, 5],
+    [999, 5]
+  ])('maps %i XP to ladder level %i', (xp, expected) => {
+    expect(getResearchLevelNumber(xp)).toBe(expected);
+  });
+});
+
+describe('getResearchLevelFraction', () => {
+  it.each([
+    [50, 0.5],
+    [250, 0.25],
+    [550, 0.75],
+    [600, 1],
+    [900, 1]
+  ])('maps %i XP to within-level fraction %f', (xp, expected) => {
+    expect(getResearchLevelFraction(xp)).toBe(expected);
   });
 });
 
@@ -172,6 +184,12 @@ describe('buildMission', () => {
     expect(
       buildMission({ totalXp: 88, questionnaires: [], isGuest: false })
     ).toBe('Complete 12 referrals to reach Pathfinder');
+  });
+
+  it('states the ladder gap of 150 XP to the next level at 450 XP', () => {
+    expect(
+      buildMission({ totalXp: 450, questionnaires: [], isGuest: false })
+    ).toBe('Complete 150 referrals to reach Pioneer');
   });
 
   it('tells guests to wait for the next batch when nothing is available', () => {
