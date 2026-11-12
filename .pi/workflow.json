@@ -4,18 +4,18 @@
       "scoped": [
         {
           "argv": [
-            "mise",
-            "run",
-            "test:go",
-            "{pkgs}"
+            "go",
+            "test",
+            "{pkgs}",
+            "-count=1"
           ],
           "scope": "packages"
         },
         {
           "argv": [
-            "mise",
+            "npx",
+            "vitest",
             "run",
-            "test:js",
             "{tests}"
           ],
           "scope": "files"
