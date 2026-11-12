@@ -35,3 +35,78 @@ npx vitest run "$@"
 
 [tasks.test]
 depends = ["test:go", "test:js"]
+
+[tasks.deps]
+description = "Install npm and Go dependencies"
+run = '''
+npm ci
+go mod download
+'''
+
+[tasks."fmt:go"]
+description = "Format Go sources with gofmt -s; --check verifies without writing"
+usage = '''
+flag "--check"
+'''
+run = '''
+if [ -n "${usage_check:-}" ]; then
+  diff="$(gofmt -s -d ./cmd/ ./internal/)"
+  if [ -n "$diff" ]; then
+    printf '%s\n' "$diff"
+    echo "Go formatting differs; run: mise run fmt:go" >&2
+    exit 1
+  fi
+  echo "Go formatting is correct"
+else
+  gofmt -s -w ./cmd/ ./internal/
+fi
+'''
+
+[tasks."lint:go"]
+description = "Run golangci-lint over all Go packages"
+run = "golangci-lint run ./..."
+
+[tasks."lint:docker"]
+description = "Lint Dockerfile with hadolint"
+run = "hadolint Dockerfile"
+
+[tasks.build]
+description = "Build Next.js static export and Go binary"
+depends = ["build:next", "build:go"]
+
+[tasks."build:go"]
+description = "Compile the Go server binary"
+usage = '''
+flag "--output <path>"
+'''
+run = '''
+go build -o "${usage_output:-konsulin-app}" ./cmd/konsulin-app
+'''
+
+[tasks."build:next"]
+description = "Export the Next.js site into out/"
+run = "npm run build"
+
+[tasks.clean]
+description = "Remove .next and out build directories"
+run = "rm -rf .next out"
+
+[tasks.start]
+description = "Run the Go BFF server"
+run = "go run ./cmd/konsulin-app"
+
+[tasks.gen]
+description = "Run data generator for <target>: wilayah|specialty"
+usage = '''
+arg "<target>"
+'''
+run = '''
+case "${usage_target:-}" in
+  wilayah) go generate ./internal/data/wilayah/ ;;
+  specialty) go generate ./internal/data/specialty/ ;;
+  *)
+    echo "usage: gen <target> (wilayah|specialty)" >&2
+    exit 1
+    ;;
+esac
+'''
