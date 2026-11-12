@@ -5,3 +5,29 @@ node = "24"
 "github:golangci/golangci-lint" = "2.12.2"
 "github:hadolint/hadolint" = "2.14.0"
 "go:github.com/uudashr/gocognit/cmd/gocognit" = "1.2.1"
+
+[tasks."test:go"]
+usage = '''
+arg "[packages]" var=#true
+flag "--run <regex>"
+'''
+run = '''
+eval "set -- ${usage_packages:-./...}"
+if [ -n "${usage_run:-}" ]; then
+  go test "$@" -count=1 -run "$usage_run"
+else
+  go test "$@" -count=1
+fi
+'''
+
+[tasks."test:js"]
+usage = '''
+arg "[files]" var=#true
+'''
+run = '''
+eval "set -- ${usage_files:-}"
+npx vitest run "$@"
+'''
+
+[tasks.test]
+depends = ["test:go", "test:js"]
