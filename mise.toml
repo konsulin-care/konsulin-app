@@ -102,8 +102,9 @@ arg "<target>"
 '''
 run = '''
 case "${usage_target:-}" in
-  wilayah) go generate ./internal/data/wilayah/ ;;
-  specialty) go generate ./internal/data/specialty/ ;;
+  wilayah|specialty)
+    go generate "./internal/data/${usage_target}/"
+    ;;
   *)
     echo "usage: gen <target> (wilayah|specialty)" >&2
     exit 1
