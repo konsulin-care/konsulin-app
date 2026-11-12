@@ -17,8 +17,8 @@
 
 /** Detected test suites (label + argv + routing scope/cwd), frozen at generation time. */
 const SUITES = [
-  { "label": "config (mise run test:go {pkgs})", "argv": ["mise","run","test:go","{pkgs}"], "scope": "packages" },
-  { "label": "config (mise run test:js {tests})", "argv": ["mise","run","test:js","{tests}"], "scope": "files" }
+  { "label": "config (go test {pkgs} -count=1)", "argv": ["go","test","{pkgs}","-count=1"], "scope": "packages" },
+  { "label": "config (npx vitest run {tests})", "argv": ["npx","vitest","run","{tests}"], "scope": "files" }
 ];
 
 /** Per-suite wall clock budget: PI_TEST_TIMEOUT_MS, 300000ms default. */
