@@ -70,6 +70,25 @@ run = "golangci-lint run ./..."
 description = "Lint Dockerfile with hadolint"
 run = "hadolint Dockerfile"
 
+[tasks.docker]
+description = "Build the Docker image with mise-pinned Go and Node versions"
+run = '''
+sh scripts/docker.sh \
+  --build-arg GO_VERSION="$(mise current go)" \
+  --build-arg NODE_VERSION="$(mise current node)"
+'''
+
+[tasks."docker:publish"]
+description = "Build and push the Docker image for <env>"
+usage = '''
+arg "<env>" values=development|staging|production
+'''
+run = '''
+sh scripts/docker-publish.sh "${usage_env}" \
+  --build-arg GO_VERSION="$(mise current go)" \
+  --build-arg NODE_VERSION="$(mise current node)"
+'''
+
 [tasks."check:file-length"]
 description = "Fail when files exceed the max line count (default 300)"
 usage = '''
