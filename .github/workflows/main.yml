@@ -40,12 +40,14 @@ jobs:
 
       - name: Install mise-managed tools (Go)
         uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          install_args: go
 
       - name: Run Go tests
-        run: make test-go
+        run: mise run --skip-tools test:go
 
       - name: Build Go binary
-        run: go build ./cmd/konsulin-app
+        run: mise run --skip-tools build:go
 
   # Build and push Docker image
   docker:
