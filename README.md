@@ -28,11 +28,11 @@
 ## Quick Start
 
 ```sh
-# Install tools (Go 1.26.3, Node 24, templ CLI, golangci-lint)
+# Install tools (Go 1.26.5, Node 24, golangci-lint)
 mise install
 
 # Install JS/Go dependencies
-make deps
+mise run deps
 
 # Copy environment config
 cp .env.example .env
@@ -49,21 +49,20 @@ npm run dev
 
 ## Available Scripts
 
-| Command          | Description                     |
-| ---------------- | ------------------------------- |
-| `make test`      | Run all tests (Go + JS)         |
-| `make check-go`  | Run all Go lint checks          |
-| `make css-templ` | Generate Tailwind CSS for templ |
-| `make docker`    | Build and run Docker image      |
-| `npm run dev`    | Start Next.js dev server        |
-| `npm run lint`   | Run ESLint                      |
+| Command             | Description                |
+| ------------------- | -------------------------- |
+| `mise run test`     | Run all tests (Go + JS)    |
+| `mise run check:go` | Run all Go lint checks     |
+| `mise run docker`   | Build and run Docker image |
+| `npm run dev`       | Start Next.js dev server   |
+| `npm run lint`      | Run ESLint                 |
 
 ## Docker
 
 Build and run the app in a container using `.env` for configuration:
 
 ```sh
-make docker
+mise run docker
 ```
 
 Or run the commands directly:

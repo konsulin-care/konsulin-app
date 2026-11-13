@@ -11,6 +11,7 @@ GOTOOLCHAIN = "local"
 lockfile = true
 
 [tasks."test:go"]
+description = "Run Go tests (default ./...; scope with packages)"
 usage = '''
 arg "[packages]" var=#true
 flag "--run <regex>"
@@ -25,6 +26,7 @@ fi
 '''
 
 [tasks."test:js"]
+description = "Run Vitest tests (default all; scope with files)"
 usage = '''
 arg "[files]" var=#true
 '''
@@ -34,6 +36,7 @@ npx vitest run "$@"
 '''
 
 [tasks.test]
+description = "Run all tests (Go + JS)"
 depends = ["test:go", "test:js"]
 
 [tasks.deps]
