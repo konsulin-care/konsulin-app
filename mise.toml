@@ -115,6 +115,17 @@ run = "npm run build"
 description = "Remove .next and out build directories"
 run = "rm -rf .next out"
 
+[tasks.dev]
+description = "Run dev servers: full|go|next|static"
+usage = '''
+arg "[mode]" values=full|go|next|static default=full
+flag "--go-port <port>" default=3000
+flag "--next-port <port>" default=8000
+'''
+run = '''
+sh scripts/dev.sh "${usage_mode:-full}" --go-port "${usage_go_port:-3000}" --next-port "${usage_next_port:-8000}"
+'''
+
 [tasks.start]
 description = "Run the Go BFF server"
 run = "go run ./cmd/konsulin-app"
