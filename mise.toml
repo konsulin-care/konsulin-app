@@ -70,6 +70,30 @@ run = "golangci-lint run ./..."
 description = "Lint Dockerfile with hadolint"
 run = "hadolint Dockerfile"
 
+[tasks."check:file-length"]
+description = "Fail when files exceed the max line count (default 300)"
+usage = '''
+arg "[files]" var=#true
+flag "--max <n>"
+'''
+run = '''
+eval "set -- ${usage_files:-}"
+if [ -n "${usage_max:-}" ]; then
+  sh scripts/check-file-length.sh --max "$usage_max" "$@"
+else
+  sh scripts/check-file-length.sh "$@"
+fi
+'''
+
+[tasks."check:go-mod"]
+description = "Verify go.mod and go.sum are tidy (go mod tidy -diff)"
+run = "sh scripts/check-go-mod.sh"
+
+[tasks."check:go"]
+description = "Run file-length, format, lint and vet checks"
+depends = ["check:file-length", "fmt:go --check", "lint:go"]
+run = "go vet ./..."
+
 [tasks.build]
 description = "Build Next.js static export and Go binary"
 depends = ["build:next", "build:go"]
