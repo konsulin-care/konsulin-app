@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install mise-managed tools (Go, Node)
-        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
 
       - name: Cache Go modules
         uses: actions/cache@v6
@@ -37,7 +37,7 @@ jobs:
         run: npm ci
 
       - name: Lint JS/TS
-        uses: reviewdog/action-eslint@3ee2a450da17e060b9dfa4bffd53976906c6b2b0 # v1.36.1
+        uses: reviewdog/action-eslint@6dad10dc50476699ad1ddbbb19bf55d36f311a39 # v1.37.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-check
