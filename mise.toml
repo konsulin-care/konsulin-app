@@ -7,7 +7,7 @@ GOTOOLCHAIN = "local"
 
 [tools]
 node = "24"
-"github:golangci/golangci-lint" = "2.12.2"
+"github:golangci/golangci-lint" = "2.15.0"
 "github:hadolint/hadolint" = "2.14.0"
 
 [tasks."test:go"]
