@@ -50,8 +50,8 @@ func recStub(t *testing.T, emptyRoles bool) *httptest.Server {
 				packed{"resource": packed{"resourceType": "HealthcareService", "id": "hs-" + num, "name": "Layanan " + num,
 					"type": []packed{{"coding": []packed{{"code": "psychology", "display": "Clinical Psychology"}}, "text": "Clinical Psychology"}},
 					"extension": []packed{
-						packed{"url": "https://konsulin.care/StructureDefinition/appointment-duration", "valueDuration": packed{"value": 30}},
-						packed{"url": "http://konsulin.care/fhir/StructureDefinition/fee", "valueMoney": packed{"value": 200000, "currency": "IDR"}},
+						{"url": "https://konsulin.care/StructureDefinition/appointment-duration", "valueDuration": packed{"value": 30}},
+						{"url": "http://konsulin.care/fhir/StructureDefinition/fee", "valueMoney": packed{"value": 200000, "currency": "IDR"}},
 					}}},
 				packed{"resource": packed{"resourceType": "Schedule", "id": "sch-" + num, "actor": []packed{{"reference": "PractitionerRole/role-" + num}}}},
 			)
@@ -69,9 +69,9 @@ func recStub(t *testing.T, emptyRoles bool) *httptest.Server {
 	}
 
 	specialtyEntries := []packed{
-		packed{"resource": packed{"resourceType": "PractitionerRole", "id": "role-1", "specialty": []packed{{"coding": []packed{{"code": "psychology", "display": "Clinical Psychology"}}, "text": "Clinical Psychology"}}}},
-		packed{"resource": packed{"resourceType": "PractitionerRole", "id": "role-2", "specialty": []packed{{"coding": []packed{{"code": "psychiatry", "display": "Psychiatry"}}, "text": "Psychiatry"}}}},
-		packed{"resource": packed{"resourceType": "PractitionerRole", "id": "role-3", "specialty": []packed{{"coding": []packed{{"code": "psychology", "display": "Clinical Psychology"}}, "text": "Clinical Psychology"}}}},
+		{"resource": packed{"resourceType": "PractitionerRole", "id": "role-1", "specialty": []packed{{"coding": []packed{{"code": "psychology", "display": "Clinical Psychology"}}, "text": "Clinical Psychology"}}}},
+		{"resource": packed{"resourceType": "PractitionerRole", "id": "role-2", "specialty": []packed{{"coding": []packed{{"code": "psychiatry", "display": "Psychiatry"}}, "text": "Psychiatry"}}}},
+		{"resource": packed{"resourceType": "PractitionerRole", "id": "role-3", "specialty": []packed{{"coding": []packed{{"code": "psychology", "display": "Clinical Psychology"}}, "text": "Clinical Psychology"}}}},
 	}
 
 	// bundleForSearchURL returns the flat searchset bundle a GET to the given

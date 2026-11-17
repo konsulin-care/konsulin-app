@@ -111,12 +111,10 @@ func assertBundleEntry(t *testing.T, entry any, expectedMethod, expectedURL stri
 	em, ok := entry.(map[string]any)
 	if !ok {
 		t.Fatal("expected entry map")
-		return
 	}
 	req, ok := em["request"].(map[string]any)
 	if !ok {
 		t.Fatal("expected request map")
-		return
 	}
 	if req["method"] != expectedMethod || req["url"] != expectedURL {
 		t.Errorf("expected %s %s, got %v %v", expectedMethod, expectedURL, req["method"], req["url"])
@@ -129,7 +127,6 @@ func assertAppointmentResource(t *testing.T, entry any) {
 	apptResource, ok := entry.(map[string]any)["resource"].(map[string]any)
 	if !ok {
 		t.Fatal("expected appointment resource map")
-		return
 	}
 	if apptResource["status"] != "proposed" {
 		t.Errorf("expected Appointment status=proposed, got %v", apptResource["status"])
@@ -150,11 +147,9 @@ func assertAppointmentSlotRef(t *testing.T, apptResource map[string]any) {
 	slotRefs, ok := apptResource["slot"].([]any)
 	if !ok {
 		t.Fatal("expected appointment slot reference")
-		return
 	}
 	if len(slotRefs) < 1 {
 		t.Fatal("expected at least one appointment slot reference")
-		return
 	}
 	slotRef, ok := slotRefs[0].(map[string]any)
 	if !ok || slotRef["reference"] != "urn:uuid:slot-1" {
@@ -168,7 +163,6 @@ func assertAppointmentParticipants(t *testing.T, apptResource map[string]any) {
 	participants, ok := apptResource["participant"].([]any)
 	if !ok {
 		t.Fatal("expected appointment participants")
-		return
 	}
 	if len(participants) != 4 {
 		t.Fatalf("expected 4 participants, got %d", len(participants))
@@ -178,7 +172,6 @@ func assertAppointmentParticipants(t *testing.T, apptResource map[string]any) {
 		pm, ok := p.(map[string]any)
 		if !ok {
 			t.Fatal("expected participant map")
-			return
 		}
 		if pm["status"] != "needs-action" {
 			t.Errorf("expected participant status=needs-action, got %v", pm["status"])
@@ -186,12 +179,10 @@ func assertAppointmentParticipants(t *testing.T, apptResource map[string]any) {
 		actor, ok := pm["actor"].(map[string]any)
 		if !ok {
 			t.Fatal("expected participant actor")
-			return
 		}
 		reference, ok := actor["reference"].(string)
 		if !ok {
 			t.Fatal("expected participant actor reference")
-			return
 		}
 		actors[reference] = true
 	}
@@ -216,7 +207,6 @@ func assertSlotResource(t *testing.T, entry any) {
 	slotResource, ok := entry.(map[string]any)["resource"].(map[string]any)
 	if !ok {
 		t.Fatal("expected slot resource map")
-		return
 	}
 	if slotResource["status"] != "free" {
 		t.Errorf("expected Slot status=free, got %v", slotResource["status"])
@@ -224,7 +214,6 @@ func assertSlotResource(t *testing.T, entry any) {
 	sched, ok := slotResource["schedule"].(map[string]any)
 	if !ok {
 		t.Fatal("expected schedule map")
-		return
 	}
 	if sched["reference"] != "Schedule/sched-1" {
 		t.Errorf("expected Slot schedule=Schedule/sched-1")
@@ -237,7 +226,6 @@ func assertInvoiceResource(t *testing.T, entry any) {
 	invoiceResource, ok := entry.(map[string]any)["resource"].(map[string]any)
 	if !ok {
 		t.Fatal("expected invoice resource map")
-		return
 	}
 	if invoiceResource["status"] != "issued" {
 		t.Errorf("expected Invoice status=issued, got %v", invoiceResource["status"])
@@ -245,7 +233,6 @@ func assertInvoiceResource(t *testing.T, entry any) {
 	totalNet, ok := invoiceResource["totalNet"].(map[string]any)
 	if !ok {
 		t.Fatal("expected totalNet map")
-		return
 	}
 	if totalNet["value"] != float64(150000) {
 		t.Errorf("expected Invoice.totalNet.value=150000, got %v", totalNet["value"])
@@ -256,7 +243,6 @@ func assertInvoiceResource(t *testing.T, entry any) {
 	subject, ok := invoiceResource["subject"].(map[string]any)
 	if !ok {
 		t.Fatal("expected subject map")
-		return
 	}
 	if subject["reference"] != "Patient/pat-1" {
 		t.Errorf("expected Invoice subject=Patient/pat-1")
