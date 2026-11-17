@@ -53,11 +53,16 @@ flag "--check"
 '''
 run = '''
 if [ -n "${usage_check:-}" ]; then
-  diff="$(gofmt -s -d ./cmd/ ./internal/)"
+  status=0
+  diff="$(gofmt -s -d ./cmd/ ./internal/)" || status=$?
   if [ -n "$diff" ]; then
     printf '%s\n' "$diff"
     echo "Go formatting differs; run: mise run fmt:go" >&2
     exit 1
+  fi
+  if [ "$status" -ne 0 ]; then
+    echo "gofmt failed (exit $status)" >&2
+    exit "$status"
   fi
   echo "Go formatting is correct"
 else
@@ -100,6 +105,9 @@ flag "--max <n>"
 '''
 run = '''
 eval "set -- ${usage_files:-}"
+if [ "$#" -eq 0 ]; then
+  set -- $(git grep -L -e '^// Code generated' -- '*.go')
+fi
 if [ -n "${usage_max:-}" ]; then
   sh scripts/check-file-length.sh --max "$usage_max" "$@"
 else
