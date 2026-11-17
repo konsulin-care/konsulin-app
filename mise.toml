@@ -1,14 +1,14 @@
-[tools]
-go = "1.26.5"
-node = "24"
-"github:golangci/golangci-lint" = "2.12.2"
-"github:hadolint/hadolint" = "2.14.0"
+[settings]
+lockfile = true
+idiomatic_version_file_enable_tools = ["go"]
 
 [env]
 GOTOOLCHAIN = "local"
 
-[settings]
-lockfile = true
+[tools]
+node = "24"
+"github:golangci/golangci-lint" = "2.12.2"
+"github:hadolint/hadolint" = "2.14.0"
 
 [tasks."test:go"]
 description = "Run Go tests (default ./...; scope with packages)"
