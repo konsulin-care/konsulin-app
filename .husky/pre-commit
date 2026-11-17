@@ -1,8 +1,11 @@
 #!/usr/bin/env sh
 #. "$(dirname -- "$0")/_/husky.sh" # Removed: Will fail in v10.0.0
 
-# mise manages Go, golangci-lint and hadolint — put the mise binary and its shims on PATH
-export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+# mise manages Go, golangci-lint and hadolint — put the mise binary on PATH.
+# Do NOT prepend the global mise shims directory: its golangci-lint symlink points at the
+# globally installed version, which shadows the version pinned in mise.toml.
+# `mise run` sets up the pinned tool paths itself.
+export PATH="$HOME/.local/bin:$PATH"
 
 # Only run Go checks if Go files are staged (all checks live in mise tasks since the Makefile was removed)
 if git diff --cached --name-only --diff-filter=ACMR | grep -q '\.go$'; then
