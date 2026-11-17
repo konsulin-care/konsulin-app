@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
 #. "$(dirname -- "$0")/_/husky.sh" # Removed: Will fail in v10.0.0
 
-# mise manages Go, templ, golangci-lint — ensure shims are on PATH
-export PATH="$HOME/.local/share/mise/shims:$PATH"
+# mise manages Go, golangci-lint and hadolint — put the mise binary and its shims on PATH
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
 
-# Only run Go checks if Go files are staged
+# Only run Go checks if Go files are staged (all checks live in mise tasks since the Makefile was removed)
 if git diff --cached --name-only --diff-filter=ACMR | grep -q '\.go$'; then
-  make check-go && make test-go && make docker-check || exit 1
+  mise run check:go && mise run test:go && mise run lint:docker || exit 1
 else
   echo "  No Go files staged — skipping Go checks"
 fi
