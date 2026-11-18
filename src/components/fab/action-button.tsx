@@ -7,7 +7,7 @@ const variantStyles: Record<string, string> = {
   primary: 'bg-secondary text-white hover:brightness-90',
   danger: 'bg-destructive text-white hover:brightness-90',
   secondary: 'bg-softGray text-primary hover:bg-secondary hover:text-white',
-  ghost: 'bg-transparent text-muted hover:bg-softGray'
+  ghost: 'bg-transparent text-muted-foreground hover:bg-softGray'
 };
 
 /** Action button shown in action mode. Renders as icon-only circle when label is absent, pill with label otherwise. */

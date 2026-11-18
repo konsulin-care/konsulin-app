@@ -68,7 +68,7 @@ export default function ScoreDisplay({
       )}
 
       <div className='mb-4'>
-        <div className='text-12 text-muted mb-2'>Result Brief</div>
+        <div className='text-12 text-muted-foreground mb-2'>Result Brief</div>
 
         {showLoading ? (
           <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
@@ -80,7 +80,7 @@ export default function ScoreDisplay({
       </div>
 
       <div className='mb-4'>
-        <div className='text-12 text-muted mb-2'>Result Tables</div>
+        <div className='text-12 text-muted-foreground mb-2'>Result Tables</div>
 
         {showLoading ? (
           <Skeleton className='h-[50px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />

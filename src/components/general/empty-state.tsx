@@ -34,8 +34,10 @@ export default function EmptyState({
         width={size}
         height={size}
       />
-      <div className='text-muted mt-4 font-bold'>{resolvedTitle}</div>
-      <div className='text-muted mt-1'>{resolvedSubtitle}</div>
+      <div className='text-muted-foreground mt-4 font-bold'>
+        {resolvedTitle}
+      </div>
+      <div className='text-muted-foreground mt-1'>{resolvedSubtitle}</div>
     </div>
   );
 }
