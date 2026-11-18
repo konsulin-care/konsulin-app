@@ -1,5 +1,5 @@
 /* eslint-disable security/detect-non-literal-fs-filename */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -34,8 +34,16 @@ describe('dark mode removed', () => {
     expect(css).not.toMatch(/\.dark\s*\{/);
   });
 
-  it('tailwind.config.ts has no darkMode setting', () => {
-    const config = read('tailwind.config.ts');
-    expect(config).not.toContain('darkMode');
+  it('has no tailwind.config.ts (Tailwind v4 is configured in CSS)', () => {
+    expect(existsSync(path.join(PROJECT_ROOT, 'tailwind.config.ts'))).toBe(
+      false
+    );
+  });
+
+  it('components.json points at no tailwind config file', () => {
+    const config: { tailwind: { config: string } } = JSON.parse(
+      read('components.json')
+    );
+    expect(config.tailwind.config).toBe('');
   });
 });
