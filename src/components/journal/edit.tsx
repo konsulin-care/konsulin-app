@@ -150,7 +150,7 @@ export default function EditJournal({ journalId }: Props) {
       <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
 
       <div className='flex grow flex-col'>
-        <span className='text-muted text-[10px]'>
+        <span className='text-muted-foreground text-[10px]'>
           {t('journal.created_label')}
         </span>
         <span className='text-[14px] font-bold'>
@@ -159,7 +159,7 @@ export default function EditJournal({ journalId }: Props) {
         </span>
       </div>
       <div className='flex flex-col'>
-        <span className='text-muted text-right text-[10px]'>
+        <span className='text-muted-foreground text-right text-[10px]'>
           {t('journal.last_edit_label')}
         </span>
         <span className='text-right text-[14px] font-bold'>

@@ -102,7 +102,7 @@ function SessionCard({
           {displayName}
         </span>
         {session.appointmentType && (
-          <span className='text-muted truncate text-left text-[12px]'>
+          <span className='text-muted-foreground truncate text-left text-[12px]'>
             {capitalizeFirstLetter(session.appointmentType)} Session
           </span>
         )}
