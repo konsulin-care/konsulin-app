@@ -28,7 +28,8 @@
 ## Quick Start
 
 ```sh
-# Install tools (Go 1.26.5, Node 24, golangci-lint)
+# Install tools (Go 1.26.5, Node 24, golangci-lint, lefthook)
+# The mise postinstall hook also installs the lefthook git hooks
 mise install
 
 # Install JS/Go dependencies
@@ -47,12 +48,15 @@ npm run dev
 - Go SSR: http://localhost:8080
 - Next.js: http://localhost:3000
 
+- Git hooks are installed by `mise install` through a mise postinstall hook (`lefthook install`); the hook definitions live in `lefthook.yml`.
+
 ## Available Scripts
 
 | Command             | Description                |
 | ------------------- | -------------------------- |
 | `mise run test`     | Run all tests (Go + JS)    |
 | `mise run check:go` | Run all Go lint checks     |
+| `mise run check:js` | Run type-check and ESLint  |
 | `mise run docker`   | Build and run Docker image |
 | `npm run dev`       | Start Next.js dev server   |
 | `npm run lint`      | Run ESLint                 |
