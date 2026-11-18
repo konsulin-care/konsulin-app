@@ -5,8 +5,12 @@ idiomatic_version_file_enable_tools = ["go"]
 [env]
 GOTOOLCHAIN = "local"
 
+[hooks]
+postinstall = "lefthook install"
+
 [tools]
 node = "24"
+lefthook = "2.2.2"
 "github:golangci/golangci-lint" = "2.15.0"
 "github:hadolint/hadolint" = "2.14.0"
 
@@ -69,6 +73,18 @@ else
   gofmt -s -w ./cmd/ ./internal/
 fi
 '''
+
+[tasks.typecheck]
+description = "Type-check TypeScript (tsc --noEmit)"
+run = "npx tsc --noEmit"
+
+[tasks."lint:js"]
+description = "Lint src/ with ESLint, failing on any warning"
+run = "npx eslint src/ --max-warnings 0"
+
+[tasks."check:js"]
+description = "Run TypeScript type-check and ESLint"
+depends = ["typecheck", "lint:js"]
 
 [tasks."lint:go"]
 description = "Run golangci-lint over all Go packages"
