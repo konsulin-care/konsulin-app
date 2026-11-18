@@ -6,7 +6,7 @@ import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
 import { getInitials } from '@/utils/name';
 import type { HomeRecommendationCard as Recommendation } from '@/utils/recommendation-card';
 import Image from 'next/image';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 interface RecommendationCardProps {
   recommendation: Recommendation;
@@ -146,25 +146,6 @@ function ExpandingOverlay({
   );
 }
 
-/** Injects marquee keyframe animation into document head once. */
-function useMarqueeAnimation() {
-  useEffect(() => {
-    if (document.querySelector('#marquee-style')) return;
-    const style = document.createElement('style');
-    style.id = 'marquee-style';
-    style.textContent = `
-      @keyframes marquee {
-        0% { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
-      }
-      .animate-marquee {
-        animation: marquee 10s linear infinite;
-      }
-    `;
-    document.head.append(style);
-  }, []);
-}
-
 /**
  *
  */
@@ -199,8 +180,6 @@ export default function RecommendationCard({
 
   const isTouchDevice =
     globalThis.matchMedia?.('(hover: none)')?.matches ?? false;
-
-  useMarqueeAnimation();
 
   return (
     <div
