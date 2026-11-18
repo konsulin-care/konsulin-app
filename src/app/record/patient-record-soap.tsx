@@ -84,7 +84,7 @@ export default function PatientRecordSoap({
   ) : (
     <div className='flex flex-col gap-5'>
       <div>
-        <div className='text-muted mb-2 text-[12px]'>
+        <div className='text-muted-foreground mb-2 text-[12px]'>
           Practitioner&apos;s Note
         </div>
         <div className='card flex text-[14px]'>

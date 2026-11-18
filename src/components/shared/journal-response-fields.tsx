@@ -33,7 +33,7 @@ export default function JournalResponseFields({
         {response.map((item, index) => (
           <div className='mb-3' key={item.id}>
             <div className='flex items-center justify-between'>
-              <div className='text-muted mb-2 text-[12px]'>
+              <div className='text-muted-foreground mb-2 text-[12px]'>
                 {t('journal.response_prompt')}
               </div>
               <Button
@@ -63,7 +63,7 @@ export default function JournalResponseFields({
       <div className='flex w-full justify-center'>
         <Button
           variant='ghost'
-          className='text-muted text-[12px]'
+          className='text-muted-foreground text-[12px]'
           onClick={onAdd}
         >
           {t('journal.add_new_thought')}

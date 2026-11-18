@@ -195,7 +195,7 @@ export default function HomeContentPatient() {
 
       {/* BELOW FOLD: Previous Records */}
       <div className='p-4'>
-        <div className='text-muted flex justify-between'>
+        <div className='text-muted-foreground flex justify-between'>
           <span className='mb-2 text-[14px] font-bold'>
             {t('previous_records')}
           </span>

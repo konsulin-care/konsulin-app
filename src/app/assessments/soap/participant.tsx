@@ -235,7 +235,7 @@ export default function Participant({
     <>
       <DialogHeader>
         {/* eslint-disable-next-line react/jsx-max-depth */}
-        <DialogTitle className='text-muted'>
+        <DialogTitle className='text-muted-foreground'>
           Create a Patient Profile
         </DialogTitle>
         {/* eslint-disable-next-line react/jsx-max-depth */}
@@ -272,7 +272,7 @@ export default function Participant({
         />
       ))
     ) : (
-      <div className='text-muted px-4 py-2 text-sm'>
+      <div className='text-muted-foreground px-4 py-2 text-sm'>
         {t('no_patient_today')}
       </div>
     );
