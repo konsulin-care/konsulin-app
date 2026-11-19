@@ -166,9 +166,11 @@ run = "rm -rf .next out"
 [tasks.dev]
 description = "Run dev servers: full|go|next|static"
 usage = '''
-arg "[mode]" values=full|go|next|static default=full
-flag "--go-port <port>" default=3000
-flag "--next-port <port>" default=8000
+arg "[mode]" default="full" {
+  choices "full" "go" "next" "static"
+}
+flag "--go-port <port>" default="3000"
+flag "--next-port <port>" default="8000"
 '''
 run = '''
 sh scripts/dev.sh "${usage_mode:-full}" --go-port "${usage_go_port:-3000}" --next-port "${usage_next_port:-8000}"
