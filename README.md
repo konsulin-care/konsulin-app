@@ -52,21 +52,22 @@ npm run dev
 
 ## Available Scripts
 
-| Command             | Description                |
-| ------------------- | -------------------------- |
-| `mise run test`     | Run all tests (Go + JS)    |
-| `mise run check:go` | Run all Go lint checks     |
-| `mise run check:js` | Run type-check and ESLint  |
-| `mise run docker`   | Build and run Docker image |
-| `npm run dev`       | Start Next.js dev server   |
-| `npm run lint`      | Run ESLint                 |
+| Command             | Description               |
+| ------------------- | ------------------------- |
+| `mise run test`     | Run all tests (Go + JS)   |
+| `mise run check:go` | Run all Go lint checks    |
+| `mise run check:js` | Run type-check and ESLint |
+| `mise run docker`   | Build Docker image        |
+| `npm run dev`       | Start Next.js dev server  |
+| `npm run lint`      | Run ESLint                |
 
 ## Docker
 
-Build and run the app in a container using `.env` for configuration:
+Build then run the app in a container using `.env` for configuration:
 
 ```sh
 mise run docker
+docker run --rm --network host --env-file .env konsulin-app
 ```
 
 Or run the commands directly:
