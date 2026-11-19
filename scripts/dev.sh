@@ -111,8 +111,18 @@ case "$MODE" in
     go_env
     trap 'kill 0' EXIT
     go run ./cmd/konsulin-app &
+    go_pid=$!
     npm run dev -- -p "$NEXT_PORT" &
-    wait
+    next_pid=$!
+    while kill -0 "$go_pid" 2>/dev/null && kill -0 "$next_pid" 2>/dev/null; do
+      sleep 1
+    done
+    if kill -0 "$go_pid" 2>/dev/null; then
+      echo "dev.sh: Next.js exited; stopping Go BFF" >&2
+    else
+      echo "dev.sh: Go BFF exited; stopping Next.js" >&2
+    fi
+    exit 1
     ;;
   go)
     go_env
