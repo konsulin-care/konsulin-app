@@ -1,6 +1,12 @@
 #!/bin/sh
 # docker-publish.sh — build and push the Docker image for an environment.
 # Usage: sh scripts/docker-publish.sh <env> [--build-arg K=V ...] [--tag <tag>]
+#
+# Tags pushed per environment:
+#   development  <ns>/<name>:nightly  <ns>/<name>:dev-<sha8>
+#   production   <ns>/<name>:latest   <ns>/<name>:<git describe --tags --abbrev=0>
+#
+# --tag overrides the channel tag only; the version tag is always added.
 set -u
 
 IMAGE_NAME="${IMAGE_NAME:-konsulin-app}"
@@ -11,11 +17,16 @@ Usage: sh scripts/docker-publish.sh <env> [--build-arg K=V ...] [--tag <tag>]
 
 Build the Docker image and push it to the registry.
 
-Environments: development | staging | production
+Environments: development | production
+
+Tags:
+  development  channel tag "nightly" plus version tag "dev-<sha8>"
+  production   channel tag "latest" plus version tag from git describe --tags --abbrev=0
+               (the version tag is skipped with a notice when no tag exists)
 
 Options:
   --build-arg K=V   forwarded to docker build (e.g. GO_VERSION, NODE_VERSION)
-  --tag <tag>       image tag (default: <env>)
+  --tag <tag>       override the channel tag (default: nightly | latest)
   --help            show this help and exit
 
 Required environment (validated before any docker call):
@@ -89,14 +100,15 @@ done
 # --- Environment validation; runs before any docker call. ---
 
 if [ -z "$ENVIRONMENT" ]; then
-  echo "docker-publish.sh: missing <env> (development|staging|production)" >&2
+  echo "docker-publish.sh: missing <env> (expected development|production)" >&2
   exit 1
 fi
 
 case "$ENVIRONMENT" in
-  development|staging|production) ;;
+  development) CHANNEL_TAG=nightly ;;
+  production) CHANNEL_TAG=latest ;;
   *)
-    echo "docker-publish.sh: invalid env: $ENVIRONMENT (expected development|staging|production)" >&2
+    echo "docker-publish.sh: invalid env: $ENVIRONMENT (expected development|production)" >&2
     exit 1
     ;;
 esac
@@ -116,10 +128,29 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 
+# --tag overrides the channel tag only.
 if [ -z "$IMAGE_TAG" ]; then
-  IMAGE_TAG=$ENVIRONMENT
+  IMAGE_TAG=$CHANNEL_TAG
 fi
+
+case "$ENVIRONMENT" in
+  development)
+    VERSION_TAG="$(git rev-parse --short=8 HEAD 2>/dev/null)" || VERSION_TAG=""
+    if [ -n "$VERSION_TAG" ]; then
+      VERSION_TAG="dev-$VERSION_TAG"
+    fi
+    ;;
+  production)
+    VERSION_TAG="$(git describe --tags --abbrev=0 2>/dev/null)" || VERSION_TAG=""
+    ;;
+esac
+
+if [ -z "$VERSION_TAG" ]; then
+  echo "docker-publish.sh: no version tag found; skipping version tag" >&2
+fi
+
 IMAGE="$IMAGE_NAMESPACE/$IMAGE_NAME:$IMAGE_TAG"
+VERSION_IMAGE="$IMAGE_NAMESPACE/$IMAGE_NAME:$VERSION_TAG"
 
 printf '%s' "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || exit 1
 
@@ -128,5 +159,10 @@ printf '%s' "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-s
 sh scripts/docker.sh --tag "$IMAGE" $passthrough || exit 1
 
 docker push "$IMAGE" || exit 1
-
 echo "docker-publish.sh: pushed $IMAGE"
+
+if [ -n "$VERSION_TAG" ]; then
+  docker tag "$IMAGE" "$VERSION_IMAGE" || exit 1
+  docker push "$VERSION_IMAGE" || exit 1
+  echo "docker-publish.sh: pushed $VERSION_IMAGE"
+fi
