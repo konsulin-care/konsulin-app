@@ -51,10 +51,10 @@ jobs:
         run: |
           if [ "$IS_DEV" == "true" ]; then
             echo "Development build..."
-            mise run --skip-tools docker:publish dev
+            mise run --skip-tools docker:publish development
           elif [ "$IS_PROD" == "true" ]; then
             echo "Production build..."
-            mise run --skip-tools docker:publish prod
+            mise run --skip-tools docker:publish production
           else
             echo "No valid environment specified. Needs IS_DEV or IS_PROD true."
             exit 1
