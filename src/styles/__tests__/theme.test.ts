@@ -1,6 +1,8 @@
+import tailwindcss from '@tailwindcss/postcss';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import postcss from 'postcss';
 import { describe, expect, it } from 'vitest';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,4 +28,21 @@ describe('Tailwind v4 theme configuration', () => {
     expect(theme).toMatch(/--color-accent:\s*var\(--color-turquoise-tint\)/);
     expect(theme).toMatch(/--color-ring:\s*var\(--color-turquoise-deep\)/);
   });
+
+  it('resolves text-muted-foreground to the charcoal palette through the real pipeline', async () => {
+    const stylesDir = resolve(__dirname, '..');
+    const { css: out } = await postcss([
+      tailwindcss({ base: stylesDir })
+    ]).process(`${css}\n@source inline("text-muted-foreground");`, {
+      from: resolve(stylesDir, 'globals.css')
+    });
+
+    expect(out).toMatch(
+      /\.text-muted-foreground\s*\{[^}]*color:\s*var\(--color-muted-foreground\)/
+    );
+    expect(out).toMatch(
+      /--color-muted-foreground:\s*var\(--color-charcoal-600\)/
+    );
+    expect(out).toMatch(/--color-charcoal-600:\s*#686c72/);
+  }, 30_000);
 });
