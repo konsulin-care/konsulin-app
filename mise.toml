@@ -105,7 +105,9 @@ sh scripts/docker.sh \
 [tasks."docker:publish"]
 description = "Build and push the Docker image for <env>"
 usage = '''
-arg "<env>" values=development|production
+arg "<env>" {
+  choices "development" "production"
+}
 '''
 run = '''
 sh scripts/docker-publish.sh "${usage_env}" \
