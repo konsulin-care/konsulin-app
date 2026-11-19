@@ -137,7 +137,7 @@ case "$MODE" in
     clean_dirs
     echo "Go BFF on :$GO_PORT serving static out/"
     go_env
-    npm run build
+    npm run build || { echo "dev.sh: npm run build failed" >&2; exit 1; }
     go run ./cmd/konsulin-app
     ;;
 esac
