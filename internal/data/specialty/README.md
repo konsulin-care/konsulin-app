@@ -45,7 +45,7 @@ internal/data/specialty/
 ### Generate Data
 
 ```bash
-make data-specialty
+mise run gen specialty
 ```
 
 1. Download ISCO-08 and NUCC taxonomy files (cached for 24 hours)

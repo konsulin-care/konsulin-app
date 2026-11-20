@@ -14,9 +14,9 @@ describe('SCSS palette tokens', () => {
     expect(scss).toMatch(/--color-gold:\s*#\{\$color-gold\}/);
   });
 
-  it('defines the secondary brand token', () => {
-    expect(scss).toMatch(/\$color-secondary:\s*#13c2c2/);
-    expect(scss).toMatch(/--color-secondary:\s*#\{\$color-secondary\}/);
+  it('does not redeclare secondary, which now lives in the globals.css @theme', () => {
+    expect(scss).not.toMatch(/--color-secondary:/);
+    expect(scss).not.toMatch(/\$color-secondary/);
   });
 
   it('is loaded from index.scss', () => {

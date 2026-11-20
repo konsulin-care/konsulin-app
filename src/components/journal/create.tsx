@@ -170,10 +170,10 @@ export default function CreateJournal() {
     <>
       <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
         <div>
-          <div className='text-muted text-center font-bold'>
+          <div className='text-muted-foreground text-center font-bold'>
             {t('journal.entry_heading')}
           </div>
-          <div className='text-muted text-center'>
+          <div className='text-muted-foreground text-center'>
             {t('journal.entry_hint')}
           </div>
         </div>

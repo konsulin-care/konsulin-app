@@ -14,7 +14,7 @@ export default function MedalCollection({ medals, isDisabled = false }) {
     <div
       className={`transition duration-300 ${isDisabled ? 'pointer-events-none opacity-50 blur-sm filter' : ''}`}
     >
-      <div className='text-muted flex justify-between py-4'>
+      <div className='text-muted-foreground flex justify-between py-4'>
         <span className='text-[14px] font-bold'> {t('medal_collection')}</span>
         <Link className='text-[12px]' href={'/'}>
           {tCommon('see_all')}
@@ -38,7 +38,7 @@ export default function MedalCollection({ medals, isDisabled = false }) {
                 <span className='text-left text-[12px] font-bold'>
                   {medal.title}
                 </span>
-                <span className='text-muted text-left text-[10px]'>
+                <span className='text-muted-foreground text-left text-[10px]'>
                   {medal.description}
                 </span>
               </div>

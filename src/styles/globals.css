@@ -1,114 +1,135 @@
 @import 'tailwindcss';
+@import 'tailwind-scrollbar-hide/v4';
 @import './phone-input.css';
+@plugin 'tailwindcss-animate';
+
 @theme {
-  --color-primary: #2c2f35;
-  --color-secondary: #13c2c2;
+  --color-charcoal-900: #161c26;
+  --color-charcoal-700: #484d54;
+  --color-charcoal-600: #686c72;
+  --color-charcoal-400: #8d8f93;
+  --color-charcoal-200: #dadbdb;
+  --color-charcoal-100: #ecedeb;
+  --color-paper: #fafaf8;
+  --color-surface: #ffffff;
+  --color-turquoise: #0abdc3;
+  --color-turquoise-tint: #d8f1f1;
+  --color-turquoise-deep: #0f7981;
+  --color-danger: #b3261e;
+  --color-danger-tint: #fbeae8;
+  --color-warning: #f2b705;
+  --color-warning-deep: #7a5200;
+  --color-warning-tint: #fdf3d7;
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-charcoal-900);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-charcoal-900);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-charcoal-900);
+  --color-primary: var(--color-charcoal-900);
+  --color-primary-foreground: var(--color-paper);
+  --color-secondary: var(--color-turquoise);
+  --color-secondary-foreground: var(--color-charcoal-900);
+  --color-muted: var(--color-charcoal-100);
+  --color-muted-foreground: var(--color-charcoal-600);
+  --color-accent: var(--color-turquoise-tint);
+  --color-accent-foreground: var(--color-charcoal-900);
+  --color-destructive: var(--color-danger);
+  --color-destructive-foreground: var(--color-surface);
+  --color-border: var(--color-charcoal-200);
+  --color-input: var(--color-charcoal-400);
+  --color-ring: var(--color-turquoise-deep);
+  --animate-pill-in: pill-in 0.25s ease-out forwards;
+  --animate-overlay-in: overlay-in 0.3s ease-out;
+  --animate-marquee: marquee 10s linear infinite;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  @keyframes pill-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
 }
 
 /* Stretch carousel slides to the tallest slide so every card is equal
-   height. Swiper sizes slides to their content otherwise, which makes the
-   carousel height jump between studies. */
+   height. Swiper sizes slides to their content otherwise. */
 .research-carousel .swiper-slide {
   height: auto;
 }
 
-/* Same equal-height behavior for the header session/research carousel.
-   Slides stretch via flexbox, so no JS height measurement is needed. */
+/* Same equal-height behavior for the header session/research carousel. */
 .header-carousel .swiper-slide {
   height: auto;
 }
 
-* {
-  border-color: var(--border);
-}
-
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-}
-
-/* Reserve the vertical scrollbar gutter on classic-scrollbar platforms so
-   the centered page column does not jump sideways when the scrollbar
-   appears/disappears between routes. No-op for overlay scrollbars. */
+/* Reserve the vertical scrollbar gutter so the centered page column does
+   not jump sideways between routes. No-op for overlay scrollbars. */
 html {
   scrollbar-gutter: stable;
 }
 
-@layer utilities {
-  .bg-secondary {
-    background-color: var(--secondary);
-  }
-
-  .bg-background {
-    background-color: var(--soft-gray);
-  }
-
-  .text-secondary {
-    color: var(--secondary);
-  }
-
-  .tab-active[data-state='active'] {
-    background-color: var(--secondary) !important;
-    color: white !important;
-    font-weight: 700 !important;
-  }
-
-  .btn-soft-gray {
-    background-color: var(--soft-gray);
-    color: #333;
-  }
-
-  .btn-soft-gray:hover {
-    background-color: var(--secondary);
-    color: white;
-  }
-
-  .btn-soft-gray:active {
-    background-color: #0fa8a8;
-  }
-}
-
 @layer components {
-  @reference utilities;
-  /* This won't be included in your compiled CSS unless you actually use it */
   .card {
-    /* ... */
     @apply rounded-lg border p-4;
   }
 }
 
+/* Inside a layer. Outside one, this rule overrides every border utility. */
 @layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: #2c2f35;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: #13c2c2;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --soft-gray: #efefef;
-
-    --muted: rgba(44, 47, 53, 60%);
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: #efefef;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 180, 82%, 42%;
-
-    --radius: 1rem;
+    /* Legacy names still read by inline styles and SCSS. */
+    --primary: var(--color-primary);
+    --secondary: var(--color-secondary);
+    --soft-gray: var(--color-muted);
+    --muted: var(--color-muted-foreground);
+    --border: var(--color-border);
   }
 }

@@ -31,13 +31,12 @@ func protectedPageHandler(authGuard func(http.Handler) http.Handler, outDir stri
 			return
 		}
 		authGuard(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// nolint:gosec // path.Clean + HasPrefix guard is the standard mitigation
 			filePath := filepath.Join(outDir, path.Clean(strings.TrimPrefix(r.URL.Path, "/"))+".html")
 			if !strings.HasPrefix(filepath.Clean(filePath), filepath.Clean(outDir)) {
 				http.NotFound(w, r)
 				return
 			}
-			http.ServeFile(w, r, filePath)
+			http.ServeFile(w, r, filePath) // nolint:gosec // path.Clean + HasPrefix guard is the standard mitigation
 		})).ServeHTTP(w, r)
 	}
 }

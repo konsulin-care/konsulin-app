@@ -1,0 +1,68 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "baseBranchPatterns": ["develop"],
+  "schedule": ["before 6am on monday"],
+  "minimumReleaseAge": "3 days",
+  "platformAutomerge": true,
+  "automergeType": "pr",
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions", "gomod", "dockerfile"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    },
+    {
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    },
+    {
+      "groupName": "framework",
+      "matchPackageNames": [
+        "next",
+        "react",
+        "react-dom",
+        "tailwindcss",
+        "@tailwindcss/**",
+        "postcss",
+        "prettier",
+        "eslint-config-next"
+      ],
+      "automerge": false
+    },
+    {
+      "matchPackageNames": ["supertokens-auth-react", "jwt-decode", "axios"],
+      "automerge": false
+    },
+    {
+      "groupName": "toolchain",
+      "matchDepNames": ["go", "golang", "node"],
+      "automerge": false
+    },
+    {
+      "matchManagers": ["mise"],
+      "automerge": false
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "automerge": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "schedule": ["before 6am on monday"]
+  }
+}

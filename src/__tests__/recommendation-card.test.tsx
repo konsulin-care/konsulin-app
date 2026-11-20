@@ -166,4 +166,9 @@ describe('RecommendationCard', () => {
     const img = screen.getByAltText('dr. Sarah Chen');
     expect((img as HTMLImageElement).src).toContain('data:image/svg+xml');
   });
+
+  it('does not inject the marquee style element into the document', () => {
+    render(<RecommendationCard {...makeProps()} />);
+    expect(document.querySelector('#marquee-style')).toBeNull();
+  });
 });

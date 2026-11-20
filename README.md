@@ -28,11 +28,12 @@
 ## Quick Start
 
 ```sh
-# Install tools (Go 1.26.3, Node 24, templ CLI, golangci-lint)
+# Install tools (Go 1.26.5, Node 24, golangci-lint, lefthook)
+# The mise postinstall hook also installs the lefthook git hooks
 mise install
 
 # Install JS/Go dependencies
-make deps
+mise run deps
 
 # Copy environment config
 cp .env.example .env
@@ -47,23 +48,26 @@ npm run dev
 - Go SSR: http://localhost:8080
 - Next.js: http://localhost:3000
 
+- Git hooks are installed by `mise install` through a mise postinstall hook (`lefthook install`); the hook definitions live in `lefthook.yml`.
+
 ## Available Scripts
 
-| Command          | Description                     |
-| ---------------- | ------------------------------- |
-| `make test`      | Run all tests (Go + JS)         |
-| `make check-go`  | Run all Go lint checks          |
-| `make css-templ` | Generate Tailwind CSS for templ |
-| `make docker`    | Build and run Docker image      |
-| `npm run dev`    | Start Next.js dev server        |
-| `npm run lint`   | Run ESLint                      |
+| Command             | Description               |
+| ------------------- | ------------------------- |
+| `mise run test`     | Run all tests (Go + JS)   |
+| `mise run check:go` | Run all Go lint checks    |
+| `mise run check:js` | Run type-check and ESLint |
+| `mise run docker`   | Build Docker image        |
+| `npm run dev`       | Start Next.js dev server  |
+| `npm run lint`      | Run ESLint                |
 
 ## Docker
 
-Build and run the app in a container using `.env` for configuration:
+Build then run the app in a container using `.env` for configuration:
 
 ```sh
-make docker
+mise run docker
+docker run --rm --network host --env-file .env konsulin-app
 ```
 
 Or run the commands directly:

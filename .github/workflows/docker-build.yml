@@ -30,44 +30,31 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Set up mise (skip tool install)
+        uses: jdx/mise-action@8418fedb1110381a0d3ba51a7a415d7c1b884550 # v5.2.2
+        with:
+          install: false
+
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Get Short SHA
-        run: echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
-
-      - name: Get Timestamp
-        run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
-
-      - name: Build and Push Docker Images
+      - name: Build and Push Docker Image
         env:
           IS_DEV: ${{ inputs.IS_DEV }}
           IS_PROD: ${{ inputs.IS_PROD }}
+          IMAGE_NAMESPACE: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           if [ "$IS_DEV" == "true" ]; then
             echo "Development build..."
-            VERSION="dev-${SHORT_SHA}"
-            docker build \
-              -t ${IMAGE_NAMESPACE}/${IMAGE_NAME}:nightly \
-              -t ${IMAGE_NAMESPACE}/${IMAGE_NAME}:${VERSION} \
-              -f Dockerfile .
-
-            docker push ${IMAGE_NAMESPACE}/${IMAGE_NAME}:nightly
-            docker push ${IMAGE_NAMESPACE}/${IMAGE_NAME}:${VERSION}
-
+            mise run --skip-tools docker:publish development
           elif [ "$IS_PROD" == "true" ]; then
             echo "Production build..."
-            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "latest")
-            docker build \
-              -t ${IMAGE_NAMESPACE}/${IMAGE_NAME}:latest \
-              -t ${IMAGE_NAMESPACE}/${IMAGE_NAME}:${VERSION} \
-              -f Dockerfile .
-
-            docker push ${IMAGE_NAMESPACE}/${IMAGE_NAME}:latest
-            docker push ${IMAGE_NAMESPACE}/${IMAGE_NAME}:${VERSION}
+            mise run --skip-tools docker:publish production
           else
             echo "No valid environment specified. Needs IS_DEV or IS_PROD true."
             exit 1

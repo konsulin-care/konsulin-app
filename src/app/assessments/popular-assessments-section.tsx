@@ -66,7 +66,7 @@ function PopularAssessmentCard({
         <span className='text-[12px] font-bold'>
           {assessment.resource.title}
         </span>
-        <span className='text-muted mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
+        <span className='text-muted-foreground mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
           {assessment.resource.description}
         </span>
       </div>
@@ -83,7 +83,7 @@ export default function PopularAssessmentsSection({
 }: Readonly<PopularAssessmentsSectionProps>) {
   return (
     <div className='bg-[#F9F9F9] p-4'>
-      <div className='text-muted mb-2 text-[14px] font-bold'>
+      <div className='text-muted-foreground mb-2 text-[14px] font-bold'>
         Popular Assessment
       </div>
 

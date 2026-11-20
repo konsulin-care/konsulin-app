@@ -50,7 +50,8 @@ This is the target structure — the current codebase is still Next.js.
 │   └── assessment-spa/       React SPA bundle for AEHRC
 ├── Dockerfile                Multi-stage Go build
 ├── go.mod
-└── Makefile
+├── mise.toml                 Tool versions + task definitions
+└── scripts/                  Helper scripts for mise tasks
 ```
 
 # Key Files

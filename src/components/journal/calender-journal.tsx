@@ -46,7 +46,7 @@ export default function CalendarJournal({ onChange, value }: Props) {
           <div className='text-secondary font-bold'>
             {date ? format(date, 'EEEE') : '-'}
           </div>
-          <div className='text-muted'>
+          <div className='text-muted-foreground'>
             {date ? format(date, 'dd/MM/yyyy') : '-'}
           </div>
         </Button>

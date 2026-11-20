@@ -236,7 +236,9 @@ export function AdminClinicCard({
       >
         <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-black' />
         <div className='mr-auto flex flex-col'>
-          <span className='text-muted text-[12px]'>Currently Managing</span>
+          <span className='text-muted-foreground text-[12px]'>
+            Currently Managing
+          </span>
           <span className='text-secondary text-left text-[14px] font-bold'>
             {clinicName}
           </span>

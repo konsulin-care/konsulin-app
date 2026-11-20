@@ -18,8 +18,7 @@
 - **Docker**: For containerization and consistent environments.
 - **Prettier**: Code formatter.
 - **ESLint**: Pluggable linting utility for JavaScript and JSX.
-- **Husky**: Git hooks for linting and formatting staged files.
-- **`lint-staged`**: Run linters against staged git files.
+- **lefthook**: Git hooks managed by lefthook (version pinned via mise, config in `lefthook.yml`); replaces `lint-staged`.
 - **`date-fns` / `dayjs`**: Date utility libraries.
 - **`jwt-decode`**: For decoding JWT tokens.
 - **`lucide-react`**: Icon library.
@@ -52,8 +51,8 @@ The project can be set up by cloning the repository, installing dependencies usi
 - Dependencies are managed via `package.json`.
 - Linting is configured with `.eslintrc.json` and `eslint-config-next`.
 - Code formatting is handled by `.prettierrc` and `prettier-plugin-tailwindcss`, `prettier-plugin-organize-imports`.
-- Git hooks are managed by Husky and `lint-staged` for pre-commit checks.
-- Tailwind CSS configuration is in `tailwind.config.ts` (implied by `postcss.config.mjs` and `components.json`).
+- Git hooks are managed by lefthook (installed by the mise postinstall hook; replaces `lint-staged`): pre-commit runs the Go checks, type-check and ESLint/Prettier on staged files; pre-push runs the go mod check, Go tests, the Next.js build, lint and JS tests.
+- Tailwind CSS v4 is configured CSS-first in `src/styles/globals.css` (`@theme`, `@plugin`); there is no `tailwind.config.ts`.
 
 ## Tool Usage Patterns
 

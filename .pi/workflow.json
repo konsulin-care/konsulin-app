@@ -23,12 +23,14 @@
       ],
       "full": [
         [
-          "make",
-          "test-go"
+          "mise",
+          "run",
+          "test:go"
         ],
         [
-          "make",
-          "test-js"
+          "mise",
+          "run",
+          "test:js"
         ]
       ]
     }

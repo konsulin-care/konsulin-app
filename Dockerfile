@@ -1,5 +1,9 @@
+# Toolchain versions; override with --build-arg GO_VERSION=... / NODE_VERSION=...
+ARG NODE_VERSION=24
+ARG GO_VERSION=1.26.5
+
 # Stage 1: Build Next.js static export
-FROM node:26-alpine AS next-builder
+FROM node:${NODE_VERSION}-alpine AS next-builder
 WORKDIR /build
 COPY package.json package-lock.json ./
 COPY next.config.mjs tsconfig.json postcss.config.mjs ./  
@@ -10,12 +14,11 @@ COPY src ./src
 RUN npm run build
 
 # Stage 2: Build Go binary
-FROM golang:1.27-alpine AS go-builder
+FROM golang:${GO_VERSION}-alpine AS go-builder
 WORKDIR /build
 RUN apk add --no-cache git
 COPY go.mod go.sum ./
 RUN go mod download
-COPY mise.toml ./
 COPY . .
 RUN CGO_ENABLED=0 go build -o /app/server ./cmd/konsulin-app
 

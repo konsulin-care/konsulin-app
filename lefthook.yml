@@ -1,0 +1,41 @@
+# Git hooks managed by lefthook (version pinned in mise.toml).
+# Installed automatically by `mise install` ([hooks] postinstall).
+lefthook: |
+  export PATH="$HOME/.local/bin:$PATH"
+  mise x -- lefthook
+glob_matcher: doublestar
+
+pre-commit:
+  piped: true
+  jobs:
+    - name: go-checks
+      glob: "**/*.go"
+      group:
+        piped: true
+        jobs:
+          - run: mise run check:go
+          - run: mise run lint:docker
+    - name: typecheck
+      run: mise run typecheck
+    - name: eslint
+      glob: "**/*.{js,jsx,ts,tsx}"
+      run: npx --no-install eslint --fix --max-warnings 5 --no-warn-ignored {staged_files}
+      stage_fixed: true
+    - name: prettier
+      glob: "**/*.{js,jsx,ts,tsx,json,css,scss,md,webmanifest}"
+      run: npx --no-install prettier -w {staged_files}
+      stage_fixed: true
+
+pre-push:
+  piped: true
+  jobs:
+    - name: go-mod
+      run: mise run check:go-mod
+    - name: test-go
+      run: mise run test:go
+    - name: build
+      run: mise run build:next
+    - name: check-js
+      run: mise run check:js
+    - name: test-js
+      run: mise run test:js
