@@ -14,15 +14,14 @@ Content scanner must target `.go` and `.templ` files instead of `.tsx`.
 
 # Current Config
 
-| Aspect           | Value                                    | Action                      |
-| ---------------- | ---------------------------------------- | --------------------------- |
-| Tailwind version | v4 with `@tailwindcss/postcss`           | Keep                        |
-| Dark mode        | `class` strategy                         | Keep                        |
-| Content scan     | `*.{ts,tsx}` paths                       | Change to `*.go`, `*.templ` |
-| Custom colors    | CSS variables (primary, secondary, etc.) | Keep                        |
-| Border radius    | xl=32px, lg=16px, md=8px, sm=4px         | Keep                        |
-| Animations       | accordion-down/up keyframes              | Keep                        |
-| Plugins          | tailwindcss-animate, scrollbar-hide      | Port                        |
+| Aspect           | Value                                           | Action                      |
+| ---------------- | ----------------------------------------------- | --------------------------- |
+| Tailwind version | v4 with `@tailwindcss/postcss`                  | Keep                        |
+| Content scan     | `*.{ts,tsx}` paths                              | Change to `*.go`, `*.templ` |
+| Custom colors    | `@theme` block in `src/styles/globals.css`      | Keep                        |
+| Border radius    | Tailwind v4 defaults (lg=8px, xl=12px)          | Keep                        |
+| Animations       | pill-in, overlay-in, marquee, accordion-down/up | Keep                        |
+| Plugins          | tailwindcss-animate, scrollbar-hide             | Port                        |
 
 # Asset Inventory
 
@@ -35,7 +34,6 @@ Content scanner must target `.go` and `.templ` files instead of `.tsx`.
 
 # Business Rules
 
-- Dark mode toggle persisted in user preference
 - Custom component styles use CSS variables for theming
 - Phone input styles required for international phone fields
 - Scrollbar hide utility needed for mobile UIs

@@ -12,7 +12,7 @@ Design language: Swiss Modernism 2.0, softened. Grid, hairlines, one accent,
 8px radius, Plus Jakarta Sans only.
 
 Source of truth: the `@theme` block in `@/src/styles/globals.css`.
-Reference copy: `@docs/agents/design-tokens-theme.md`.
+Theme block overview: `@docs/agents/design-tokens-theme.md`.
 
 # Tokens
 

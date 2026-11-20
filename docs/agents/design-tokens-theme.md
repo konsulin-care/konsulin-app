@@ -1,140 +1,31 @@
 ---
 title: Design Tokens Theme Block
-description: Reference copy of the Tailwind v4 theme block and base rules for globals.css
+description: Where the Tailwind v4 theme lives and what the build verification showed
 date: 2026-11-13
 ---
 
 # Overview
 
-Reference for `@/src/styles/globals.css`. Compiled with tailwindcss 4.3.3
-against `src/` at `41710bc`: dead theme classes drop from 52 to 3 (the
-`softGray` ones, which plan 030 replaces), dead animation classes drop from
-36 to 0, and border utilities take effect.
+The `@theme` block and its base rules live in `@/src/styles/globals.css`. That
+file is the source of truth; this document does not copy it.
+
+Compiled with tailwindcss 4.3.3 against `src/` at `41710bc`: dead theme classes
+drop from 52 to 3, dead animation classes drop from 36 to 0, and border
+utilities take effect.
+
 Token meaning and rules: `@docs/agents/design-tokens.md`.
 
-# Theme Block
+# What the file defines
 
-```css
-@import 'tailwindcss';
-@import 'tailwind-scrollbar-hide/v4';
-@import './phone-input.css';
-@plugin 'tailwindcss-animate';
-
-@theme {
-  --color-charcoal-900: #161c26;
-  --color-charcoal-700: #484d54;
-  --color-charcoal-600: #686c72;
-  --color-charcoal-400: #8d8f93;
-  --color-charcoal-200: #dadbdb;
-  --color-charcoal-100: #ecedeb;
-  --color-paper: #fafaf8;
-  --color-surface: #ffffff;
-  --color-turquoise: #0abdc3;
-  --color-turquoise-tint: #d8f1f1;
-  --color-turquoise-deep: #0f7981;
-  --color-danger: #b3261e;
-  --color-danger-tint: #fbeae8;
-  --color-warning: #f2b705;
-  --color-warning-deep: #7a5200;
-  --color-warning-tint: #fdf3d7;
-  --color-background: var(--color-paper);
-  --color-foreground: var(--color-charcoal-900);
-  --color-card: var(--color-surface);
-  --color-card-foreground: var(--color-charcoal-900);
-  --color-popover: var(--color-surface);
-  --color-popover-foreground: var(--color-charcoal-900);
-  --color-primary: var(--color-charcoal-900);
-  --color-primary-foreground: var(--color-paper);
-  --color-secondary: var(--color-turquoise);
-  --color-secondary-foreground: var(--color-charcoal-900);
-  --color-muted: var(--color-charcoal-100);
-  --color-muted-foreground: var(--color-charcoal-600);
-  --color-accent: var(--color-turquoise-tint);
-  --color-accent-foreground: var(--color-charcoal-900);
-  --color-destructive: var(--color-danger);
-  --color-destructive-foreground: var(--color-surface);
-  --color-border: var(--color-charcoal-200);
-  --color-input: var(--color-charcoal-400);
-  --color-ring: var(--color-turquoise-deep);
-  --animate-pill-in: pill-in 0.25s ease-out forwards;
-  --animate-overlay-in: overlay-in 0.3s ease-out;
-  --animate-marquee: marquee 10s linear infinite;
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
-  @keyframes pill-in {
-    from {
-      opacity: 0;
-      transform: translateY(16px) scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-  @keyframes overlay-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  @keyframes marquee {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
-  }
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-accordion-content-height);
-    }
-  }
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-    to {
-      height: 0;
-    }
-  }
-}
-
-/* Inside a layer. Outside one, this rule overrides every border utility. */
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-border);
-  }
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-  }
-  :root {
-    /* Legacy names still read by inline styles; plan 032 removes them. */
-    --primary: var(--color-primary);
-    --secondary: var(--color-secondary);
-    --soft-gray: var(--color-muted);
-    --muted: var(--color-muted-foreground);
-    --border: var(--color-border);
-  }
-}
-```
+- The three-hue palette and its semantic aliases as `--color-*` tokens.
+- The animations `pill-in`, `overlay-in`, `marquee`, `accordion-down` and
+  `accordion-up`.
+- A `@layer base` block that sets the default border colour and the body
+  background and foreground.
+- Legacy `:root` aliases still read by inline styles; plan 032 removes them.
 
 # Notes
 
 - Do not define radius tokens. Tailwind v4 defaults give `rounded-lg` 8px and
   `rounded-xl` 12px, which is what the app renders today.
-- The switch shadow and gradients in `tailwind.config.ts` are unused. Do not
-  port them.
 - Opacity modifiers such as `hover:bg-destructive/90` work with these tokens.
-- `@/src/components/general/home/recommendation-card.tsx` defines its own
-  `.animate-marquee`. Remove that copy once the theme one is live.
