@@ -17,9 +17,8 @@ lefthook = "2.2.2"
 [tasks."test:go"]
 description = "Run Go tests (default ./...; scope with packages)"
 usage = '''
-arg "[packages]" var=#true
-flag "--run <regex>"
-'''
+arg "[packages]" var=#true help="Go package patterns to test; defaults to ./..."
+flag "--run <regex>" help="Run only tests whose names match this regex (go test -run)"'''
 run = '''
 eval "set -- ${usage_packages:-./...}"
 if [ -n "${usage_run:-}" ]; then
