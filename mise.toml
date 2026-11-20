@@ -164,13 +164,13 @@ description = "Remove .next and out build directories"
 run = "rm -rf .next out"
 
 [tasks.dev]
-description = "Run dev servers: full|go|next|static"
+description = "Run dev servers: full|go|next|static (full and static clear .next and out first)"
 usage = '''
-arg "[mode]" default="full" {
+arg "[mode]" default="full" help="full: clears .next and out, runs Next.js dev on next-port with hot reload and the Go proxy on go-port; go: Go proxy only, expects Next.js at NEXTJS_URL on next-port; next: Next.js dev server only; static: clears .next and out, runs npm run build, then serves out/ from the Go server" {
   choices "full" "go" "next" "static"
 }
-flag "--go-port <port>" default="3000"
-flag "--next-port <port>" default="8000"
+flag "--go-port <port>" default="3000" help="Port for the Go BFF server"
+flag "--next-port <port>" default="8000" help="Port for the Next.js dev server; Go proxies to it"
 '''
 run = '''
 sh scripts/dev.sh "${usage_mode:-full}" --go-port "${usage_go_port:-3000}" --next-port "${usage_next_port:-8000}"
