@@ -177,7 +177,7 @@ sh scripts/dev.sh "${usage_mode:-full}" --go-port "${usage_go_port:-3000}" --nex
 '''
 
 [tasks.start]
-description = "Run the Go BFF server"
+description = "Run the Go BFF server (needs out/ from build:next, or Next.js at NEXTJS_URL)"
 run = "go run ./cmd/konsulin-app"
 
 [tasks.gen]
