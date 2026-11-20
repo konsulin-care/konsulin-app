@@ -148,8 +148,7 @@ depends = ["build:next", "build:go"]
 [tasks."build:go"]
 description = "Compile the Go server binary"
 usage = '''
-flag "--output <path>"
-'''
+flag "--output <path>" help="Path for the compiled binary; defaults to konsulin-app"'''
 run = '''
 go build -o "${usage_output:-konsulin-app}" ./cmd/konsulin-app
 '''
