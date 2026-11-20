@@ -183,8 +183,9 @@ run = "go run ./cmd/konsulin-app"
 [tasks.gen]
 description = "Run data generator for <target>: wilayah|specialty"
 usage = '''
-arg "<target>"
-'''
+arg "<target>" help="wilayah: regenerate the data in internal/data/wilayah via go generate; specialty: regenerate the data in internal/data/specialty via go generate" {
+  choices "wilayah" "specialty"
+}'''
 run = '''
 case "${usage_target:-}" in
   wilayah|specialty)
