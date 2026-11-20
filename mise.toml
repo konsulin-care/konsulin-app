@@ -31,7 +31,7 @@ fi
 [tasks."test:js"]
 description = "Run Vitest tests (default all; scope with files)"
 usage = '''
-arg "[files]" var=#true
+arg "[files]" var=#true help="Vitest file filters; defaults to all tests"
 '''
 run = '''
 eval "set -- ${usage_files:-}"
