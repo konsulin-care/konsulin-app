@@ -18,7 +18,8 @@ lefthook = "2.2.2"
 description = "Run Go tests (default ./...; scope with packages)"
 usage = '''
 arg "[packages]" var=#true help="Go package patterns to test; defaults to ./..."
-flag "--run <regex>" help="Run only tests whose names match this regex (go test -run)"'''
+flag "--run <regex>" help="Run only tests whose names match this regex (go test -run)"
+'''
 run = '''
 eval "set -- ${usage_packages:-./...}"
 if [ -n "${usage_run:-}" ]; then
@@ -117,8 +118,8 @@ sh scripts/docker-publish.sh "${usage_env}" \
 [tasks."check:file-length"]
 description = "Fail when files exceed the max line count (default 300)"
 usage = '''
-arg "[files]" var=#true
-flag "--max <n>"
+arg "[files]" var=#true help="Files to check; defaults to all non-generated .go files"
+flag "--max <n>" help="Maximum lines per file; defaults to 300"
 '''
 run = '''
 eval "set -- ${usage_files:-}"
@@ -148,7 +149,8 @@ depends = ["build:next", "build:go"]
 [tasks."build:go"]
 description = "Compile the Go server binary"
 usage = '''
-flag "--output <path>" help="Path for the compiled binary; defaults to konsulin-app"'''
+flag "--output <path>" help="Path for the compiled binary; defaults to konsulin-app"
+'''
 run = '''
 go build -o "${usage_output:-konsulin-app}" ./cmd/konsulin-app
 '''
@@ -183,7 +185,8 @@ description = "Run data generator for <target>: wilayah|specialty"
 usage = '''
 arg "<target>" help="wilayah: regenerate the data in internal/data/wilayah via go generate; specialty: regenerate the data in internal/data/specialty via go generate" {
   choices "wilayah" "specialty"
-}'''
+}
+'''
 run = '''
 case "${usage_target:-}" in
   wilayah|specialty)
