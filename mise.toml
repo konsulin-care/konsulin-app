@@ -105,7 +105,7 @@ sh scripts/docker.sh \
 [tasks."docker:publish"]
 description = "Build and push the Docker image for <env>"
 usage = '''
-arg "<env>" {
+arg "<env>" help="development: push nightly and dev-<sha8> image tags; production: push latest and the version tag from git describe" {
   choices "development" "production"
 }
 '''
