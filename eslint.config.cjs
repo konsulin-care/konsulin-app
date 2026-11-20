@@ -50,7 +50,6 @@ module.exports = [
 
   // --- React hooks recommended ---
   {
-    plugins: { 'react-hooks': reactHooks },
     rules: {
       ...reactHooks.configs.recommended.rules,
       // Disable new rules from react-hooks v5+ that flag pre-existing patterns
