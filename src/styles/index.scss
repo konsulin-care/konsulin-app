@@ -1,6 +1,7 @@
+// Tailwind is emitted once, from globals.css. Importing it again here appends
+// a second preflight inside @layer base, whose `border: 0 solid` resets the
+// border-color default back to currentColor.
 @use 'sass:meta';
-@use 'tailwindcss';
-@use 'tailwindcss/utilities';
 @use './palette';
 @include meta.load-css('custom-smart-form.scss');
 @include meta.load-css('custom-soap-form.scss');
