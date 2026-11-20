@@ -70,7 +70,7 @@ function StudySlide({
     <div
       data-testid={`research-slide-${progress.study.id}`}
       data-active={isActive}
-      className={`card border-softGray focus-within:ring-secondary relative flex h-full flex-col gap-2 bg-white p-4 transition-all duration-300 focus-within:ring-2 ${
+      className={`card border-border focus-within:ring-secondary relative flex h-full flex-col gap-2 bg-white p-4 transition-all duration-300 focus-within:ring-2 ${
         isActive ? 'opacity-100' : 'opacity-70'
       }`}
     >
