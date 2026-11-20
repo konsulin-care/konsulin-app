@@ -23,11 +23,11 @@ Each domain has a focused document under `@docs/agents/`.
 - Utility-first: no custom CSS unless design requires it
 - Use CSS variables from the theme for colors (not arbitrary hex)
 - Responsive breakpoints: mobile-first (sm, md, lg)
-- State-driven styling: for custom `@layer utilities` classes that
-  respond to `data-state`, `aria-*`, or `[data-*]` attributes, define
-  an explicit CSS class with `!important` (e.g.
-  `.foo[data-state='active']`). Do NOT use Tailwind `data-[*]:`
-  variant modifiers — they silently fail for custom utilities.
+- State-driven styling: Tailwind `data-[*]:` variants work with theme
+  utilities (e.g. `data-[state=open]:bg-accent`) and with custom
+  utilities declared via `@utility`. They do NOT work on plain classes
+  declared inside `@layer utilities` — use `@utility` for custom
+  utilities that need state variants.
 
 # JavaScript/TypeScript Standards
 
