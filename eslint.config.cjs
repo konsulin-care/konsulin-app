@@ -83,7 +83,9 @@ module.exports = [
 
   // --- Import: recommended rules + TypeScript settings ---
   {
-    plugins: { import: importPlugin },
+    // Reuse the `import` plugin instance already registered by eslint-config-next
+    // to avoid ESLint 9's "Cannot redefine plugin" error.
+    plugins: { import: require('eslint-config-next/core-web-vitals')[0].plugins.import },
     rules: {
       ...importPlugin.flatConfigs.recommended.rules,
       ...importPlugin.flatConfigs.typescript.rules
