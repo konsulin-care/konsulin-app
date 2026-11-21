@@ -102,9 +102,9 @@ export function AuthArea({
     <Link href='/auth' className='flex items-center gap-2'>
       <div className='flex flex-col text-right'>
         {indicator && (
-          <div className='text-xs font-normal text-[#2c2f35]'>{indicator}</div>
+          <div className='text-foreground text-xs font-normal'>{indicator}</div>
         )}
-        <div className='text-sm font-bold text-[#2c2f35]'>Guest</div>
+        <div className='text-foreground text-sm font-bold'>Guest</div>
       </div>
       <Avatar
         seed={guestAvatar.seed}
@@ -219,27 +219,24 @@ export function AdminClinicCard({
 }>) {
   if (isLoading) {
     return (
-      <div className='card mt-4 flex items-center border-0 bg-[#F9F9F9] p-4'>
-        <div className='mr-[10pxpx] h-5 w-5 animate-pulse rounded bg-gray-200' />
+      <div className='card bg-muted mt-4 flex items-center gap-1 p-4'>
+        <div className='bg-charcoal-100 mr-[10px] h-5 w-5 animate-pulse rounded' />
         <div className='mr-auto flex flex-col gap-1'>
-          <div className='h-3 w-20 animate-pulse rounded bg-gray-200' />
-          <div className='h-4 w-40 animate-pulse rounded bg-gray-200' />
+          <div className='bg-charcoal-100 h-3 w-20 animate-pulse rounded' />
+          <div className='bg-charcoal-100 h-4 w-40 animate-pulse rounded' />
         </div>
       </div>
     );
   }
   if (clinicName && clinicName !== '-') {
     return (
-      <Link
-        href='/clinic'
-        className='card mt-4 flex items-center border-0 bg-[#F9F9F9]'
-      >
-        <Calendar className='mr-[10px] h-5 w-5 shrink-0 text-black' />
+      <Link href='/clinic' className='card bg-muted mt-4 flex items-center'>
+        <Calendar className='text-foreground mr-[10px] h-5 w-5 shrink-0' />
         <div className='mr-auto flex flex-col'>
           <span className='text-muted-foreground text-[12px]'>
             Currently Managing
           </span>
-          <span className='text-secondary text-left text-[14px] font-bold'>
+          <span className='text-turquoise-deep text-left text-[14px] font-bold'>
             {clinicName}
           </span>
         </div>

@@ -5,6 +5,8 @@ import { addDays, format } from 'date-fns';
 import { describe, expect, it, vi } from 'vitest';
 import PageHeader from '../page-header';
 import {
+  AdminClinicCard,
+  AuthArea,
   canShowResearchHeader,
   isSessionCardAvailable,
   isSessionWithinWindow,
@@ -219,5 +221,59 @@ describe('PageHeader token styling', () => {
     expect(svg).not.toBeNull();
     expect(svg).toHaveAttribute('stroke', 'currentColor');
     expect(svg?.outerHTML).not.toContain('#2c2f35');
+  });
+
+  it('renders the admin clinic card skeleton on the muted surface', () => {
+    const { container } = render(
+      <AdminClinicCard isLoading clinicName={undefined} />
+    );
+
+    const card = container.firstElementChild;
+    expect(card).not.toBeNull();
+    expect(card).toHaveClass('bg-muted');
+    expect(card?.outerHTML).not.toContain('#F9F9F9');
+
+    const bars = container.querySelectorAll('.bg-charcoal-100');
+    expect(bars.length).toBeGreaterThan(0);
+    expect(card?.outerHTML).not.toContain('bg-gray-200');
+  });
+
+  it('renders the managing clinic card with token colours', () => {
+    const { container } = render(
+      <AdminClinicCard isLoading={false} clinicName='Klinik Sehat' />
+    );
+
+    const link = container.querySelector('a');
+    expect(link).not.toBeNull();
+    expect(link).toHaveClass('bg-muted');
+
+    const clinicName = container.querySelector('.text-turquoise-deep');
+    expect(clinicName).not.toBeNull();
+    expect(clinicName).toHaveTextContent('Klinik Sehat');
+    expect(link?.outerHTML).not.toContain('text-secondary');
+
+    const icon = container.querySelector('svg');
+    expect(icon).toHaveClass('text-foreground');
+    expect(link?.outerHTML).not.toContain('text-black');
+  });
+
+  it('renders the guest identity lines with the foreground token', () => {
+    const { getByText, container } = render(
+      <AuthArea
+        isLoading={false}
+        isAuthenticated={false}
+        indicator='Belum masuk'
+        displayName={undefined}
+        guestAvatar={{
+          seed: 'guest',
+          initials: 'G',
+          backgroundColor: '#13c2c2'
+        }}
+      />
+    );
+
+    expect(getByText('Guest')).toHaveClass('text-foreground');
+    expect(getByText('Belum masuk')).toHaveClass('text-foreground');
+    expect(container.innerHTML).not.toContain('#2c2f35');
   });
 });
