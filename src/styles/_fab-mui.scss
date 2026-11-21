@@ -1,8 +1,9 @@
 // Shared MUI FAB overrides — used by SOAP form and smart form
 @mixin fab-mui-overrides {
   .MuiFab-root {
-    background-color: #00838f !important;
-    color: white !important;
+    background-color: var(--color-turquoise) !important;
+    color: var(--color-charcoal-900) !important;
+    border: 1px solid var(--color-turquoise-deep) !important;
     border-radius: 50% !important;
   }
 
@@ -11,6 +12,7 @@
   }
 
   .MuiFab-root.Mui-disabled {
-    background-color: rgba(158, 158, 158, 0.24) !important;
+    background-color: var(--color-charcoal-100) !important;
+    color: var(--color-charcoal-700) !important;
   }
 }

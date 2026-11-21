@@ -24,7 +24,7 @@
   }
 
   .MuiTableRow-root {
-    background-color: white !important;
+    background-color: var(--color-surface) !important;
   }
 
   .MuiTableCell-root {
@@ -86,7 +86,8 @@
   }
 
   [data-test='button-add-repeat-item']:not(.Mui-disabled) {
-    background-color: #0abdc3 !important;
+    background-color: var(--color-charcoal-900) !important;
+    color: var(--color-paper) !important;
   }
 
   [data-test='button-add-repeat-item'] {
