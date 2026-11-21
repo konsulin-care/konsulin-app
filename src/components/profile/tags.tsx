@@ -7,7 +7,7 @@ export default function Tags({ tags }: Readonly<{ tags: string[] }>) {
       {tags?.map(tag => (
         <div
           key={tag}
-          className='flex items-center rounded-full bg-[#E1E1E1] px-2 py-1 text-[10px] font-normal text-black'
+          className='bg-muted text-foreground flex items-center rounded-full px-2 py-1 text-xs font-normal'
         >
           {tag}
         </div>

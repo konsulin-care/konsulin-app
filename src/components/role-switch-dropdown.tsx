@@ -70,8 +70,8 @@ function RoleSwitchMenuItems({
               switchRole(role, t('practitioner.switch_role_error'))
             }
           >
-            <Icon className='mr-3 h-4 w-4 text-[#2c2f35]' />
-            <span className='text-sm font-medium text-[#2c2f35]'>
+            <Icon className='text-foreground mr-3 h-4 w-4' />
+            <span className='text-foreground text-sm font-medium'>
               {roleLabel(role)}
             </span>
           </DropdownItem>
@@ -125,10 +125,10 @@ export function RoleSwitchDropdown({
           />
         </div>
       </DropdownTrigger>
-      <DropdownContent align='end' sideOffset={8} className='bg-white'>
+      <DropdownContent align='end' sideOffset={8} className='bg-card'>
         <DropdownItem className='cursor-pointer' onClick={handleProfileClick}>
-          <UserIcon className='mr-3 h-4 w-4 text-[#2c2f35]' />
-          <span className='text-sm font-medium text-[#2c2f35]'>Profile</span>
+          <UserIcon className='text-foreground mr-3 h-4 w-4' />
+          <span className='text-foreground text-sm font-medium'>Profile</span>
         </DropdownItem>
         <RoleSwitchMenuItems otherRoles={otherRoles} />
       </DropdownContent>

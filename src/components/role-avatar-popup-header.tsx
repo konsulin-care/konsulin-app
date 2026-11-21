@@ -11,10 +11,10 @@ export function HeaderText({
   return (
     <div className='flex flex-col text-right'>
       {indicator && (
-        <div className='text-xs font-normal text-[#2c2f35]'>{indicator}</div>
+        <div className='text-foreground text-xs font-normal'>{indicator}</div>
       )}
       {displayName && (
-        <div className='text-sm font-bold text-[#2c2f35]'>{displayName}</div>
+        <div className='text-foreground text-sm font-bold'>{displayName}</div>
       )}
     </div>
   );

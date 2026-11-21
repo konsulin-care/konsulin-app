@@ -51,7 +51,7 @@ export default function RegisterPractitionerDrawerContent({
             onNameChange(e.target.value);
           }}
           placeholder={t('practitioner.full_name')}
-          className='bg-white'
+          className='bg-card'
           aria-label={t('practitioner.full_name')}
         />
       </div>
@@ -66,7 +66,7 @@ export default function RegisterPractitionerDrawerContent({
             onEmailChange(e.target.value);
           }}
           placeholder={t('practitioner.email_placeholder')}
-          className='bg-white'
+          className='bg-card'
           aria-label={t('practitioner.email')}
         />
       </div>
