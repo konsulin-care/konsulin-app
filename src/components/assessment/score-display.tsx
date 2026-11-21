@@ -71,7 +71,7 @@ export default function ScoreDisplay({
         <div className='text-12 text-muted-foreground mb-2'>Result Brief</div>
 
         {showLoading ? (
-          <Skeleton className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+          <Skeleton className='bg-muted h-[80px] w-full rounded-lg' />
         ) : (
           <div className='card'>
             <ReactMarkdown>{displayResultBrief}</ReactMarkdown>
@@ -83,9 +83,9 @@ export default function ScoreDisplay({
         <div className='text-12 text-muted-foreground mb-2'>Result Tables</div>
 
         {showLoading ? (
-          <Skeleton className='h-[50px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]' />
+          <Skeleton className='bg-muted h-[50px] w-full rounded-lg' />
         ) : (
-          <div className='space-y-2 rounded-lg bg-[#F9F9F9] p-4'>
+          <div className='bg-muted space-y-2 rounded-lg p-4'>
             {scoreList.map(item => {
               const barColor = getScoreColor(item.name);
               return (

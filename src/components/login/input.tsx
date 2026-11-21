@@ -34,7 +34,7 @@ export default function Input({
         className={
           outline
             ? 'w-full'
-            : 'w-full text-sm font-normal text-[#2C2F35] opacity-40 outline-none placeholder:text-[#2C2F35]'
+            : 'text-foreground placeholder:text-foreground w-full text-sm font-normal opacity-40 outline-none'
         }
         {...props}
       />

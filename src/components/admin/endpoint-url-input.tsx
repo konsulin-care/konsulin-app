@@ -162,11 +162,11 @@ export function EndpointUrlInput({
       {open && filteredFlat.length > 0 && (
         <div
           ref={listRef}
-          className='absolute top-full left-0 z-50 max-h-60 w-full overflow-y-auto rounded-b-md border border-t-0 border-slate-300 bg-white shadow-md'
+          className='border-border bg-card absolute top-full left-0 z-50 max-h-60 w-full overflow-y-auto rounded-b-md border border-t-0 shadow-md'
         >
           {[...filteredGrouped].map(([group, endpoints]) => (
             <div key={group}>
-              <div className='px-2 py-1.5 text-xs font-bold text-slate-500'>
+              <div className='text-muted-foreground px-2 py-1.5 text-xs font-bold'>
                 {group}
               </div>
               {endpoints.map(ep => {
@@ -177,8 +177,8 @@ export function EndpointUrlInput({
                     key={ep.path}
                     type='button'
                     data-suggestion
-                    className={`block w-full px-3 py-1.5 text-left font-mono text-xs hover:bg-slate-100 ${
-                      index === highlightedIndex ? 'bg-slate-100' : ''
+                    className={`hover:bg-muted block w-full px-3 py-1.5 text-left font-mono text-xs ${
+                      index === highlightedIndex ? 'bg-muted' : ''
                     }`}
                     onMouseDown={e => {
                       e.preventDefault();

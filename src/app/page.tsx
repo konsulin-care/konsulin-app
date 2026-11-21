@@ -28,7 +28,7 @@ const App = () => {
 
   if (isLoading || isRedirecting) {
     return (
-      <div className='mt-[-24px] flex min-h-screen min-w-full items-center justify-center rounded-b-[16px] bg-white pt-4 pb-20'>
+      <div className='bg-card mt-[-24px] flex min-h-screen min-w-full items-center justify-center rounded-b-[16px] pt-4 pb-20'>
         <LoadingSpinnerIcon
           width={60}
           height={60}
