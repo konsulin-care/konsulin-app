@@ -249,7 +249,7 @@ export default function QuestionnaireUploadDrawer({
                 setForm(prev => ({ ...prev, imageUrl: e.target.value }));
               }}
               placeholder='https://example.com/image.webp'
-              className='bg-white'
+              className='bg-card'
               aria-label={t('questionnaire_upload.image_url')}
             />
           </div>
@@ -268,7 +268,7 @@ export default function QuestionnaireUploadDrawer({
               setForm(prev => ({ ...prev, duration: e.target.value }));
             }}
             placeholder='10'
-            className='bg-white'
+            className='bg-card'
             aria-label={t('questionnaire_upload.estimated_duration')}
           />
         </div>
@@ -283,7 +283,7 @@ export default function QuestionnaireUploadDrawer({
                 setForm(prev => ({ ...prev, fee }));
               }}
               placeholder='0'
-              className='bg-white'
+              className='bg-card'
               aria-label={t('questionnaire_upload.fee')}
             />
           </div>
@@ -299,7 +299,7 @@ export default function QuestionnaireUploadDrawer({
             onChange={e => {
               setForm(prev => ({ ...prev, category: e.target.value }));
             }}
-            className='focus:ring-primary block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:outline-none'
+            className='focus:ring-primary border-input bg-card block w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none'
             aria-label={t('questionnaire_upload.category')}
           >
             <option value='' disabled>

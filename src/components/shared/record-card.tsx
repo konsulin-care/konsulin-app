@@ -45,7 +45,7 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
     profile: Patient | Practitioner,
     getName: (p: Patient | Practitioner) => string
   ) {
-    const { initials, seed, backgroundColor } = generateAvatarPlaceholder({
+    const { initials, seed } = generateAvatarPlaceholder({
       id: profile.id,
       name: getName(profile) ?? ''
     });
@@ -53,7 +53,6 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
       <Avatar
         photoUrl={profile.photo?.[0]?.url}
         initials={initials ?? ''}
-        backgroundColor={backgroundColor ?? '#13c2c2'}
         seed={seed}
         height={40}
         width={40}
@@ -71,7 +70,10 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
       );
     }
     return (
-      <FileText data-testid='icon-fallback' className='h-5 w-5 text-gray-500' />
+      <FileText
+        data-testid='icon-fallback'
+        className='text-muted-foreground h-5 w-5'
+      />
     );
   }
 
@@ -81,7 +83,10 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
       return renderProfileAvatar(record.patientProfile, getPatientName);
     }
     return (
-      <FileText data-testid='icon-fallback' className='h-5 w-5 text-gray-500' />
+      <FileText
+        data-testid='icon-fallback'
+        className='text-muted-foreground h-5 w-5'
+      />
     );
   }
 
@@ -90,7 +95,7 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
     return (
       <HeartPulse
         data-testid='icon-assessment'
-        className='h-5 w-5 text-gray-500'
+        className='text-muted-foreground h-5 w-5'
       />
     );
   }
@@ -98,13 +103,16 @@ function RecordCardIcon({ record }: Readonly<{ record: IRecord }>) {
     return (
       <Microscope
         data-testid='icon-condition'
-        className='h-5 w-5 text-gray-500'
+        className='text-muted-foreground h-5 w-5'
       />
     );
   }
 
   return (
-    <FileText data-testid='icon-fallback' className='h-5 w-5 text-gray-500' />
+    <FileText
+      data-testid='icon-fallback'
+      className='text-muted-foreground h-5 w-5'
+    />
   );
 }
 
@@ -122,7 +130,7 @@ function RecordCardContent({
 }>) {
   return (
     <div className='flex'>
-      <div className='mr-2 flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
+      <div className='bg-muted mr-2 flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full'>
         <RecordCardIcon record={record} />
       </div>
       <div className='flex w-0 grow flex-col justify-center'>
@@ -131,7 +139,7 @@ function RecordCardContent({
         ) : (
           <div className='text-[12px] font-bold'>{formattedTitle}</div>
         )}
-        <div className='line-clamp-3 overflow-hidden text-[10px] text-ellipsis'>
+        <div className='line-clamp-3 overflow-hidden text-xs text-ellipsis'>
           <ReactMarkdown components={customMarkdownComponents}>
             {cleanDescription}
           </ReactMarkdown>
@@ -159,10 +167,10 @@ function RecordCardFooter({
 }>) {
   return (
     <div className='flex items-center justify-between'>
-      <Badge className='rounded-full bg-[#08979C] px-[10px] py-[4px] text-[10px] text-white'>
+      <Badge className='bg-accent text-accent-foreground rounded-full px-[10px] py-[4px] text-xs'>
         {typeMappings[recordType]?.text ?? recordType}
       </Badge>
-      <div className='text-[10px] text-gray-500'>{formattedDate}</div>
+      <div className='text-muted-foreground text-xs'>{formattedDate}</div>
     </div>
   );
 }

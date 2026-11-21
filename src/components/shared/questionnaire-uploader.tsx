@@ -78,7 +78,7 @@ export default function QuestionnaireUploader({ value, onChange }: Props) {
       >
         <pre
           data-testid='questionnaire-snippet'
-          className='text-muted-foreground m-0 w-full overflow-auto p-3 font-mono text-[10px] leading-4 whitespace-pre-wrap'
+          className='text-muted-foreground m-0 w-full overflow-auto p-3 font-mono text-xs leading-4 whitespace-pre-wrap'
         >
           {snippet}
         </pre>

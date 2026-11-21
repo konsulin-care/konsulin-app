@@ -101,15 +101,17 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
   const t = useTranslations('common');
   return (
     // skipcq: JS-0415 — nesting inherent to shell layout
-    <div className='mt-[-24px] rounded-[16px] bg-white pb-20'>
+    <div className='bg-card mt-[-24px] rounded-[16px] pb-20'>
       <div className='w-full p-4'>
         <div className='flex gap-4'>
           <InputWithIcon
             value={keyword}
             onChange={event => onKeywordChange(event.target.value)}
             placeholder={t('schedule.search')}
-            className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
-            startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+            className='text-primary bg-muted mr-4 h-[50px] w-full border-0'
+            startIcon={
+              <SearchIcon className='text-turquoise-deep' width={16} />
+            }
           />
           <SessionFilter
             onChange={(filter: IUseClinicParams) => {
@@ -122,12 +124,12 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
 
         <div className='mb-4 flex gap-4'>
           {sessionsFilter.start_date && sessionsFilter.end_date && (
-            <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
+            <Badge className='bg-accent text-accent-foreground ring-turquoise-deep mt-4 rounded-md px-4 py-[3px] font-normal ring-1'>
               {`${format(new Date(sessionsFilter.start_date), 'dd MMM yy')} - ${format(new Date(sessionsFilter.end_date), 'dd MMM yy')}`}
             </Badge>
           )}
           {sessionsFilter.start_time && sessionsFilter.end_time && (
-            <Badge className='bg-secondary mt-4 rounded-md px-4 py-[3px] font-normal text-white'>
+            <Badge className='bg-accent text-accent-foreground ring-turquoise-deep mt-4 rounded-md px-4 py-[3px] font-normal ring-1'>
               {`${sessionsFilter.start_time} - ${sessionsFilter.end_time}`}
             </Badge>
           )}
@@ -141,13 +143,13 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
         >
           <TabsList className='grid w-full grid-cols-2 bg-transparent'>
             <TabsTrigger
-              className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
+              className='border-turquoise-deep data-[state=active]:text-turquoise-deep rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
               value='upcoming'
             >
               {t('schedule.upcoming_session')}
             </TabsTrigger>
             <TabsTrigger
-              className='border-secondary data-[state=active]:text-secondary rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
+              className='border-turquoise-deep data-[state=active]:text-turquoise-deep rounded-none data-[state=active]:border-b-2 data-[state=active]:font-bold data-[state=active]:shadow-none'
               value='past'
             >
               {t('schedule.past_session')}
@@ -156,7 +158,7 @@ export default function SchedulePageShell<T extends { appointmentId: string }>({
           {isLoading ? (
             <Skeleton
               count={4}
-              className='mt-4 h-[100px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
+              className='bg-muted mt-4 h-[100px] w-full rounded-lg'
             />
           ) : (
             <>
