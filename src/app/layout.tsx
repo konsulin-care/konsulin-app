@@ -2,6 +2,7 @@ import { RouteGate } from '@/components/route-gate';
 import { LocaleProvider } from '@/i18n/locale-provider';
 import '@/styles/globals.css';
 import '@/styles/index.scss';
+import { TOKENS } from '@/styles/tokens';
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import Script from 'next/script';
@@ -54,7 +55,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#FAFAF8'
+  themeColor: TOKENS.paper
 };
 
 /**

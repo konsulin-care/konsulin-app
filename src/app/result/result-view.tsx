@@ -84,7 +84,7 @@ export default function ResultView() {
           pageIndicator='Assessment Result'
           backRoute='/assessments'
         />
-        <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+        <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
           <div className='flex min-h-[300px] items-center justify-center'>
             <p className='text-muted-foreground text-sm'>Result not found</p>
           </div>
@@ -96,7 +96,7 @@ export default function ResultView() {
   return (
     <>
       <PageHeader pageIndicator='Assessment Result' backRoute='/assessments' />
-      <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
         <ScoreDisplay
           questionnaireResponse={qrData}
           isLoading={false}

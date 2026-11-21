@@ -1,3 +1,6 @@
+/** Colour for appointments without a location reference. */
+export const UNSPECIFIED_LOCATION_COLOR = '#D9D9D9';
+
 /** Palette of deterministic colors for location dots. */
 export const LOCATION_COLORS = [
   '#13C2C2',
@@ -17,7 +20,7 @@ export const LOCATION_COLORS = [
  * @returns A hex color string.
  */
 export function getLocationColor(locationId: string | null): string {
-  if (!locationId) return '#D9D9D9';
+  if (!locationId) return UNSPECIFIED_LOCATION_COLOR;
   let hash = 0;
   for (let i = 0; i < locationId.length; i++) {
     hash = (locationId.codePointAt(i) ?? 0) + ((hash << 5) - hash);

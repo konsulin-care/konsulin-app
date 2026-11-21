@@ -6,7 +6,10 @@ import {
   extractResources
 } from '@/utils/fhir/appointment-extract';
 import { parseMergedSessions } from '@/utils/helper';
-import { getLocationColor } from '@/utils/location-color';
+import {
+  UNSPECIFIED_LOCATION_COLOR,
+  getLocationColor
+} from '@/utils/location-color';
 import {
   keepPreviousData,
   useQuery,
@@ -68,7 +71,7 @@ function computeDayVisuals(
   const hasUnspecified = appointments.some(ap => !ap.locationRef);
   if (hasUnspecified) {
     legendMap.set('__unspecified__', {
-      color: '#D9D9D9',
+      color: UNSPECIFIED_LOCATION_COLOR,
       name: 'Unspecified Location'
     });
   }
