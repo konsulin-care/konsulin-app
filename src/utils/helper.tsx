@@ -1,6 +1,6 @@
 import { typeMappings } from '@/constants/record';
 import { MergedAppointment, MergedSession } from '@/types/appointment';
-import { AVATAR_FALLBACK_COLOR } from '@/utils/gradientAvatar';
+import { AVATAR_FALLBACK_COLOR } from '@/utils/location-color';
 import { parse } from 'date-fns';
 import {
   Address,

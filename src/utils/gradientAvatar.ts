@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, unicorn/number-literal-case, unicorn/prefer-https */
-/**
- * Avatar fallback colour. This is data (a seeded SVG fill), not a theme token,
- * so it intentionally stays a literal hex value.
- */
-export const AVATAR_FALLBACK_COLOR = '#13c2c2';
+import { AVATAR_FALLBACK_COLOR } from '@/utils/location-color';
 
 const TEAL = AVATAR_FALLBACK_COLOR;
 const PARTNER_COLORS = ['#2c2f35', '#5E81AC', '#08979C'] as const;
@@ -120,3 +116,5 @@ export function generateAvatarSvgDataUrl(
 
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
+
+export { AVATAR_FALLBACK_COLOR } from '@/utils/location-color';

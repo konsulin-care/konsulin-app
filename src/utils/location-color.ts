@@ -1,9 +1,15 @@
 /** Colour for appointments without a location reference. */
 export const UNSPECIFIED_LOCATION_COLOR = '#D9D9D9';
 
+/**
+ * Avatar fallback fill. Seeded SVG avatars are data, not theme tokens, so this
+ * intentionally stays a literal hex value shared with the location palette.
+ */
+export const AVATAR_FALLBACK_COLOR = '#13c2c2';
+
 /** Palette of deterministic colors for location dots. */
 export const LOCATION_COLORS = [
-  '#13C2C2',
+  AVATAR_FALLBACK_COLOR,
   '#F5222D',
   '#1890FF',
   '#FA8C16',
