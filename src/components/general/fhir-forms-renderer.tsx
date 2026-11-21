@@ -411,7 +411,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     footerContent = (
       <button
         type='button'
-        className='mt-2 w-full text-center text-sm text-gray-500 underline underline-offset-4'
+        className='text-muted-foreground mt-2 w-full text-center text-sm underline underline-offset-4'
         onClick={() => {
           handleSubmitQuestionnaire('result').catch(console.error);
         }}
@@ -426,7 +426,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         isPatient={isAuthenticated && Boolean(patientId)}
         fhirId={patientId}
         studyId={continuation?.studyId}
-        className='mt-2 w-full text-center text-sm text-gray-500 underline underline-offset-4'
+        className='text-muted-foreground mt-2 w-full text-center text-sm underline underline-offset-4'
       />
     );
   }

@@ -345,7 +345,7 @@ export function CardStackContainer({
       </div>
 
       {/* Progress indicator */}
-      <div className='mt-2 text-center text-sm text-gray-500'>
+      <div className='text-muted-foreground mt-2 text-center text-sm'>
         {t('question_progress', {
           current: answeredCount + 1,
           total: totalFocusable

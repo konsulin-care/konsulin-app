@@ -19,12 +19,12 @@ export default function ActionCard({
 }: Readonly<ActionCardProps>) {
   return (
     <Link href={href} className='card flex w-full items-center gap-3 p-4'>
-      <div className='flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full bg-[#F8F8F8]'>
+      <div className='bg-muted flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full'>
         {icon}
       </div>
       <div className='flex flex-col'>
-        <span className='text-primary text-[12px] font-bold'>{title}</span>
-        <span className='text-primary text-[10px]'>{description}</span>
+        <span className='text-primary text-xs font-bold'>{title}</span>
+        <span className='text-primary text-xs'>{description}</span>
       </div>
     </Link>
   );

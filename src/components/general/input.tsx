@@ -28,7 +28,7 @@ export default function Input({
   className,
   width = 16,
   height = 18,
-  backgroundColor = '[#FFFFFF]',
+  backgroundColor = 'card',
   opacity = true,
   onShow = noop,
   ...props
@@ -36,7 +36,7 @@ export default function Input({
   const opacityClass = opacity ? 'opacity-40' : '';
   const inputClassName = outline
     ? 'w-full'
-    : `w-full text-sm font-normal text-[#2C2F35] ${opacityClass} outline-none placeholder:text-[#2C2F35]/60 bg-${backgroundColor}`;
+    : `w-full text-sm font-normal text-foreground ${opacityClass} outline-none placeholder:text-muted-foreground bg-${backgroundColor}`;
 
   return (
     <div className={className}>
