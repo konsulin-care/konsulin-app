@@ -124,12 +124,4 @@ html {
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
-  :root {
-    /* Legacy names still read by inline styles and SCSS. */
-    --primary: var(--color-primary);
-    --secondary: var(--color-secondary);
-    --soft-gray: var(--color-muted);
-    --muted: var(--color-muted-foreground);
-    --border: var(--color-border);
-  }
 }

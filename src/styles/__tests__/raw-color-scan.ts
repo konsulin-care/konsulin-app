@@ -42,11 +42,49 @@ export const RAW_COLOR_PATTERNS: RawColorPattern[] = [
  *   and the matched text.
  */
 export function scanSource(text: string): RawColorFinding[] {
+  return scanText(text, RAW_COLOR_PATTERNS);
+}
+
+/**
+ * Guards for stylesheets, where design tokens must replace raw colours and
+ * legacy CSS variable aliases.
+ */
+export const STYLESHEET_PATTERNS: RawColorPattern[] = [
+  { name: 'six-digit-hex', pattern: /#[0-9a-fA-F]{6}\b/ },
+  {
+    name: 'legacy-css-var',
+    pattern: /var\(--(secondary|soft-gray|muted|primary|border)\)/
+  }
+];
+
+/**
+ * Scans stylesheet text for raw six-digit hex colours and legacy CSS variable
+ * reads.
+ *
+ * @param text - Stylesheet contents to scan.
+ * @returns One finding per match, with the pattern name, 1-based line number
+ *   and the matched text.
+ */
+export function scanStylesheet(text: string): RawColorFinding[] {
+  return scanText(text, STYLESHEET_PATTERNS);
+}
+
+/**
+ * Applies the given patterns line by line so findings carry line numbers.
+ *
+ * @param text - Source text to scan.
+ * @param patterns - Patterns to match against each line.
+ * @returns One finding per match.
+ */
+function scanText(
+  text: string,
+  patterns: RawColorPattern[]
+): RawColorFinding[] {
   const findings: RawColorFinding[] = [];
   const lines = text.split(/\r?\n/);
 
   lines.forEach((line, index) => {
-    for (const { name, pattern } of RAW_COLOR_PATTERNS) {
+    for (const { name, pattern } of patterns) {
       const matcher = new RegExp(
         pattern.source,
         pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`

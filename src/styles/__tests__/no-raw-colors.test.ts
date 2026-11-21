@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { scanSource } from './raw-color-scan';
+import { scanSource, scanStylesheet } from './raw-color-scan';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -137,6 +137,8 @@ const SWEPT: string[] = [
   'src/components/ui/circular-progress.tsx',
   'src/components/ui/slider.tsx',
   'src/services/hooks/usePractitionerDashboard.ts',
+  'src/styles/custom-soap-form.scss',
+  'src/styles/phone-input.css',
   'src/utils/helper.tsx'
 ];
 
@@ -213,5 +215,48 @@ describe('raw colour guard', () => {
     }
 
     expect(report, report.join('\n')).toEqual([]);
+  });
+});
+
+describe('stylesheet token guard', () => {
+  const readRepoFile = (relativePath: string): string =>
+    readFileSync(resolve(repoRoot, relativePath), 'utf8');
+
+  it('flags six-digit hex and legacy var reads in stylesheet text', () => {
+    const findings = scanStylesheet(
+      'color: #2c2f35; background: var(--primary); #fff; var(--color-border);'
+    );
+
+    expect(findings.map(finding => finding.match)).toEqual([
+      '#2c2f35',
+      'var(--primary)'
+    ]);
+    expect(findings.map(finding => finding.pattern)).toEqual([
+      'six-digit-hex',
+      'legacy-css-var'
+    ]);
+  });
+
+  it('keeps phone input and soap form on design tokens', () => {
+    for (const relativePath of [
+      'src/styles/phone-input.css',
+      'src/styles/custom-soap-form.scss'
+    ]) {
+      const findings = scanStylesheet(readRepoFile(relativePath));
+      expect(findings, relativePath).toEqual([]);
+    }
+  });
+
+  it('removes legacy aliases and legacy var reads from globals.css', () => {
+    const globals = readRepoFile('src/styles/globals.css');
+
+    expect(globals).not.toMatch(
+      /--(primary|secondary|soft-gray|muted|border):/
+    );
+    expect(
+      scanStylesheet(globals).filter(
+        finding => finding.pattern === 'legacy-css-var'
+      )
+    ).toEqual([]);
   });
 });

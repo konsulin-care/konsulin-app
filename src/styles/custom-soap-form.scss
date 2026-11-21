@@ -82,7 +82,7 @@
 
   .MuiTypography-root {
     font-family: inherit !important;
-    color: var(--muted);
+    color: var(--color-muted-foreground);
   }
 
   [data-test='button-add-repeat-item']:not(.Mui-disabled) {
