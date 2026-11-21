@@ -59,7 +59,7 @@ const ProfileCompletenessModal = () => {
       }}
     >
       <div
-        className='relative w-[90%] max-w-md rounded-xl bg-white p-6 text-center shadow-lg'
+        className='bg-card relative w-[90%] max-w-md rounded-xl p-6 text-center shadow-lg'
         role='dialog'
         aria-modal='true'
         aria-labelledby='profile-completeness-title'
@@ -69,7 +69,7 @@ const ProfileCompletenessModal = () => {
         <button
           ref={closeBtnRef}
           type='button'
-          className='absolute top-3 right-3 text-gray-500 hover:text-gray-700'
+          className='text-muted-foreground hover:text-charcoal-700 absolute top-3 right-3'
           aria-label={t('close_completeness_prompt')}
           onClick={() => {
             setIsOpen(false);
@@ -86,13 +86,13 @@ const ProfileCompletenessModal = () => {
         </h2>
         <p
           id='profile-completeness-description'
-          className='mb-4 text-sm text-gray-600'
+          className='text-muted-foreground mb-4 text-sm'
         >
           {t('incomplete_modal_desc')}
         </p>
         <button
           type='button'
-          className='bg-secondary inline-flex items-center justify-center rounded-lg px-4 py-2 text-white'
+          className='bg-primary text-primary-foreground inline-flex items-center justify-center rounded-lg px-4 py-2'
           onClick={() => {
             setIsOpen(false);
             router.push('/profile');

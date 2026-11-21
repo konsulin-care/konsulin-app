@@ -11,10 +11,7 @@ export default function LoadingSection({
   return (
     <div
       data-testid='loading-section'
-      className={cn(
-        'h-24 w-full animate-pulse rounded-lg bg-gray-100',
-        className
-      )}
+      className={cn('bg-muted h-24 w-full animate-pulse rounded-lg', className)}
     />
   );
 }

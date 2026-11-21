@@ -13,21 +13,21 @@ export default function GuestOnboardingSection() {
   const features = [
     {
       id: 'checkups',
-      icon: <HeartPulse className='h-5 w-5 text-gray-600' />,
+      icon: <HeartPulse className='text-muted-foreground h-5 w-5' />,
       title: t('mental_health'),
       description: t('mental_health_desc'),
       href: '/assessments'
     },
     {
       id: 'journal',
-      icon: <BookText className='h-5 w-5 text-gray-600' />,
+      icon: <BookText className='text-muted-foreground h-5 w-5' />,
       title: t('journal'),
       description: t('journal_desc'),
       href: '/auth?redirectToPath=/journal'
     },
     {
       id: 'sessions',
-      icon: <Calendar className='h-5 w-5 text-gray-600' />,
+      icon: <Calendar className='text-muted-foreground h-5 w-5' />,
       title: t('sessions'),
       description: t('sessions_desc'),
       href: '/recommendation'
@@ -36,7 +36,7 @@ export default function GuestOnboardingSection() {
 
   return (
     <div className='px-4 pb-4'>
-      <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
+      <h2 className='text-foreground/60 mb-2 text-[14px] font-bold'>
         {t('start_wellness')}
       </h2>
       <div className='flex flex-col gap-3'>

@@ -79,8 +79,8 @@ export default function RecommendationCardStack({
             aria-label={`Go to slide ${index + 1}`}
             className={`cursor-pointer rounded-full transition-all duration-300 ${
               index === activeIndex
-                ? 'h-[6px] w-6 bg-[#0abdc3]'
-                : 'h-2 w-2 bg-gray-300'
+                ? 'bg-turquoise-deep h-[6px] w-6'
+                : 'bg-border h-2 w-2'
             }`}
           />
         ))}
