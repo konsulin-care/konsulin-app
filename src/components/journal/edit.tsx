@@ -146,11 +146,11 @@ export default function EditJournal({ journalId }: Props) {
   };
 
   const journalInfoCard = journalData && (
-    <div className='card flex items-center bg-[hsla(0,0%,98%,1)]'>
+    <div className='card bg-muted flex items-center'>
       <FileCheckIcon className='mr-[10px]' color='hsla(220,9%,19%,0.4)' />
 
       <div className='flex grow flex-col'>
-        <span className='text-muted-foreground text-[10px]'>
+        <span className='text-muted-foreground text-xs'>
           {t('journal.created_label')}
         </span>
         <span className='text-[14px] font-bold'>
@@ -159,7 +159,7 @@ export default function EditJournal({ journalId }: Props) {
         </span>
       </div>
       <div className='flex flex-col'>
-        <span className='text-muted-foreground text-right text-[10px]'>
+        <span className='text-muted-foreground text-right text-xs'>
           {t('journal.last_edit_label')}
         </span>
         <span className='text-right text-[14px] font-bold'>
@@ -199,10 +199,7 @@ export default function EditJournal({ journalId }: Props) {
   return (
     <>
       {isAuthLoading || isJournalLoading ? (
-        <Skeleton
-          count={3}
-          className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
-        />
+        <Skeleton count={3} className='bg-muted h-[80px] w-full rounded-lg' />
       ) : (
         journalContent
       )}

@@ -43,7 +43,7 @@ export default function CalendarJournal({ onChange, value }: Props) {
             'flex flex-col items-center justify-center rounded-lg border-0 p-4'
           )}
         >
-          <div className='text-secondary font-bold'>
+          <div className='text-turquoise-deep font-bold'>
             {date ? format(date, 'EEEE') : '-'}
           </div>
           <div className='text-muted-foreground'>
@@ -63,7 +63,7 @@ export default function CalendarJournal({ onChange, value }: Props) {
               className='w-full p-0'
             />
           </div>
-          <DrawerClose className='bg-secondary mt-4 w-full rounded-xl p-4 text-center text-white'>
+          <DrawerClose className='bg-primary text-primary-foreground mt-4 w-full rounded-xl p-4 text-center'>
             {t('back')}
           </DrawerClose>
         </div>

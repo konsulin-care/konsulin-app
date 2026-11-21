@@ -85,7 +85,7 @@ function SessionCard({
     <Link
       href={href}
       data-testid='upcoming-session-card'
-      className='card flex items-center gap-2.5 border-0 bg-[#F9F9F9] p-3'
+      className='card bg-muted flex items-center gap-2.5 border-0 p-3'
     >
       <Avatar
         seed={placeholder.seed}
@@ -98,7 +98,7 @@ function SessionCard({
         width={40}
       />
       <div className='flex min-w-0 flex-1 flex-col'>
-        <span className='text-secondary truncate text-left text-[14px] font-bold'>
+        <span className='text-turquoise-deep truncate text-left text-[14px] font-bold'>
           {displayName}
         </span>
         {session.appointmentType && (
@@ -107,9 +107,9 @@ function SessionCard({
           </span>
         )}
       </div>
-      <div className='flex shrink-0 flex-col items-end text-black'>
-        <span className='text-[11px] font-bold'>{sessionDate}</span>
-        <span className='text-[11px]'>{timeRange}</span>
+      <div className='text-foreground flex shrink-0 flex-col items-end'>
+        <span className='text-xs font-bold'>{sessionDate}</span>
+        <span className='text-xs'>{timeRange}</span>
       </div>
     </Link>
   );

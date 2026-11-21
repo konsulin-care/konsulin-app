@@ -122,7 +122,7 @@ export default function CreateJournal() {
   };
 
   const datePicker = (
-    <div className='card flex items-center justify-evenly bg-[hsla(0,0%,98%,1)]'>
+    <div className='card bg-muted flex items-center justify-evenly'>
       <Button onClick={prevDay} variant='ghost' className='w-fit rounded-full'>
         <ChevronLeftIcon color='hsla(220,9%,19%,0.4)' />
       </Button>
@@ -168,7 +168,7 @@ export default function CreateJournal() {
 
   return (
     <>
-      <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] p-4'>
         <div>
           <div className='text-muted-foreground text-center font-bold'>
             {t('journal.entry_heading')}
@@ -179,10 +179,7 @@ export default function CreateJournal() {
         </div>
 
         {isAuthLoading ? (
-          <Skeleton
-            count={3}
-            className='h-[80px] w-full rounded-lg bg-[hsl(210,40%,96.1%)]'
-          />
+          <Skeleton count={3} className='bg-muted h-[80px] w-full rounded-lg' />
         ) : (
           journalForm
         )}
