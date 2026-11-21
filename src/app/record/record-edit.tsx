@@ -44,7 +44,7 @@ export default function RecordEdit({ resourceType, resourceId }: Props) {
         pageIndicator={editPageTitle(resourceType)}
         backRoute={`/record?view=${resourceType}/${resourceId}`}
       />
-      <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] p-4'>
         {renderEdit()}
       </div>
     </>

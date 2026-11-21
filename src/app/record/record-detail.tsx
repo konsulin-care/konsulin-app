@@ -54,7 +54,7 @@ function PatientIdentityBar({
   return (
     <div className='mb-4 flex items-center rounded-xl border p-4'>
       <UsersIcon className='mr-[10px] shrink-0' color='hsla(220,9%,19%,0.4)' />
-      <div className='text-sm font-medium text-[#2c2f35]'>{displayName}</div>
+      <div className='text-foreground text-sm font-medium'>{displayName}</div>
     </div>
   );
 }
@@ -231,7 +231,7 @@ export default function RecordDetail({
         pageIndicator={dynamicTitle ?? pageTitle}
         backRoute={backRoute}
       />
-      <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
         <PatientIdentityBar authState={authState} />
         {renderContent()}
       </div>

@@ -84,7 +84,7 @@ describe('RecordJournal', () => {
     const title = screen.getByText('My Journal Entry');
     expect(title).toBeInTheDocument();
     expect(title.className).toContain('font-bold');
-    expect(title.className).toContain('text-[#2c2f35]');
+    expect(title.className).toContain('text-foreground');
   });
 
   it('renders created date in small gray text', () => {
@@ -105,7 +105,7 @@ describe('RecordJournal', () => {
     const created = screen.getByText(/^Created:/);
     expect(created).toBeInTheDocument();
     expect(created.className).toContain('text-xs');
-    expect(created.className).toContain('text-gray-500');
+    expect(created.className).toContain('text-muted-foreground');
   });
 
   it('renders updated date in small gray text', () => {
@@ -126,7 +126,7 @@ describe('RecordJournal', () => {
     const updated = screen.getByText(/^Updated:/);
     expect(updated).toBeInTheDocument();
     expect(updated.className).toContain('text-xs');
-    expect(updated.className).toContain('text-gray-500');
+    expect(updated.className).toContain('text-muted-foreground');
   });
 
   it('renders content via ReactMarkdown', () => {

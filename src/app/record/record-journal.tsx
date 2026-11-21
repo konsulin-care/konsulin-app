@@ -45,15 +45,15 @@ export default function RecordJournal({ journalId }: Props) {
 
   return (
     <div className='mb-4 rounded-xl border p-4'>
-      <p className='text-[14px] font-bold text-[#2c2f35]'>{title}</p>
+      <p className='text-foreground text-[14px] font-bold'>{title}</p>
 
       {effectiveDateTime && (
-        <p className='mt-2 text-xs text-gray-500'>
+        <p className='text-muted-foreground mt-2 text-xs'>
           Created: {formattedDate(effectiveDateTime)}
         </p>
       )}
       {lastUpdated && (
-        <p className='text-xs text-gray-500'>
+        <p className='text-muted-foreground text-xs'>
           Updated: {formattedDate(lastUpdated)}
         </p>
       )}
