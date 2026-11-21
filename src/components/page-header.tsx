@@ -237,25 +237,25 @@ export default function PageHeader({
     overrideBackRoute ?? getDefaultBackRoute(pathname, searchParams);
 
   return (
-    <div className='bg-[#efefef] px-4 pt-4 pb-8'>
+    <div className='bg-background px-4 pt-4 pb-8'>
       <div className='relative flex items-center justify-end'>
         {showBack &&
           (backAction ? (
             <a
               href={backAction}
               aria-label={t('go_back')}
-              className='absolute left-0 flex h-10 w-10 items-center justify-center'
+              className='text-foreground absolute left-0 flex h-10 w-10 items-center justify-center'
             >
-              <ChevronLeftIcon size={24} color='#2c2f35' aria-hidden='true' />
+              <ChevronLeftIcon size={24} aria-hidden='true' />
             </a>
           ) : (
             <button
               type='button'
               aria-label={t('go_back')}
               onClick={() => router.back()}
-              className='absolute left-0 flex h-10 w-10 items-center justify-center'
+              className='text-foreground absolute left-0 flex h-10 w-10 items-center justify-center'
             >
-              <ChevronLeftIcon size={24} color='#2c2f35' aria-hidden='true' />
+              <ChevronLeftIcon size={24} aria-hidden='true' />
             </button>
           ))}
         <AuthArea
@@ -275,7 +275,7 @@ export default function PageHeader({
 
       {shouldShowSeeAll(hasSessionCard, isSessionUrgent, researchEligible) && (
         <div className='mt-1 flex justify-end'>
-          <Link href='/schedule' className='text-[10px] text-[#2c2f35]'>
+          <Link href='/schedule' className='text-foreground text-xs'>
             See All
           </Link>
         </div>

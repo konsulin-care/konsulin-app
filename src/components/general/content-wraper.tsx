@@ -7,7 +7,13 @@ interface ContentWrapperProps {
 }
 
 /**
+ * Renders the main page content surface that overlaps the header band.
+ * The negative margin pulls the content over the band so the top hairline
+ * sits on the content's top edge.
  *
+ * @param props.className - Additional classes merged onto the root element.
+ * @param props.children - Content rendered inside the wrapper.
+ * @returns The content wrapper element.
  */
 export default function ContentWraper({
   className,
@@ -16,7 +22,7 @@ export default function ContentWraper({
   return (
     <div
       className={cn(
-        'mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20',
+        'border-border bg-background mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] border-t pb-20',
         className
       )}
     >

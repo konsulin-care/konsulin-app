@@ -1,12 +1,70 @@
 import type { MergedAppointment } from '@/types/appointment';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
 import { addDays, format } from 'date-fns';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import PageHeader from '../page-header';
 import {
   canShowResearchHeader,
   isSessionCardAvailable,
   isSessionWithinWindow,
   shouldShowSeeAll
 } from '../page-header-sections';
+
+const { mockUseAuth, mockPathname } = vi.hoisted(() => ({
+  mockUseAuth: vi.fn(() => ({
+    isLoading: false,
+    state: { isAuthenticated: false, userInfo: {} }
+  })),
+  mockPathname: { current: '/' }
+}));
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(() => (key: string) => key)
+}));
+
+vi.mock('@/context/auth/authContext', () => ({
+  useAuth: () => mockUseAuth()
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => mockPathname.current
+}));
+
+vi.mock('@/hooks/useUpcomingEvents', () => ({
+  useUpcomingEvents: () => ({ appointmentData: null, sessionData: null })
+}));
+
+vi.mock('@/services/api/research', () => ({
+  useResearchProgress: () => ({ data: null, isLoading: false })
+}));
+
+vi.mock('@/components/role-avatar-popup', () => ({
+  default: () => <div data-testid='role-avatar' />
+}));
+
+vi.mock('@/lib/indexeddb', () => ({
+  STORES: { uiPreferences: 'ui' },
+  dbGet: vi.fn().mockResolvedValue(null)
+}));
+
+vi.mock('@/services/api', () => ({
+  getAPI: vi.fn()
+}));
+
+/** Renders PageHeader inside a fresh query client. */
+function renderHeader() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } }
+  });
+  return render(<PageHeader />, {
+    wrapper: ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    )
+  });
+}
 
 /** Local naive ISO string offset by the given number of days from now. */
 function slotOn(dayOffset: number): string {
@@ -139,5 +197,27 @@ describe('canShowResearchHeader', () => {
 
   it('is false while auth is loading', () => {
     expect(canShowResearchHeader({ ...base, isLoadingAuth: true })).toBe(false);
+  });
+});
+
+describe('PageHeader token styling', () => {
+  it('uses the background token on the root band', () => {
+    mockPathname.current = '/';
+    const { container } = renderHeader();
+
+    const root = container.firstElementChild;
+    expect(root).not.toBeNull();
+    expect(root).toHaveClass('bg-background');
+    expect(root?.className).not.toContain('bg-[#efefef]');
+  });
+
+  it('renders the back chevron with a currentColor stroke', () => {
+    mockPathname.current = '/clinic';
+    const { container } = renderHeader();
+
+    const svg = container.querySelector('a svg');
+    expect(svg).not.toBeNull();
+    expect(svg).toHaveAttribute('stroke', 'currentColor');
+    expect(svg?.outerHTML).not.toContain('#2c2f35');
   });
 });
