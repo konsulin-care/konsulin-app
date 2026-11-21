@@ -1,6 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
+import { AssessmentThemeProvider } from '@/components/general/assessment-theme-provider';
 import PageLoader from '@/components/general/page-loader';
 import { SmartFormShell } from '@/components/general/smart-form-shell';
 import { LoadingSpinnerIcon } from '@/components/icons';
@@ -15,8 +16,7 @@ import {
   buildForm,
   destroyForm,
   extractObservationBased,
-  getResponse,
-  RendererThemeProvider
+  getResponse
 } from '@aehrc/smart-forms-renderer';
 import { Bundle, Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -225,7 +225,7 @@ export default function SoapForm({
   }
 
   return (
-    <RendererThemeProvider>
+    <AssessmentThemeProvider>
       <SmartFormShell
         className='custom-soap-form'
         onChange={handleResponseChange}
@@ -273,6 +273,6 @@ export default function SoapForm({
           </Button>
         )}
       </div>
-    </RendererThemeProvider>
+    </AssessmentThemeProvider>
   );
 }

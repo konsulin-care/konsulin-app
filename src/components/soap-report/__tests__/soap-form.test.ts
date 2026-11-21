@@ -9,7 +9,8 @@ import SoapForm, { buildSoapResponseResource } from '../soap-form';
 
 const h = vi.hoisted(() => ({
   locale: 'id' as 'en' | 'id',
-  submitSoapBundle: vi.fn()
+  submitSoapBundle: vi.fn(),
+  rendererThemeProvider: vi.fn()
 }));
 
 vi.mock('@/i18n', async () => {
@@ -50,8 +51,15 @@ vi.mock('@aehrc/smart-forms-renderer', () => ({
     status: 'in-progress',
     item: []
   }),
-  RendererThemeProvider: ({ children }: { children?: ReactNode }) =>
-    children ?? null
+  RendererThemeProvider: ({ children }: { children?: ReactNode }) => {
+    h.rendererThemeProvider();
+    return children ?? null;
+  }
+}));
+
+vi.mock('@/components/general/assessment-theme-provider', () => ({
+  AssessmentThemeProvider: ({ children }: { children?: ReactNode }) =>
+    createElement('div', { 'data-testid': 'assessment-theme' }, children)
 }));
 
 vi.mock('@/lib/indexeddb', () => ({
@@ -124,6 +132,44 @@ describe('buildSoapResponseResource', () => {
     expect(qr.authored).toBe('2026-01-01T00:00:00Z');
     expect(qr.author).toEqual({ reference: 'Practitioner/dr-1' });
     expect(qr.subject).toEqual({ reference: 'Patient/pat-1' });
+  });
+});
+
+describe('SOAP form theming', () => {
+  it('renders the form inside AssessmentThemeProvider', async () => {
+    h.rendererThemeProvider.mockClear();
+
+    render(
+      createElement(SoapForm, {
+        questionnaire: { resourceType: 'Questionnaire' } as Questionnaire,
+        patientId: 'pat-1',
+        practitionerId: 'prac-1',
+        mode: 'create'
+      })
+    );
+
+    const saveButton = await screen.findByRole('button', {
+      name: 'Save SOAP'
+    });
+    const theme = screen.getByTestId('assessment-theme');
+    expect(saveButton).toBeInTheDocument();
+    expect(theme).toContainElement(saveButton);
+  });
+
+  it('never renders RendererThemeProvider', async () => {
+    h.rendererThemeProvider.mockClear();
+
+    render(
+      createElement(SoapForm, {
+        questionnaire: { resourceType: 'Questionnaire' } as Questionnaire,
+        patientId: 'pat-1',
+        practitionerId: 'prac-1',
+        mode: 'create'
+      })
+    );
+
+    await screen.findByRole('button', { name: 'Save SOAP' });
+    expect(h.rendererThemeProvider).not.toHaveBeenCalled();
   });
 });
 
