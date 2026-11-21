@@ -30,13 +30,13 @@ export function AdminShell({ children }: Readonly<AdminShellProps>) {
   };
 
   return (
-    <div className='flex min-h-screen flex-col bg-slate-50'>
-      <header className='flex h-14 items-center justify-between border-b border-slate-200 bg-white px-6'>
+    <div className='bg-background flex min-h-screen flex-col'>
+      <header className='border-border bg-card flex h-14 items-center justify-between border-b px-6'>
         <span className='font-semibold tracking-tight'>Superadmin Console</span>
         <button
           type='button'
           onClick={handleLock}
-          className='inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100'
+          className='border-border hover:bg-muted inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm'
         >
           <LockIcon width={14} height={14} />
           Lock

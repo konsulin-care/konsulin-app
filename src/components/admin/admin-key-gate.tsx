@@ -45,7 +45,7 @@ export function AdminKeyGate({ onUnlocked }: Readonly<AdminKeyGateProps>) {
       }}
     >
       <h1 className='text-lg font-semibold'>Superadmin access</h1>
-      <p className='text-sm text-slate-500'>
+      <p className='text-muted-foreground text-sm'>
         Enter the superadmin API key to unlock the console.
       </p>
       <input
@@ -56,14 +56,14 @@ export function AdminKeyGate({ onUnlocked }: Readonly<AdminKeyGateProps>) {
           setApiKey(e.target.value);
         }}
         placeholder='superadmin API key'
-        className='rounded-md border border-slate-300 px-3 py-2'
+        className='border-input rounded-md border px-3 py-2'
         autoComplete='off'
       />
-      {error && <p className='text-sm text-red-600'>{error}</p>}
+      {error && <p className='text-danger text-sm'>{error}</p>}
       <button
         type='submit'
         disabled={submitting || !apiKey.trim()}
-        className='rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50'
+        className='bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50'
       >
         {submitting ? 'Unlocking…' : 'Unlock'}
       </button>

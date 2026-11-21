@@ -35,12 +35,12 @@ describe('AdminRequestBuilder', () => {
       expect(methodTrigger).toBeDefined();
     });
 
-    it('shows GET with blue badge by default', () => {
+    it('shows GET with a neutral token badge by default', () => {
       render(<AdminRequestBuilder />);
       const methodTrigger = screen.getAllByRole('combobox')[0];
       expect(methodTrigger.textContent).toContain('GET');
-      // Check for blue color class on the trigger itself
-      expect(methodTrigger.className).toContain('bg-blue-100');
+      expect(methodTrigger.className).toContain('bg-muted');
+      expect(methodTrigger.className).not.toContain('bg-blue-100');
     });
 
     it('renders all four method options when opened', async () => {
@@ -64,15 +64,15 @@ describe('AdminRequestBuilder', () => {
       const methodTrigger = screen.getAllByRole('combobox')[0];
       await user.click(methodTrigger);
 
-      // Each method should have a colored badge span (use first match from dropdown)
+      // Each method should have a token badge span (use first match from dropdown)
       const getBadges = screen.getAllByText('GET');
-      const getBadge = getBadges[0]?.closest('[class*="bg-blue"]');
+      const getBadge = getBadges[0]?.closest('[class*="bg-muted"]');
       const postBadges = screen.getAllByText('POST');
-      const postBadge = postBadges[0]?.closest('[class*="bg-green"]');
+      const postBadge = postBadges[0]?.closest('[class*="bg-warning-tint"]');
       const putBadges = screen.getAllByText('PUT');
-      const putBadge = putBadges[0]?.closest('[class*="bg-amber"]');
+      const putBadge = putBadges[0]?.closest('[class*="bg-warning-tint"]');
       const deleteBadges = screen.getAllByText('DELETE');
-      const deleteBadge = deleteBadges[0]?.closest('[class*="bg-red"]');
+      const deleteBadge = deleteBadges[0]?.closest('[class*="bg-danger-tint"]');
 
       expect(getBadge).not.toBeNull();
       expect(postBadge).not.toBeNull();
@@ -253,8 +253,9 @@ describe('AdminRequestBuilder', () => {
     it('renders method trigger with colored background matching the method', () => {
       render(<AdminRequestBuilder />);
       const methodTrigger = screen.getByRole('combobox', { name: /method/i });
-      // GET is selected by default, should have blue background
-      expect(methodTrigger.className).toContain('bg-blue-100');
+      // GET is selected by default, should have a neutral token background
+      expect(methodTrigger.className).toContain('bg-muted');
+      expect(methodTrigger.className).not.toContain('bg-blue-100');
     });
 
     it('renders method trigger without its own border', () => {
