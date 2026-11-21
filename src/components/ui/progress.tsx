@@ -16,7 +16,7 @@ const Progress = React.forwardRef<
     ref={ref}
     value={value == null ? null : value * 100}
     className={cn(
-      'relative h-4 w-full overflow-hidden rounded-full bg-white',
+      'bg-muted relative h-4 w-full overflow-hidden rounded-full',
       className
     )}
     {...props}
@@ -26,7 +26,7 @@ const Progress = React.forwardRef<
       // style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       style={{
         width: `${(value || 0) * 100}%`,
-        backgroundColor: color || 'var(--secondary)'
+        backgroundColor: color || 'var(--color-turquoise-deep)'
       }}
     />
   </ProgressPrimitive.Root>

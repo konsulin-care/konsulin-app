@@ -15,7 +15,7 @@ interface CircularProgressProps {
 }
 
 /**
- * SVG circular progress ring: a gray background ring with a colored arc
+ * SVG circular progress ring: a charcoal-100 background ring with a colored arc
  * marking the completed fraction, and the percentage centered in the middle.
  * Follows the LevelHalo ring pattern from the research contribution dashboard.
  *
@@ -58,7 +58,7 @@ export default function CircularProgress({
           cy={size / 2}
           r={radius}
           fill='none'
-          stroke='#E5E7EB'
+          stroke='var(--color-charcoal-100)'
           strokeWidth={strokeWidth}
         />
         <circle

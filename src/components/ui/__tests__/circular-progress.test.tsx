@@ -74,8 +74,8 @@ describe('CircularProgress', () => {
       'stroke-dashoffset',
       String(circumference * (1 - 0.25))
     );
-    // Background circle paints the uncharted remainder in gray.
-    expect(circles[0]).toHaveAttribute('stroke', '#E5E7EB');
+    // Background circle paints the uncharted remainder with charcoal-100.
+    expect(circles[0]).toHaveAttribute('stroke', 'var(--color-charcoal-100)');
   });
 
   it('applies a passed className to the wrapper', () => {
