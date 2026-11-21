@@ -60,9 +60,9 @@ function DescriptionCard({
   t
 }: Readonly<{ text: string; t: (key: string) => string }>) {
   return (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+    <div className='card bg-muted mt-4 border-0'>
       <div className='font-bold'>{t('brief')}</div>
-      <hr className='my-4 border-black opacity-10' />
+      <hr className='border-border my-4' />
       <div className='flex flex-wrap gap-[10px] text-sm'>
         <DrawerDescription>
           <ReactMarkdown components={customMarkdownComponents}>
@@ -131,9 +131,9 @@ export default function AssessmentDrawerContent({
   const renderBadge = showBadge && (
     <Badge
       style={{ justifySelf: 'center' }}
-      className='bg-secondary flex w-fit rounded-[8px] px-[10px] py-[4px]'
+      className='bg-accent text-accent-foreground ring-turquoise-deep flex w-fit rounded-[8px] px-[10px] py-[4px] ring-1'
     >
-      <div className='text-xs text-white'>
+      <div className='text-accent-foreground text-xs'>
         Estimated time: ~{selectedAssessment?.note?.[0]?.text}
       </div>
     </Badge>
@@ -186,7 +186,7 @@ export default function AssessmentDrawerContent({
               <div className='mt-4 font-bold'>Researcher</div>
               {(selectedAssessment.contact ?? []).map((item, index) => (
                 <div
-                  className='card mt-2 border-0 bg-[#F9F9F9] text-sm'
+                  className='card bg-muted mt-2 border-0 text-sm'
                   key={item.name ?? `contact-${index}`}
                 >
                   {item.name}

@@ -275,7 +275,7 @@ describe('AssessmentsList', () => {
     expect(buttons.length).toBeGreaterThan(0);
   });
 
-  it('renders the search badge with secondary colors', async () => {
+  it('renders the search badge with accent colors', async () => {
     mockUseCuratedAssessments.mockReturnValue({
       data: MOCK_CURATED,
       isLoading: false
@@ -290,13 +290,14 @@ describe('AssessmentsList', () => {
 
     await waitFor(() => {
       const badge = screen.getByText('Search: depression');
-      expect(badge.className).toContain('bg-secondary');
-      expect(badge.className).toContain('text-white');
-      expect(badge.className).not.toContain('teal');
+      expect(badge.className).toContain('bg-accent');
+      expect(badge.className).toContain('text-accent-foreground');
+      expect(badge.className).not.toContain('bg-secondary');
+      expect(badge.className).not.toContain('text-white');
     });
   });
 
-  it('renders the category badge with secondary colors', async () => {
+  it('renders the category badge with accent colors', async () => {
     mockUseCuratedAssessments.mockReturnValue({
       data: MOCK_CURATED,
       isLoading: false
@@ -315,9 +316,10 @@ describe('AssessmentsList', () => {
 
     await waitFor(() => {
       const badge = screen.getByText('physical-health');
-      expect(badge.className).toContain('bg-secondary');
-      expect(badge.className).toContain('text-white');
-      expect(badge.className).not.toContain('teal');
+      expect(badge.className).toContain('bg-accent');
+      expect(badge.className).toContain('text-accent-foreground');
+      expect(badge.className).not.toContain('bg-secondary');
+      expect(badge.className).not.toContain('text-white');
     });
   });
 });

@@ -14,6 +14,9 @@ const repoRoot = resolve(__dirname, '../../..');
  * appends its owned files here, sorted alphabetically.
  */
 const SWEPT: string[] = [
+  'src/app/assessments/assessment-card.tsx',
+  'src/app/assessments/assessment-drawer.tsx',
+  'src/app/assessments/assessments-list.tsx',
   'src/app/clinic/clinic-filter.tsx',
   'src/app/home-content.tsx',
   'src/app/layout.tsx',

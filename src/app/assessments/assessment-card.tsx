@@ -92,7 +92,7 @@ export default function AssessmentCard({
     return (
       <button
         type='button'
-        className='relative aspect-[4/3] h-[180px] w-auto flex-shrink-0 cursor-pointer overflow-hidden rounded-2xl shadow-lg'
+        className='border-border relative aspect-[4/3] h-[180px] w-auto flex-shrink-0 cursor-pointer overflow-hidden rounded-2xl border'
         onClick={onClick}
       >
         <Image
@@ -107,7 +107,7 @@ export default function AssessmentCard({
             <div className='truncate text-sm font-bold text-white'>{title}</div>
             <div className='flex items-center gap-2 text-xs text-white/80'>
               {categoryLabel && (
-                <span className='rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-medium'>
+                <span className='bg-card/20 rounded-md px-2 py-0.5 text-xs font-medium'>
                   {categoryLabel}
                 </span>
               )}
@@ -131,17 +131,19 @@ export default function AssessmentCard({
       onClick={onClick}
     >
       <div className='flex items-center gap-2'>
-        <div className='flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#F8F8F8]'>
+        <div className='bg-muted flex size-10 shrink-0 items-center justify-center rounded-lg'>
           {Icon ? (
             <Icon className='size-5' />
           ) : (
-            <CalendarDays className='size-5 text-gray-400' />
+            <CalendarDays className='text-muted-foreground size-5' />
           )}
         </div>
         <div className='flex min-w-0 flex-1 flex-col'>
-          <span className='truncate text-sm font-bold text-black'>{title}</span>
+          <span className='text-foreground truncate text-sm font-bold'>
+            {title}
+          </span>
           {duration != null && (
-            <span className='flex items-center gap-1 text-xs text-gray-500'>
+            <span className='text-muted-foreground flex items-center gap-1 text-xs'>
               <Clock className='size-3' />
               {duration} min
             </span>
@@ -149,7 +151,7 @@ export default function AssessmentCard({
         </div>
       </div>
       {categoryLabel && (
-        <span className='bg-primary/10 text-primary mr-auto rounded-md px-2 py-0.5 text-[10px] font-medium'>
+        <span className='bg-primary/10 text-primary mr-auto rounded-md px-2 py-0.5 text-xs font-medium'>
           {categoryLabel}
         </span>
       )}

@@ -74,7 +74,7 @@ function InstrumentsGrid({
 }>) {
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center py-16 text-sm text-gray-400'>
+      <div className='text-muted-foreground flex items-center justify-center py-16 text-sm'>
         {tCommon('loading')}
       </div>
     );
@@ -210,8 +210,10 @@ export default function AssessmentsList() {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder={t('search')}
-            className='h-[50px] w-full border-0 bg-[#F9F9F9]'
-            startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+            className='bg-muted h-[50px] w-full border-0'
+            startIcon={
+              <SearchIcon className='text-turquoise-deep' width={16} />
+            }
           />
           <AssessmentsFilter onChange={setFilters} />
         </div>
@@ -222,7 +224,7 @@ export default function AssessmentsList() {
             {filters.categories.map(cat => (
               <span
                 key={cat}
-                className='bg-secondary flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-white'
+                className='bg-accent text-accent-foreground ring-turquoise-deep flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ring-1'
               >
                 {cat}
                 <button
@@ -237,7 +239,7 @@ export default function AssessmentsList() {
             ))}
 
             {searchTerm && (
-              <span className='bg-secondary flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-white'>
+              <span className='bg-accent text-accent-foreground ring-turquoise-deep flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ring-1'>
                 Search: {searchTerm}
                 <button
                   type='button'
@@ -256,7 +258,7 @@ export default function AssessmentsList() {
                 setSearchTerm('');
                 setFilters({ categories: [], sort: 'a-z' });
               }}
-              className='text-xs text-gray-500 underline'
+              className='text-muted-foreground text-xs underline'
             >
               {t('clear_all')}
             </button>
@@ -273,7 +275,7 @@ export default function AssessmentsList() {
 
         {/* Instruments Grid */}
         <div className='px-4 pt-4'>
-          <h2 className='mb-2 text-sm font-bold text-gray-700'>
+          <h2 className='text-charcoal-700 mb-2 text-sm font-bold'>
             {searchTerm || filters.categories.length > 0
               ? `Results (${filtered.length})`
               : `All Instruments (${curated.length})`}
