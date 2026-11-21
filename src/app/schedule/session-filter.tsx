@@ -141,7 +141,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
   );
 
   const timeFilterSection = (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+    <div className='card bg-muted mt-4 border-0'>
       <div className='mb-4 font-bold'>{t('session_time')}</div>
       <div className='flex flex-wrap gap-[10px]'>
         {filterContentListTime.map(time => (
@@ -157,8 +157,8 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
               'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
               filter.start_time === time.value.start &&
                 filter.end_time === time.value.end
-                ? 'bg-secondary hover:bg-secondary font-bold text-white'
-                : 'bg-white font-normal'
+                ? 'bg-accent hover:bg-accent text-accent-foreground ring-turquoise-deep font-bold ring-1'
+                : 'bg-card font-normal'
             )}
           >
             {time.label}
@@ -169,7 +169,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
             variant='outline'
             onClick={handleCustomOpen}
             className={cn(
-              'bg-secondary hover:bg-secondary h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-bold text-white'
+              'bg-accent hover:bg-accent text-accent-foreground ring-turquoise-deep h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-bold ring-1'
             )}
           >
             Custom : {`${filter.start_time} - ${filter.end_time}`}
@@ -230,7 +230,7 @@ export default function SessionFilter({ onChange, type, initialFilter }) {
             <Button
               type='button'
               onClick={openDefaultPane}
-              className='bg-secondary mt-4 rounded-xl text-white'
+              className='bg-primary text-primary-foreground mt-4 rounded-xl'
             >
               {t('back')}
             </Button>

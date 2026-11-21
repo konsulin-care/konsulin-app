@@ -34,7 +34,7 @@ function isProcessingStatus(status: string | null): boolean {
 function ProcessingPill() {
   const t = useTranslations('common');
   return (
-    <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
+    <span className='bg-muted text-foreground rounded-full px-2 py-0.5 text-xs font-medium'>
       {t('processing')}
     </span>
   );
@@ -48,7 +48,7 @@ function AppointmentTypeLabel({
 }>) {
   const t = useTranslations('common');
   return (
-    <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+    <div className='text-xs text-[hsla(220,9%,19%,0.8)]'>
       {appointmentType
         ? t('session_type', {
             type: `${capitalizeFirstLetter(appointmentType)}`
@@ -91,7 +91,7 @@ export const AppointmentCard = ({
       className='card mt-4 flex flex-col gap-2 p-4'
     >
       <div className='flex items-center justify-between'>
-        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+        <div className='text-xs text-[hsla(220,9%,19%,0.8)]'>
           {appointmentStartTime} - {appointmentDate}
         </div>
         {isProcessingStatus(appointment.appointmentStatus) && (

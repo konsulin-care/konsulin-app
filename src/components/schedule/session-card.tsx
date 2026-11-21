@@ -49,17 +49,17 @@ export default function SessionCard({
       style={borderStyle}
     >
       <div className='flex items-center justify-between'>
-        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+        <div className='text-xs text-[hsla(220,9%,19%,0.8)]'>
           {sessionStartTime} - {sessionDate}
         </div>
         <div className='flex items-center gap-2'>
           {isProcessing && (
-            <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
+            <span className='bg-muted text-foreground rounded-full px-2 py-0.5 text-xs font-medium'>
               {t('processing')}
             </span>
           )}
           {locationName && (
-            <div className='text-[10px] text-[hsla(220,9%,19%,0.5)]'>
+            <div className='text-xs text-[hsla(220,9%,19%,0.5)]'>
               {locationName}
             </div>
           )}
@@ -79,7 +79,7 @@ export default function SessionCard({
           width={32}
         />
         <div className='mr-auto text-[12px] font-bold'>{displayName}</div>
-        <div className='text-[10px] text-[hsla(220,9%,19%,0.8)]'>
+        <div className='text-xs text-[hsla(220,9%,19%,0.8)]'>
           {session.appointmentType
             ? t('session_type', {
                 type: `${capitalizeFirstLetter(session.appointmentType)}`

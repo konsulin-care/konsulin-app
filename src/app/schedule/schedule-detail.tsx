@@ -60,16 +60,16 @@ function SessionDetailInfo({
   const isProcessing =
     appointmentStatus === 'proposed' || appointmentStatus === 'pending';
   return (
-    <div className='card mt-4 flex flex-col border-0 bg-[#F9F9F9] p-4'>
+    <div className='card bg-muted mt-4 flex flex-col border-0 p-4'>
       <div className='flex items-center justify-between'>
         <div className='flex items-center'>
-          <HospitalIcon size={24} color='#13C2C2' className='mr-2' />
+          <HospitalIcon size={24} className='text-turquoise-deep mr-2' />
           <span className='text-[12px] font-bold'>
             {t('schedule.detail_session')}
           </span>
         </div>
         {isProcessing && (
-          <span className='rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] font-medium text-black'>
+          <span className='bg-muted text-foreground rounded-full px-2 py-0.5 text-xs font-medium'>
             {t('processing')}
           </span>
         )}
@@ -194,7 +194,7 @@ export default function ScheduleDetail() {
     <>
       <PageHeader />
 
-      <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col rounded-[16px] p-4'>
         {renderContent()}
       </div>
     </>
