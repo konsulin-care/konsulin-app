@@ -36,7 +36,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
     <div>
       <div className='relative'>
         <SearchIcon
-          className='absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400'
+          className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2'
           aria-hidden='true'
         />
         <input
@@ -47,7 +47,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
           }}
           placeholder={t('search_placeholder')}
           aria-label={t('search_label')}
-          className='w-full rounded-full border border-gray-200 bg-white py-2.5 pr-10 pl-10 text-[14px] outline-none focus:border-[var(--secondary)]'
+          className='border-input bg-card focus:border-turquoise-deep w-full rounded-full border py-2.5 pr-10 pl-10 text-[14px] outline-none'
         />
         {searching && (
           <button
@@ -56,7 +56,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
             onClick={() => {
               setQuery('');
             }}
-            className='absolute top-1/2 right-3 -translate-y-1/2 text-gray-400'
+            className='text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2'
           >
             <X className='h-4 w-4' aria-hidden='true' />
           </button>
@@ -64,7 +64,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
       </div>
 
       {deadEnd && (
-        <p className='mt-3 rounded-lg bg-[#F9F9F9] p-3 text-center text-[12px] text-gray-500'>
+        <p className='bg-muted text-charcoal-700 mt-3 rounded-lg p-3 text-center text-[12px]'>
           {t('no_match_hint')}
         </p>
       )}
@@ -78,7 +78,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
                 onClick={() => {
                   onSelect(complaint);
                 }}
-                className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] hover:border-[var(--secondary)]'
+                className='border-border bg-card hover:border-turquoise-deep w-full rounded-lg border px-4 py-3 text-left text-[14px]'
               >
                 {resolveLabel(complaint, t)}
               </button>
@@ -89,7 +89,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
 
       {!searching && (
         <div className='mt-3'>
-          <p className='mb-2 text-[12px] font-semibold text-gray-500'>
+          <p className='text-muted-foreground mb-2 text-[12px] font-semibold'>
             {t('popular_concerns')}
           </p>
           <div className='flex flex-wrap gap-2'>
@@ -100,7 +100,7 @@ export function ComplaintSearch({ onSelect }: Readonly<ComplaintSearchProps>) {
                 onClick={() => {
                   onSelect(complaint);
                 }}
-                className='rounded-full border border-gray-200 bg-white px-3 py-1.5 text-[12px] text-gray-700 hover:border-[var(--secondary)] hover:text-[var(--secondary)]'
+                className='border-border bg-card text-charcoal-700 hover:border-turquoise-deep hover:text-turquoise-deep rounded-full border px-3 py-1.5 text-[12px]'
               >
                 {resolveLabel(complaint, t)}
               </button>

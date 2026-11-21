@@ -71,9 +71,9 @@ export function InterviewFlow({
 
   return (
     <div className='fixed inset-x-0 bottom-0 z-40 flex justify-center'>
-      <div className='w-full max-w-md rounded-t-3xl bg-white p-5 pb-8 shadow-lg'>
+      <div className='bg-card w-full max-w-md rounded-t-3xl p-5 pb-8 shadow-lg'>
         <div className='mb-2 flex items-center justify-between'>
-          <span className='text-[12px] font-medium text-gray-400'>
+          <span className='text-muted-foreground text-[12px] font-medium'>
             {resolveLabel(complaint, t)} · {step === 'options' ? '1/2' : '2/2'}
           </span>
           {onClose && (
@@ -81,7 +81,7 @@ export function InterviewFlow({
               type='button'
               onClick={onClose}
               aria-label={t('close_interview')}
-              className='text-[12px] text-gray-400'
+              className='text-muted-foreground text-[12px]'
             >
               ✕
             </button>
@@ -90,7 +90,7 @@ export function InterviewFlow({
 
         {step === 'options' && (
           <>
-            <h2 className='mb-4 text-[16px] font-bold text-gray-900'>
+            <h2 className='text-foreground mb-4 text-[16px] font-bold'>
               {t('which_describes')}
             </h2>
             <ul className='flex flex-col gap-2'>
@@ -101,7 +101,7 @@ export function InterviewFlow({
                     onClick={() => {
                       handleOptionSelect(option.id);
                     }}
-                    className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] text-gray-800 hover:border-[var(--secondary)]'
+                    className='border-border bg-card text-charcoal-700 hover:border-turquoise-deep w-full rounded-lg border px-4 py-3 text-left text-[14px]'
                   >
                     {resolveLabel(option, t)}
                   </button>
@@ -119,12 +119,12 @@ export function InterviewFlow({
                 setStep('options');
               }}
               aria-label={t('back')}
-              className='mb-3 flex items-center gap-1 text-[12px] text-gray-500'
+              className='text-muted-foreground mb-3 flex items-center gap-1 text-[12px]'
             >
               <ChevronLeft className='h-3.5 w-3.5' aria-hidden='true' />
               {t('back')}
             </button>
-            <h2 className='mb-4 text-[16px] font-bold text-gray-900'>
+            <h2 className='text-foreground mb-4 text-[16px] font-bold'>
               {resolveLabel(complaint.redFlag, t)}
             </h2>
             <div className='flex flex-col gap-2'>
@@ -133,7 +133,7 @@ export function InterviewFlow({
                 onClick={() => {
                   handleSafetyAnswer(false);
                 }}
-                className='w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-[14px] text-gray-800 hover:border-[var(--secondary)]'
+                className='border-border bg-card text-charcoal-700 hover:border-turquoise-deep w-full rounded-lg border px-4 py-3 text-left text-[14px]'
               >
                 {t('safe_answer')}
               </button>
@@ -142,7 +142,7 @@ export function InterviewFlow({
                 onClick={() => {
                   handleSafetyAnswer(true);
                 }}
-                className='w-full rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-left text-[14px] text-amber-900 hover:border-amber-400'
+                className='border-warning-deep bg-warning-tint text-warning-deep hover:border-warning-deep w-full rounded-lg border px-4 py-3 text-left text-[14px]'
               >
                 {t('flagged_answer')}
               </button>
@@ -154,7 +154,7 @@ export function InterviewFlow({
                 <button
                   type='button'
                   onClick={finish}
-                  className='mt-4 w-full rounded-full bg-[var(--secondary)] py-3 text-[14px] font-semibold text-white'
+                  className='bg-primary text-primary-foreground mt-4 w-full rounded-full py-3 text-[14px] font-semibold'
                 >
                   {t('show_recommendations')}
                 </button>

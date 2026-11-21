@@ -128,7 +128,7 @@ function ExpandingOverlay({
           {specialties.map(s => (
             <Badge
               key={s}
-              className='rounded-full border-none bg-white/20 px-2 py-0.5 text-[10px] text-white'
+              className='bg-card/20 rounded-full border-none px-2 py-0.5 text-xs text-white'
             >
               {s}
             </Badge>
@@ -136,7 +136,7 @@ function ExpandingOverlay({
         </div>
         <p className='text-xs text-white/80'>{serviceName}</p>
         {description && (
-          <p className='max-w-[90%] text-[10px] leading-tight text-white/70'>
+          <p className='max-w-[90%] text-xs leading-tight text-white/70'>
             {description}
           </p>
         )}
@@ -183,7 +183,7 @@ export default function RecommendationCard({
 
   return (
     <div
-      className={`group relative aspect-square w-full cursor-pointer overflow-hidden rounded-2xl shadow-lg ${className ?? ''}`}
+      className={`group relative aspect-square w-full cursor-pointer overflow-hidden rounded-2xl ${className ?? ''}`}
       style={style}
     >
       <button
