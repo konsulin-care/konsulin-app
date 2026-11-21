@@ -14,12 +14,15 @@ const repoRoot = resolve(__dirname, '../../..');
  * appends its owned files here, sorted alphabetically.
  */
 const SWEPT: string[] = [
+  'src/app/practitioner/practitioner-filter.tsx',
   'src/components/icons/filter-icon.tsx',
   'src/components/icons/house-icon.tsx',
   'src/components/icons/literature-icon.tsx',
+  'src/components/icons/loading-spinner-icon.tsx',
   'src/components/icons/note-icon.tsx',
   'src/components/icons/office-icon.tsx',
-  'src/components/icons/user-icon.tsx'
+  'src/components/icons/user-icon.tsx',
+  'src/components/shared/filter-drawer-trigger.tsx'
 ];
 
 describe('raw colour guard', () => {

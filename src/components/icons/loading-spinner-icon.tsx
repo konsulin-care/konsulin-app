@@ -2,14 +2,18 @@ import { cn } from '@/lib/utils';
 import * as React from 'react';
 
 /**
+ * Renders a spinning loading indicator with a turquoise default tone.
  *
+ * @param props - Standard SVG props; `stroke` defaults to `currentColor` and
+ *   `className` is merged with the default tone.
+ * @returns The loading spinner SVG element.
  */
 export default function LoadingSpinnerIcon(
   props: React.SVGProps<SVGSVGElement>
 ) {
   const {
     fill = 'none',
-    stroke = '#13c2c2',
+    stroke = 'currentColor',
     width = 24,
     height = 24,
     className
@@ -26,7 +30,7 @@ export default function LoadingSpinnerIcon(
       strokeWidth='2'
       strokeLinecap='round'
       strokeLinejoin='round'
-      className={cn('animate-spin', className)}
+      className={cn('text-turquoise-deep animate-spin', className)}
     >
       <path d='M21 12a9 9 0 1 1-6.219-8.56' />
     </svg>

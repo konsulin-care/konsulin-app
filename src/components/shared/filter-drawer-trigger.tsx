@@ -18,14 +18,13 @@ const FilterDrawerTrigger = React.forwardRef<HTMLButtonElement, Props>(
         onClick={onClick}
         variant='outline'
         className={cn(
-          'flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0 bg-[#F9F9F9]'
+          'bg-muted flex h-[50px] w-[50px] items-center justify-center rounded-lg border-0'
         )}
       >
         <FilterIcon
           width={20}
           height={20}
-          className='min-h-[20px] min-w-[20px]'
-          fill='#13c2c2'
+          className='text-turquoise-deep min-h-[20px] min-w-[20px]'
         />
       </Button>
     );

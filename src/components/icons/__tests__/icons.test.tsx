@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import FilterIcon from '../filter-icon';
 import HouseIcon from '../house-icon';
 import LiteratureIcon from '../literature-icon';
+import LoadingSpinnerIcon from '../loading-spinner-icon';
 import NoteIcon from '../note-icon';
 import OfficeIcon from '../office-icon';
 import UserIcon from '../user-icon';
@@ -59,6 +60,16 @@ describe('icons', () => {
     for (const path of paths) {
       expect(path.getAttribute('stroke')).toBe('currentColor');
     }
+  });
+
+  it('renders LoadingSpinnerIcon with currentColor stroke and turquoise class', () => {
+    const { container } = render(<LoadingSpinnerIcon />);
+    const svg = container.querySelector('svg');
+
+    expect(svg).not.toBeNull();
+    expect(svg?.getAttribute('stroke')).toBe('currentColor');
+    expect(svg?.getAttribute('class')).toContain('text-turquoise-deep');
+    expect(svg?.getAttribute('class')).toContain('animate-spin');
   });
 
   it('renders NoteIcon with currentColor and merged turquoise class', () => {
