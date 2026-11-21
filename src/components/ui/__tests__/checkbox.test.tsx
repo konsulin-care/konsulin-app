@@ -10,8 +10,25 @@ describe('Checkbox', () => {
     expect(checkbox).toHaveAttribute('data-state', 'unchecked');
   });
 
+  it('uses input and card tokens for the unchecked surface', () => {
+    render(<Checkbox />);
+    const checkbox = screen.getByRole('checkbox');
+    expect(checkbox.className).toContain('border-input');
+    expect(checkbox.className).toContain('bg-card');
+    expect(checkbox.className).not.toContain('border-[#D1D5DB]');
+    expect(checkbox.className).not.toContain('bg-white');
+  });
+
   it.each([
-    [true, 'checked', ['bg-secondary', 'text-white', 'border-secondary']],
+    [
+      true,
+      'checked',
+      [
+        'data-[state=checked]:bg-accent',
+        'data-[state=checked]:border-turquoise-deep',
+        'data-[state=checked]:text-foreground'
+      ]
+    ],
     [false, 'unchecked', []]
   ])(
     'applies correct state and classes when checked=%s',
@@ -22,6 +39,7 @@ describe('Checkbox', () => {
       for (const cls of expectedClasses) {
         expect(checkbox.className).toContain(cls);
       }
+      expect(checkbox.className).not.toContain('text-white');
     }
   );
 
