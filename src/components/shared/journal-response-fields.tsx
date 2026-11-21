@@ -53,7 +53,7 @@ export default function JournalResponseFields({
             <Textarea
               value={item.text}
               onChange={e => onResponseChange(index, e.target.value)}
-              className='rounded-lg bg-white text-[14px]'
+              className='bg-card rounded-lg text-[14px]'
               placeholder={t('journal.response_placeholder')}
             />
           </div>

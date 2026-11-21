@@ -75,14 +75,14 @@ export default function LocationHoursEditor({
                 className={cn(
                   'flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium transition-colors sm:h-12 sm:w-12',
                   hasHours
-                    ? 'bg-secondary text-white'
-                    : 'bg-[#F9F9F9] text-black'
+                    ? 'bg-accent text-accent-foreground ring-turquoise-deep ring-1'
+                    : 'bg-muted text-charcoal-700'
                 )}
               >
                 {getDayShortName(day)}
               </div>
               {isSelected && (
-                <div className='bg-secondary h-1.5 w-1.5 rounded-full' />
+                <div className='bg-turquoise-deep h-1.5 w-1.5 rounded-full' />
               )}
             </button>
           );
@@ -91,7 +91,7 @@ export default function LocationHoursEditor({
 
       {/* Day header */}
       <div className='flex items-center justify-between'>
-        <h3 className='text-sm font-semibold text-gray-900'>
+        <h3 className='text-foreground text-sm font-semibold'>
           {getDayName(selectedDay)} Hours
         </h3>
         <Button
@@ -109,7 +109,7 @@ export default function LocationHoursEditor({
       {/* Time ranges */}
       <div className='space-y-3'>
         {dayHours.length === 0 ? (
-          <p className='py-4 text-center text-xs text-gray-500'>
+          <p className='text-muted-foreground py-4 text-center text-xs'>
             {t('location.no_hours')}
           </p>
         ) : (

@@ -20,7 +20,7 @@ export default function JournalSubmitButton({
   return (
     <Button
       onClick={onClick}
-      className='bg-secondary !mt-auto w-full rounded-full p-4 text-[14px] text-white'
+      className='bg-primary text-primary-foreground !mt-auto w-full rounded-full p-4 text-sm'
       disabled={isLoading}
     >
       {isLoading ? (

@@ -112,7 +112,7 @@ export default function LocationFormFields({
             onNameChange(e.target.value);
           }}
           placeholder={t('location.name_placeholder')}
-          className='bg-white'
+          className='bg-card'
           aria-label={t('location.name')}
           maxLength={30}
         />
@@ -129,7 +129,7 @@ export default function LocationFormFields({
             onAddressLineChange(e.target.value);
           }}
           placeholder={t('location.address_placeholder')}
-          className='bg-white'
+          className='bg-card'
           aria-label={t('location.address')}
         />
       </div>
@@ -175,7 +175,7 @@ export default function LocationFormFields({
               onLongitudeChange(e.target.value);
             }}
             placeholder='106.846'
-            className='bg-white'
+            className='bg-card'
             aria-label={t('location.longitude')}
             step='any'
           />
@@ -190,7 +190,7 @@ export default function LocationFormFields({
               onLatitudeChange(e.target.value);
             }}
             placeholder='-6.305'
-            className='bg-white'
+            className='bg-card'
             aria-label={t('location.latitude')}
             step='any'
           />
