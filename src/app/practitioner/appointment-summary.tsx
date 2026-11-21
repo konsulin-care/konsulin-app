@@ -33,19 +33,19 @@ function ServiceDetails({
   locationName
 }: Readonly<ServiceDetailsProps>) {
   return (
-    <div className='flex flex-col gap-2 rounded-[14px] border border-[#E3E3E3] p-3'>
+    <div className='border-border flex flex-col gap-2 rounded-[14px] border p-3'>
       <div className='flex items-center gap-2'>
-        <Calendar size={14} className='text-[#666]' />
-        <span className='text-[12px] text-[#2C2F35]'>{dateFormatted}</span>
+        <Calendar size={14} className='text-muted-foreground' />
+        <span className='text-foreground text-[12px]'>{dateFormatted}</span>
       </div>
       <div className='flex items-center gap-2'>
-        <Clock size={14} className='text-[#666]' />
-        <span className='text-[12px] text-[#2C2F35]'>{timeFormatted}</span>
+        <Clock size={14} className='text-muted-foreground' />
+        <span className='text-foreground text-[12px]'>{timeFormatted}</span>
       </div>
       {locationName && (
         <div className='flex items-center gap-2'>
-          <MapPin size={14} className='text-[#666]' />
-          <span className='text-[12px] text-[#2C2F35]'>{locationName}</span>
+          <MapPin size={14} className='text-muted-foreground' />
+          <span className='text-foreground text-[12px]'>{locationName}</span>
         </div>
       )}
     </div>
@@ -79,7 +79,7 @@ export default function AppointmentSummary({
         practitionerName={practitionerName}
       />
 
-      <div className='text-center text-[14px] font-medium text-[#2C2F35]'>
+      <div className='text-foreground text-center text-[14px] font-medium'>
         {serviceNames}
       </div>
 
@@ -90,8 +90,8 @@ export default function AppointmentSummary({
       />
 
       {invoice?.totalNet && (
-        <div className='mt-2 flex items-center justify-between rounded-[12px] bg-[#F9F9F9] p-3'>
-          <span className='text-[12px] text-[#666]'>Total</span>
+        <div className='bg-muted mt-2 flex items-center justify-between rounded-[12px] p-3'>
+          <span className='text-charcoal-700 text-[12px]'>Total</span>
           <span className='text-[16px] font-bold'>{formattedPrice}</span>
         </div>
       )}

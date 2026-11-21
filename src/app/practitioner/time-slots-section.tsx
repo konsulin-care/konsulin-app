@@ -80,8 +80,8 @@ export default function TimeSlotsSection({
         {slotPills.map(pill => {
           const isSelected = pill.value === bookingState.startTime;
           const pillClassName = isSelected
-            ? 'bg-secondary hover:bg-secondary font-bold text-white'
-            : 'bg-white font-normal';
+            ? 'bg-accent hover:bg-accent font-bold text-accent-foreground ring-1 ring-turquoise-deep'
+            : 'bg-card font-normal';
           return (
             <Button
               variant='outline'
@@ -106,7 +106,7 @@ export default function TimeSlotsSection({
   };
 
   return (
-    <div className='card my-4 border-0 bg-[#F9F9F9]'>
+    <div className='card bg-muted my-4 border-0'>
       <div className='mb-4 font-bold'>
         {bookingState.date && format(bookingState.date, 'dd MMMM yyyy')}
       </div>

@@ -67,8 +67,8 @@ export default function AvailabilityPage() {
     return (
       <>
         <PageHeader pageIndicator={t('practitioner.tab_availability')} />
-        <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
-          <div className='flex min-h-[30vh] items-center justify-center text-sm text-gray-500'>
+        <div className='bg-card mt-[-24px] flex grow flex-col rounded-[16px] p-4'>
+          <div className='text-muted-foreground flex min-h-[30vh] items-center justify-center text-sm'>
             {t('practitioner.no_practitioner_selected')}
           </div>
         </div>
@@ -80,7 +80,7 @@ export default function AvailabilityPage() {
   const renderManagementShell = () => (
     <>
       <PageHeader pageIndicator={t('practitioner.manage_availability')} />
-      <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col rounded-[16px] p-4'>
         <PractitionerRoleManagementShell practitionerRoleId={id} />
       </div>
     </>
@@ -90,7 +90,7 @@ export default function AvailabilityPage() {
   const renderPatientView = () => (
     <>
       <PageHeader pageIndicator={t('practitioner.tab_availability')} />
-      <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col rounded-[16px] p-4'>
         {isServicesLoading ? (
           <div className='flex min-h-[30vh] items-center justify-center'>
             <LoadingSpinnerIcon
@@ -121,8 +121,8 @@ export default function AvailabilityPage() {
       return (
         <>
           <PageHeader pageIndicator={t('practitioner.tab_availability')} />
-          <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
-            <div className='flex min-h-[30vh] items-center justify-center text-sm text-red-500'>
+          <div className='bg-card mt-[-24px] flex grow flex-col rounded-[16px] p-4'>
+            <div className='text-danger flex min-h-[30vh] items-center justify-center text-sm'>
               {t('practitioner.not_authorized')}
             </div>
           </div>

@@ -87,7 +87,8 @@ describe('TimeSlotsSection', () => {
     );
 
     const slotButton = screen.getByRole('button', { name: '10:00' });
-    expect(slotButton.className).toContain('bg-secondary');
+    expect(slotButton.className).toContain('bg-accent');
+    expect(slotButton.className).toContain('text-accent-foreground');
   });
 
   it('renders disabled slot pills as disabled', () => {
