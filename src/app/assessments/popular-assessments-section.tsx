@@ -21,11 +21,11 @@ interface PopularAssessmentsSectionProps {
 function AssessmentBadges() {
   return (
     <div className='flex min-w-[192px] justify-end gap-2'>
-      <Badge className='bg-secondary flex items-center rounded-[8px] px-[10px] py-[4px]'>
+      <Badge className='bg-primary text-primary-foreground flex items-center rounded-[8px] px-[10px] py-[4px]'>
         <AwardIcon size={16} color='white' fill='white' />
-        <div className='text-[10px] text-white'>Best Impact</div>
+        <div className='text-primary-foreground text-xs'>Best Impact</div>
       </Badge>
-      <Badge className='bg-secondary rounded-[8px] px-[10px] py-[4px]'>
+      <Badge className='bg-primary text-primary-foreground rounded-[8px] px-[10px] py-[4px]'>
         <BookmarkIcon size={16} color='white' fill='white' />
       </Badge>
     </div>
@@ -48,7 +48,7 @@ function PopularAssessmentCard({
     <button
       key={assessment.resource.id}
       type='button'
-      className='card flex cursor-pointer flex-col gap-4 bg-white text-left'
+      className='card bg-card flex cursor-pointer flex-col gap-4 text-left'
       onClick={() => {
         onClick(assessment.resource);
       }}
@@ -66,7 +66,7 @@ function PopularAssessmentCard({
         <span className='text-[12px] font-bold'>
           {assessment.resource.title}
         </span>
-        <span className='text-muted-foreground mt-2 max-w-[250px] truncate overflow-hidden text-[10px] text-ellipsis'>
+        <span className='text-muted-foreground mt-2 max-w-[250px] truncate overflow-hidden text-xs text-ellipsis'>
           {assessment.resource.description}
         </span>
       </div>
@@ -82,7 +82,7 @@ export default function PopularAssessmentsSection({
   onAssessmentClick
 }: Readonly<PopularAssessmentsSectionProps>) {
   return (
-    <div className='bg-[#F9F9F9] p-4'>
+    <div className='bg-muted p-4'>
       <div className='text-muted-foreground mb-2 text-[14px] font-bold'>
         Popular Assessment
       </div>

@@ -25,7 +25,7 @@ export default function FeaturedRail({
 
   return (
     <div className='px-4'>
-      <h2 className='mb-2 text-sm font-bold text-gray-700'>
+      <h2 className='text-charcoal-700 mb-2 text-sm font-bold'>
         {t('editors_picks')}
       </h2>
 

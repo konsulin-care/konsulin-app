@@ -40,7 +40,7 @@ export default function BrowseInstrumentsSection({
               }}
             >
               <div className='flex items-center'>
-                <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
+                <div className='bg-muted mr-2 h-[40px] w-[40px] rounded-full p-2'>
                   <Image
                     className='h-[24px] w-[24px] object-cover'
                     src={'/images/note.svg'}

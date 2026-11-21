@@ -118,7 +118,7 @@ export default function AssessmentsError({
       )}
 
       {process.env.NODE_ENV === 'development' && (
-        <pre className='mt-8 max-w-full overflow-auto rounded-lg bg-gray-100 p-4 text-xs'>
+        <pre className='bg-muted mt-8 max-w-full overflow-auto rounded-lg p-4 text-xs'>
           {error.name}: {error.message}
         </pre>
       )}
