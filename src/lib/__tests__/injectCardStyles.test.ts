@@ -67,8 +67,10 @@ describe('buildCardStyles', () => {
       expect(css).not.toContain('margin-top: -12px');
     });
 
-    it('uses var(--color-secondary) for answered and active borders', () => {
-      expect(css).toContain('var(--color-secondary, #13c2c2)');
+    it('uses var(--color-turquoise-deep) for answered and active borders', () => {
+      expect(css).toContain('var(--color-turquoise-deep)');
+      expect(css).not.toContain('--color-secondary');
+      expect(css).not.toContain('#13c2c2');
       expect(css).not.toContain('#229954');
     });
 
@@ -83,9 +85,11 @@ describe('buildCardStyles', () => {
       expect(css).toContain('.card-future .MuiSvgIcon-colorSuccess');
     });
 
-    it('colors SyncIcon with secondary color on active card', () => {
+    it('colors SyncIcon with turquoise-deep on active card', () => {
       expect(css).toContain('.card-active .MuiSvgIcon-colorSuccess');
-      expect(css).toContain('var(--color-secondary, #13c2c2)');
+      expect(css).toContain('var(--color-turquoise-deep)');
+      expect(css).not.toContain('--color-secondary');
+      expect(css).not.toContain('#13c2c2');
     });
 
     it('uses border-right for answered card indicator', () => {
@@ -102,6 +106,8 @@ describe('buildCardStyles', () => {
     it('uses border-right for future card indicator', () => {
       expect(css).toContain('.card-future');
       expect(css).toContain('border-right: 3px solid');
+      expect(css).toContain('var(--color-charcoal-200)');
+      expect(css).not.toContain('#ccc');
     });
 
     it('uses scale 0.95 for peek cards', () => {

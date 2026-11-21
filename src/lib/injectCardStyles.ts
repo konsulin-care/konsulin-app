@@ -18,7 +18,7 @@ interface CardStyleParams {
 export function buildCardStyles(params: CardStyleParams): string {
   const hasActive = params.activeLinkId !== null;
 
-  const secondaryColor = 'var(--color-secondary, #13c2c2)';
+  const deepColor = 'var(--color-turquoise-deep)';
 
   return `
 .card-stack-viewport {
@@ -56,7 +56,7 @@ export function buildCardStyles(params: CardStyleParams): string {
 .card-answered {
   opacity: 0.5;
   scale: 0.95;
-  border-right: 3px solid ${secondaryColor};
+  border-right: 3px solid ${deepColor};
 }
 
 ${
@@ -64,13 +64,13 @@ ${
     ? `.card-active {
   opacity: 1;
   scale: 1;
-  border-right: 4px solid ${secondaryColor};
+  border-right: 4px solid ${deepColor};
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
   z-index: 2;
 }
 
 .card-active .MuiSvgIcon-colorSuccess {
-  color: ${secondaryColor} !important;
+  color: ${deepColor} !important;
 }`
     : ''
 }
@@ -78,7 +78,7 @@ ${
 .card-future {
   opacity: 0.5;
   scale: 0.95;
-  border-right: 3px solid #ccc;
+  border-right: 3px solid var(--color-charcoal-200);
 }
 
 /* Hide answer options on peek cards */
