@@ -157,7 +157,9 @@ export default function BookingCalendar({
                   className='h-2 w-2 rounded-full'
                   style={{ backgroundColor: entry.color }}
                 />
-                <span className='text-[11px] text-gray-600'>{entry.name}</span>
+                <span className='text-muted-foreground text-xs'>
+                  {entry.name}
+                </span>
               </div>
             ))}
           </div>

@@ -16,6 +16,9 @@ const repoRoot = resolve(__dirname, '../../..');
 const SWEPT: string[] = [
   'src/app/home-content.tsx',
   'src/app/layout.tsx',
+  'src/app/practitioner/admin-listing.tsx',
+  'src/app/practitioner/booking-calendar.tsx',
+  'src/app/practitioner/booking-form-section.tsx',
   'src/app/practitioner/practitioner-filter.tsx',
   'src/app/recommendation/page.tsx',
   'src/app/recommendation/recommendation-card.tsx',

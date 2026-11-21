@@ -116,13 +116,13 @@ describe('BookingFormSection', () => {
     expect(button).toBeDisabled();
   });
 
-  it('applies bg-white class to textarea', () => {
+  it('applies bg-card class to textarea', () => {
     render(<BookingFormSection {...defaultProps} />);
 
     const textarea = screen.getByPlaceholderText(
       /anxiety|depressed mood|sleep|racing thoughts|mental health/i
     );
-    expect(textarea.className).toContain('bg-white');
+    expect(textarea.className).toContain('bg-card');
   });
 
   it('textarea value is synced with bookingForm.problem_brief', () => {

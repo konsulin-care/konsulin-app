@@ -72,7 +72,7 @@ export default function BookingFormSection({
             handleBookingInformationChange('problem_brief', e.target.value);
           }}
           placeholder={t('practitioner.booking_placeholder')}
-          className='w-full resize-none bg-white text-[12px] text-[#2C2F35]'
+          className='bg-card text-foreground w-full resize-none text-[12px]'
         />
       </div>
 
@@ -86,7 +86,7 @@ export default function BookingFormSection({
         <>
           {isAuthenticated ? (
             <Button
-              className='bg-secondary mt-auto rounded-xl text-white disabled:opacity-50'
+              className='bg-primary text-primary-foreground mt-auto rounded-xl disabled:opacity-50'
               onClick={handleSubmitForm}
               disabled={
                 isCreateAppointmentLoading ||
@@ -109,7 +109,7 @@ export default function BookingFormSection({
             </Button>
           ) : (
             <Button
-              className='bg-secondary mt-auto w-full rounded-[32px] py-2 text-[14px] font-bold text-white'
+              className='bg-primary text-primary-foreground mt-auto w-full rounded-[32px] py-2 text-[14px] font-bold'
               disabled={isPending}
               onClick={() => {
                 saveIntent('appointment', {

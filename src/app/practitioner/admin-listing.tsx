@@ -66,8 +66,8 @@ function FilterBar({
             setSearchQuery(e.target.value);
           }}
           placeholder={t('practitioner.search_practitioner')}
-          className='h-[50px] w-full border-0 bg-[#F9F9F9]'
-          startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+          className='bg-muted h-[50px] w-full border-0'
+          startIcon={<SearchIcon className='text-charcoal-400' width={16} />}
         />
         <PractitionerFilter
           locations={locations}
