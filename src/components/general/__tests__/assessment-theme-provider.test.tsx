@@ -1,17 +1,26 @@
+import { useTheme, type Theme } from '@mui/material/styles';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+const { rendererThemeComponentOverrides } = vi.hoisted(() => ({
+  rendererThemeComponentOverrides: vi.fn((_theme: Theme) => ({}))
+}));
+
 // Mock the renderer theme modules
 vi.mock('@aehrc/smart-forms-renderer', () => ({
-  RendererThemeProvider: ({ children }: { children: React.ReactNode }) =>
-    children,
   rendererThemeOptions: {
     palette: { primary: { main: '#1976d2' } }
   },
-  rendererThemeComponentOverrides: vi.fn(() => ({}))
+  rendererThemeComponentOverrides
 }));
 
 import { AssessmentThemeProvider } from '../assessment-theme-provider';
+
+function ThemeProbe() {
+  const theme = useTheme();
+
+  return <span data-testid='primary'>{theme.palette.primary.main}</span>;
+}
 
 describe('AssessmentThemeProvider', () => {
   it('renders children inside the theme context', () => {
@@ -25,22 +34,48 @@ describe('AssessmentThemeProvider', () => {
     expect(screen.getByTestId('child')).toHaveTextContent('Hello');
   });
 
-  it('renders nothing when no children', () => {
-    const { container } = render(<AssessmentThemeProvider />);
+  it('exposes the assessment theme to children via useTheme', () => {
+    render(
+      <AssessmentThemeProvider>
+        <ThemeProbe />
+      </AssessmentThemeProvider>
+    );
 
-    // With mocked RendererThemeProvider as fragment, no children = empty
-    expect(container.innerHTML).toBe('');
+    expect(screen.getByTestId('primary')).toHaveTextContent('#0F7981');
   });
 
-  it('renders children with RendererThemeProvider wrapper', () => {
+  it('wraps children in the ScopedCssBaseline root', () => {
     const { container } = render(
       <AssessmentThemeProvider>
         <div data-testid='inner'>test</div>
       </AssessmentThemeProvider>
     );
 
-    // Since RendererThemeProvider is mocked as a fragment,
-    // children should be directly in the DOM
-    expect(container.textContent).toBe('test');
+    const baseline = container.querySelector('.MuiScopedCssBaseline-root');
+
+    expect(baseline).not.toBeNull();
+    expect(baseline).toContainElement(screen.getByTestId('inner'));
+  });
+
+  it('renders the ScopedCssBaseline wrapper when no children', () => {
+    const { container } = render(<AssessmentThemeProvider />);
+
+    expect(
+      container.querySelector('.MuiScopedCssBaseline-root')
+    ).not.toBeNull();
+  });
+
+  it('builds component overrides from the generated theme', () => {
+    render(
+      <AssessmentThemeProvider>
+        <ThemeProbe />
+      </AssessmentThemeProvider>
+    );
+
+    expect(rendererThemeComponentOverrides).toHaveBeenCalled();
+    const theme = rendererThemeComponentOverrides.mock.calls[0][0];
+
+    expect(theme.palette.primary.main).toBe('#0F7981');
+    expect(theme.components).toBeDefined();
   });
 });
