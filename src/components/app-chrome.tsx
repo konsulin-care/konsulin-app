@@ -10,6 +10,7 @@ import { FabProvider } from '@/context/fabContext';
 import { RecommendationProvider } from '@/context/recommendationContext';
 import { resolveCjsDefaultExport } from '@/lib/lazy-component';
 import SwUpdateDetector from '@/lib/sw-update';
+import { TOKENS } from '@/styles/tokens';
 import dynamic from 'next/dynamic';
 import { Suspense, type ComponentType, type ReactNode } from 'react';
 import { ToastContainer, ToastContainerProps } from 'react-toastify';
@@ -63,7 +64,7 @@ export default function AppChrome({
     <>
       <RouteResponseCleaner />
       <Suspense fallback={null}>
-        <NextTopLoader showSpinner={false} color='#13c2c2' />
+        <NextTopLoader showSpinner={false} color={TOKENS.turquoiseDeep} />
       </Suspense>
       <ToastContainer {...toastConfig} />
       <ProfileCompletenessModal />
