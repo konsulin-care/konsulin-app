@@ -28,10 +28,10 @@ export function FabToggleButton({
       disabled={disabled}
       aria-label={isOpen ? undefined : 'Open menu'}
       className={cn(
-        'bg-secondary flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-all duration-300',
+        'bg-secondary text-secondary-foreground border-turquoise-deep flex h-14 w-14 items-center justify-center rounded-full border shadow-lg transition-all duration-300',
         isOpen ? 'rotate-45' : '',
         disabled
-          ? 'cursor-not-allowed bg-gray-300 text-gray-500 hover:bg-gray-300'
+          ? 'bg-muted text-charcoal-700 hover:bg-muted cursor-not-allowed'
           : 'hover:brightness-90'
       )}
     >

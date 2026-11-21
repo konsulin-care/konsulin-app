@@ -131,8 +131,8 @@ describe('QuickActionFab disabled action state', () => {
     const { container } = renderFab();
     fireEvent.click(screen.getByTestId('trigger-action-disabled'));
     const fabButton = getFabButton(container);
-    expect(fabButton.className).toContain('bg-gray-300');
-    expect(fabButton.className).toContain('text-gray-500');
+    expect(fabButton.className).toContain('bg-muted');
+    expect(fabButton.className).toContain('text-charcoal-700');
     expect(fabButton.className).toContain('cursor-not-allowed');
     expect(fabButton.disabled).toBe(true);
   });

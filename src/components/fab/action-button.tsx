@@ -4,9 +4,10 @@ import { cn } from '@/lib/utils';
 import type { ActionConfig } from './types';
 
 const variantStyles: Record<string, string> = {
-  primary: 'bg-secondary text-white hover:brightness-90',
-  danger: 'bg-destructive text-white hover:brightness-90',
-  secondary: 'bg-muted text-primary hover:bg-secondary hover:text-white',
+  primary:
+    'bg-secondary text-secondary-foreground border-turquoise-deep border hover:brightness-90',
+  danger: 'bg-destructive text-destructive-foreground hover:brightness-90',
+  secondary: 'bg-card text-foreground border-border border hover:bg-muted',
   ghost: 'bg-transparent text-muted-foreground hover:bg-muted'
 };
 
@@ -29,7 +30,7 @@ export function ActionFab({ config }: { readonly config: ActionConfig }) {
         hasLabel ? 'h-14 gap-2 px-6' : 'h-14 w-14 justify-center',
         variantStyles[variant],
         config.disabled
-          ? 'cursor-not-allowed bg-gray-300 text-gray-500 hover:bg-gray-300'
+          ? 'bg-muted text-charcoal-700 hover:bg-muted cursor-not-allowed'
           : ''
       )}
     >
@@ -40,7 +41,7 @@ export function ActionFab({ config }: { readonly config: ActionConfig }) {
         </span>
       )}
       {config.isSaving && (
-        <span className='h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent' />
+        <span className='h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent' />
       )}
     </button>
   );

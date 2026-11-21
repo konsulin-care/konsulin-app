@@ -9,7 +9,7 @@ export function SelectionFab({ config }: { readonly config: SelectionConfig }) {
     <button
       type='button'
       onClick={config.onDelete}
-      className='bg-destructive flex h-14 items-center gap-2 rounded-full px-6 text-white shadow-lg transition-all duration-300 hover:brightness-90'
+      className='bg-destructive text-destructive-foreground flex h-14 items-center gap-2 rounded-full px-6 shadow-lg transition-all duration-300 hover:brightness-90'
     >
       <Trash2 className='h-5 w-5' />
       <span className='text-sm font-semibold whitespace-nowrap'>

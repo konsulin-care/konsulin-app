@@ -42,6 +42,27 @@ describe('FabToggleButton', () => {
     const btn = container.querySelector('button');
     expect(btn?.className).toContain('rotate-45');
   });
+
+  it('uses the turquoise token palette without white text', () => {
+    const { container } = render(
+      <FabToggleButton isOpen={false} onToggle={vi.fn()} />
+    );
+    const btn = container.querySelector('button');
+    expect(btn?.className).toContain('bg-secondary');
+    expect(btn?.className).toContain('text-secondary-foreground');
+    expect(btn?.className).toContain('border-turquoise-deep');
+    expect(btn?.className).not.toContain('text-white');
+  });
+
+  it('uses muted tokens when disabled', () => {
+    const { container } = render(
+      <FabToggleButton isOpen={false} onToggle={vi.fn()} disabled />
+    );
+    const btn = container.querySelector('button');
+    expect(btn?.className).toContain('bg-muted');
+    expect(btn?.className).toContain('text-charcoal-700');
+    expect(btn?.className).toContain('cursor-not-allowed');
+  });
 });
 
 describe('SelectionFab', () => {
@@ -52,6 +73,18 @@ describe('SelectionFab', () => {
       />
     );
     expect(getByText('Delete (3)')).toBeInTheDocument();
+  });
+
+  it('uses the destructive token palette without white text', () => {
+    const { container } = render(
+      <SelectionFab
+        config={{ count: 3, onDelete: vi.fn(), onCancel: vi.fn() }}
+      />
+    );
+    const btn = container.querySelector('button');
+    expect(btn?.className).toContain('bg-destructive');
+    expect(btn?.className).toContain('text-destructive-foreground');
+    expect(btn?.className).not.toContain('text-white');
   });
 });
 
@@ -120,6 +153,65 @@ describe('ActionFab', () => {
     const button = container.querySelector('button');
     expect(button?.className).toContain('px-6');
     expect(button?.className).toContain('gap-2');
+  });
+
+  it('uses the turquoise token palette for the primary variant', () => {
+    const { container } = render(
+      <ActionFab
+        config={{ label: 'Next', onAction: vi.fn(), variant: 'primary' }}
+      />
+    );
+    const button = container.querySelector('button');
+    expect(button?.className).toContain('bg-secondary');
+    expect(button?.className).toContain('text-secondary-foreground');
+    expect(button?.className).toContain('border-turquoise-deep');
+    expect(button?.className).not.toContain('text-white');
+  });
+
+  it('uses the destructive token palette for the danger variant', () => {
+    const { container } = render(
+      <ActionFab
+        config={{ label: 'Delete', onAction: vi.fn(), variant: 'danger' }}
+      />
+    );
+    const button = container.querySelector('button');
+    expect(button?.className).toContain('bg-destructive');
+    expect(button?.className).toContain('text-destructive-foreground');
+  });
+
+  it('uses the card surface palette for the secondary variant', () => {
+    const { container } = render(
+      <ActionFab
+        config={{ label: 'Back', onAction: vi.fn(), variant: 'secondary' }}
+      />
+    );
+    const button = container.querySelector('button');
+    expect(button?.className).toContain('bg-card');
+    expect(button?.className).toContain('text-foreground');
+    expect(button?.className).toContain('border');
+  });
+
+  it('uses muted tokens when disabled', () => {
+    const { container } = render(
+      <ActionFab
+        config={{ label: 'Next', onAction: vi.fn(), disabled: true }}
+      />
+    );
+    const button = container.querySelector('button');
+    expect(button?.className).toContain('bg-muted');
+    expect(button?.className).toContain('text-charcoal-700');
+    expect(button?.className).toContain('cursor-not-allowed');
+  });
+
+  it('uses current colour for the saving spinner', () => {
+    const { container } = render(
+      <ActionFab
+        config={{ label: 'Next', onAction: vi.fn(), isSaving: true }}
+      />
+    );
+    const spinner = container.querySelector('.animate-spin');
+    expect(spinner?.className).toContain('border-current');
+    expect(spinner?.className).toContain('border-t-transparent');
   });
 });
 
