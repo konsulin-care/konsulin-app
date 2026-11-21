@@ -22,12 +22,12 @@ function PractitionerCountCard({
   return (
     <Link href='/practitioner' className='block'>
       <div className='card flex items-center gap-4 p-4'>
-        <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#E6F7F7]'>
-          <Users className='text-[#13C2C2]' />
+        <div className='bg-accent flex h-[48px] w-[48px] items-center justify-center rounded-full'>
+          <Users className='text-turquoise-deep' />
         </div>
         <div>
           <div className='text-[24px] font-bold'>{isError ? '-' : count}</div>
-          <div className='text-[12px] text-gray-500'>
+          <div className='text-muted-foreground text-[12px]'>
             {t('active_practitioners')}
           </div>
         </div>
@@ -69,12 +69,14 @@ function BookedAppointmentsTodayCard({
 
   return (
     <div className='card flex items-center gap-4 p-4'>
-      <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#F0F5FF]'>
-        <CalendarDays className='text-[#2F54EB]' />
+      <div className='bg-muted flex h-[48px] w-[48px] items-center justify-center rounded-full'>
+        <CalendarDays className='text-charcoal-600' />
       </div>
       <div>
         <div className='text-[24px] font-bold'>-</div>
-        <div className='text-[12px] text-gray-500'>{t('booked_today')}</div>
+        <div className='text-muted-foreground text-[12px]'>
+          {t('booked_today')}
+        </div>
       </div>
     </div>
   );
@@ -84,12 +86,12 @@ function BookedAppointmentsTodayCard({
 function PendingApprovalsCard({ t }: Readonly<{ t: (key: string) => string }>) {
   return (
     <div className='card flex items-center gap-4 p-4'>
-      <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#FFF7E6]'>
-        <Clock className='text-[#FAAD14]' />
+      <div className='bg-warning-tint flex h-[48px] w-[48px] items-center justify-center rounded-full'>
+        <Clock className='text-warning-deep' />
       </div>
       <div>
         <div className='text-[24px] font-bold'>-</div>
-        <div className='text-[12px] text-gray-500'>
+        <div className='text-muted-foreground text-[12px]'>
           {t('pending_approvals')}
         </div>
       </div>
@@ -164,7 +166,7 @@ export default function HomeContentAdmin() {
       </div>
 
       <section className='p-4'>
-        <h2 className='mb-2 text-[14px] font-bold text-[#2C2F3599]'>
+        <h2 className='text-charcoal-700 mb-2 text-[14px] font-bold'>
           {t('service_management')}
         </h2>
         <div className='flex flex-col gap-4'>
@@ -188,7 +190,7 @@ export default function HomeContentAdmin() {
           <button
             type='button'
             onClick={handleRetryCount}
-            className='text-secondary w-full rounded-lg border border-gray-200 py-2 text-[12px]'
+            className='text-turquoise-deep border-border w-full rounded-lg border py-2 text-[12px]'
           >
             {t('load_practitioner_fail')}
           </button>

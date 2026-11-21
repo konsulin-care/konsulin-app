@@ -15,12 +15,12 @@ function StatCard({
 }: Readonly<{ label: string; value: number | string; isError: boolean }>) {
   return (
     <div className='card flex items-center gap-4 p-4'>
-      <div className='flex h-[48px] w-[48px] items-center justify-center rounded-full bg-[#E6F7F7]'>
-        <FlaskConical className='text-[#13C2C2]' />
+      <div className='bg-accent flex h-[48px] w-[48px] items-center justify-center rounded-full'>
+        <FlaskConical className='text-turquoise-deep' />
       </div>
       <div>
         <div className='text-[24px] font-bold'>{isError ? '-' : value}</div>
-        <div className='text-[12px] text-gray-500'>{label}</div>
+        <div className='text-muted-foreground text-[12px]'>{label}</div>
       </div>
     </div>
   );
@@ -74,7 +74,7 @@ export default function ResearcherDashboard() {
         <div className='px-4 pb-4'>
           <button
             type='button'
-            className='text-secondary w-full rounded-lg border border-gray-200 py-2 text-[12px]'
+            className='text-turquoise-deep border-border w-full rounded-lg border py-2 text-[12px]'
           >
             Failed to load research data. Tap to retry.
           </button>

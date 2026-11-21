@@ -20,21 +20,21 @@ function EmptyRecommendationState({
 }: Readonly<{ onStart: () => void; t: (key: string) => string }>) {
   return (
     <div className='p-4'>
-      <div className='rounded-2xl border border-dashed border-gray-300 bg-[#F9F9F9] p-6 text-center'>
+      <div className='border-border bg-muted rounded-2xl border border-dashed p-6 text-center'>
         <Sparkles
-          className='mx-auto mb-3 h-6 w-6 text-[var(--secondary)]'
+          className='text-turquoise-deep mx-auto mb-3 h-6 w-6'
           aria-hidden='true'
         />
-        <p className='mb-1 text-[14px] font-bold text-gray-800'>
+        <p className='text-charcoal-700 mb-1 text-[14px] font-bold'>
           {t('get_matched')}
         </p>
-        <p className='mb-4 text-[12px] text-gray-500'>
+        <p className='text-muted-foreground mb-4 text-[12px]'>
           {t('start_assessment')}
         </p>
         <Button
           variant='default'
           onClick={onStart}
-          className='bg-[var(--secondary)] text-white'
+          className='bg-primary text-primary-foreground'
         >
           {t('start_assessment')}
         </Button>
@@ -93,8 +93,8 @@ export default function HomeContentGuest() {
     ) {
       return (
         <div className='p-4'>
-          <div className='rounded-2xl border border-dashed border-gray-300 bg-[#F9F9F9] p-6 text-center'>
-            <p className='text-[12px] text-gray-500'>
+          <div className='border-border bg-muted rounded-2xl border border-dashed p-6 text-center'>
+            <p className='text-muted-foreground text-[12px]'>
               {isRecError ? t('no_recommendations') : t('no_practitioners')}
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function HomeContentGuest() {
       {/* TERTIARY: Quick Actions */}
       <div className='px-4 pb-4'>
         <ActionCard
-          icon={<Building2 className='h-5 w-5 text-gray-600' />}
+          icon={<Building2 className='text-muted-foreground h-5 w-5' />}
           title={t('show_clinics')}
           description={t('login_browse')}
           href='/clinic'
