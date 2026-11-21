@@ -124,6 +124,32 @@ describe('raw colour guard', () => {
     expect(scanSource(source)).toEqual([]);
   });
 
+  it('flags numbered utilities on token families with no numeric scale', () => {
+    const findings = scanSource(
+      'className="bg-primary-50 ring-primary-500 border-accent-200"'
+    );
+
+    expect(findings.map(finding => finding.match)).toEqual([
+      'bg-primary-50',
+      'ring-primary-500',
+      'border-accent-200'
+    ]);
+    expect(
+      findings.every(finding => finding.pattern === 'dead-scale-utility')
+    ).toBe(true);
+  });
+
+  it('accepts scaled families and unscaled token utilities', () => {
+    const source = [
+      'className="text-charcoal-700 bg-charcoal-100"',
+      'className="bg-secondary text-secondary-foreground"',
+      'className="ring-turquoise-deep border-turquoise-deep"',
+      'className="ring-2 ring-offset-2 bg-danger-tint text-warning-deep"'
+    ].join('\n');
+
+    expect(scanSource(source)).toEqual([]);
+  });
+
   it('sweeps every src source file outside tests, exclusions and the allowlist', () => {
     const report: string[] = [];
     const files = collectSourceFiles();

@@ -46,7 +46,7 @@ export default function ServiceCard({
       onTouchEnd={onTouchEnd}
       className={`w-full cursor-pointer rounded-lg border p-4 text-left ${
         isSelected
-          ? 'border-primary-500 ring-primary-500 bg-primary-50 ring-2'
+          ? 'border-turquoise-deep ring-turquoise-deep bg-accent text-accent-foreground ring-2'
           : 'border-border bg-card'
       } ${isActive ? '' : 'opacity-50'}`}
     >

@@ -31,6 +31,11 @@ export const RAW_COLOR_PATTERNS: RawColorPattern[] = [
   {
     name: 'status-utility',
     pattern: /\b(text|bg|border)-(red|amber|green|blue)-\d{2,3}\b/
+  },
+  {
+    name: 'dead-scale-utility',
+    pattern:
+      /\b(?:text|bg|border|ring|from|to|via|fill|stroke|outline|divide|placeholder)-(?:primary|secondary|accent|card|popover|muted|border|input|foreground|background|danger|warning|success|destructive|turquoise)-(?:50|100|200|300|400|500|600|700|800|900|950)\b/
   }
 ];
 

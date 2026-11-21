@@ -65,18 +65,19 @@ describe('ServiceCard', () => {
       <ServiceCard service={activeService} isSelected />
     );
     const button = container.querySelector('button');
-    expect(button).toHaveClass('border-primary-500');
+    expect(button).toHaveClass('border-turquoise-deep');
     expect(button).toHaveClass('ring-2');
-    expect(button).toHaveClass('ring-primary-500');
-    expect(button).toHaveClass('bg-primary-50');
+    expect(button).toHaveClass('ring-turquoise-deep');
+    expect(button).toHaveClass('bg-accent');
+    expect(button).toHaveClass('text-accent-foreground');
   });
 
   it('applies normal border when not selected', () => {
     const { container } = render(<ServiceCard service={activeService} />);
     const button = container.querySelector('button');
-    expect(button).toHaveClass('border-gray-200');
-    expect(button).toHaveClass('bg-white');
-    expect(button).not.toHaveClass('border-primary-500');
+    expect(button).toHaveClass('border-border');
+    expect(button).toHaveClass('bg-card');
+    expect(button).not.toHaveClass('border-turquoise-deep');
   });
 
   it('renders inactive service with opacity-50', () => {
