@@ -81,11 +81,11 @@ function DrawerFooterBlock({
   footerContent?: ReactNode;
 }>) {
   return (
-    <div className='sticky bottom-0 mt-auto border-t bg-white p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]'>
+    <div className='bg-card sticky bottom-0 mt-auto border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]'>
       <Button
         type='button'
-        variant='secondary'
-        className='w-full rounded-xl py-4 text-white'
+        size='lg'
+        className='w-full'
         disabled={ctaDisabled || ctaLoading}
         onClick={() => {
           // skipcq: JS-0098 - fire-and-forget CTA action

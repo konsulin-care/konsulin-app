@@ -95,6 +95,38 @@ describe('AppDrawer', () => {
     expect(onCtaClick).toHaveBeenCalledTimes(1);
   });
 
+  it('styles the CTA as a full-width primary action with large height', () => {
+    render(
+      <AppDrawer
+        open
+        onClose={vi.fn()}
+        ctaLabel='Submit'
+        onCtaClick={vi.fn()}
+      />
+    );
+
+    const cta = screen.getByRole('button', { name: 'Submit' });
+    expect(cta.className).toContain('bg-primary');
+    expect(cta.className).toContain('h-12');
+    expect(cta.className).not.toContain('text-white');
+    expect(cta.className).not.toContain('bg-secondary');
+  });
+
+  it('renders the sticky footer on the card surface', () => {
+    render(
+      <AppDrawer
+        open
+        onClose={vi.fn()}
+        ctaLabel='Submit'
+        onCtaClick={vi.fn()}
+      />
+    );
+
+    const footer = screen.getByRole('button', { name: 'Submit' }).parentElement;
+    expect(footer?.className).toContain('bg-card');
+    expect(footer?.className).not.toContain('bg-white');
+  });
+
   it('disables the CTA when ctaDisabled is true', () => {
     render(
       <AppDrawer

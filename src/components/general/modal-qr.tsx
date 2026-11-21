@@ -53,13 +53,7 @@ export default function ModalQr({ value, open, onOpenChange }: Props) {
         viewBox='0 0 256 256'
       />
       <DrawerFooter>
-        <Button
-          variant='secondary'
-          className='text-white'
-          onClick={handleCopyLink}
-        >
-          {t('qr.copy_link')}
-        </Button>
+        <Button onClick={handleCopyLink}>{t('qr.copy_link')}</Button>
       </DrawerFooter>
     </DrawerContent>
   );

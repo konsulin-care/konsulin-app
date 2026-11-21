@@ -92,6 +92,14 @@ describe('ModalQr', () => {
     expect(vi.mocked(writeClipboard)).toHaveBeenCalledWith('https://test.url');
   });
 
+  it('styles the Copy Link button as a primary action', () => {
+    render(<ModalQr value='https://example.com' open onOpenChange={noop} />);
+    const copy = screen.getByRole('button', { name: 'Copy Link' });
+    expect(copy.className).toContain('bg-primary');
+    expect(copy.className).not.toContain('text-white');
+    expect(copy.className).not.toContain('bg-secondary');
+  });
+
   it('shows success toast on clipboard copy', async () => {
     render(<ModalQr value='https://test.url' open onOpenChange={noop} />);
     const user = userEvent.setup();
