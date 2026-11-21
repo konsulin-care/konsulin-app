@@ -326,15 +326,15 @@ export default function PractitionerAvailabilityEditor({
   return (
     <div className='flex h-full flex-col pb-24 sm:pb-28 md:pb-32'>
       {/* Header */}
-      <div className='border-b border-gray-200 px-6 py-4'>
-        <h2 className='text-xl font-bold text-gray-900'>Edit Availability</h2>
-        <p className='mt-1 text-sm text-gray-600'>
+      <div className='border-border border-b px-6 py-4'>
+        <h2 className='text-foreground text-xl font-bold'>Edit Availability</h2>
+        <p className='text-muted-foreground mt-1 text-sm'>
           Configure your weekly availability across all practice locations
         </p>
       </div>
 
       {/* Day Selector Navigation */}
-      <div className='border-b border-gray-200 px-6 py-4'>
+      <div className='border-border border-b px-6 py-4'>
         <DaySelectorNavigation
           selectedDay={selectedDay}
           weeklyAvailability={weeklyAvailability}

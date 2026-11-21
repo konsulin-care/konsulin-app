@@ -26,22 +26,24 @@ export default function PractitionerWorkingLocationCard({
   return (
     <Link
       href={`/practitioner/availability?id=${practitionerRoleId}`}
-      className='card flex flex-col gap-3 rounded-lg bg-[#F9F9F9] p-4'
+      className='card bg-muted flex flex-col gap-3 rounded-lg p-4'
     >
-      <div className='text-[14px] font-bold text-black'>{locationName}</div>
+      <div className='text-foreground text-[14px] font-bold'>
+        {locationName}
+      </div>
 
       <div className='flex flex-wrap gap-1'>
         {workingDays.map(day => (
           <Badge
             key={day}
-            className='bg-[#E1E1E1] px-2 py-[2px] text-[11px] font-normal text-black'
+            className='bg-muted text-charcoal-700 px-2 py-[2px] text-xs font-normal'
           >
             {day}
           </Badge>
         ))}
       </div>
 
-      <div className='text-[12px] text-gray-500'>
+      <div className='text-muted-foreground text-xs'>
         {healthcareServiceNames.length > 0
           ? healthcareServiceNames.join(', ')
           : 'No healthcare service registered'}

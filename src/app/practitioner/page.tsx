@@ -117,7 +117,7 @@ export default function Practitioner() {
 
       if (workingLocations.length === 0) {
         return (
-          <div className='flex min-h-[30vh] items-center justify-center text-sm text-gray-500'>
+          <div className='text-muted-foreground flex min-h-[30vh] items-center justify-center text-sm'>
             {t('practitioner.no_working_locations')}
           </div>
         );
@@ -161,7 +161,7 @@ export default function Practitioner() {
   return (
     <>
       <PageHeader pageIndicator={pageTitle} />
-      <div className='mt-[-24px] flex grow flex-col rounded-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col rounded-[16px] p-4'>
         {id ? renderDetail() : renderListing()}
       </div>
     </>

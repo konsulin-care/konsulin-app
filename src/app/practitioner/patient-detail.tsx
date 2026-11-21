@@ -94,7 +94,7 @@ function PractitionerIdentity({
     );
   } else {
     avatar = (
-      <div className='flex h-full w-full items-center justify-center rounded-full bg-[#13c2c2] text-sm font-bold text-white'>
+      <div className='bg-turquoise-deep text-primary-foreground flex h-full w-full items-center justify-center rounded-full text-sm font-bold'>
         {initials}
       </div>
     );
@@ -106,19 +106,19 @@ function PractitionerIdentity({
         {avatar}
       </div>
       <div className='min-w-0 flex-1'>
-        <h1 className='text-xl font-bold text-black'>{name}</h1>
+        <h1 className='text-foreground text-xl font-bold'>{name}</h1>
         {specialties.length > 0 && (
           <div className='mt-1 flex flex-wrap items-center gap-1'>
             {visibleBadges.map(s => (
               <Badge
                 key={s}
-                className='bg-[#E1E1E1] px-2 py-[2px] text-[11px] font-normal text-black'
+                className='bg-muted text-charcoal-700 px-2 py-[2px] text-xs font-normal'
               >
                 {s}
               </Badge>
             ))}
             {overflowCount > 0 && (
-              <span className='text-[11px] text-gray-500'>
+              <span className='text-muted-foreground text-xs'>
                 ({overflowCount}+)
               </span>
             )}
@@ -152,10 +152,12 @@ function ClinicLocationSection({
   if (!orgOrLocation) return null;
   return (
     <div>
-      <div className='text-sm text-gray-500'>Location</div>
-      <div className='text-sm font-medium text-black'>{orgOrLocation.name}</div>
+      <div className='text-muted-foreground text-sm'>Location</div>
+      <div className='text-foreground text-sm font-medium'>
+        {orgOrLocation.name}
+      </div>
       {address && (
-        <div className='mt-1 text-xs text-gray-500'>
+        <div className='text-muted-foreground mt-1 text-xs'>
           {formatAddress(address)}
         </div>
       )}
@@ -181,7 +183,7 @@ function HealthcareServicesSection({
   const t = useTranslations('common');
   return (
     <div>
-      <div className='mb-2 text-sm font-bold text-black'>
+      <div className='text-foreground mb-2 text-sm font-bold'>
         {t('practitioner.healthcare_services')}
       </div>
       {activeServices.length > 0 ? (
@@ -199,7 +201,7 @@ function HealthcareServicesSection({
           ))}
         </div>
       ) : (
-        <div className='text-sm text-gray-500'>No services listed</div>
+        <div className='text-muted-foreground text-sm'>No services listed</div>
       )}
     </div>
   );
