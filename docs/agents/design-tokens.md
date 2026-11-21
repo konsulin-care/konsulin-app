@@ -14,6 +14,11 @@ Design language: Swiss Modernism 2.0, softened. Grid, hairlines, one accent,
 Source of truth: the `@theme` block in `@/src/styles/globals.css`.
 Theme block overview: `@docs/agents/design-tokens-theme.md`.
 
+Non-CSS consumers (the MUI renderer theme, the SuperTokens sign-in style, the
+top loader) read hex from `@src/styles/tokens.ts`, kept in sync with
+`globals.css` by `tokens.test.ts`. Button `secondary` is a bordered surface
+button, never a turquoise fill.
+
 # Tokens
 
 Contrast is against `paper`. Text needs 4.5, controls and icons need 3.0.

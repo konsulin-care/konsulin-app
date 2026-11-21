@@ -16,11 +16,14 @@ idle (speed-dial)**. Selection mode suppresses all other modes.
 
 # Three Modes
 
-| Mode       | Dispatch                 | UI                    |
-| ---------- | ------------------------ | --------------------- |
-| Selection  | `SET_SELECTION`          | Red pill "Delete (N)" |
-| Action     | `SET_ACTION`             | Labeled teal button   |
-| Speed-dial | none (idle) / `SET_MENU` | `+` icon → role pills |
+| Mode       | Dispatch                 | UI                                       |
+| ---------- | ------------------------ | ---------------------------------------- |
+| Selection  | `SET_SELECTION`          | Red pill "Delete (N)"                    |
+| Action     | `SET_ACTION`             | Labeled turquoise button, charcoal label |
+| Speed-dial | none (idle) / `SET_MENU` | `+` icon → role pills                    |
+
+The speed-dial toggle label comes from `page-header.open_menu` /
+`page-header.close_menu`.
 
 # Wiring Action State
 
