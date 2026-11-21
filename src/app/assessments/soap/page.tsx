@@ -35,7 +35,7 @@ export default function Soap() {
       <>
         <PageHeader pageIndicator='SOAP Report' />
 
-        <div className='mt-[-24px] rounded-[16px] bg-white'>
+        <div className='bg-card mt-[-24px] rounded-[16px]'>
           {isQuestionnaireLoading || isPatientListLoading ? (
             <div className='flex min-h-screen min-w-full items-center justify-center'>
               <LoadingSpinnerIcon

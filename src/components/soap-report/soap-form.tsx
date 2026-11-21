@@ -241,7 +241,7 @@ export default function SoapForm({
         {mode !== 'view' && (
           <Button
             disabled={isSubmitSoapLoading || requiredItemEmpty > 0}
-            className='bg-secondary w-full text-white'
+            className='bg-primary text-primary-foreground w-full'
             onClick={() => {
               const isValid = handleValidation();
               if (isValid) {
@@ -259,7 +259,7 @@ export default function SoapForm({
 
         {mode === 'view' && (
           <Button
-            className='bg-secondary w-full text-white'
+            className='bg-primary text-primary-foreground w-full'
             disabled={!isAuthorSame}
             onClick={() => {
               const queryParams = new URLSearchParams({

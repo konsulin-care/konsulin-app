@@ -43,7 +43,7 @@ export default function ObjectiveFindingModal({
   return (
     <Drawer>
       <DrawerTrigger className='flex' asChild>
-        <Button className='bg-secondary rounded-xl text-[14px] text-white'>
+        <Button className='bg-primary text-primary-foreground rounded-xl text-[14px]'>
           Add Test
         </Button>
       </DrawerTrigger>
@@ -53,7 +53,7 @@ export default function ObjectiveFindingModal({
             key={item.id}
             className='card my-4 flex items-center justify-evenly border'
           >
-            <div className='mr-2 h-[40px] w-[40px] rounded-full bg-[#F8F8F8] p-2'>
+            <div className='bg-muted mr-2 h-[40px] w-[40px] rounded-full p-2'>
               <Image
                 className='h-[24px] w-[24px] object-cover'
                 src={'/images/note.svg'}
@@ -72,7 +72,7 @@ export default function ObjectiveFindingModal({
               }}
             >
               {selectedTest[index] ? (
-                <SquareCheckIcon fill='#13c2c2' color='white' />
+                <SquareCheckIcon className='text-turquoise-deep' />
               ) : (
                 <SquareIcon color='hsla(240,6%,83%,1)' />
               )}
@@ -80,10 +80,10 @@ export default function ObjectiveFindingModal({
           </div>
         ))}
         <DrawerClose>
-          <Button className='bg-secondary w-full rounded-xl p-4 text-[14px] text-white'>
+          <Button className='bg-primary text-primary-foreground w-full rounded-xl p-4 text-[14px]'>
             Save Test
           </Button>
-          <Button className='text-secondary w-full rounded-xl bg-white p-4 text-[14px]'>
+          <Button className='text-turquoise-deep bg-card w-full rounded-xl p-4 text-[14px]'>
             Close
           </Button>
         </DrawerClose>

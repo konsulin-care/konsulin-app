@@ -44,11 +44,8 @@ type DropdownProps = {
 function TriggerContent({ label }: { readonly label: React.ReactNode }) {
   return (
     <div className='flex w-full items-center justify-between'>
-      <span className='text-sm font-normal text-[#2C2F35]'>{label}</span>
-      <ChevronDown
-        className='ml-2 h-4 w-4 shrink-0 opacity-50'
-        color='#18AAA1'
-      />
+      <span className='text-foreground text-sm font-normal'>{label}</span>
+      <ChevronDown className='text-turquoise-deep ml-2 h-4 w-4 shrink-0 opacity-50' />
     </div>
   );
 }
@@ -79,15 +76,13 @@ function PatientOptionItem({
     <DropdownItem
       onSelect={() => onSelect(item)}
       className={`w-full cursor-pointer ${
-        selected ? 'bg-secondary text-white' : ''
+        selected ? 'bg-accent text-accent-foreground' : ''
       }`}
     >
       <div className='flex w-full items-center justify-start p-1'>
         <UsersIcon color='hsla(220,9%,19%,0.4)' className='mr-[10px]' />
         <span>{item.patientName}</span>
-        {selected && (
-          <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
-        )}
+        {selected && <Check className='ml-2 h-4 w-4' />}
       </div>
     </DropdownItem>
   );
@@ -201,6 +196,7 @@ export default function Participant({
   const dialogContent = (
     <div className='space-y-4'>
       <div className='flex flex-col gap-2'>
+        {' '}
         <Input
           type='email'
           placeholder={t('email_placeholder')}
@@ -209,10 +205,10 @@ export default function Participant({
           onChange={e => setEmail(e.target.value)}
           disabled={isSubmitting}
         />
-        {error && <div className='text-sm text-red-500'>{error}</div>}
+        {error && <div className='text-danger text-sm'>{error}</div>}
       </div>
       <Button
-        className='bg-secondary w-full text-white'
+        className='bg-primary text-primary-foreground w-full'
         onClick={() => {
           handleCreatePatient().catch(console.error);
         }}
