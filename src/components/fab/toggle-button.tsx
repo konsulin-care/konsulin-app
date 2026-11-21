@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -21,12 +22,15 @@ export function FabToggleButton({
   onToggle,
   disabled
 }: FabToggleButtonProps) {
+  const t = useTranslations('page-header');
+
   return (
     <button
       type='button'
       onClick={onToggle}
       disabled={disabled}
-      aria-label={isOpen ? undefined : 'Open menu'}
+      aria-label={isOpen ? t('close_menu') : t('open_menu')}
+      aria-expanded={isOpen}
       className={cn(
         'bg-secondary text-secondary-foreground border-turquoise-deep flex h-14 w-14 items-center justify-center rounded-full border shadow-lg transition-all duration-300',
         isOpen ? 'rotate-45' : '',

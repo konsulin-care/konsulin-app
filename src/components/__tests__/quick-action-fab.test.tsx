@@ -30,6 +30,8 @@ vi.mock('@/lib/indexeddb', () => ({
 vi.mock('@/i18n', () => ({
   useTranslations: vi.fn(() => (key: string) => {
     const translations: Record<string, string> = {
+      open_menu: 'Open menu',
+      close_menu: 'Close menu',
       pill_register_survey: 'Register Survey',
       pill_my_survey: 'My Survey',
       pill_self_checkup: 'Self Checkup',
@@ -184,6 +186,19 @@ describe('QuickActionFab', () => {
   it('has accessible label on collapsed button', () => {
     const { container } = renderFab();
     expect(getFabButton(container)).toHaveAttribute('aria-label', 'Open menu');
+  });
+
+  it('exposes an expanded toggle with a close label when open', () => {
+    const { container } = renderFab();
+    const fabButton = getFabButton(container);
+    expect(fabButton).toHaveAccessibleName('Open menu');
+    expect(fabButton).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(fabButton);
+
+    const openToggle = getFabButton(container);
+    expect(openToggle).toHaveAccessibleName('Close menu');
+    expect(openToggle).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('shows action mode button with label when SET_ACTION dispatched', () => {

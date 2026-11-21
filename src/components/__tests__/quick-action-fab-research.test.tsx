@@ -43,6 +43,8 @@ vi.mock('@/services/api', () => ({
 vi.mock('@/i18n', () => ({
   useTranslations: vi.fn(() => (key: string) => {
     const translations: Record<string, string> = {
+      open_menu: 'Open menu',
+      close_menu: 'Close menu',
       pill_register_survey: 'Register Survey',
       pill_my_survey: 'My Survey'
     };
