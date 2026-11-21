@@ -63,6 +63,24 @@ describe('DrawerContent', () => {
     expect(innerWrapper).toHaveClass('overflow-y-auto');
   });
 
+  it('uses the card surface and charcoal overlay tokens', () => {
+    render(
+      <Drawer open>
+        <DrawerContent>
+          <DrawerTitle>Token Title</DrawerTitle>
+        </DrawerContent>
+      </Drawer>
+    );
+
+    const drawerEl = document.querySelector('[data-vaul-drawer]');
+    expect(drawerEl).toHaveClass('bg-card');
+    expect(drawerEl).not.toHaveClass('bg-white');
+
+    const overlayEl = document.querySelector('[data-vaul-overlay]');
+    expect(overlayEl).toHaveClass('bg-charcoal-900/80');
+    expect(overlayEl).not.toHaveClass('bg-black/80');
+  });
+
   it('portals a nested Popover content into the drawer content node', async () => {
     render(
       <Drawer open>
