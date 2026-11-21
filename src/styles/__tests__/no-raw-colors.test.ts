@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -9,138 +9,58 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const repoRoot = resolve(__dirname, '../../..');
 
+interface AllowlistEntry {
+  path: string;
+  reason: string;
+}
+
 /**
- * Repo-relative paths swept by the design-token migration. Each sweep task
- * appends its owned files here, sorted alphabetically.
+ * Files that legitimately define raw colours or legacy aliases (token palette
+ * and colour-derivation helpers). Every entry must exist and be justified.
  */
-const SWEPT: string[] = [
-  'src/app/assessments/assessment-card.tsx',
-  'src/app/assessments/assessment-drawer.tsx',
-  'src/app/assessments/assessments-list.tsx',
-  'src/app/assessments/browse-instruments-section.tsx',
-  'src/app/assessments/error.tsx',
-  'src/app/assessments/featured-rail.tsx',
-  'src/app/assessments/popular-assessments-section.tsx',
-  'src/app/assessments/soap/objective-finding-modal.tsx',
-  'src/app/assessments/soap/page.tsx',
-  'src/app/assessments/soap/participant.tsx',
-  'src/app/clinic/clinic-filter.tsx',
-  'src/app/clinic/clinic-list.tsx',
-  'src/app/home-content-admin.tsx',
-  'src/app/home-content-guest.tsx',
-  'src/app/home-content-patient.tsx',
-  'src/app/home-content.tsx',
-  'src/app/layout.tsx',
-  'src/app/page.tsx',
-  'src/app/practitioner-dashboard.tsx',
-  'src/app/practitioner/admin-listing.tsx',
-  'src/app/practitioner/appointment-summary.tsx',
-  'src/app/practitioner/availability/page.tsx',
-  'src/app/practitioner/booking-calendar.tsx',
-  'src/app/practitioner/booking-form-section.tsx',
-  'src/app/practitioner/page.tsx',
-  'src/app/practitioner/patient-detail.tsx',
-  'src/app/practitioner/practitioner-availability-editor.tsx',
-  'src/app/practitioner/practitioner-filter.tsx',
-  'src/app/practitioner/practitioner-working-location-card.tsx',
-  'src/app/practitioner/service-form-drawer.tsx',
-  'src/app/practitioner/services-tab.tsx',
-  'src/app/practitioner/time-slots-section.tsx',
-  'src/app/profile/address-edit-drawer.tsx',
-  'src/app/profile/contact-edit-drawer.tsx',
-  'src/app/profile/name-edit-drawer.tsx',
-  'src/app/profile/page.tsx',
-  'src/app/profile/personal-info-edit-drawer.tsx',
-  'src/app/profile/profile-display.tsx',
-  'src/app/profile/profile-identity.tsx',
-  'src/app/recommendation/page.tsx',
-  'src/app/recommendation/recommendation-card.tsx',
-  'src/app/record/edit/page.tsx',
-  'src/app/record/record-detail.tsx',
-  'src/app/record/record-edit.tsx',
-  'src/app/record/record-filter.tsx',
-  'src/app/record/record-journal.tsx',
-  'src/app/record/record-timeline.tsx',
-  'src/app/record/report-payment-drawer.tsx',
-  'src/app/researcher-dashboard.tsx',
-  'src/app/result/result-view.tsx',
-  'src/app/schedule/patient-schedule.tsx',
-  'src/app/schedule/schedule-detail.tsx',
-  'src/app/schedule/session-filter.tsx',
-  'src/components/admin/admin-key-gate.tsx',
-  'src/components/admin/admin-request-builder.tsx',
-  'src/components/admin/admin-shell.tsx',
-  'src/components/admin/endpoint-url-input.tsx',
-  'src/components/assessment/score-display.tsx',
-  'src/components/availability/availability-editor.tsx',
-  'src/components/availability/day-selector-navigation.tsx',
-  'src/components/availability/floating-save-button.tsx',
-  'src/components/availability/organization-card.tsx',
-  'src/components/availability/time-range-input.tsx',
-  'src/components/clinic/clinic-practitioners-view.tsx',
-  'src/components/general/action-card.tsx',
-  'src/components/general/avatar.tsx',
-  'src/components/general/card-stack-container.tsx',
-  'src/components/general/fhir-forms-renderer.tsx',
-  'src/components/general/home/guest-onboarding-section.tsx',
-  'src/components/general/home/interview/complaint-search.tsx',
-  'src/components/general/home/interview/emergency-banner.tsx',
-  'src/components/general/home/interview/interview-accordion.tsx',
-  'src/components/general/home/interview/interview-flow.tsx',
-  'src/components/general/home/recommendation-card-stack.tsx',
-  'src/components/general/home/recommendation-card.tsx',
-  'src/components/general/input.tsx',
-  'src/components/general/loading-section.tsx',
-  'src/components/general/profile-completeness-modal.tsx',
-  'src/components/icons/filter-icon.tsx',
-  'src/components/icons/house-icon.tsx',
-  'src/components/icons/literature-icon.tsx',
-  'src/components/icons/loading-spinner-icon.tsx',
-  'src/components/icons/note-icon.tsx',
-  'src/components/icons/office-icon.tsx',
-  'src/components/icons/user-icon.tsx',
-  'src/components/journal/calender-journal.tsx',
-  'src/components/journal/create.tsx',
-  'src/components/journal/edit.tsx',
-  'src/components/login/input.tsx',
-  'src/components/practitioner/practitioner-card.tsx',
-  'src/components/practitioner/service-card.tsx',
-  'src/components/profile/collapsible.tsx',
-  'src/components/profile/completeness-banner.tsx',
-  'src/components/profile/dob-input.tsx',
-  'src/components/profile/dropdown-profile.tsx',
-  'src/components/profile/information-detail.tsx',
-  'src/components/profile/medal-collection.tsx',
-  'src/components/profile/photo-uploader.tsx',
-  'src/components/profile/ProfileActions.tsx',
-  'src/components/profile/tags.tsx',
-  'src/components/register-practitioner-drawer/drawer-content.tsx',
-  'src/components/role-avatar-popup-header.tsx',
-  'src/components/role-switch-dropdown.tsx',
-  'src/components/schedule/session-card.tsx',
-  'src/components/schedule/upcoming-session.tsx',
-  'src/components/screening-drawer.tsx',
-  'src/components/shared/combobox.tsx',
-  'src/components/shared/date-picker-button.tsx',
-  'src/components/shared/date-preset-filter.tsx',
-  'src/components/shared/filter-drawer-trigger.tsx',
-  'src/components/shared/journal-response-fields.tsx',
-  'src/components/shared/journal-submit-button.tsx',
-  'src/components/shared/location-form-fields.tsx',
-  'src/components/shared/location-hours-editor.tsx',
-  'src/components/shared/questionnaire-upload-drawer.tsx',
-  'src/components/shared/questionnaire-uploader.tsx',
-  'src/components/shared/record-card.tsx',
-  'src/components/shared/schedule-page-shell.tsx',
-  'src/components/soap-report/soap-form.tsx',
-  'src/components/stacked-circles.tsx',
-  'src/components/ui/circular-progress.tsx',
-  'src/components/ui/slider.tsx',
-  'src/services/hooks/usePractitionerDashboard.ts',
-  'src/styles/custom-soap-form.scss',
-  'src/styles/phone-input.css',
-  'src/utils/helper.tsx'
+const ALLOWLIST: AllowlistEntry[] = [
+  {
+    path: 'src/styles/tokens.ts',
+    reason: 'Defines the canonical design-token palette and raw colour values.'
+  },
+  {
+    path: 'src/utils/location-color.ts',
+    reason: 'Maps location identifiers to design-token colour values.'
+  },
+  {
+    path: 'src/utils/gradientAvatar.ts',
+    reason: 'Generates avatar gradients from token colour values.'
+  }
 ];
+
+const SOURCE_ROOT = 'src';
+
+/** Directories whose files are out of scope for the token sweep. */
+const EXCLUDED_DIRS: string[] = [
+  'src/app/research/',
+  'src/app/report/',
+  'src/components/research/'
+];
+
+/**
+ * Lists every TypeScript source file under src, excluding tests, the research
+ * and report directories, and any path already allowlisted.
+ *
+ * @returns Sorted repo-relative paths of the files the guard must scan.
+ */
+function collectSourceFiles(): string[] {
+  const allowlisted = new Set(ALLOWLIST.map(entry => entry.path));
+
+  return readdirSync(resolve(repoRoot, SOURCE_ROOT), { recursive: true })
+    .map(entry => entry.toString().replaceAll('\\', '/'))
+    .filter(name => name.endsWith('.ts') || name.endsWith('.tsx'))
+    .map(name => `${SOURCE_ROOT}/${name}`)
+    .filter(name => !name.includes('/__tests__/'))
+    .filter(name => !/\.test\.[^.]+$/.test(name))
+    .filter(name => !EXCLUDED_DIRS.some(dir => name.startsWith(dir)))
+    .filter(name => !allowlisted.has(name))
+    .sort();
+}
 
 describe('raw colour guard', () => {
   it('flags every guarded colour and utility form', () => {
@@ -204,10 +124,13 @@ describe('raw colour guard', () => {
     expect(scanSource(source)).toEqual([]);
   });
 
-  it('sweeps every file in SWEPT and reports file, line and match', () => {
+  it('sweeps every src source file outside tests, exclusions and the allowlist', () => {
     const report: string[] = [];
+    const files = collectSourceFiles();
 
-    for (const relativePath of SWEPT) {
+    expect(files.length).toBeGreaterThan(0);
+
+    for (const relativePath of files) {
       const text = readFileSync(resolve(repoRoot, relativePath), 'utf8');
       for (const finding of scanSource(text)) {
         report.push(`${relativePath}:${finding.line}:${finding.match}`);
@@ -215,6 +138,19 @@ describe('raw colour guard', () => {
     }
 
     expect(report, report.join('\n')).toEqual([]);
+  });
+
+  it('keeps every allowlist entry pointing to an existing, justified file', () => {
+    for (const entry of ALLOWLIST) {
+      expect(
+        existsSync(resolve(repoRoot, entry.path)),
+        `${entry.path} must exist`
+      ).toBe(true);
+      expect(
+        entry.reason.trim().length,
+        `${entry.path} needs a non-empty reason`
+      ).toBeGreaterThan(0);
+    }
   });
 });
 
