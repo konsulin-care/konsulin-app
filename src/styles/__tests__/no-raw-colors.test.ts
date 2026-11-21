@@ -16,7 +16,10 @@ const repoRoot = resolve(__dirname, '../../..');
 const SWEPT: string[] = [
   'src/components/icons/filter-icon.tsx',
   'src/components/icons/house-icon.tsx',
-  'src/components/icons/literature-icon.tsx'
+  'src/components/icons/literature-icon.tsx',
+  'src/components/icons/note-icon.tsx',
+  'src/components/icons/office-icon.tsx',
+  'src/components/icons/user-icon.tsx'
 ];
 
 describe('raw colour guard', () => {
