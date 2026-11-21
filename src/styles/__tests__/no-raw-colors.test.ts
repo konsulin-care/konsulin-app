@@ -15,6 +15,7 @@ const repoRoot = resolve(__dirname, '../../..');
  */
 const SWEPT: string[] = [
   'src/app/practitioner/practitioner-filter.tsx',
+  'src/components/general/avatar.tsx',
   'src/components/icons/filter-icon.tsx',
   'src/components/icons/house-icon.tsx',
   'src/components/icons/literature-icon.tsx',
@@ -26,7 +27,8 @@ const SWEPT: string[] = [
   'src/components/shared/filter-drawer-trigger.tsx',
   'src/components/stacked-circles.tsx',
   'src/components/ui/circular-progress.tsx',
-  'src/components/ui/slider.tsx'
+  'src/components/ui/slider.tsx',
+  'src/utils/helper.tsx'
 ];
 
 describe('raw colour guard', () => {

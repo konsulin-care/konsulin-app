@@ -1,5 +1,6 @@
 import { typeMappings } from '@/constants/record';
 import { MergedAppointment, MergedSession } from '@/types/appointment';
+import { AVATAR_FALLBACK_COLOR } from '@/utils/gradientAvatar';
 import { parse } from 'date-fns';
 import {
   Address,
@@ -225,7 +226,7 @@ export const generateAvatarPlaceholder = ({
 
   initials = initials.toUpperCase();
 
-  const backgroundColor = seed ? '#13c2c2' : null;
+  const backgroundColor = seed ? AVATAR_FALLBACK_COLOR : null;
 
   return { initials: initials || null, backgroundColor, seed };
 };

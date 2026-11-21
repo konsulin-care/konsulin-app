@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, unicorn/number-literal-case, unicorn/prefer-https */
-const TEAL = '#13c2c2';
+/**
+ * Avatar fallback colour. This is data (a seeded SVG fill), not a theme token,
+ * so it intentionally stays a literal hex value.
+ */
+export const AVATAR_FALLBACK_COLOR = '#13c2c2';
+
+const TEAL = AVATAR_FALLBACK_COLOR;
 const PARTNER_COLORS = ['#2c2f35', '#5E81AC', '#08979C'] as const;
 
 const DIRECTIONS = [

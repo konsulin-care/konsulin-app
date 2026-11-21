@@ -1,7 +1,10 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { generateAvatarSvgDataUrl } from '@/utils/gradientAvatar';
+import {
+  AVATAR_FALLBACK_COLOR,
+  generateAvatarSvgDataUrl
+} from '@/utils/gradientAvatar';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 
@@ -59,7 +62,7 @@ export default function Avatar({
         'flex items-center justify-center rounded-full font-bold text-white',
         className
       )}
-      style={{ backgroundColor: '#13c2c2', height, width }}
+      style={{ backgroundColor: AVATAR_FALLBACK_COLOR, height, width }}
     >
       {initials}
     </div>
