@@ -28,26 +28,32 @@ vi.mock('@/lib/indexeddb', () => ({
   dbGet: vi.fn().mockResolvedValue(null)
 }));
 vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      open_menu: 'Open menu',
-      close_menu: 'Close menu',
-      pill_register_survey: 'Register Survey',
-      pill_my_survey: 'My Survey',
-      pill_self_checkup: 'Self Checkup',
-      pill_write_journal: 'Write Journal',
-      pill_view_schedule: 'View Schedule',
-      pill_join_research: 'Join Research',
-      pill_get_recommendation: 'Get Recommendation',
-      pill_set_availability: 'Set Availability',
-      pill_health_screening: 'Health Screening',
-      pill_soap: 'S.O.A.P.',
-      pill_register_practitioner: 'Register Practitioner',
-      pill_add_location: 'Add Location',
-      pill_add_assessments: 'Add Assessments'
-    };
-    return translations[key] ?? key;
-  })
+  useTranslations: vi.fn(
+    () => (key: string, values?: Record<string, unknown>) => {
+      const translations: Record<string, string> = {
+        open_menu: 'Open menu',
+        close_menu: 'Close menu',
+        delete_count: 'Delete ({count})',
+        pill_register_survey: 'Register Survey',
+        pill_my_survey: 'My Survey',
+        pill_self_checkup: 'Self Checkup',
+        pill_write_journal: 'Write Journal',
+        pill_view_schedule: 'View Schedule',
+        pill_join_research: 'Join Research',
+        pill_get_recommendation: 'Get Recommendation',
+        pill_set_availability: 'Set Availability',
+        pill_health_screening: 'Health Screening',
+        pill_soap: 'S.O.A.P.',
+        pill_register_practitioner: 'Register Practitioner',
+        pill_add_location: 'Add Location',
+        pill_add_assessments: 'Add Assessments'
+      };
+      return (translations[key] ?? key).replace(
+        '{count}',
+        String(values?.count ?? '')
+      );
+    }
+  )
 }));
 vi.mock('@/services/api', () => ({ getAPI: vi.fn() }));
 vi.mock('react-toastify', () => ({

@@ -9,12 +9,18 @@ import { FabToggleButton } from '../toggle-button';
 import { FabToggleShell } from '../toggle-shell';
 
 vi.mock('@/i18n', () => ({
-  useTranslations: vi.fn(() => (key: string) => {
-    const translations: Record<string, string> = {
-      close_menu: 'Close menu'
-    };
-    return translations[key] ?? key;
-  })
+  useTranslations: vi.fn(
+    () => (key: string, values?: Record<string, unknown>) => {
+      const translations: Record<string, string> = {
+        close_menu: 'Close menu',
+        delete_count: 'Delete ({count})'
+      };
+      return (translations[key] ?? key).replace(
+        '{count}',
+        String(values?.count ?? '')
+      );
+    }
+  )
 }));
 
 describe('FabOverlay', () => {
