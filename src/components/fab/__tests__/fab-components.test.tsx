@@ -231,6 +231,21 @@ describe('FabCustomMenu', () => {
     );
     expect(getByText('Edit')).toBeInTheDocument();
   });
+
+  it('uses the card surface palette for pills', () => {
+    const actions = [
+      { label: 'Edit', icon: () => null, onAction: vi.fn() }
+    ] as const;
+    const { container } = render(
+      <FabCustomMenu actions={actions} onAction={vi.fn()} />
+    );
+    const button = container.querySelector('button');
+    expect(button?.className).toContain('bg-card');
+    expect(button?.className).toContain('text-foreground');
+    expect(button?.className).toContain('border-border');
+    expect(button?.className).toContain('min-h-11');
+    expect(button?.className).not.toContain('bg-white');
+  });
 });
 
 describe('FabSpeedDial', () => {
@@ -248,6 +263,27 @@ describe('FabSpeedDial', () => {
       <FabSpeedDial pills={pills} onPillClick={vi.fn()} />
     );
     expect(getByText('Checkup')).toBeInTheDocument();
+  });
+
+  it('uses the card surface palette for pills', () => {
+    const pills = [
+      {
+        label: 'Checkup',
+        icon: () => null,
+        delay: 0,
+        action: 'navigate' as const,
+        href: '/checkup'
+      }
+    ];
+    const { container } = render(
+      <FabSpeedDial pills={pills} onPillClick={vi.fn()} />
+    );
+    const button = container.querySelector('button');
+    expect(button?.className).toContain('bg-card');
+    expect(button?.className).toContain('text-foreground');
+    expect(button?.className).toContain('border-border');
+    expect(button?.className).toContain('min-h-11');
+    expect(button?.className).not.toContain('bg-white');
   });
 });
 
