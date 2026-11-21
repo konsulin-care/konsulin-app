@@ -47,6 +47,7 @@ vi.mock('../auth-helpers', () => ({
   resolvePostLoginRedirect: vi.fn(() => '/')
 }));
 
+import { TOKENS } from '@/styles/tokens';
 import Passwordless from 'supertokens-auth-react/recipe/passwordless';
 import ThirdParty from 'supertokens-auth-react/recipe/thirdparty';
 import type { Mock } from 'vitest';
@@ -94,5 +95,20 @@ describe('frontendConfig', () => {
     const initMock = Passwordless.init as Mock;
     const callArgs = initMock.mock.calls[0]?.[0] as PasswordlessInitArg;
     expect(typeof callArgs?.onHandleEvent).toBe('function');
+  });
+
+  it('styles the submit button with charcoal background and paper text', () => {
+    const config = frontendConfig();
+    const style = config.style ?? '';
+    expect(style).toContain(`background-color: ${TOKENS.charcoal900};`);
+    expect(style).toContain(`color: ${TOKENS.paper};`);
+  });
+
+  it('styles the header title and spinner with deep turquoise tokens', () => {
+    const config = frontendConfig();
+    const style = config.style ?? '';
+    expect(style).toContain(`color: ${TOKENS.charcoal900};`);
+    expect(style).toContain(`stroke: ${TOKENS.turquoiseDeep} !important;`);
+    expect(style).not.toContain('#0ABDC3');
   });
 });

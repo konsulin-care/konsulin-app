@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-conversion, @typescript-eslint/no-misused-promises, no-console */
 import { STORES, dbSet } from '@/lib/indexeddb';
+import { TOKENS } from '@/styles/tokens';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 import { SuperTokensConfig } from 'supertokens-auth-react/lib/build/types';
@@ -57,7 +58,8 @@ export const frontendConfig = (
         }
         /* Sign In button (primary submit) */
         [data-supertokens~=button]:not([data-supertokens~=providerButton]) {
-            background-color: #0ABDC3;
+            background-color: ${TOKENS.charcoal900};
+            color: ${TOKENS.paper};
             border: 0px;
         }
         /* Make the "provider" buttons (our Email / WhatsApp choices) visually distinct */
@@ -70,8 +72,8 @@ export const frontendConfig = (
         [data-supertokens~=button][data-supertokens~=providerButton] {
             border-width: 2px !important;
             border-style: solid !important;
-            border-color: #161C26 !important;
-            background-color: #ffffff !important;
+            border-color: ${TOKENS.charcoal900} !important;
+            background-color: ${TOKENS.surface} !important;
             min-height: 32px;
             display: flex;
             flex-direction: row;
@@ -79,10 +81,10 @@ export const frontendConfig = (
             justify-content: center;
             padding: 2px calc(var(--logo-size) + 2 * var(--logo-horizontal-spacing));
             position: relative;
-            color: #000;
+            color: ${TOKENS.charcoal900};
         }
         [data-supertokens~=providerButton]:hover {
-            border-color: #161C26 !important;
+            border-color: ${TOKENS.charcoal900} !important;
         }
         [data-supertokens~=providerButtonLeft] {
             width: calc(var(--logo-size));
@@ -110,10 +112,10 @@ export const frontendConfig = (
             text-overflow: ellipsis;
         }
         [data-supertokens~=headerTitle] {
-            color: #0ABDC3;
+            color: ${TOKENS.charcoal900};
         }
         [data-supertokens~=spinnerIcon] circle {
-            stroke: #0ABDC3 !important;
+            stroke: ${TOKENS.turquoiseDeep} !important;
         }
         [data-supertokens~=sendCodeIcon] {
             display: flex;
