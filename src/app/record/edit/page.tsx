@@ -54,7 +54,7 @@ export default function EditRecordDetail() {
   return (
     <>
       <PageHeader pageIndicator={pageTitle(category)} />
-      <div className='mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col space-y-4 rounded-[16px] p-4'>
         {renderContent(category)}
       </div>
     </>

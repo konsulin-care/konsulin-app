@@ -137,7 +137,7 @@ export default function RecordFilter({
             />
 
             {/* Multi-select record types */}
-            <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+            <div className='card bg-muted text-charcoal-700 mt-4 border-0'>
               <div className='mb-4 font-bold'>{t('record.show_by')}</div>
               <LocationCombobox
                 multiple
@@ -172,7 +172,7 @@ export default function RecordFilter({
             <Button
               type='button'
               onClick={openDefaultPane}
-              className='bg-secondary mt-4 rounded-xl text-white'
+              className='bg-primary text-primary-foreground mt-4 rounded-xl'
             >
               {t('back')}
             </Button>

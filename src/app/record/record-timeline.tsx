@@ -59,7 +59,7 @@ function TimelineSkeleton({ backRoute }: Readonly<{ backRoute?: string }>) {
       <TimelineHeader backRoute={backRoute} />
       <div
         data-testid='timeline-overlay'
-        className='mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20'
+        className='bg-card mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] pb-20'
       >
         <div className='flex flex-col gap-2 p-4'>
           <Skeleton className='h-[80px] w-full' />
@@ -79,7 +79,7 @@ function TimelineEmpty({ backRoute }: Readonly<{ backRoute?: string }>) {
       <TimelineHeader backRoute={backRoute} />
       <div
         data-testid='timeline-overlay'
-        className='mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20'
+        className='bg-card mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] pb-20'
       >
         <div className='flex flex-col items-center justify-center py-16'>
           <p className='text-muted-foreground'>{t('record.no_records')}</p>
@@ -221,7 +221,7 @@ export default function RecordTimeline({ patientId, backRoute }: Props) {
 
       <div
         data-testid='timeline-overlay'
-        className='mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] bg-white pb-20'
+        className='bg-card mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] pb-20'
       >
         <div className='w-full p-4'>
           {/* Search + Filter row */}
@@ -230,8 +230,10 @@ export default function RecordTimeline({ patientId, backRoute }: Props) {
               value={searchTerm}
               onChange={event => setSearchTerm(event.target.value)}
               placeholder={t('record.search_placeholder')}
-              className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
-              startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+              className='text-primary bg-muted mr-4 h-[50px] w-full border-0'
+              startIcon={
+                <SearchIcon className='text-turquoise-deep' width={16} />
+              }
             />
             <RecordFilter onChange={handleFilterChange} />
           </div>
@@ -242,7 +244,7 @@ export default function RecordTimeline({ patientId, backRoute }: Props) {
               {selectedTypes.map(code => (
                 <Badge
                   key={code}
-                  className='bg-secondary cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                  className='bg-accent text-accent-foreground ring-turquoise-deep cursor-pointer rounded-md px-4 py-[3px] font-normal ring-1'
                   onClick={() => clearBadge('type', code)}
                 >
                   {typeBadgeLabel(code)}
@@ -250,7 +252,7 @@ export default function RecordTimeline({ patientId, backRoute }: Props) {
               ))}
               {filterParams.start_date && filterParams.end_date && (
                 <Badge
-                  className='bg-secondary cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                  className='bg-accent text-accent-foreground ring-turquoise-deep cursor-pointer rounded-md px-4 py-[3px] font-normal ring-1'
                   onClick={() => clearBadge('date')}
                 >
                   <DateBadgeContent

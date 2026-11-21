@@ -31,8 +31,8 @@ export default function ReportPaymentDrawer({
       ctaLabel='Pay Now'
       onCtaClick={close}
     >
-      <div className='mt-2 flex items-center justify-between rounded-[12px] bg-[#F9F9F9] p-3'>
-        <span className='text-[12px] text-[#666]'>Total</span>
+      <div className='bg-muted mt-2 flex items-center justify-between rounded-[12px] p-3'>
+        <span className='text-charcoal-700 text-[12px]'>Total</span>
         <span className='text-[16px] font-bold'>{formatFee(fee)}</span>
       </div>
     </AppDrawer>
