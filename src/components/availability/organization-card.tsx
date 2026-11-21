@@ -22,7 +22,7 @@ function OrganizationCardHeader({
   const t = useTranslations('common');
   return (
     <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between'>
-      <h3 className='max-w-[200px] truncate text-sm font-semibold text-gray-900'>
+      <h3 className='text-foreground max-w-[200px] truncate text-sm font-semibold'>
         {organization.name}
       </h3>
       <div className='mt-2 sm:mt-0'>
@@ -53,7 +53,7 @@ export default function OrganizationCard({
 }: OrganizationCardProps) {
   const t = useTranslations('common');
   return (
-    <div className='rounded-lg border border-gray-200 bg-white p-4'>
+    <div className='border-border bg-card rounded-lg border p-4'>
       <div className='mb-3 flex flex-col gap-2'>
         <OrganizationCardHeader
           organization={organization}
@@ -63,7 +63,7 @@ export default function OrganizationCard({
 
       <div className='space-y-3'>
         {timeRanges.length === 0 ? (
-          <p className='text-xs text-gray-500'>
+          <p className='text-muted-foreground text-xs'>
             {t('location.no_availability')}
           </p>
         ) : (

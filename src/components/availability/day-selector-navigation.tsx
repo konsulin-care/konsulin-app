@@ -32,14 +32,14 @@ export default function DaySelectorNavigation({
               className={cn(
                 'flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium transition-colors sm:h-12 sm:w-12',
                 hasAvailability
-                  ? 'bg-secondary text-white'
-                  : 'bg-[#F9F9F9] text-black'
+                  ? 'bg-accent text-accent-foreground ring-turquoise-deep ring-2'
+                  : 'bg-muted text-foreground'
               )}
             >
               {getDayShortName(day)}
             </div>
             {isSelected && (
-              <div className='bg-secondary h-1.5 w-1.5 rounded-full' />
+              <div className='bg-turquoise-deep h-1.5 w-1.5 rounded-full' />
             )}
           </button>
         );

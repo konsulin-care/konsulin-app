@@ -1,9 +1,9 @@
 'use client';
 
+import { formatFee, getFeeFromHealthcareService } from '@/utils/fhir/fee';
+import { getServiceDuration } from '@/utils/fhir/service-duration';
 import type { HealthcareService } from 'fhir/r4';
 import { Clock, Coins } from 'lucide-react';
-import { getFeeFromHealthcareService, formatFee } from '@/utils/fhir/fee';
-import { getServiceDuration } from '@/utils/fhir/service-duration';
 
 type Props = {
   readonly service: HealthcareService;
@@ -46,25 +46,25 @@ export default function ServiceCard({
       onTouchEnd={onTouchEnd}
       className={`w-full cursor-pointer rounded-lg border p-4 text-left ${
         isSelected
-          ? 'border-primary-500 ring-2 ring-primary-500 bg-primary-50'
-          : 'border-gray-200 bg-white'
+          ? 'border-primary-500 ring-primary-500 bg-primary-50 ring-2'
+          : 'border-border bg-card'
       } ${isActive ? '' : 'opacity-50'}`}
     >
-      <div className='text-sm font-bold text-black'>{service.name}</div>
+      <div className='text-foreground text-sm font-bold'>{service.name}</div>
       {fee && (
-        <div className='mt-1 flex items-center gap-1 text-sm font-bold text-gray-500'>
+        <div className='text-muted-foreground mt-1 flex items-center gap-1 text-sm font-bold'>
           <Coins size={14} />
           {formatFee(fee)}
         </div>
       )}
       {duration != null && (
-        <div className='mt-1 flex items-center gap-1 text-sm text-gray-500'>
+        <div className='text-muted-foreground mt-1 flex items-center gap-1 text-sm'>
           <Clock size={14} />
           {duration} min
         </div>
       )}
       {service.extraDetails && (
-        <div className='mt-2 text-xs text-gray-500'>
+        <div className='text-muted-foreground mt-2 text-xs'>
           {service.extraDetails}
         </div>
       )}
