@@ -42,7 +42,7 @@ export default function DatePresetFilter({
   const customLabel = getCustomLabel();
 
   return (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+    <div className='card bg-muted text-charcoal-700 mt-4 border-0'>
       <div className='mb-4 font-bold'>{t('date_filter.heading')}</div>
       <div className='flex flex-wrap gap-[10px]'>
         {presets.map(date => (
@@ -56,8 +56,8 @@ export default function DatePresetFilter({
                 activeEnd &&
                 isSameDay(activeStart, date.value.start) &&
                 isSameDay(activeEnd, date.value.end)
-                ? 'bg-secondary hover:bg-secondary font-bold text-white'
-                : 'bg-white font-normal'
+                ? 'bg-accent hover:bg-accent text-accent-foreground ring-ring font-bold ring-2'
+                : 'bg-card font-normal'
             )}
           >
             {date.label}
@@ -69,8 +69,8 @@ export default function DatePresetFilter({
           className={cn(
             'h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px]',
             isCustom
-              ? 'bg-secondary hover:bg-secondary font-bold text-white'
-              : 'bg-white font-normal'
+              ? 'bg-accent hover:bg-accent text-accent-foreground ring-ring font-bold ring-2'
+              : 'bg-card font-normal'
           )}
         >
           {t('date_filter.custom')}

@@ -248,12 +248,12 @@ describe('Combobox (mobile sheet)', () => {
     await waitFor(() => {
       const header = screen.getByTestId('combobox-sheet-input-header');
       expect(header.className).toContain('p-3');
-      expect(header.className).toContain('bg-white');
+      expect(header.className).toContain('bg-card');
 
       const wrapper = header.querySelector('[data-cmdk-input-wrapper]');
       expect(wrapper).not.toBeNull();
       expect(wrapper?.className).toContain('rounded-xl');
-      expect(wrapper?.className).toContain('bg-[#efefef]');
+      expect(wrapper?.className).toContain('bg-muted');
     });
   });
 

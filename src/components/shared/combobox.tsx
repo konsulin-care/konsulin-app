@@ -177,7 +177,7 @@ function OptionList({
         className={cn(
           'shrink-0',
           inputHeaderTestId !== undefined &&
-            'sticky top-0 z-10 border-b bg-white p-3'
+            'bg-card sticky top-0 z-10 border-b p-3'
         )}
       >
         <CommandInput
@@ -185,7 +185,7 @@ function OptionList({
           wrapperClassName={
             inputHeaderTestId === undefined
               ? undefined
-              : 'rounded-xl border-0 bg-[#efefef]'
+              : 'rounded-xl border-0 bg-muted'
           }
         />
       </div>
@@ -288,7 +288,7 @@ export default function Combobox(props: ComboboxProps) {
       ? {}
       : { role: 'combobox' as const, 'aria-expanded': open };
   const triggerClassName =
-    'h-[56px] w-full justify-between bg-white px-3 text-sm font-normal';
+    'h-[56px] w-full justify-between bg-card px-3 text-sm font-normal';
 
   /** Shared search+list props for both the popover and the sheet body. */
   const listProps = {

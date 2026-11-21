@@ -55,7 +55,7 @@ export default function DatePickerButton({
         onClick={() => {
           setOpen(true);
         }}
-        className='h-[56px] w-full justify-between bg-white px-3 text-sm font-normal'
+        className='bg-card h-[56px] w-full justify-between px-3 text-sm font-normal'
       >
         <span className={value ? '' : 'text-muted-foreground'}>
           {displayText}
