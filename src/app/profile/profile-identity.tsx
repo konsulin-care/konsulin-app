@@ -43,7 +43,7 @@ export default function ProfileIdentity({
         />
         <span
           data-testid='role-badge'
-          className='bg-secondary absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap text-white'
+          className='bg-primary text-primary-foreground absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-xs font-bold whitespace-nowrap'
         >
           {roleName}
         </span>
@@ -51,7 +51,7 @@ export default function ProfileIdentity({
       <div className='mt-5 flex items-center justify-center gap-1.5'>
         <p
           data-testid='display-name'
-          className='max-w-[220px] truncate text-base font-bold text-[#2C2F35]'
+          className='text-foreground max-w-[220px] truncate text-base font-bold'
         >
           {identity.displayName || '-'}
         </p>
@@ -60,7 +60,7 @@ export default function ProfileIdentity({
           data-testid='edit-name'
           onClick={onEditName}
           aria-label={t('edit_name')}
-          className='text-secondary cursor-pointer'
+          className='text-turquoise-deep cursor-pointer'
         >
           <Pencil className='h-4 w-4' />
         </button>

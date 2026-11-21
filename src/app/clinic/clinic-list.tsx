@@ -126,8 +126,10 @@ export default function ClinicList() {
               value={searchTerm}
               onChange={event => setSearchTerm(event.target.value)}
               placeholder={t('clinic.search')}
-              className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
-              startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+              className='text-primary bg-muted mr-4 h-[50px] w-full border-0'
+              startIcon={
+                <SearchIcon className='text-turquoise-deep' width={16} />
+              }
             />
             <ClinicFilter
               role={role}
@@ -144,7 +146,7 @@ export default function ClinicList() {
           <div className='flex gap-4'>
             {clinicFilter.province && (
               <Badge
-                className='bg-secondary mt-4 cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                className='bg-accent text-accent-foreground ring-turquoise-deep mt-4 cursor-pointer rounded-md px-4 py-[3px] font-normal ring-1'
                 onClick={() => {
                   setClinicFilter(prev => ({
                     ...prev,
@@ -159,7 +161,7 @@ export default function ClinicList() {
             )}
             {clinicFilter.city && (
               <Badge
-                className='bg-secondary mt-4 cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                className='bg-accent text-accent-foreground ring-turquoise-deep mt-4 cursor-pointer rounded-md px-4 py-[3px] font-normal ring-1'
                 onClick={() => {
                   setClinicFilter(prev => ({
                     ...prev,
@@ -172,7 +174,7 @@ export default function ClinicList() {
             )}
             {clinicFilter.organization && (
               <Badge
-                className='bg-secondary mt-4 cursor-pointer rounded-md px-4 py-[3px] font-normal text-white'
+                className='bg-accent text-accent-foreground ring-turquoise-deep mt-4 cursor-pointer rounded-md px-4 py-[3px] font-normal ring-1'
                 onClick={() => {
                   setClinicFilter(prev => ({
                     ...prev,
