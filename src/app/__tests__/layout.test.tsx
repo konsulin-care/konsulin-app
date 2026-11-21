@@ -7,7 +7,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 // Mock every import that layout.tsx pulls in
 vi.mock('next/font/google', () => ({
-  Plus_Jakarta_Sans: () => ({ className: 'mock-font' })
+  Plus_Jakarta_Sans: () => ({
+    className: 'mock-font',
+    variable: 'mock-font-variable'
+  })
 }));
 
 vi.mock('next/navigation', () => ({
@@ -119,7 +122,7 @@ vi.mock('@/styles/index.scss', () => ({}));
 vi.mock('react-toastify/dist/ReactToastify.css', () => ({}));
 vi.mock('react-international-phone/style.css', () => ({}));
 
-import RootLayout from '../layout';
+import RootLayout, { viewport } from '../layout';
 
 describe('RootLayout', () => {
   it('renders html and body wrappers', async () => {
@@ -146,6 +149,25 @@ describe('RootLayout', () => {
   it('renders font class on body', async () => {
     await renderAsync(<RootLayout>test</RootLayout>);
     expect(document.querySelector('body.mock-font')).toBeInTheDocument();
+  });
+
+  it('applies both the font className and font variable to body', async () => {
+    await renderAsync(<RootLayout>test</RootLayout>);
+    const body = document.querySelector('body');
+    expect(body).toHaveClass('mock-font');
+    expect(body).toHaveClass('mock-font-variable');
+  });
+
+  it('uses the paper theme colour for the viewport', () => {
+    expect(viewport.themeColor).toBe('#FAFAF8');
+  });
+
+  it('uses the paper colour in the web app manifest', () => {
+    const manifest = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, '../manifest.json'), 'utf-8')
+    ) as { theme_color: string; background_color: string };
+    expect(manifest.theme_color).toBe('#FAFAF8');
+    expect(manifest.background_color).toBe('#FAFAF8');
   });
 
   it('has suppressHydrationWarning on body to tolerate browser extension attributes', () => {

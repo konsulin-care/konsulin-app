@@ -8,7 +8,10 @@ import Script from 'next/script';
 import React from 'react';
 import 'react-toastify/dist/ReactToastify.css';
 
-const inter = Plus_Jakarta_Sans({ subsets: ['latin'] });
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-jakarta'
+});
 
 const APP_NAME = 'Konsulin';
 const APP_DEFAULT_TITLE = 'Konsulin';
@@ -51,7 +54,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#FFFFFF'
+  themeColor: '#FAFAF8'
 };
 
 /**
@@ -66,7 +69,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='id'>
-      <body className={inter.className} suppressHydrationWarning>
+      <body
+        className={`${jakarta.className} ${jakarta.variable}`}
+        suppressHydrationWarning
+      >
         <Script src='/js/pathname-init.js' strategy='beforeInteractive' />
         <Script src='/js/sw-register.js' strategy='beforeInteractive' />
         <LocaleProvider>

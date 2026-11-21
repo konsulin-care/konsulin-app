@@ -39,8 +39,8 @@
       "density": "4.0"
     }
   ],
-  "theme_color": "#FFFFFF",
-  "background_color": "#FFFFFF",
+  "theme_color": "#FAFAF8",
+  "background_color": "#FAFAF8",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait"
