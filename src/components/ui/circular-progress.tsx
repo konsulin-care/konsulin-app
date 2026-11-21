@@ -73,7 +73,7 @@ export default function CircularProgress({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           // Palette-driven arc color; inline style because SVG stroke
           // attributes cannot resolve CSS custom properties.
-          style={{ stroke: 'var(--secondary)' }}
+          style={{ stroke: 'var(--color-turquoise-deep)' }}
         />
         <text
           x='50%'

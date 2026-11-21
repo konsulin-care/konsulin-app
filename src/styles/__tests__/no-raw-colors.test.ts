@@ -22,7 +22,11 @@ const SWEPT: string[] = [
   'src/components/icons/note-icon.tsx',
   'src/components/icons/office-icon.tsx',
   'src/components/icons/user-icon.tsx',
-  'src/components/shared/filter-drawer-trigger.tsx'
+  'src/components/screening-drawer.tsx',
+  'src/components/shared/filter-drawer-trigger.tsx',
+  'src/components/stacked-circles.tsx',
+  'src/components/ui/circular-progress.tsx',
+  'src/components/ui/slider.tsx'
 ];
 
 describe('raw colour guard', () => {

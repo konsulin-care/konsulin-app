@@ -20,7 +20,7 @@ export function StackedCircles({
       {hasMultipleRoles && (
         <div
           data-testid='stack-bg-circle'
-          className='absolute rounded-full bg-gradient-to-br from-[#13c2c2] to-[#6b7280] opacity-80'
+          className='from-turquoise-deep to-charcoal-400 absolute rounded-full bg-gradient-to-br opacity-80'
           style={{ width: 32, height: 32, left: 8, top: 0 }}
         />
       )}

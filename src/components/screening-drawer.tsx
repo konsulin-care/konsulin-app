@@ -116,7 +116,7 @@ export default function ScreeningDrawer({
       footerContent={
         <a
           href='tel:119'
-          className='mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-sm font-medium text-gray-700 hover:bg-gray-50'
+          className='border-border bg-card text-charcoal-700 hover:bg-muted mt-2 flex w-full items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium'
         >
           <ShieldPlus className='h-4 w-4' />
           {t('emergency_line')}
