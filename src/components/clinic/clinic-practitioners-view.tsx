@@ -175,7 +175,7 @@ export default function ClinicPractitionersView({
   }, [cards, keyword]);
   if (isLoading || isFetching) return <CardLoader />;
   return (
-    <div className='mt-[-24px] rounded-[16px] bg-white p-4'>
+    <div className='bg-card mt-[-24px] rounded-[16px] p-4'>
       <ClinicHero
         clinicName={clinicName}
         fullAddress={fullAddress}
@@ -191,8 +191,8 @@ export default function ClinicPractitionersView({
             setKeyword(e.target.value);
           }}
           placeholder={t('location.search')}
-          className='text-primary mr-4 h-[50px] w-full border-0 bg-[#F9F9F9]'
-          startIcon={<SearchIcon className='text-[#ABDCDB]' width={16} />}
+          className='text-primary bg-muted mr-4 h-[50px] w-full border-0'
+          startIcon={<SearchIcon className='text-turquoise-deep' width={16} />}
         />
       </div>
 

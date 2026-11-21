@@ -32,7 +32,7 @@ function FilterSection({
   children
 }: Readonly<{ title: string; hint: string; children: ReactNode }>) {
   return (
-    <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+    <div className='card bg-muted mt-4 border-0'>
       <div className='mb-4'>
         <div className='font-bold'>{title}</div>
         <span className='text-muted-foreground text-xs opacity-50'>{hint}</span>
@@ -209,7 +209,7 @@ export default function ClinicFilter({
                   onPresetSelect={handlePresetSelect}
                   onCustomOpen={handleCustomOpen}
                 />
-                <div className='card mt-4 border-0 bg-[#F9F9F9]'>
+                <div className='card bg-muted mt-4 border-0'>
                   <div className='mb-4 font-bold'>{t('session_time')}</div>
                   <div className='flex flex-wrap gap-[10px]'>
                     {filterContentListTime.map(time => (
@@ -221,7 +221,7 @@ export default function ClinicFilter({
                           handleFilterChange('start_time', time.value.start);
                           handleFilterChange('end_time', time.value.end);
                         }}
-                        className='h-[50px] w-min items-center justify-center rounded-lg border-0 bg-white p-4 text-[12px] font-normal'
+                        className='bg-card h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-normal'
                       >
                         {time.label}
                       </Button>
@@ -232,7 +232,7 @@ export default function ClinicFilter({
                         <Button
                           variant='outline'
                           onClick={handleCustomOpen}
-                          className='bg-secondary hover:bg-secondary h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-bold text-white'
+                          className='bg-accent hover:bg-accent text-accent-foreground ring-turquoise-deep h-[50px] w-min items-center justify-center rounded-lg border-0 p-4 text-[12px] font-bold ring-1'
                         >
                           {t('custom_range', {
                             range: `${filter.start_time} - ${filter.end_time}`
@@ -290,7 +290,7 @@ export default function ClinicFilter({
             <Button
               type='button'
               onClick={openDefaultPane}
-              className='bg-secondary mt-4 rounded-xl text-white'
+              className='bg-primary text-primary-foreground mt-4 rounded-xl'
             >
               {t('back')}
             </Button>

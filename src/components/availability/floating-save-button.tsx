@@ -21,7 +21,7 @@ export default function FloatingSaveButton({
       <Button
         onClick={onSave}
         disabled={!hasChanges || isSaving}
-        className='bg-secondary hover:bg-secondary/90 h-12 rounded-full px-6 text-white shadow-lg'
+        className='bg-primary hover:bg-primary/90 text-primary-foreground h-12 rounded-full px-6 shadow-lg'
         size='lg'
       >
         {isSaving ? (

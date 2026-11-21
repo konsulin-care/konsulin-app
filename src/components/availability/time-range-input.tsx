@@ -31,7 +31,7 @@ export default function TimeRangeInput({
   return (
     <div className='flex items-center gap-2'>
       <div className='flex flex-1 items-center gap-2'>
-        <span className='text-xs text-gray-500'>
+        <span className='text-muted-foreground text-xs'>
           {t('location.from_label')}
         </span>
         <Input
@@ -43,7 +43,9 @@ export default function TimeRangeInput({
         />
       </div>
       <div className='flex flex-1 items-center gap-2'>
-        <span className='text-xs text-gray-500'>{t('location.to_label')}</span>
+        <span className='text-muted-foreground text-xs'>
+          {t('location.to_label')}
+        </span>
         <Input
           type='time'
           value={timeRange.to}
@@ -63,7 +65,7 @@ export default function TimeRangeInput({
           variant='ghost'
           size='icon'
           onClick={onRemove}
-          className='hover:text-destructive h-9 w-9 text-gray-500'
+          className='hover:text-destructive text-muted-foreground h-9 w-9'
           aria-label={t('location.remove_time_range')}
         >
           <Trash2 className='h-4 w-4' />
