@@ -104,7 +104,7 @@ export default function NameEditDrawer({
     >
       <div className='space-y-5'>
         <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>
+          <p className='text-foreground text-xs font-semibold'>
             {t('given_names')}
           </p>
           {rows.map(row => (
@@ -116,7 +116,7 @@ export default function NameEditDrawer({
                 }}
                 data-testid={`given-${row.id}`}
                 placeholder={t('given_name_n', { n: String(row.id + 1) })}
-                className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+                className='border-input focus:border-turquoise-deep w-full rounded-xl border px-3 py-2.5 text-sm outline-none'
               />
               {rows.length > 1 && (
                 <button
@@ -128,7 +128,7 @@ export default function NameEditDrawer({
                   aria-label={t('remove_given_name_n', {
                     n: String(row.id + 1)
                   })}
-                  className='text-secondary shrink-0 cursor-pointer'
+                  className='text-turquoise-deep shrink-0 cursor-pointer'
                 >
                   <Trash2 className='h-4 w-4' />
                 </button>
@@ -139,14 +139,14 @@ export default function NameEditDrawer({
             type='button'
             onClick={handleAddGiven}
             data-testid='add-given'
-            className='text-secondary flex cursor-pointer items-center gap-1 text-xs font-semibold'
+            className='text-turquoise-deep flex cursor-pointer items-center gap-1 text-xs font-semibold'
           >
             <Plus className='h-4 w-4' />
             {t('add_given')}
           </button>
         </div>
         <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>
+          <p className='text-foreground text-xs font-semibold'>
             {t('family_name')}
           </p>
           <input
@@ -156,7 +156,7 @@ export default function NameEditDrawer({
             }}
             data-testid='family-input'
             placeholder={t('family_name')}
-            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+            className='border-input focus:border-turquoise-deep w-full rounded-xl border px-3 py-2.5 text-sm outline-none'
           />
         </div>
       </div>

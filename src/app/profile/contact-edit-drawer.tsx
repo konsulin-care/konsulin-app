@@ -76,7 +76,7 @@ export default function ContactEditDrawer({
     >
       <div className='space-y-5'>
         <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>{t('email')}</p>
+          <p className='text-foreground text-xs font-semibold'>{t('email')}</p>
           <input
             value={emailValue}
             onChange={event => {
@@ -86,11 +86,11 @@ export default function ContactEditDrawer({
             data-testid='email-input'
             type='email'
             placeholder={t('email_placeholder')}
-            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+            className='border-input focus:border-turquoise-deep w-full rounded-xl border px-3 py-2.5 text-sm outline-none'
           />
         </div>
         <div className='space-y-2'>
-          <p className='text-xs font-semibold text-[#2C2F35]'>{t('phone')}</p>
+          <p className='text-foreground text-xs font-semibold'>{t('phone')}</p>
           <input
             value={phoneValue}
             onChange={event => {
@@ -99,7 +99,7 @@ export default function ContactEditDrawer({
             data-testid='phone-input'
             type='tel'
             placeholder={t('phone_placeholder')}
-            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+            className='border-input focus:border-turquoise-deep w-full rounded-xl border px-3 py-2.5 text-sm outline-none'
           />
         </div>
       </div>

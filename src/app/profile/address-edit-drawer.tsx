@@ -45,7 +45,7 @@ function Field({
 }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <div className='space-y-2'>
-      <p className='text-xs font-semibold text-[#2C2F35]'>{label}</p>
+      <p className='text-foreground text-xs font-semibold'>{label}</p>
       {children}
     </div>
   );
@@ -67,7 +67,7 @@ function StreetLinesField({
 }>) {
   return (
     <div className='space-y-2'>
-      <p className='text-xs font-semibold text-[#2C2F35]'>{t('street')}</p>
+      <p className='text-foreground text-xs font-semibold'>{t('street')}</p>
       {lines.map(row => (
         <div key={row.id} className='flex items-center gap-2'>
           <input
@@ -77,7 +77,7 @@ function StreetLinesField({
             }}
             data-testid={`line-${row.id}`}
             placeholder={t('street_placeholder')}
-            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+            className='border-input focus:border-turquoise-deep w-full rounded-xl border px-3 py-2.5 text-sm outline-none'
           />
           {lines.length > 1 && (
             <button
@@ -87,7 +87,7 @@ function StreetLinesField({
               }}
               data-testid={`remove-line-${row.id}`}
               aria-label={t('remove_address_line')}
-              className='text-secondary shrink-0 cursor-pointer'
+              className='text-turquoise-deep shrink-0 cursor-pointer'
             >
               <Trash2 className='h-4 w-4' />
             </button>
@@ -98,7 +98,7 @@ function StreetLinesField({
         type='button'
         onClick={onAddLine}
         data-testid='add-line'
-        className='text-secondary flex cursor-pointer items-center gap-1 text-xs font-semibold'
+        className='text-turquoise-deep flex cursor-pointer items-center gap-1 text-xs font-semibold'
       >
         <Plus className='h-4 w-4' />
         {t('add_address_line')}
@@ -283,7 +283,7 @@ export default function AddressEditDrawer({
             }}
             data-testid='postal-input'
             placeholder={t('postal_code_placeholder')}
-            className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+            className='border-input focus:border-turquoise-deep w-full rounded-xl border px-3 py-2.5 text-sm outline-none'
           />
         </Field>
       </div>

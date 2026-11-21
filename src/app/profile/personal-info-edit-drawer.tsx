@@ -36,7 +36,7 @@ function Field({
 }: Readonly<{ label: string; children: ReactNode }>) {
   return (
     <div className='space-y-2'>
-      <p className='text-xs font-semibold text-[#2C2F35]'>{label}</p>
+      <p className='text-foreground text-xs font-semibold'>{label}</p>
       {children}
     </div>
   );
@@ -62,7 +62,7 @@ function SelectField({
         value={value}
         onChange={onChange}
         data-testid={testId}
-        className='w-full rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]'
+        className='border-input focus:border-turquoise-deep w-full rounded-xl border px-3 py-2.5 text-sm outline-none'
       >
         {children}
       </select>
