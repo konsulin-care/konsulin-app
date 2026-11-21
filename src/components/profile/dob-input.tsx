@@ -57,7 +57,7 @@ function formatDob(year: number, month: number, day: number): string {
 // ---------------------------------------------------------------------------
 
 const SELECT_CLASS =
-  'rounded-xl border border-[#E3E3E3] px-3 py-2.5 text-sm outline-none focus:border-[#13C2C2]';
+  'border-input focus:border-turquoise-deep rounded-xl border px-3 py-2.5 text-sm outline-none';
 
 // ---------------------------------------------------------------------------
 // Main component

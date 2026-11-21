@@ -39,7 +39,7 @@ function TriggerValue({
 }: Readonly<TriggerValueProps>) {
   const tCommon = useTranslations('common');
   return (
-    <span className='text-sm font-normal text-[#2C2F35]'>
+    <span className='text-foreground text-sm font-normal'>
       {loading ? (
         <LoadingSpinnerIcon
           width={20}
@@ -81,7 +81,7 @@ const DropdownProfile: React.FC<DropdownProps> = ({
           <Button
             ref={triggerRef}
             variant='outline'
-            className='h-[56px] w-full justify-between bg-white'
+            className='bg-card h-[56px] w-full justify-between'
             disabled={loading}
           >
             <TriggerValue
@@ -91,28 +91,27 @@ const DropdownProfile: React.FC<DropdownProps> = ({
               labelPlaceholder={labelPlaceholder}
               loading={loading}
             />
-            <ChevronDown
-              className='ml-2 h-4 w-4 shrink-0 opacity-50'
-              color='#18AAA1'
-            />
+            <ChevronDown className='text-turquoise-deep ml-2 h-4 w-4 shrink-0 opacity-50' />
           </Button>
         </DropdownTrigger>
         <DropdownContent
           style={{ minWidth: triggerWidth }}
-          className='max-h-60 overflow-y-auto bg-white'
+          className='bg-card max-h-60 overflow-y-auto'
         >
           {options?.map(item => (
             <DropdownItem
               key={item.code}
               onSelect={() => onSelect(item)}
-              className={`w-full bg-white hover:bg-gray-50 focus:bg-gray-100 ${
-                value === item.code ? 'bg-secondary text-white' : ''
+              className={`bg-card hover:bg-muted focus:bg-muted w-full ${
+                value === item.code
+                  ? 'bg-accent text-accent-foreground ring-turquoise-deep ring-1'
+                  : ''
               }`}
             >
               <div className='flex w-full items-center justify-between px-4 py-2'>
                 <span>{item.name}</span>
                 {value === item.code && (
-                  <Check className='text-accent-foreground ml-2 h-4 w-4 text-white' />
+                  <Check className='text-accent-foreground ml-2 h-4 w-4' />
                 )}
               </div>
             </DropdownItem>

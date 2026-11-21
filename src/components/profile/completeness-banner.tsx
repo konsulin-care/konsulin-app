@@ -31,16 +31,16 @@ export default function CompletenessBanner({ show }: Props) {
   };
 
   return (
-    <div className='mx-4 mb-2 rounded-lg border border-amber-300 bg-amber-50 p-3'>
+    <div className='border-warning-deep bg-warning-tint mx-4 mb-2 rounded-lg border p-3'>
       <div className='flex items-start justify-between gap-2'>
-        <div className='flex-1 text-sm text-amber-800'>
+        <div className='text-warning-deep flex-1 text-sm'>
           <p className='font-medium'>{t('incomplete')}</p>
-          <p className='mt-1 text-amber-700'>{t('incomplete_desc')}</p>
+          <p className='mt-1'>{t('incomplete_desc')}</p>
         </div>
         <button
           type='button'
           onClick={handleDismiss}
-          className='shrink-0 text-amber-400 hover:text-amber-600'
+          className='text-warning-deep hover:text-charcoal-900 shrink-0'
           aria-label={tCommon('dismiss')}
         >
           <svg
