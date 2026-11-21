@@ -256,7 +256,7 @@ export default function ServicesTab({
   if (localServices.length === 0) {
     return (
       <>
-        <div className='py-8 text-center text-sm text-gray-500'>
+        <div className='text-muted-foreground py-8 text-center text-sm'>
           {t('practitioner.no_services')}
           <br />
           <button

@@ -7,7 +7,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useTranslations } from '@/i18n';
 import { usePractitionerDashboard } from '@/services/hooks/usePractitionerDashboard';
 import type { MergedSession } from '@/types/appointment';
-import { endOfMonth, format, startOfDay, startOfMonth } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 
@@ -19,13 +19,15 @@ function renderDayContent(
 ): ReactNode {
   if (!selectedDate) {
     return (
-      <p className='text-center text-[12px] text-gray-400'>{t('select_day')}</p>
+      <p className='text-muted-foreground text-center text-[12px]'>
+        {t('select_day')}
+      </p>
     );
   }
 
   if (selectedSessions.length === 0) {
     return (
-      <p className='text-center text-[12px] text-gray-400'>
+      <p className='text-muted-foreground text-center text-[12px]'>
         {t('no_appointments')}
       </p>
     );
@@ -33,7 +35,7 @@ function renderDayContent(
 
   return (
     <div>
-      <h3 className='text-[14px] font-bold text-gray-700'>
+      <h3 className='text-charcoal-700 text-[14px] font-bold'>
         {format(selectedDate, 'EEEE, dd MMMM yyyy')}
       </h3>
       {selectedSessions.map(session => (
@@ -57,12 +59,23 @@ export default function PractitionerDashboard() {
   const [displayMonth, setDisplayMonth] = useState<Date>(today);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const { monthStart, monthEnd } = useMemo(() => {
-    return {
-      monthStart: startOfMonth(displayMonth),
-      monthEnd: endOfMonth(displayMonth)
-    };
-  }, [displayMonth]);
+  const monthStart = useMemo(
+    () => new Date(displayMonth.getFullYear(), displayMonth.getMonth(), 1),
+    [displayMonth]
+  );
+  const monthEnd = useMemo(
+    () =>
+      new Date(
+        displayMonth.getFullYear(),
+        displayMonth.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999
+      ),
+    [displayMonth]
+  );
 
   const {
     dayDots,

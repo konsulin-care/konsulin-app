@@ -159,8 +159,8 @@ export function PractitionerCard({
   } else {
     avatarContent = (
       <div
-        className='flex h-full w-full items-center justify-center text-base font-bold text-white'
-        style={{ backgroundColor: backgroundColor ?? '#13c2c2' }}
+        className='text-accent-foreground flex h-full w-full items-center justify-center text-base font-bold'
+        style={{ backgroundColor: backgroundColor ?? 'var(--color-accent)' }}
       >
         {initials}
       </div>
@@ -171,11 +171,11 @@ export function PractitionerCard({
     <Link
       ref={cardRef}
       href={href ?? `/practitioner?id=${practitionerRoleId}`}
-      className='card flex h-[100px] items-stretch overflow-hidden bg-[#F9F9F9] p-0'
+      className='card bg-muted flex h-[100px] items-stretch overflow-hidden p-0'
     >
       {/* Square avatar spanning full card height */}
       <div
-        className='relative shrink-0 overflow-hidden bg-[#13c2c2]'
+        className='bg-accent relative shrink-0 overflow-hidden'
         style={{ width: size, minWidth: size }}
       >
         {avatarContent}
@@ -183,7 +183,9 @@ export function PractitionerCard({
 
       {/* Practitioner details */}
       <div className='min-w-0 flex-1 p-4 pl-3'>
-        <div className='text-[14px] font-bold text-black'>{displayName}</div>
+        <div className='text-foreground text-[14px] font-bold'>
+          {displayName}
+        </div>
 
         <div
           ref={containerRef}
@@ -192,19 +194,19 @@ export function PractitionerCard({
           {visibleSpecialties.map(s => (
             <Badge
               key={s}
-              className='shrink-0 bg-[#E1E1E1] px-2 py-[2px] text-[11px] font-normal text-black'
+              className='bg-muted text-foreground shrink-0 px-2 py-[2px] text-xs font-normal'
             >
               {s === HIDDEN_PLACEHOLDER ? '' : s}
             </Badge>
           ))}
           {overflowCount > 0 && (
-            <span className='shrink-0 text-[11px] text-gray-500'>
+            <span className='text-muted-foreground shrink-0 text-xs'>
               ({overflowCount}+)
             </span>
           )}
         </div>
 
-        <div className='mt-1 truncate text-[12px] text-gray-500'>
+        <div className='text-muted-foreground mt-1 truncate text-[12px]'>
           {serviceDisplay}
         </div>
       </div>

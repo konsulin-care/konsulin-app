@@ -68,7 +68,7 @@ function FormFields({
             onNameChange(e.target.value);
           }}
           placeholder={t('practitioner.service_name_placeholder')}
-          className='bg-white'
+          className='bg-card'
         />
       </div>
 
@@ -81,7 +81,7 @@ function FormFields({
           value={fee}
           onChange={onFeeChange}
           placeholder='250,000'
-          className='bg-white'
+          className='bg-card'
         />
       </div>
 
@@ -95,7 +95,7 @@ function FormFields({
           onChange={onDurationChange}
           placeholder='30'
           inputMode='numeric'
-          className='bg-white'
+          className='bg-card'
         />
       </div>
 
@@ -110,7 +110,7 @@ function FormFields({
             onExtraDetailsChange(e.target.value);
           }}
           rows={3}
-          className='bg-white'
+          className='bg-card'
         />
       </div>
     </div>
