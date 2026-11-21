@@ -49,7 +49,7 @@ export default function RecommendationCard({
   const nextSlot = formatNextSlot(recommendation.nextSlot?.start);
 
   return (
-    <div className='border-input flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm'>
+    <div className='border-border bg-card flex flex-col gap-3 rounded-2xl border p-4'>
       <div className='flex items-center gap-3'>
         {avatar && (
           <Image

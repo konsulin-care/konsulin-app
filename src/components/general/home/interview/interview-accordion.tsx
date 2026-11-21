@@ -72,7 +72,7 @@ export function InterviewAccordion({
     // skipcq: JS-0415 — nesting inherent to accordion layout
     <div className='flex h-full flex-col gap-3'>
       {/* Step 1 — Chief Concern */}
-      <div className='rounded-xl border border-gray-200'>
+      <div className='border-border rounded-xl border'>
         <button
           type='button'
           onClick={step1Complete ? handleEditStep1 : undefined}
@@ -80,25 +80,25 @@ export function InterviewAccordion({
           disabled={!step1Complete}
         >
           <div className='flex items-center gap-2'>
-            <span className='flex h-6 w-6 items-center justify-center rounded-full bg-[var(--secondary)] text-xs font-bold text-white'>
+            <span className='bg-turquoise-deep flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white'>
               1
             </span>
             <span>{t('chief_concern')}</span>
           </div>
           {step1Complete ? (
             <div className='flex items-center gap-2'>
-              <span className='text-xs text-gray-500'>
+              <span className='text-muted-foreground text-xs'>
                 {complaint ? resolveLabel(complaint, t) : null}
               </span>
               <Pencil
                 data-testid='step-1-edit'
-                className='h-4 w-4 text-gray-400'
+                className='text-muted-foreground h-4 w-4'
               />
             </div>
           ) : null}
         </button>
         {activeStep === 1 && (
-          <div className='border-t border-gray-100 px-4 pt-3 pb-4'>
+          <div className='border-border border-t px-4 pt-3 pb-4'>
             <ChiefComplaintCombobox
               options={options}
               value={complaint}
@@ -109,14 +109,14 @@ export function InterviewAccordion({
       </div>
 
       {/* Step 2 — Specific Focus */}
-      <div className='rounded-xl border border-gray-200'>
+      <div className='border-border rounded-xl border'>
         <div className='flex items-center justify-between px-4 py-3'>
           <div className='flex items-center gap-2'>
             <span
               className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
                 step2Complete
-                  ? 'bg-[var(--secondary)] text-white'
-                  : 'bg-gray-200 text-gray-500'
+                  ? 'bg-turquoise-deep text-white'
+                  : 'bg-muted text-charcoal-700'
               }`}
             >
               2
@@ -124,23 +124,26 @@ export function InterviewAccordion({
             <span>{t('specific_focus')}</span>
           </div>
           {!step1Complete && (
-            <Lock data-testid='step-2-lock' className='h-4 w-4 text-gray-400' />
+            <Lock
+              data-testid='step-2-lock'
+              className='text-muted-foreground h-4 w-4'
+            />
           )}
           {step2Complete && complaint && (
             <div className='flex items-center gap-2'>
-              <span className='text-xs text-gray-500'>
+              <span className='text-muted-foreground text-xs'>
                 {selectedOption ? resolveLabel(selectedOption, t) : null}
               </span>
               <Pencil
                 data-testid='step-2-edit'
-                className='h-4 w-4 text-gray-400'
+                className='text-muted-foreground h-4 w-4'
               />
             </div>
           )}
         </div>
         {activeStep === 2 && step1Complete && complaint && (
-          <div className='border-t border-gray-100 px-4 pt-3 pb-4'>
-            <p className='mb-3 text-sm font-medium text-gray-700'>
+          <div className='border-border border-t px-4 pt-3 pb-4'>
+            <p className='text-charcoal-700 mb-3 text-sm font-medium'>
               {t('which_describes')}
             </p>
             <ul className='flex flex-1 flex-col gap-2 overflow-y-auto'>
@@ -153,8 +156,8 @@ export function InterviewAccordion({
                     }}
                     className={`w-full rounded-lg border px-4 py-3 text-left text-sm ${
                       selectedOptionId === option.id
-                        ? 'border-[var(--secondary)] bg-[var(--secondary)]/5 text-[var(--secondary)]'
-                        : 'border-gray-200 bg-white text-gray-800 hover:border-[var(--secondary)]'
+                        ? 'border-turquoise-deep bg-accent text-accent-foreground ring-turquoise-deep ring-1'
+                        : 'border-border bg-card text-charcoal-700 hover:border-turquoise-deep'
                     }`}
                   >
                     {resolveLabel(option, t)}

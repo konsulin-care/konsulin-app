@@ -40,7 +40,7 @@ export default function HomeContent() {
         !(Object.values(Roles) as string[]).includes(
           authState.userInfo.role_name
         ) && (
-          <div className='flex min-h-[40vh] items-center justify-center p-4 text-center text-gray-500'>
+          <div className='text-muted-foreground flex min-h-[40vh] items-center justify-center p-4 text-center'>
             {t('unable_load_role')}
           </div>
         )}

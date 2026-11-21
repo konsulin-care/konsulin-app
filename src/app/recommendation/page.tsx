@@ -32,20 +32,17 @@ function NoRecommendationsPrompt({
   const t = useTranslations('common');
   return (
     <div className='flex min-h-[300px] flex-col items-center justify-center gap-3 px-6 text-center'>
-      <Sparkles
-        className='h-6 w-6 text-[var(--secondary)]'
-        aria-hidden='true'
-      />
-      <p className='text-sm font-medium text-gray-800'>
+      <Sparkles className='text-turquoise-deep h-6 w-6' aria-hidden='true' />
+      <p className='text-charcoal-700 text-sm font-medium'>
         {t('recommendation.screening_title')}
       </p>
-      <p className='text-xs text-gray-500'>
+      <p className='text-muted-foreground text-xs'>
         {t('recommendation.screening_hint')}
       </p>
       <Button
         variant='default'
         onClick={onOpenDrawer}
-        className='bg-[var(--secondary)] text-white'
+        className='bg-primary text-primary-foreground'
       >
         {t('recommendation.start_screening')}
       </Button>
@@ -134,7 +131,7 @@ export default function RecommendationPage() {
     return (
       <>
         <PageHeader pageIndicator='Rekomendasi' backRoute='/' />
-        <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+        <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
           <Skeleton className='mb-4 h-6 w-40' />
           <Skeleton className='h-[200px] w-full rounded-xl' />
         </div>
@@ -146,7 +143,7 @@ export default function RecommendationPage() {
     <>
       <PageHeader pageIndicator='Rekomendasi' backRoute='/' />
 
-      <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
         {!savedResult && (
           <NoRecommendationsPrompt onOpenDrawer={() => setDrawerOpen(true)} />
         )}
@@ -183,7 +180,7 @@ export default function RecommendationPage() {
     if (isError) {
       return (
         <div className='flex min-h-[300px] flex-col items-center justify-center gap-3 text-center'>
-          <p className='text-sm text-red-600'>
+          <p className='text-danger text-sm'>
             Gagal memuat rekomendasi. Silakan coba lagi.
           </p>
           <Button
