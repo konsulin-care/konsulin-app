@@ -8,7 +8,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 describe('PopoverContent', () => {
-  it('renders with a solid white background (not dependent on CSS variables)', () => {
+  it('renders with semantic popover surface tokens', () => {
     render(
       <Popover open>
         <PopoverTrigger>Open</PopoverTrigger>
@@ -20,8 +20,10 @@ describe('PopoverContent', () => {
     const contentEl = document.querySelector('[data-side]');
     expect(contentEl).not.toBeNull();
     const allClasses = contentEl.className;
-    expect(allClasses).toContain('bg-white');
-    expect(allClasses).toContain('text-gray-900');
+    expect(allClasses).toContain('bg-popover');
+    expect(allClasses).toContain('text-popover-foreground');
+    expect(allClasses).not.toContain('bg-white');
+    expect(allClasses).not.toContain('text-gray-900');
   });
 
   it('renders content children', () => {
