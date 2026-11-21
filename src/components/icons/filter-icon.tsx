@@ -4,7 +4,7 @@ import * as React from 'react';
  *
  */
 export default function FilterIcon(props: React.SVGProps<SVGSVGElement>) {
-  const { fill = '#000000', width = 24, height = 24 } = props;
+  const { fill = 'currentColor', width = 24, height = 24 } = props;
 
   return (
     <svg

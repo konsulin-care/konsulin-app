@@ -13,7 +13,11 @@ const repoRoot = resolve(__dirname, '../../..');
  * Repo-relative paths swept by the design-token migration. Each sweep task
  * appends its owned files here, sorted alphabetically.
  */
-const SWEPT: string[] = [];
+const SWEPT: string[] = [
+  'src/components/icons/filter-icon.tsx',
+  'src/components/icons/house-icon.tsx',
+  'src/components/icons/literature-icon.tsx'
+];
 
 describe('raw colour guard', () => {
   it('flags every guarded colour and utility form', () => {
