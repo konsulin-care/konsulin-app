@@ -59,6 +59,21 @@ describe('PendingSubmissionsBanner', () => {
     expect(container.querySelector('output')).not.toBeNull();
   });
 
+  it('uses the warning tint banner and turquoise sync button tokens', async () => {
+    const { container } = render(<PendingSubmissionsBanner />);
+    await screen.findByText(/2/);
+
+    const banner = container.querySelector('output');
+    expect(banner?.className).toContain('bg-warning-tint');
+    expect(banner?.className).toContain('text-warning-deep');
+    expect(banner?.className).not.toMatch(/amber/);
+    expect(banner?.className).not.toMatch(/neutral/);
+
+    const button = screen.getByRole('button', { name: /sync now/i });
+    expect(button.className).toContain('text-turquoise-deep');
+    expect(button.className).not.toMatch(/teal/);
+  });
+
   it('renders nothing when the queue is empty', async () => {
     vi.mocked(pendingCount).mockResolvedValue(0);
 

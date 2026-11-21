@@ -81,12 +81,12 @@ export default function PendingSubmissionsBanner() {
   };
 
   return (
-    <output className='flex items-center justify-between gap-2 border-b border-neutral-200 bg-amber-50 px-4 py-2 text-sm'>
+    <output className='border-border bg-warning-tint text-warning-deep flex items-center justify-between gap-2 border-b px-4 py-2 text-sm'>
       <span>{t('pwa.waiting_to_sync', { count })}</span>
       <button
         type='button'
         onClick={handleSyncNow}
-        className='cursor-pointer font-semibold text-teal-600 underline'
+        className='text-turquoise-deep cursor-pointer font-semibold underline'
       >
         {t('pwa.sync_now')}
       </button>

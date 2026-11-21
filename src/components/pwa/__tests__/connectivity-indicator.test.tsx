@@ -43,4 +43,17 @@ describe('ConnectivityIndicator', () => {
     const { container } = render(<ConnectivityIndicator />);
     expect(container.querySelector('output')).not.toBeNull();
   });
+
+  it.each(['offline', 'unstable'] as const)(
+    'uses the warning tint tokens when %s',
+    status => {
+      vi.mocked(getStatus).mockReturnValue(status);
+      render(<ConnectivityIndicator />);
+
+      const region = screen.getByRole('status');
+      expect(region.className).toContain('bg-warning-tint');
+      expect(region.className).toContain('text-warning-deep');
+      expect(region.className).not.toMatch(/neutral/);
+    }
+  );
 });

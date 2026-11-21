@@ -28,7 +28,7 @@ export default function ConnectivityIndicator() {
       : 'Connection unstable — retrying…';
 
   return (
-    <output className='flex items-center justify-center border-b border-neutral-200 bg-neutral-50 px-4 py-2 text-center text-xs text-neutral-500'>
+    <output className='border-border bg-warning-tint text-warning-deep flex items-center justify-center border-b px-4 py-2 text-center text-xs'>
       {message}
     </output>
   );
