@@ -23,12 +23,13 @@ function CalendarBase({ className, ...props }: CalendarBaseProps) {
       className={cn('flex justify-center', className)}
       style={
         {
-          '--rdp-accent-color': '#0ABDC3'
+          '--rdp-accent-color': 'var(--color-turquoise-deep)',
+          '--rdp-accent-background-color': 'var(--color-turquoise-tint)'
         } as CSSProperties
       }
       navLayout='around'
       modifiersClassNames={{
-        selected: 'bg-[#0ABDC3] text-[#ECEFF4] font-bold',
+        selected: 'bg-accent text-accent-foreground font-bold',
         today: 'font-extrabold'
       }}
       {...props}

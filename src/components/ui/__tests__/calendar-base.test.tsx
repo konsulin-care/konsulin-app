@@ -122,5 +122,25 @@ describe('CalendarBase', () => {
     // The style prop sets --rdp-accent-color on the element
     const styleAttr = root?.getAttribute('style') ?? '';
     expect(styleAttr).toContain('--rdp-accent-color');
+    expect(styleAttr).toContain('var(--color-turquoise-deep)');
+    expect(styleAttr).toContain('var(--color-turquoise-tint)');
+  });
+
+  it('styles the selected day with accent tokens and bold text', () => {
+    const { container } = render(
+      <CalendarBase
+        mode='single'
+        selected={new Date(2026, 6, 15)}
+        defaultMonth={new Date(2026, 6, 1)}
+      />
+    );
+
+    const selectedDay = container.querySelector('[data-selected="true"]');
+    expect(selectedDay).toBeInTheDocument();
+    expect(selectedDay?.className).toContain('bg-accent');
+    expect(selectedDay?.className).toContain('text-accent-foreground');
+    expect(selectedDay?.className).toContain('font-bold');
+    expect(selectedDay?.className).not.toContain('#0ABDC3');
+    expect(selectedDay?.className).not.toContain('#ECEFF4');
   });
 });
