@@ -59,6 +59,17 @@ describe('ModalQr', () => {
     expect(screen.getByText('Show QR')).toBeInTheDocument();
   });
 
+  it('styles the uncontrolled trigger as a charcoal primary action', () => {
+    render(<ModalQr value='https://example.com' />);
+    const trigger = screen.getByRole('button', { name: 'Show QR' });
+
+    expect(trigger.className).toContain('bg-primary');
+    expect(trigger.className).toContain('text-primary-foreground');
+    expect(trigger.className).not.toContain('text-white');
+    expect(trigger.className).not.toContain('bg-secondary');
+    expect(trigger.className).not.toContain('rounded-xl');
+  });
+
   it('renders QR code when controlled open is true', () => {
     render(<ModalQr value='https://example.com' open onOpenChange={noop} />);
     expect(screen.getByTestId('qr-code')).toBeInTheDocument();

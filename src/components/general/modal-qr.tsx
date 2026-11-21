@@ -69,9 +69,7 @@ export default function ModalQr({ value, open, onOpenChange }: Props) {
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button className='bg-secondary rounded-xl text-white'>
-          {t('qr.show')}
-        </Button>
+        <Button>{t('qr.show')}</Button>
       </DrawerTrigger>
       {drawerContent}
     </Drawer>
