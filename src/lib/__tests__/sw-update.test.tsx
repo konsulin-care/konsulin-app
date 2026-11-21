@@ -165,6 +165,9 @@ describe('setupSwUpdateDetection', () => {
     const toastContent = vi.mocked(toast.info).mock.calls[0][0] as ReactElement;
     render(toastContent);
     expect(screen.getByText('Update available')).toBeInTheDocument();
+    const reloadButton = screen.getByText('Reload');
+    expect(reloadButton.className).toContain('text-turquoise-deep');
+    expect(reloadButton.className).not.toContain('text-teal-600');
 
     fireEvent.click(screen.getByText('Reload'));
 

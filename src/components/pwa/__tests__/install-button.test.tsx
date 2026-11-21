@@ -43,7 +43,9 @@ describe('InstallButton', () => {
       mockOnChangeCallback?.();
     });
 
-    expect(screen.getByRole('button', { name: /install app/i })).toBeTruthy();
+    const button = screen.getByRole('button', { name: /install app/i });
+    expect(button.className).toContain('text-turquoise-deep');
+    expect(button.className).not.toContain('text-teal-600');
   });
 
   it('hides the button after the app is installed', () => {

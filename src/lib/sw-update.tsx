@@ -40,7 +40,7 @@ function SwUpdateToastContent({
       <span>{t('sw.update_available')}</span>
       <button
         type='button'
-        className='cursor-pointer font-semibold text-teal-600 underline'
+        className='text-turquoise-deep cursor-pointer font-semibold underline'
         onClick={() => {
           onDismiss();
           applySwUpdate(registration);

@@ -27,7 +27,7 @@ export default function InstallButton() {
     <button
       type='button'
       onClick={handleInstallClick}
-      className='cursor-pointer font-semibold text-teal-600 underline'
+      className='text-turquoise-deep cursor-pointer font-semibold underline'
     >
       {t('pwa.install_app')}
     </button>
