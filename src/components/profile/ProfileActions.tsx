@@ -38,14 +38,16 @@ function MenuItem({
         }
       }}
       className={`flex cursor-pointer items-center justify-between py-4 ${
-        !isFirst && !isLast ? 'border-b border-[#E8E8E8]' : ''
-      } ${isFirst || isLast ? 'border-none' : 'border-t border-[#E8E8E8]'}`}
+        !isFirst && !isLast ? 'border-border border-b' : ''
+      } ${isFirst || isLast ? 'border-none' : 'border-border border-t'}`}
     >
-      {IconComponent && <IconComponent size={24} className='text-[#13C2C2]' />}
-      <p className='flex flex-grow justify-start pl-4 font-[#26282C] text-xs font-normal'>
+      {IconComponent && (
+        <IconComponent size={24} className='text-turquoise-deep' />
+      )}
+      <p className='text-foreground flex flex-grow justify-start pl-4 text-xs font-normal'>
         {name}
       </p>
-      <ChevronRightIcon color='#ADB6C7' width={18} height={18} />
+      <ChevronRightIcon className='text-charcoal-400' width={18} height={18} />
     </li>
   );
 }
@@ -81,7 +83,7 @@ export default function ProfileActions({
 
   return (
     <>
-      <div className='mt-4 w-full rounded-lg bg-white'>
+      <div className='bg-card mt-4 w-full rounded-lg'>
         <ul>
           {menus.map((item, index) => (
             <MenuItem

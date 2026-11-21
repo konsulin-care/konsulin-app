@@ -79,7 +79,7 @@ export default function PhotoUploader({
                 className='h-4 w-4 text-white'
                 data-testid='upload-icon'
               />
-              <span className='text-[10px] font-semibold text-white'>
+              <span className='text-xs font-semibold text-white'>
                 {t('update_photo')}
               </span>
             </div>

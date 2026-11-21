@@ -26,7 +26,7 @@ export default function MedalCollection({ medals, isDisabled = false }) {
             <Link
               key={medal.title}
               href={'/'}
-              className='card flex w-[250px] shrink-0 items-center gap-2 bg-white text-wrap'
+              className='card bg-card flex w-[250px] shrink-0 items-center gap-2 text-wrap'
             >
               <Image
                 src={'/icons/survivor.svg'}
@@ -38,7 +38,7 @@ export default function MedalCollection({ medals, isDisabled = false }) {
                 <span className='text-left text-[12px] font-bold'>
                   {medal.title}
                 </span>
-                <span className='text-muted-foreground text-left text-[10px]'>
+                <span className='text-muted-foreground text-left text-xs'>
                   {medal.description}
                 </span>
               </div>

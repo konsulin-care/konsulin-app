@@ -21,26 +21,26 @@ export default function InformationDetail({
   onEdit
 }: Readonly<Props>) {
   return (
-    <div className='w-full rounded-[16px] border-0 bg-[#F9F9F9] p-4'>
+    <div className='bg-muted w-full rounded-[16px] border-0 p-4'>
       <div className='flex w-full items-center justify-between'>
-        <p className='text-sm font-bold text-[#2C2F35]'>{title}</p>
+        <p className='text-foreground text-sm font-bold'>{title}</p>
         {onEdit && (
           <button
             type='button'
             onClick={onEdit}
             aria-label={`Edit ${title}`}
             data-testid='section-edit'
-            className='text-secondary cursor-pointer'
+            className='text-turquoise-deep cursor-pointer'
           >
             <Pencil className='h-4 w-4' />
           </button>
         )}
       </div>
-      <div className='mt-2 flex w-full flex-col space-y-2 border-t border-[#E3E3E3]'>
+      <div className='border-border mt-2 flex w-full flex-col space-y-2 border-t'>
         {rows.map(row => (
           <div
             key={row.id}
-            className='mt-2 flex justify-between gap-3 text-xs text-[#2C2F35]'
+            className='text-foreground mt-2 flex justify-between gap-3 text-xs'
           >
             <p className='shrink-0 text-left'>{row.key}</p>
             <p className='text-right font-bold break-words'>{row.value}</p>
