@@ -107,31 +107,49 @@ describe('AssessmentsFilter', () => {
     });
   });
 
-  it('uses the secondary color for the Apply CTA', () => {
+  it('uses the charcoal primary for the Apply CTA', () => {
     render(<AssessmentsFilter onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole('button'));
 
     const applyBtn = screen.getByText('Apply');
-    expect(applyBtn.className).toContain('bg-secondary');
-    expect(applyBtn.className).not.toContain('bg-teal');
+    expect(applyBtn.className).toContain('bg-primary');
+    expect(applyBtn.className).not.toContain('bg-secondary');
   });
 
-  it('uses the secondary color for the selected sort button', () => {
+  it('marks the selected sort chip with a tint and a deep ring', () => {
     render(<AssessmentsFilter onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole('button'));
 
     fireEvent.click(screen.getByText('Most Popular'));
     const selected = screen.getByText('Most Popular');
-    expect(selected.className).toContain('bg-secondary');
-    expect(selected.className).not.toContain('bg-teal');
+    expect(selected.className).toContain('bg-accent');
+    expect(selected.className).toContain('text-accent-foreground');
+    expect(selected.className).toContain('ring-turquoise-deep');
+    expect(selected.className).not.toContain('bg-secondary');
+    expect(selected.className).not.toContain('text-white');
   });
 
-  it('uses the secondary color for the category checkbox accent', () => {
+  it('renders unselected sort chips on the card surface', () => {
+    render(<AssessmentsFilter onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button'));
+
+    const unselected = screen.getByText('Newest');
+    expect(unselected.className).toContain('bg-card');
+    expect(unselected.className).toContain('border-border');
+    expect(unselected.className).toContain('text-foreground');
+    expect(unselected.className).not.toContain('border-gray-300');
+    expect(unselected.className).not.toContain('bg-white');
+    expect(unselected.className).not.toContain('text-gray-700');
+  });
+
+  it('uses the deep turquoise token for the category checkbox accent', () => {
     render(<AssessmentsFilter onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole('button'));
 
     const checkbox = screen.getByLabelText('Physical Health');
-    expect(checkbox.className).toContain('accent-[var(--secondary)]');
-    expect(checkbox.className).not.toContain('accent-teal-500');
+    expect(checkbox.className).toContain(
+      'accent-[var(--color-turquoise-deep)]'
+    );
+    expect(checkbox.className).not.toContain('accent-[var(--secondary)]');
   });
 });

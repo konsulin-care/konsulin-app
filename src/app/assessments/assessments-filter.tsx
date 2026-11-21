@@ -61,7 +61,7 @@ export default function AssessmentsFilter({
       onCtaClick={handleApply}
     >
       <div className='mt-4'>
-        <h3 className='mb-2 text-sm font-semibold text-gray-700'>
+        <h3 className='text-charcoal-700 mb-2 text-sm font-semibold'>
           {t('category')}
         </h3>
         <div className='flex flex-col gap-2'>
@@ -74,7 +74,7 @@ export default function AssessmentsFilter({
                 type='checkbox'
                 checked={selectedCategories.includes(cat.code)}
                 onChange={() => handleCategoryToggle(cat.code)}
-                className='size-4 accent-[var(--secondary)]'
+                className='size-4 accent-[var(--color-turquoise-deep)]'
                 aria-label={t(`category.${cat.code}`)}
               />
               {t(`category.${cat.code}`)}
@@ -84,7 +84,7 @@ export default function AssessmentsFilter({
       </div>
 
       <div className='mt-4'>
-        <h3 className='mb-2 text-sm font-semibold text-gray-700'>
+        <h3 className='text-charcoal-700 mb-2 text-sm font-semibold'>
           {t('sort')}
         </h3>
         <div className='flex flex-wrap gap-2'>
@@ -96,8 +96,8 @@ export default function AssessmentsFilter({
               onClick={() => setSelectedSort(opt.value)}
               className={
                 selectedSort === opt.value
-                  ? 'bg-secondary text-white'
-                  : 'border-gray-300 bg-white text-gray-700'
+                  ? 'bg-accent text-accent-foreground ring-turquoise-deep ring-1'
+                  : 'border-border bg-card text-foreground'
               }
             >
               {opt.label}
