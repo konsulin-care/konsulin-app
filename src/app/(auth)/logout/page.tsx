@@ -15,6 +15,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { useProfile } from '@/context/profile/profileContext';
 import { useTranslations } from '@/i18n';
 import { clearUserData } from '@/lib/indexeddb';
+import { clearQueryCache } from '@/lib/query-persistence/clear';
 import { ownerKeyFor, type ReplayIdentity } from '@/lib/submission-owner';
 import {
   listOwnedSubmissions,
@@ -43,6 +44,7 @@ async function finishLogout(
   await (queueOwnerKey
     ? clearUserData(ownerId, { queueOwnerKey })
     : clearUserData(ownerId));
+  await clearQueryCache();
   await clearLastInterviewResult();
   const csrfRes = await fetch('/auth/cookie/csrf-token');
   const csrfToken = csrfRes.ok

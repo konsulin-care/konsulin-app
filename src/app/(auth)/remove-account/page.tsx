@@ -4,6 +4,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfile } from '@/context/profile/profileContext';
 import { clearUserData } from '@/lib/indexeddb';
+import { clearQueryCache } from '@/lib/query-persistence/clear';
 import { ownerKeyFor } from '@/lib/submission-owner';
 import { purgeResearchData } from '@/services/api/privacy';
 import { clearLastInterviewResult } from '@/utils/recommendation-interview';
@@ -42,6 +43,7 @@ export default function RemoveAccount() {
         await purgeResearchData();
         clearReferralLocalState(window.localStorage);
         await clearUserData(ownerId, { queueOwnerKey });
+        await clearQueryCache();
         await clearLastInterviewResult();
         // Account is already deleted server-side; local sign-out is best-effort.
         await Session.signOut().catch((err: unknown) => {

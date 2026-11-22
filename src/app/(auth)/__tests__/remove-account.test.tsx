@@ -6,6 +6,7 @@ const {
   mockPurge,
   mockClearReferral,
   mockClearUserData,
+  mockClearQueryCache,
   mockSignOut,
   mockDispatch,
   mockDispatchProfile
@@ -14,6 +15,7 @@ const {
   mockPurge: vi.fn(),
   mockClearReferral: vi.fn(),
   mockClearUserData: vi.fn(),
+  mockClearQueryCache: vi.fn(),
   mockSignOut: vi.fn(),
   mockDispatch: vi.fn(),
   mockDispatchProfile: vi.fn()
@@ -33,6 +35,10 @@ vi.mock('@/utils/referral', () => ({
 
 vi.mock('@/lib/indexeddb', () => ({
   clearUserData: mockClearUserData
+}));
+
+vi.mock('@/lib/query-persistence/clear', () => ({
+  clearQueryCache: mockClearQueryCache
 }));
 
 vi.mock('supertokens-auth-react/recipe/session', () => ({
@@ -100,6 +106,10 @@ describe('remove-account page', () => {
     expect(mockClearUserData).toHaveBeenCalledWith('u1', {
       queueOwnerKey: 'Patient/p1'
     });
+    expect(mockClearQueryCache).toHaveBeenCalledTimes(1);
+    expect(mockClearQueryCache.mock.invocationCallOrder[0]).toBeGreaterThan(
+      mockClearUserData.mock.invocationCallOrder[0]
+    );
     expect(mockSignOut).toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith('/auth/cookie/csrf-token');
     expect(mockFetch).toHaveBeenCalledWith(
@@ -118,6 +128,7 @@ describe('remove-account page', () => {
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/profile'));
     expect(mockClearReferral).not.toHaveBeenCalled();
     expect(mockClearUserData).not.toHaveBeenCalled();
+    expect(mockClearQueryCache).not.toHaveBeenCalled();
     expect(mockSignOut).not.toHaveBeenCalled();
     expect(window.location.href).toBe('http://localhost/profile');
   });

@@ -39,6 +39,10 @@ vi.mock('@/lib/indexeddb', () => ({
   clearUserData: vi.fn().mockResolvedValue(undefined)
 }));
 
+vi.mock('@/lib/query-persistence/clear', () => ({
+  clearQueryCache: vi.fn().mockResolvedValue(undefined)
+}));
+
 vi.mock('@/lib/submission-queue', () => ({
   listOwnedSubmissions: vi.fn().mockResolvedValue([]),
   replayPendingSubmissions: vi.fn().mockResolvedValue(undefined)
@@ -74,6 +78,7 @@ vi.mock('@/i18n', () => ({
 }));
 
 import { clearUserData } from '@/lib/indexeddb';
+import { clearQueryCache } from '@/lib/query-persistence/clear';
 import Session from 'supertokens-auth-react/recipe/session';
 
 /** Builds a queued submission owned by the authenticated patient. */
@@ -106,6 +111,7 @@ beforeEach(() => {
   vi.mocked(listOwnedSubmissions).mockResolvedValue([]);
   vi.mocked(Session.signOut).mockResolvedValue(undefined);
   vi.mocked(clearUserData).mockResolvedValue(undefined);
+  vi.mocked(clearQueryCache).mockResolvedValue(undefined);
   globalThis.fetch = vi.fn(
     async () =>
       ({
@@ -146,6 +152,12 @@ describe('Logout page', () => {
     });
 
     expect(clearUserData).toHaveBeenCalledTimes(1);
+    expect(clearQueryCache).toHaveBeenCalledTimes(1);
+    const clearUserDataOrder =
+      vi.mocked(clearUserData).mock.invocationCallOrder[0];
+    const clearQueryCacheOrder =
+      vi.mocked(clearQueryCache).mock.invocationCallOrder[0];
+    expect(clearUserDataOrder).toBeLessThan(clearQueryCacheOrder);
     expect(screen.getByTestId('loading-spinner')).toBeDefined();
   });
 
@@ -160,6 +172,14 @@ describe('Logout page', () => {
       expect(clearUserData).toHaveBeenCalledWith('user-1');
     });
     expect(vi.mocked(clearUserData).mock.calls[0]).toEqual(['user-1']);
+    await waitFor(() => {
+      expect(clearQueryCache).toHaveBeenCalledTimes(1);
+    });
+    const clearUserDataOrder =
+      vi.mocked(clearUserData).mock.invocationCallOrder[0];
+    const clearQueryCacheOrder =
+      vi.mocked(clearQueryCache).mock.invocationCallOrder[0];
+    expect(clearUserDataOrder).toBeLessThan(clearQueryCacheOrder);
     await waitFor(() => {
       expect(Session.signOut).toHaveBeenCalled();
     });
