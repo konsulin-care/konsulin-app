@@ -337,7 +337,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           return;
         }
         author = { reference: `Practitioner/${practitionerId}` };
-        subject = { reference: `Practitioner/${practitionerId}` };
+        subject = { reference: `Patient/${patientId}` };
       } else {
         if (!patientId) {
           toast.error(t('missing_patient'));

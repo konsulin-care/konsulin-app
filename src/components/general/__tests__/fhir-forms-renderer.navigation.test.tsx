@@ -529,4 +529,41 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       expect.anything()
     );
   });
+
+  it('practitioner submission: author is the practitioner, subject is the patient', async () => {
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+        role='Practitioner'
+        practitionerId='prac-1'
+      />
+    );
+
+    clickCta('See Results');
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+
+    const payload = mockSubmitQuestionnaire.mock.calls[0][0];
+    expect(payload.subject).toEqual({ reference: 'Patient/pat-1' });
+    expect(payload.author).toEqual({ reference: 'Practitioner/prac-1' });
+  });
+
+  it('patient submission: author and subject are both the patient', async () => {
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+        role='Patient'
+      />
+    );
+
+    clickCta('See Results');
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+
+    const payload = mockSubmitQuestionnaire.mock.calls[0][0];
+    expect(payload.subject).toEqual({ reference: 'Patient/pat-1' });
+    expect(payload.author).toEqual({ reference: 'Patient/pat-1' });
+  });
 });
