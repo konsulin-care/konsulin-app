@@ -1,5 +1,5 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   BatchProgress,
@@ -99,7 +99,15 @@ describe('BatchProgress', () => {
     expect(screen.getByText('Total participants: 12')).toBeTruthy();
   });
 
-  it('shows Total participants: 0 when completionCounts is empty', () => {
+  it('renders the participant count when provided', () => {
+    render(
+      <BatchProgress progress={makeStudyProgress()} participantCount={12} />
+    );
+
+    expect(screen.getByText('Total participants: 12')).toBeTruthy();
+  });
+
+  it('hides Total participants when completionCounts is empty', () => {
     render(
       <BatchProgress
         progress={makeStudyProgress()}
@@ -107,13 +115,37 @@ describe('BatchProgress', () => {
       />
     );
 
-    expect(screen.getByText('Total participants: 0')).toBeTruthy();
+    expect(screen.queryByText(/Total participants/)).toBeNull();
   });
 
-  it('shows Total participants: 0 when completionCounts is undefined', () => {
+  it('hides Total participants when no count is available', () => {
     render(<BatchProgress progress={makeStudyProgress()} />);
 
-    expect(screen.getByText('Total participants: 0')).toBeTruthy();
+    expect(screen.queryByText(/Total participants/)).toBeNull();
+  });
+
+  it('hides Total participants when the participant count is below the floor', () => {
+    render(
+      <BatchProgress progress={makeStudyProgress()} participantCount={4} />
+    );
+
+    expect(screen.queryByText(/Total participants/)).toBeNull();
+  });
+
+  it('shows the cached-count disclaimer when the info trigger is focused', async () => {
+    render(
+      <BatchProgress progress={makeStudyProgress()} participantCount={12} />
+    );
+
+    fireEvent.focus(screen.getByRole('button', { name: 'About this count' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'This is a cached count, updated every 30 minutes to reduce server load.'
+        )
+      ).toBeTruthy();
+    });
   });
 
   it('does not show X/Y questionnaires text', () => {

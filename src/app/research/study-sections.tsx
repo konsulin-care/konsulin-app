@@ -1,9 +1,16 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/tooltip';
 import type { QuestionnaireInfo } from '@/services/api/research';
+import { withKAnonymityFloor } from '@/services/api/research-counts';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { daysUntilBatch } from '@/utils/fhir/research';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle, Info } from 'lucide-react';
 
 /**
  * Limits a description to maxLength characters, appending an ellipsis.
@@ -21,13 +28,61 @@ export function truncateDescription(
   return `${description.slice(0, maxLength).trimEnd()}…`;
 }
 
+/**
+ * Resolves the participant count to display.
+ *
+ * Prefers the study participant count, applying the k-anonymity floor. Falls
+ * back to the highest per-questionnaire completion count (unfloored) for the
+ * researcher path. Returns null when neither source has data.
+ *
+ * @param participantCount - Raw study participant count, when available.
+ * @param completionCounts - Per-questionnaire completion counts.
+ * @returns The count to display, or null when there is nothing to show.
+ */
+function resolveParticipantCount(
+  participantCount: number | undefined,
+  completionCounts: Map<string, number> | undefined
+): number | null {
+  if (participantCount !== undefined) {
+    return withKAnonymityFloor(participantCount);
+  }
+  if (!completionCounts || completionCounts.size === 0) return null;
+  return Math.max(...completionCounts.values());
+}
+
+/** Info trigger with the cached-count disclaimer tooltip. */
+function ParticipantCountInfo() {
+  return (
+    <TooltipProvider delayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type='button'
+            aria-label='About this count'
+            className='cursor-pointer text-gray-400 hover:text-gray-600'
+          >
+            <Info className='h-3 w-3' />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          This is a cached count, updated every 30 minutes to reduce server
+          load.
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
 /** Current batch index, closing deadline, progress bar, and participant counts. */
 export function BatchProgress({
   progress,
-  completionCounts
+  completionCounts,
+  participantCount
 }: Readonly<{
   progress: StudyProgress;
   completionCounts?: Map<string, number>;
+  /** Study participant count; floored before display when provided. */
+  participantCount?: number;
 }>) {
   const { currentBatch } = progress;
   if (!currentBatch) return null;
@@ -45,10 +100,10 @@ export function BatchProgress({
       ? Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100))
       : 0;
 
-  const maxParticipants =
-    completionCounts && completionCounts.size > 0
-      ? Math.max(...completionCounts.values())
-      : 0;
+  const resolvedParticipantCount = resolveParticipantCount(
+    participantCount,
+    completionCounts
+  );
 
   return (
     <div className='flex flex-col gap-1 text-[11px] text-gray-600'>
@@ -66,9 +121,12 @@ export function BatchProgress({
           style={{ width: `${completedPercent}%` }}
         />
       </div>
-      <div className='flex items-center justify-between'>
-        <span>Total participants: {maxParticipants}</span>
-      </div>
+      {resolvedParticipantCount !== null && resolvedParticipantCount > 0 && (
+        <div className='flex items-center gap-1'>
+          <span>Total participants: {resolvedParticipantCount}</span>
+          <ParticipantCountInfo />
+        </div>
+      )}
     </div>
   );
 }
