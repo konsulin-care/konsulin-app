@@ -3,7 +3,7 @@ import {
   MOCK_FIELD,
   renderWithQuery
 } from '@/__tests__/react-test-utils';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Step3 } from '../research-form-steps';
@@ -57,6 +57,45 @@ describe('BatchDateField - date picker button', () => {
 
     const dateInputs = screen.queryAllByRole('spinbutton');
     expect(dateInputs).toHaveLength(0);
+  });
+
+  it('stores the Jakarta local date when picking 31 October 2026', () => {
+    const originalTz = process.env.TZ;
+    process.env.TZ = 'Asia/Jakarta';
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-15T03:00:00Z'));
+
+    try {
+      const setValue = vi.fn();
+      renderWithQuery(
+        <Step3
+          fields={[MOCK_FIELD]}
+          errors={{}}
+          batches={[MOCK_BATCH]}
+          setValue={setValue}
+          onAddBatch={vi.fn()}
+          onRemoveBatch={vi.fn()}
+        />
+      );
+
+      fireEvent.click(
+        screen.getByRole('button', { name: /select start date/i })
+      );
+      fireEvent.click(screen.getByRole('button', { name: /October 31/ }));
+
+      expect(setValue).toHaveBeenCalledWith(
+        'batches.0.startDate',
+        '2026-10-31',
+        { shouldValidate: true }
+      );
+    } finally {
+      vi.useRealTimers();
+      if (originalTz === undefined) {
+        delete process.env.TZ;
+      } else {
+        process.env.TZ = originalTz;
+      }
+    }
   });
 
   it('opens drawer with calendar when date picker button is clicked', async () => {

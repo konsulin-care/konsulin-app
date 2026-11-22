@@ -5,6 +5,7 @@ import { useAuth } from '@/context/auth/authContext';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import type { PlanDefinition, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -76,7 +77,7 @@ const mapToPlanIds = (
 
 /** Return indices of batches whose start date is in the past. */
 const computeLockedBatchIndices = (batches: FormData['batches']): number[] => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = format(new Date(), 'yyyy-MM-dd');
   return batches
     .map((batch, i) => ({ batch, i }))
     .filter(

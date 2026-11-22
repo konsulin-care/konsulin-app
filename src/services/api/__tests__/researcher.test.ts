@@ -1,5 +1,5 @@
 import type { Bundle, PlanDefinition, ResearchStudy } from 'fhir/r4';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseResearcherDashboardBundle } from '../researcher';
 
 function makeStudy(id: string, protocolRefs: string[] = []): ResearchStudy {
@@ -107,6 +107,30 @@ describe('parseResearcherDashboardBundle', () => {
 
     expect(result.studies[0].currentBatch).toBeNull();
     expect(result.studies[0].daysRemaining).toBe(0);
+  });
+
+  it('uses the Jakarta local date for the current batch lookup', () => {
+    const originalTz = process.env.TZ;
+    process.env.TZ = 'Asia/Jakarta';
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-31T18:00:00Z'));
+
+    try {
+      const study = makeStudy('study-1', ['PlanDefinition/batch-1']);
+      const batch1 = makePlan('batch-1', '2026-11-01', '2026-11-30');
+      const bundle = makeStudiesBundle([study], [batch1]);
+
+      const result = parseResearcherDashboardBundle(bundle, 0);
+
+      expect(result.studies[0].currentBatch?.id).toBe('batch-1');
+    } finally {
+      vi.useRealTimers();
+      if (originalTz === undefined) {
+        delete process.env.TZ;
+      } else {
+        process.env.TZ = originalTz;
+      }
+    }
   });
 
   it('includes totalParticipants from count bundle', () => {

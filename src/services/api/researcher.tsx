@@ -3,6 +3,7 @@
 import type { ResearchBatch } from '@/utils/fhir/research';
 import { daysUntilBatch, toResearchBatch } from '@/utils/fhir/research';
 import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import type { Bundle, PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { getAPI } from '../api';
 
@@ -47,7 +48,7 @@ export function parseResearcherDashboardBundle(
   studiesBundle: Bundle,
   participantCount: number
 ): ResearcherDashboardData {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = format(new Date(), 'yyyy-MM-dd');
   const entries = studiesBundle.entry ?? [];
 
   const studies = entries

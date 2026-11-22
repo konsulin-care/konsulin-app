@@ -5,6 +5,7 @@ import DatePickerButton from '@/components/shared/date-picker-button';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/i18n';
+import { format } from 'date-fns';
 
 import type { FieldErrors, UseFormReturn } from 'react-hook-form';
 import type { QuestionnaireOption } from '../shared';
@@ -38,7 +39,7 @@ export function BatchDateField({
 
   /** Persist a date selection into the form field. */
   const handleChange = (date: Date) => {
-    const yyyyMMdd = date.toISOString().slice(0, 10);
+    const yyyyMMdd = format(date, 'yyyy-MM-dd');
     // skipcq: JS-0098 - fire-and-forget validation
     setValue(`batches.${index}.${field}`, yyyyMMdd, {
       shouldValidate: true
