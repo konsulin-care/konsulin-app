@@ -161,7 +161,10 @@
   "pwa": {
     "install_app": "Install app",
     "sync_now": "Sync now",
-    "waiting_to_sync": "{count, plural, one {# submission waiting to sync} other {# submissions waiting to sync}}"
+    "waiting_to_sync": "{count, plural, one {# submission waiting to sync} other {# submissions waiting to sync}}",
+    "queued_title": "Saved on this device",
+    "queued_description": "Your submission was saved on this device, sent when you are back online.",
+    "queued_back_home": "Back to home"
   },
   "sw": {
     "update_available": "Update available",

@@ -161,7 +161,10 @@
   "pwa": {
     "install_app": "Instal aplikasi",
     "sync_now": "Sinkron sekarang",
-    "waiting_to_sync": "{count} submission menunggu untuk disinkronkan"
+    "waiting_to_sync": "{count} submission menunggu untuk disinkronkan",
+    "queued_title": "Tersimpan di perangkat ini",
+    "queued_description": "Kiriman Anda tersimpan di perangkat ini dan akan dikirim saat Anda kembali online.",
+    "queued_back_home": "Kembali ke beranda"
   },
   "sw": {
     "update_available": "Pembaruan tersedia",

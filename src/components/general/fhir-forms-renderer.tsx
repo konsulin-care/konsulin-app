@@ -18,6 +18,7 @@ import Image from 'next/image';
 
 import { AssessmentThemeProvider } from '@/components/general/assessment-theme-provider';
 import { CardStackContainer } from '@/components/general/card-stack-container';
+import OfflineQueuedNotice from '@/components/general/offline-queued-notice';
 import AppDrawer from '@/components/ui/app-drawer';
 import CircularProgress from '@/components/ui/circular-progress';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
@@ -40,6 +41,21 @@ import {
 import { toast } from 'react-toastify';
 
 import { useRuntimeConfig } from '@/components/general/runtime-config-provider';
+
+/**
+ * True when a submission result is the offline queue marker rather than a
+ * persisted QuestionnaireResponse.
+ *
+ * @param result - Value returned by the submit mutation.
+ * @returns Whether the response was queued for offline replay.
+ */
+function isOfflineQueuedResult(result: unknown): boolean {
+  return (
+    typeof result === 'object' &&
+    result !== null &&
+    (result as { queued?: unknown }).queued === true
+  );
+}
 
 interface FhirFormsRendererProps {
   questionnaire: Questionnaire;
@@ -113,6 +129,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isQueued, setIsQueued] = useState(false);
   const { dispatch } = useFab();
   const draftOwnerId = props.ownerId || practitionerId || patientId || '';
   const { terminologyServer } = useRuntimeConfig();
@@ -140,7 +157,8 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const { mutateAsync: submitQuestionnaire } = useSubmitQuestionnaire(
     questionnaire.id,
-    isAuthenticated
+    isAuthenticated,
+    questionnaire.title
   );
 
   const { data: researchProgress } = useResearchProgress();
@@ -345,6 +363,16 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         subject
       });
 
+      if (isOfflineQueuedResult(submitResult)) {
+        // The response is saved locally and will replay later. Show the
+        // offline confirmation instead of navigating, interpreting, or
+        // storing a guest draft with an undefined response id.
+        setIsQueued(true);
+        setIsSubmitting(false);
+        setIsOpen(false);
+        return;
+      }
+
       // Authenticated users only: fire-and-forget the interpret webhook so
       // navigation is never blocked on the async interpretation. The record
       // page polls the result via the stored service request id.
@@ -467,6 +495,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   if (isBuilding) {
     return <PageLoader />;
+  }
+
+  if (isQueued) {
+    return <OfflineQueuedNotice />;
   }
 
   return (

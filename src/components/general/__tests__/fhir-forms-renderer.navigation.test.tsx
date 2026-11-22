@@ -141,6 +141,13 @@ vi.mock('@/components/ui/drawer', () => ({
   )
 }));
 vi.mock('react-toastify', () => ({ toast: { error: vi.fn() } }));
+vi.mock('next/link', () => ({
+  default: ({ href, children, ...props }: any) => (
+    <a href={typeof href === 'string' ? href : String(href)} {...props}>
+      {children}
+    </a>
+  )
+}));
 vi.mock('next/image', () => ({
   default: (props: any) => <img data-testid='mock-image' {...props} />
 }));
@@ -463,5 +470,63 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
       '/record?id=pat-1&view=QuestionnaireResponse/resp-789'
     );
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('queued: shows the saved-on-this-device confirmation with a home link and skips navigation', async () => {
+    mockSubmitQuestionnaire.mockResolvedValue({ queued: true });
+
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated
+        patientId='pat-1'
+      />
+    );
+
+    clickCta('See Results');
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+
+    const notice = await screen.findByTestId('offline-queued-notice');
+    expect(notice).toHaveTextContent(/saved on this device/i);
+    expect(
+      within(notice).getByRole('link', { name: /back to home/i })
+    ).toHaveAttribute('href', '/');
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(useSubmitQuestionnaire).toHaveBeenCalledWith('q-123', true, 'PHQ-9');
+  });
+
+  it('queued: skips the interpret webhook and the guest draft save', async () => {
+    const post = vi.fn();
+    vi.mocked(getAPI).mockResolvedValue({ post } as any);
+    vi.mocked(getResponse).mockReturnValue({
+      resourceType: 'QuestionnaireResponse',
+      questionnaire: 'Questionnaire/q-123',
+      status: 'completed',
+      item: [
+        {
+          linkId: 'interpretation',
+          item: [{ linkId: 'score-dimension', item: [] }]
+        }
+      ]
+    } as any);
+    mockSubmitQuestionnaire.mockResolvedValue({ queued: true });
+
+    render(
+      <FhirFormsRenderer
+        questionnaire={mockQuestionnaire}
+        isAuthenticated={false}
+      />
+    );
+
+    clickCta('See Results');
+    await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
+    await screen.findByTestId('offline-queued-notice');
+
+    expect(post).not.toHaveBeenCalled();
+    expect(dbSet).not.toHaveBeenCalledWith(
+      'assessment_drafts',
+      expect.anything()
+    );
   });
 });
