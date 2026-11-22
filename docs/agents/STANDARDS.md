@@ -53,6 +53,10 @@ Each domain has a focused document under `@docs/agents/`.
 - Cache stable resources (Practitioner, Organization) with TTL
 - Use `_include` to eager-load referenced resources and avoid N+1 queries
 - Use `_summary=count` for list endpoints when only metadata is needed
+- **Persisted queries**: any query persisted to IndexedDB must use an
+  allowlisted key, return structured-cloneable plain data (never an axios
+  response), and never hold a QuestionnaireResponse or clinical data.
+  Bump the `CACHE_BUSTER` constant whenever the persisted shape changes.
 - **Bundle resource referencing**: When constructing a FHIR transaction
   bundle, reference resources created within the same bundle via
   `urn:uuid:<uuid>` (`fullUrl` on the creating entry). New resources

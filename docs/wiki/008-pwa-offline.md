@@ -8,81 +8,97 @@ dependencies: [007-aehrc-forms.md]
 
 # Summary
 
-Current PWA uses Serwist (Next.js-specific library). Must be replaced
-with a plain service worker since Serwist is tightly coupled to Next.js
-patterns (RSC, router prefetch). IndexedDB usage for assessment storage
-is portable.
+Current PWA uses Serwist (Next.js-specific, RSC/router prefetch); IndexedDB is portable.
 
 # Current Implementation
 
-| File                        | Purpose                       | Fate                     |
-| --------------------------- | ----------------------------- | ------------------------ |
-| `src/app/sw.ts`             | Serwist service worker config | Replace with plain SW    |
-| `public/sw.js`              | Built service worker          | Replace                  |
-| `src/app/~offline/page.tsx` | Offline fallback page         | Replace with Go template |
-| `src/app/manifest.json`     | PWA manifest                  | Keep (adapt)             |
+`src/app/sw.ts` and `public/sw.js` (replace with plain SW), `src/app/~offline/page.tsx` (Go template), `src/app/manifest.json` (adapt).
 
 # Business Rules
 
-- Offline fallback page shown when navigator.onLine === false
-- Cache-first strategy for static assets
-- Network-first for HTML navigation
+- Offline fallback page when navigator.onLine === false; cache-first static assets, network-first HTML navigation
 - Questionnaire responses cached in IndexedDB for offline sync
-- Service worker queue replays failed submissions
-- PWA manifest defines app name, icons, theme color
+- SW queue replays failed submissions; manifest sets name, icons, theme
+
+# Query Cache Persistence
+
+TanStack Query v5 persists a small allowlist to IndexedDB via
+`@tanstack/react-query-persist-client` so research counts, titles and
+study structure survive reloads and render offline for 24 hours.
+
+- **Allowlist**: `['study-participant-count', ...]`,
+  `['per-questionnaire-counts', ...]`, `['questionnaire-titles', ...]`,
+  and `['research', kind, id, mode]` (key[0] === 'research' AND
+  key.length === 4). The bare `['research']` key is NOT persisted. Only
+  `status === 'success'` queries; `shouldDehydrateMutation: () => false`.
+- **Never persisted**: `['assessments', id]` (an axios response) or any
+  QuestionnaireResponse / clinical data.
+- **Policy**: `gcTime` 24h (>= `maxAge`), `maxAge` 24h, `CACHE_BUSTER`
+  as buster; keep `refetchOnWindowFocus: false` and `retry: 0`.
+- **Store**: a custom `Persister` over `src/lib/indexeddb`
+  (`dbGet`/`dbSet`/`dbDelete`) writes `query_cache` with structured
+  clone (not JSON), so the `Map` in `PerQuestionnaireCounts` survives.
+  Writes are trailing-throttled 1000 ms; an empty client deletes the
+  record; `removeClient` cancels any pending write.
+- **Display**: no optimistic bump; count queries use `staleTime` 30
+  minutes. BatchProgress tooltips the count: "This is a cached count,
+  updated every 30 minutes to reduce server load." Apply
+  `withKAnonymityFloor` (`COMPLETION_COUNT_FLOOR = 5`) and hide the
+  "Total participants" line when there is no count (absent, below floor,
+  or empty map). Never render "Total participants: 0".
+- **Clearing**: logout and account removal call `clearQueryCache()`
+  (`queryClient.clear()` + `persister.removeClient()`); `clearUserData`
+  also empties `query_cache`. On identity change remove only
+  `['research', kind, id, mode]` queries that do not match the current
+  identity; shared count/title queries stay. Do NOT hook auth `login`
+  (it fires on cached-session reload).
+- **Prefetch**: after full progress loads while `navigator.onLine`,
+  prefetch `['assessments', id]` for each uncompleted questionnaire of
+  each study's `currentBatch`, reusing the exact `useQuestionnaire`
+  queryFn/URL so the SW caches the Questionnaire GET (network-first
+  `/proxy/fhir/Questionnaire*`).
 
 # Owner Scope
 
 Pending submissions are scoped to the identity that created them.
 
-- Authenticated: `Patient/<fhirId>` when role is Patient, otherwise
+- Authenticated: `Patient/<fhirId>` for Patient, else
   `Practitioner/<fhirId>` (Practitioner, Researcher, Clinic Admin).
-- Guest: `guest:<identifier.value>` for the anonymous session identifier
-  system; payloads with no author and no identifier become `guest:unbound`.
-- SOAP bundle: owner is the first entry whose resource has
-  `author.reference`.
-- Owner is derived from the payload at replay time, so legacy items with
-  `ownerId: ''` still route correctly.
-- Unbound guest items replay only for a guest; the handler binds them with
-  `buildAnonymousIdentifier(await ensureAnonymousSession(false))` before
-  sending. Authenticated users never send or see them.
+- Guest: `guest:<identifier.value>` or `guest:unbound` (no author/identifier).
+- SOAP bundle owner: first entry whose resource has `author.reference`.
+- Owner is derived from the payload at replay, so legacy `ownerId: ''`
+  items still route correctly.
+- Unbound guest items replay only for a guest, bound with
+  `buildAnonymousIdentifier(await ensureAnonymousSession(false))`.
+  Authenticated users never send or see them.
 - Replay waits until `useAuth().isLoading` is false.
 
 # Replay Safety
 
-- A single IndexedDB module lives in `src/lib/indexeddb/index.ts`; the
-  former monolith and legacy files are removed. Test `vi.mock` calls keep
-  working because the import path is unchanged.
+- One IndexedDB module at `src/lib/indexeddb/index.ts`; test `vi.mock`
+  calls keep working because the import path is unchanged.
 - Locking: `navigator.locks.request('konsulin-replay',
-{ ifAvailable: true }, cb)`. A null lock means another tab is running,
-  so return without sending. Without `navigator.locks`, a module-level
-  in-flight promise is shared by concurrent callers.
-- Exists probe (questionnaire responses only): `GET
+{ ifAvailable: true }, cb)`. A null lock means another tab is running, so
+  return without sending. Without locks, a module-level promise is shared.
+- Exists probe (responses only): `GET
 /fhir/QuestionnaireResponse?<scope>&questionnaire=<id>&authored=ge<x>&authored=le<x>&_summary=count`
-  with scope `author=<ref>` or `identifier=<system>|<value>`. When the
-  returned Bundle has `total >= 1`, resolve without POST and drop the
-  item. Probe failure propagates; no POST is attempted.
-- Error classes: network errors (no status) or 5xx keep the item and
-  increment attempts; 401/403 keep it with attempts unchanged; other 4xx
-  park it with `lastError`; 8 attempts parks it with `max-attempts`.
-- Parked items are never auto-replayed. `retrySubmission(id)` resets to
+  with `author=<ref>` or `identifier=<system>|<value>`. Bundle `total >= 1`
+  drops the item; probe failure propagates and no POST is attempted.
+- Error classes: network errors or 5xx keep and increment attempts;
+  401/403 keep attempts; other 4xx park with `lastError`; 8 attempts
+  parks with `max-attempts`.
+- Parked items never auto-replay; `retrySubmission(id)` resets to
   waiting, attempts 0, and replays that item.
 
 # Review UI & Logout
 
 - Banner (app-chrome, every role) shows only the current owner's items:
-  "N waiting to sync · Sync now" and "N could not be sent · Review",
-  each only when > 0.
+  "N waiting to sync · Sync now" / "N could not be sent · Review" when > 0.
 - Review dialog lists parked items with label, local date-time, mapped
-  reason (400/422 invalid, 404 questionnaire gone, max-attempts several
-  tries, else generic), raw error in collapsed details, Retry, and
-  Discard confirmed by alert-dialog.
-- Logout replays first, then asks keep or discard when the current owner
-  still has queue items, then signs out and calls
-  `clearUserData(userId, { queueOwnerKey })` (option only on discard).
-  Account removal always discards. Token expiry keeps the queue.
-- Queue write calls `navigator.storage?.persist?.()` when queued into an
-  empty queue.
+  reason, collapsed raw error, Retry, and alert-confirmed Discard.
+- Logout replays, asks keep/discard when the owner has items, then signs out
+  and calls `clearUserData(userId, { queueOwnerKey })`; removal discards, expiry keeps.
+- Queue write calls `navigator.storage?.persist?.()` on an empty queue.
 
 # Go SSR Considerations
 
