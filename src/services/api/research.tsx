@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ensureAnonymousSession } from '../anonymous-session';
 import { getAPI } from '../api';
 import { submitFhirBundle } from './fhir-bundle';
+import { prefetchCurrentBatchQuestionnaires } from './research-prefetch';
 
 export type { QuestionnaireInfo } from './questionnaire-info';
 
@@ -233,6 +234,7 @@ export function useResearchProgress(options?: {
   skipResponseSearch?: boolean;
 }) {
   const skipResponseSearch = options?.skipResponseSearch ?? false;
+  const queryClient = useQueryClient();
   const { identity, identityFailed, isEligible } = useResearchIdentity();
 
   const query = useQuery({
@@ -246,6 +248,19 @@ export function useResearchProgress(options?: {
     staleTime: 5 * 60_000,
     queryFn: () => fetchResearchProgress(identity, skipResponseSearch)
   });
+
+  // Warm the questionnaire cache for the current batch once full progress is
+  // available. Counts and batch structure can render from cache, but opening
+  // an uncompleted questionnaire needs its Questionnaire GET.
+  useEffect(() => {
+    if (skipResponseSearch || !query.data) return;
+    // skipcq: JS-0098 - fire-and-forget prefetch; failures fall back to on-demand
+    void prefetchCurrentBatchQuestionnaires(queryClient, query.data).catch(
+      () => {
+        /* prefetch is best-effort */
+      }
+    );
+  }, [query.data, queryClient, skipResponseSearch]);
 
   // v5's isLoading (isPending && isFetching) is false while the query is
   // disabled during identity resolution, which would flash the empty state.

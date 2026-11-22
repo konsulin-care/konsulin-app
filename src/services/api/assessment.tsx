@@ -8,7 +8,12 @@ import {
 } from '@/lib/submission-replay';
 import { IQuestionnaireResponse } from '@/types/assessment';
 import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient
+} from '@tanstack/react-query';
 import { format } from 'date-fns';
 import {
   Bundle,
@@ -187,9 +192,14 @@ export const useOngoingResearch = () => {
   });
 };
 
-/** Fetch a single questionnaire by ID. */
-export const useQuestionnaire = (questionnaireId: number | string) => {
-  return useQuery({
+/**
+ * Shared query options for fetching a single questionnaire by ID.
+ *
+ * @param questionnaireId - Questionnaire id to fetch.
+ * @returns TanStack Query options keyed by ['assessments', questionnaireId].
+ */
+export const questionnaireQueryOptions = (questionnaireId: number | string) =>
+  queryOptions({
     queryKey: ['assessments', questionnaireId],
     queryFn: async () => {
       const API = await getAPI();
@@ -199,7 +209,13 @@ export const useQuestionnaire = (questionnaireId: number | string) => {
       return response;
     },
     staleTime: 30_000,
-    retry: 1,
+    retry: 1
+  });
+
+/** Fetch a single questionnaire by ID. */
+export const useQuestionnaire = (questionnaireId: number | string) => {
+  return useQuery({
+    ...questionnaireQueryOptions(questionnaireId),
     select: response => {
       return response.data.entry ?? null;
     }

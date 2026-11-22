@@ -36,6 +36,10 @@ vi.mock('../../api', () => ({
   getAPI: vi.fn()
 }));
 
+vi.mock('../research-prefetch', () => ({
+  prefetchCurrentBatchQuestionnaires: vi.fn().mockResolvedValue(undefined)
+}));
+
 /** Batch-response for the studies bundle: study + batch plan in a searchset. */
 const STUDIES_BATCH_RESPONSE = makeStudiesBatchResponse([
   { id: 'study-a', periodStart: '2026-06-01' }
