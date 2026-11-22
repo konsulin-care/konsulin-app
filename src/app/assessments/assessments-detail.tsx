@@ -53,6 +53,9 @@ export default function AssessmentsDetail() {
   const role = authState?.userInfo?.role_name;
   const isPractitioner = role === Roles.Practitioner;
   const practitionerId = isPractitioner ? authState?.userInfo?.fhirId : null;
+  /** Only patients and guests assess themselves; every other role fills the
+   * form for a patient picked from the participant selector. */
+  const isSelfPatient = role === Roles.Patient || role === Roles.Guest;
 
   useEffect(() => {
     globalThis.window.scrollTo(0, 0);
@@ -89,7 +92,7 @@ export default function AssessmentsDetail() {
     }
     return (
       <div className='flex flex-col gap-5'>
-        {practitionerId && (
+        {!isSelfPatient && (
           <Participant
             list={patientsListToday}
             value={participantId}
@@ -100,7 +103,9 @@ export default function AssessmentsDetail() {
         <FhirFormsRenderer
           questionnaire={questionnaire?.[0]?.resource}
           isAuthenticated={authState.isAuthenticated}
-          patientId={isPractitioner ? participantId : authState.userInfo.fhirId}
+          patientId={
+            isSelfPatient ? (authState?.userInfo?.fhirId ?? '') : participantId
+          }
           formType={
             questionnaire?.[0]?.resource?.useContext?.[0]?.valueCodeableConcept
               ?.coding?.[0]?.code

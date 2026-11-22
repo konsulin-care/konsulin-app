@@ -79,7 +79,16 @@ vi.mock('@/components/page-header', () => ({
 
 vi.mock('@/components/general/fhir-forms-renderer', () => ({
   __esModule: true,
-  default: () => <div data-testid='fhir-forms-renderer'>Form Renderer</div>
+  default: (props: { patientId?: string }) => (
+    <div data-testid='fhir-forms-renderer' data-patient-id={props.patientId}>
+      Form Renderer
+    </div>
+  )
+}));
+
+vi.mock('@/app/assessments/soap/participant', () => ({
+  __esModule: true,
+  default: () => <div data-testid='participant-selector'>Select patient</div>
 }));
 
 vi.mock('@/lib/lazy-component', async () => {
@@ -204,5 +213,65 @@ describe('AssessmentsDetail', () => {
 
     // The FHIR forms renderer is lazy-loaded — we just check header renders
     expect(screen.getByTestId('page-header')).toBeDefined();
+  });
+
+  it('passes the auth fhirId as patientId for a Patient-role user', async () => {
+    vi.mocked(useQuestionnaire).mockReturnValue({
+      data: [
+        {
+          resource: {
+            id: 'q-123',
+            resourceType: 'Questionnaire',
+            title: 'Anxiety Test'
+          }
+        }
+      ],
+      isLoading: false
+    } as unknown as ReturnType<typeof useQuestionnaire>);
+
+    render(<AssessmentsDetail />, { wrapper });
+    await waitForLoad();
+
+    expect(screen.getByTestId('fhir-forms-renderer')).toHaveAttribute(
+      'data-patient-id',
+      'patient-1'
+    );
+  });
+
+  it('never uses a staff fhirId as patientId and offers the participant selector', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: {
+          role_name: 'Clinic Admin',
+          fhirId: 'staff-1',
+          fullname: 'Admin User',
+          email: 'admin@example.com'
+        }
+      },
+      dispatch: vi.fn()
+    } as unknown as ReturnType<typeof useAuth>);
+    vi.mocked(useQuestionnaire).mockReturnValue({
+      data: [
+        {
+          resource: {
+            id: 'q-123',
+            resourceType: 'Questionnaire',
+            title: 'Anxiety Test'
+          }
+        }
+      ],
+      isLoading: false
+    } as unknown as ReturnType<typeof useQuestionnaire>);
+
+    render(<AssessmentsDetail />, { wrapper });
+    await waitForLoad();
+
+    expect(screen.getByTestId('participant-selector')).toBeDefined();
+    expect(screen.getByTestId('fhir-forms-renderer')).toHaveAttribute(
+      'data-patient-id',
+      ''
+    );
   });
 });
