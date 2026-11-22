@@ -180,7 +180,11 @@
     "cancel_discard": "Cancel",
     "queued_title": "Saved on this device",
     "queued_description": "Your submission was saved on this device, sent when you are back online.",
-    "queued_back_home": "Back to home"
+    "queued_back_home": "Back to home",
+    "logout_pending_title": "Unsent submissions",
+    "logout_pending_description": "Some submissions from this session have not been sent yet. Keep them on this device or discard them before logging out.",
+    "logout_keep": "Keep",
+    "logout_discard": "Discard"
   },
   "sw": {
     "update_available": "Update available",

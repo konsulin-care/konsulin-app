@@ -180,7 +180,11 @@
     "cancel_discard": "Batal",
     "queued_title": "Tersimpan di perangkat ini",
     "queued_description": "Kiriman Anda tersimpan di perangkat ini dan akan dikirim saat Anda kembali online.",
-    "queued_back_home": "Kembali ke beranda"
+    "queued_back_home": "Kembali ke beranda",
+    "logout_pending_title": "Kiriman belum terkirim",
+    "logout_pending_description": "Beberapa kiriman dari sesi ini belum terkirim. Simpan di perangkat ini atau hapus sebelum keluar.",
+    "logout_keep": "Simpan",
+    "logout_discard": "Hapus"
   },
   "sw": {
     "update_available": "Pembaruan tersedia",
