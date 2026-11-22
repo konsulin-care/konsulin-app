@@ -1,14 +1,24 @@
 import { trendForQuestionnaire } from '@/utils/fhir/report';
 import type { ResearchBatch } from '@/utils/fhir/research';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
+import { localDateOf } from '@/utils/local-date';
 import { format, parseISO } from 'date-fns';
 import type { QuestionnaireResponse } from 'fhir/r4';
 
-/** Formats a yyyy-mm-dd date for display, e.g. "15 Aug 2026". */
-export function formatDay(date: string | undefined): string | null {
+/**
+ * Formats an ISO date or date-time for display, e.g. "15 Aug 2026".
+ *
+ * @param date - ISO 8601 date or date-time string.
+ * @param timeZone - IANA time zone used to derive the local calendar date.
+ * @returns The formatted "dd MMM yyyy" date, or null when absent or invalid.
+ */
+export function formatDay(
+  date: string | undefined,
+  timeZone?: string
+): string | null {
   if (!date) return null;
   try {
-    return format(parseISO(date.slice(0, 10)), 'dd MMM yyyy');
+    return format(parseISO(localDateOf(date, timeZone)), 'dd MMM yyyy');
   } catch {
     return null;
   }

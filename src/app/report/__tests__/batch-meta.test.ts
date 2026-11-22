@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ResearchBatch } from '@/utils/fhir/research';
 
-import { batchTitle } from '../batch-meta';
+import { batchTitle, formatDay } from '../batch-meta';
 
 const B1: ResearchBatch = {
   id: 'b1',
@@ -16,6 +16,18 @@ const B2: ResearchBatch = {
   end: '2026-09-30',
   questionnaireIds: ['phq2']
 };
+
+describe('formatDay', () => {
+  it('formats a UTC date-time in the requested time zone', () => {
+    expect(formatDay('2026-11-12T17:30:00Z', 'Asia/Jakarta')).toBe(
+      '13 Nov 2026'
+    );
+  });
+
+  it('returns a date-only input unchanged', () => {
+    expect(formatDay('2026-11-13')).toBe('13 Nov 2026');
+  });
+});
 
 describe('batchTitle', () => {
   /** Mirrors the en message report.batch_prefix: "Batch {index}". */
