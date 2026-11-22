@@ -36,6 +36,7 @@ const {
   mockUseConsentToStudy,
   mockUseQuestionnaireTitles,
   mockUsePerQuestionnaireCounts,
+  mockUseStudyParticipantCount,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -55,6 +56,7 @@ const {
     mockUseConsentToStudy: vi.fn(),
     mockUseQuestionnaireTitles: vi.fn(),
     mockUsePerQuestionnaireCounts: vi.fn(),
+    mockUseStudyParticipantCount: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -96,6 +98,8 @@ vi.mock('react-toastify', () => ({
 
 vi.mock('@/services/api/research-counts', () => ({
   usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
+  useStudyParticipantCount: mockUseStudyParticipantCount,
+  withKAnonymityFloor: (total: number) => (total >= 5 ? total : null),
   COMPLETION_COUNT_FLOOR: 5
 }));
 
@@ -135,6 +139,8 @@ beforeEach(() => {
   });
   mockUsePerQuestionnaireCounts.mockReset();
   mockUsePerQuestionnaireCounts.mockReturnValue({ data: new Map() });
+  mockUseStudyParticipantCount.mockReset();
+  mockUseStudyParticipantCount.mockReturnValue({ data: undefined });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();

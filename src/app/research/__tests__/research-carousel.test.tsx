@@ -10,6 +10,16 @@ import {
   TITLE_MAP
 } from './research-fixtures';
 
+const { mockUseStudyParticipantCount } = vi.hoisted(() => ({
+  mockUseStudyParticipantCount: vi.fn()
+}));
+
+vi.mock('@/services/api/research-counts', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/services/api/research-counts')>();
+  return { ...actual, useStudyParticipantCount: mockUseStudyParticipantCount };
+});
+
 vi.mock('@/i18n', async () => {
   const { createUseTranslationsMock } =
     await import('@/i18n/__tests__/test-messages');
@@ -72,6 +82,8 @@ function renderCarousel(
 
 beforeEach(() => {
   window.localStorage.clear();
+  mockUseStudyParticipantCount.mockReset();
+  mockUseStudyParticipantCount.mockReturnValue({ data: 42 });
   Object.defineProperty(window, 'location', {
     configurable: true,
     value: new URL('https://konsulin.care/research')
@@ -92,11 +104,20 @@ describe('ResearchCarousel', () => {
       screen.getByText(/A longitudinal survey of mental health/)
     ).toBeTruthy();
     expect(screen.getByText(/Closes in \d+ days/i)).toBeTruthy();
-    expect(screen.getByText('Total participants: 0')).toBeTruthy();
+    expect(screen.getByText('Total participants: 42')).toBeTruthy();
+    expect(mockUseStudyParticipantCount).toHaveBeenCalledWith('research');
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
     expect(screen.getByText('PHQ-2')).toBeTruthy();
     expect(screen.getByText('Big Five Inventory')).toBeTruthy();
     expect(screen.getByText(/Tap to share this survey/i)).toBeTruthy();
+  });
+
+  it('never renders a zero participant total', () => {
+    mockUseStudyParticipantCount.mockReturnValue({ data: 0 });
+    renderCarousel([makeStudyProgress()], 'research');
+
+    expect(screen.queryByText('Total participants: 0')).toBeNull();
+    expect(screen.queryByText(/Total participants:/)).toBeNull();
   });
 
   it('shares the full invite message when the share bar is clicked', () => {

@@ -31,6 +31,12 @@ function renderCarousel(
 
 const OPEN_STUDY_NAME = 'Open study Konsulin Mental Health Survey';
 
+vi.mock('@/services/api/research-counts', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/services/api/research-counts')>();
+  return { ...actual, useStudyParticipantCount: () => ({ data: 42 }) };
+});
+
 vi.mock('@/i18n', async () => {
   const { createUseTranslationsMock } =
     await import('@/i18n/__tests__/test-messages');

@@ -2,6 +2,7 @@
 
 import ShareResearchButton from '@/components/research/share-research-button';
 import type { QuestionnaireInfo } from '@/services/api/research';
+import { useStudyParticipantCount } from '@/services/api/research-counts';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { FlaskConical } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -66,6 +67,10 @@ function StudySlide({
   onStudyClick: (studyId: string) => void;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
 }>) {
+  const { data: participantCount } = useStudyParticipantCount(
+    progress.study.id
+  );
+
   return (
     <div
       data-testid={`research-slide-${progress.study.id}`}
@@ -84,7 +89,10 @@ function StudySlide({
       />
       <div className='pointer-events-none relative z-10 flex flex-col gap-2'>
         <StudyHeader study={progress.study} />
-        <BatchProgress progress={progress} />
+        <BatchProgress
+          progress={progress}
+          participantCount={participantCount}
+        />
         <TimelineStrip progress={progress} />
         <QuestionnaireList
           progress={progress}
