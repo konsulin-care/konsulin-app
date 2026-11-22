@@ -20,6 +20,37 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+interface InterceptorRegistration {
+  interceptors: {
+    response: {
+      use: ReturnType<typeof vi.fn>;
+    };
+  };
+}
+
+/** Returns the error handler registered on the mocked axios response interceptor. */
+async function getInterceptorErrorHandler(): Promise<
+  (error: unknown) => Promise<unknown>
+> {
+  const { getAPI } = await import('../api');
+  const axios = await import('axios');
+
+  await getAPI();
+
+  const createMock = vi.mocked(axios.default.create);
+  const instance = createMock.mock.results[0]?.value as unknown as
+    InterceptorRegistration | undefined;
+  const useMock = instance?.interceptors.response.use;
+  const errorHandler = useMock?.mock.calls[0]?.[1] as
+    ((error: unknown) => Promise<unknown>) | undefined;
+
+  if (!errorHandler) {
+    throw new Error('response interceptor was not registered');
+  }
+
+  return errorHandler;
+}
+
 describe('getAPI', () => {
   it('creates instance with /proxy baseURL by default', async () => {
     const { getAPI } = await import('../api');
@@ -151,6 +182,55 @@ describe('getAPI', () => {
 
       expect(axios.default.create).toHaveBeenCalledTimes(2);
       expect(first).not.toBe(second);
+    });
+  });
+
+  describe('response interceptor errors', () => {
+    it('rejects a 400 response with an ApiError whose status is 400', async () => {
+      const handler = await getInterceptorErrorHandler();
+      const { ApiError } = await import('../api-error');
+      const axiosError = {
+        message: 'Request failed with status code 400',
+        code: 'ERR_BAD_REQUEST',
+        config: { url: '/fhir/QuestionnaireResponse', method: 'post' },
+        response: { status: 400, data: { message: 'bad request' } }
+      };
+
+      const error = await handler(axiosError).catch((err: unknown) => err);
+
+      expect(error).toBeInstanceOf(ApiError);
+      expect((error as InstanceType<typeof ApiError>).status).toBe(400);
+    });
+
+    it('rejects a request with no response and code ERR_NETWORK with an ApiError whose status is undefined and code is ERR_NETWORK', async () => {
+      const handler = await getInterceptorErrorHandler();
+      const { ApiError } = await import('../api-error');
+      const axiosError = {
+        message: 'Network Error',
+        code: 'ERR_NETWORK',
+        config: { url: '/fhir/QuestionnaireResponse', method: 'post' }
+      };
+
+      const error = await handler(axiosError).catch((err: unknown) => err);
+
+      expect(error).toBeInstanceOf(ApiError);
+      const apiError = error as InstanceType<typeof ApiError>;
+      expect(apiError.status).toBeUndefined();
+      expect(apiError.code).toBe('ERR_NETWORK');
+    });
+
+    it('rejected ApiError message equals String(originalAxiosError)', async () => {
+      const handler = await getInterceptorErrorHandler();
+      const axiosError = {
+        message: 'Request failed with status code 400',
+        code: 'ERR_BAD_REQUEST',
+        config: { url: '/fhir/QuestionnaireResponse', method: 'post' },
+        response: { status: 400, data: { message: 'bad request' } }
+      };
+
+      const error = await handler(axiosError).catch((err: unknown) => err);
+
+      expect((error as Error).message).toBe(String(axiosError));
     });
   });
 });

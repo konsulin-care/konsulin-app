@@ -5,7 +5,7 @@ import { clearUserData } from '@/lib/indexeddb';
 import axios, { AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { Patient, Practitioner } from 'fhir/r4';
 import { toast } from 'react-toastify';
-import { parseAxiosError } from './api-error';
+import { ApiError, parseAxiosError } from './api-error';
 import type { RoleProfile } from './role-profiles';
 
 export interface UserProfile {
@@ -175,7 +175,7 @@ function setupResponseInterceptor(instance: AxiosInstance) {
         });
       }
 
-      return Promise.reject(new Error(error));
+      return Promise.reject(new ApiError(error));
     }
   );
 }
