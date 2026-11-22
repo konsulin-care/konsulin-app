@@ -21,6 +21,14 @@ vi.mock('@/components/general/query-provider', () => ({
   getAppQueryClient: vi.fn()
 }));
 
+vi.mock('@/services/anonymous-session', () => ({
+  ensureAnonymousSession: vi.fn(),
+  buildAnonymousIdentifier: vi.fn((guestId: string) => ({
+    system: 'https://login.konsulin.care/guestid',
+    value: guestId
+  }))
+}));
+
 import { getAppQueryClient } from '@/components/general/query-provider';
 import {
   isNetworkError,
@@ -28,8 +36,40 @@ import {
   registerSubmissionReplayHandlers,
   SOAP_BUNDLE_KIND
 } from '@/lib/submission-replay';
+import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { getAPI } from '@/services/api';
 import { ApiError } from '@/services/api-error';
+
+const QUESTIONNAIRE_RESPONSE_URL = '/fhir/QuestionnaireResponse';
+
+const boundPayload = {
+  resourceType: 'QuestionnaireResponse',
+  id: 'QR-1',
+  author: { reference: 'Patient/patient-1' },
+  questionnaire: 'Questionnaire/questionnaire-1',
+  authored: '2025-01-01T10:00:00Z'
+};
+
+/**
+ * Mocks the API surface used by the questionnaire response handler.
+ *
+ * @param total - The exists probe result count to return.
+ * @returns The mocked post and get functions.
+ */
+function mockQuestionnaireApi(total: number): {
+  mockPost: ReturnType<typeof vi.fn>;
+  mockGet: ReturnType<typeof vi.fn>;
+} {
+  const mockPost = vi.fn().mockResolvedValue({ data: {} });
+  const mockGet = vi.fn().mockResolvedValue({
+    data: { resourceType: 'Bundle', total }
+  });
+  vi.mocked(getAPI).mockResolvedValue({
+    post: mockPost,
+    get: mockGet
+  } as unknown as AxiosInstance);
+  return { mockPost, mockGet };
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -45,30 +85,76 @@ describe('registerSubmissionReplayHandlers', () => {
 });
 
 describe('questionnaire response replay', () => {
-  it('re-posts the stored payload to /fhir/QuestionnaireResponse', async () => {
-    const mockPost = vi.fn().mockResolvedValue({ data: {} });
-    vi.mocked(getAPI).mockResolvedValue({
-      post: mockPost
-    } as unknown as AxiosInstance);
+  it('re-posts the stored payload when the exists probe returns no match', async () => {
+    const { mockPost } = mockQuestionnaireApi(0);
 
     registerSubmissionReplayHandlers();
     const handler = mockRegistry.get(QUESTIONNAIRE_RESPONSE_KIND);
     expect(handler).toBeDefined();
 
-    const payload = { resourceType: 'QuestionnaireResponse', id: 'QR-1' };
-    await handler?.(payload);
+    await handler?.(boundPayload);
 
     expect(mockPost).toHaveBeenCalledWith(
-      '/fhir/QuestionnaireResponse',
-      payload
+      QUESTIONNAIRE_RESPONSE_URL,
+      boundPayload
     );
   });
 
+  it('resolves without posting when the exists probe already finds a match', async () => {
+    const { mockPost } = mockQuestionnaireApi(1);
+
+    registerSubmissionReplayHandlers();
+    const handler = mockRegistry.get(QUESTIONNAIRE_RESPONSE_KIND);
+
+    await handler?.(boundPayload);
+
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it('probes by questionnaire, authored range and count summary', async () => {
+    const { mockGet } = mockQuestionnaireApi(0);
+
+    registerSubmissionReplayHandlers();
+    const handler = mockRegistry.get(QUESTIONNAIRE_RESPONSE_KIND);
+
+    await handler?.(boundPayload);
+
+    const probeUrl = mockGet.mock.calls[0]?.[0] as string;
+    expect(probeUrl).toContain('questionnaire=Questionnaire/questionnaire-1');
+    expect(probeUrl).toContain('authored=ge2025-01-01T10:00:00Z');
+    expect(probeUrl).toContain('authored=le2025-01-01T10:00:00Z');
+    expect(probeUrl).toContain('_summary=count');
+    expect(probeUrl).toContain('author=Patient/patient-1');
+  });
+
+  it('binds an unbound guest payload with an anonymous identifier', async () => {
+    const { mockPost } = mockQuestionnaireApi(0);
+    vi.mocked(ensureAnonymousSession).mockResolvedValue('guest-123');
+    const guestPayload = {
+      resourceType: 'QuestionnaireResponse',
+      questionnaire: 'Questionnaire/questionnaire-1',
+      authored: '2025-01-01T10:00:00Z'
+    };
+
+    registerSubmissionReplayHandlers();
+    const handler = mockRegistry.get(QUESTIONNAIRE_RESPONSE_KIND);
+
+    await handler?.(guestPayload);
+
+    expect(ensureAnonymousSession).toHaveBeenCalledWith(false);
+    expect(mockPost).toHaveBeenCalledWith(QUESTIONNAIRE_RESPONSE_URL, {
+      ...guestPayload,
+      identifier: [
+        {
+          system: 'https://login.konsulin.care/guestid',
+          value: 'guest-123'
+        }
+      ]
+    });
+  });
+
   it('invalidates research queries after a successful replay', async () => {
-    const mockPost = vi.fn().mockResolvedValue({ data: {} });
-    vi.mocked(getAPI).mockResolvedValue({
-      post: mockPost
-    } as unknown as AxiosInstance);
+    mockQuestionnaireApi(0);
     const invalidateQueries = vi.fn();
     vi.mocked(getAppQueryClient).mockReturnValue({
       invalidateQueries
@@ -77,7 +163,7 @@ describe('questionnaire response replay', () => {
     registerSubmissionReplayHandlers();
     const handler = mockRegistry.get(QUESTIONNAIRE_RESPONSE_KIND);
 
-    await handler?.({ resourceType: 'QuestionnaireResponse' });
+    await handler?.(boundPayload);
 
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['research'] });
   });
