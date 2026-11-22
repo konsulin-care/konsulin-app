@@ -1,6 +1,7 @@
 import { ANONYMOUS_SESSION_IDENTIFIER_SYSTEM } from '@/constants/anonymous-session';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
+import { pruneForeignResearchQueries } from '@/lib/query-persistence/clear';
 import { clearConsentFlag, readConsentFlag } from '@/utils/consent';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 import {
@@ -111,6 +112,7 @@ export function buildQuestionnaireResponseSearch(
  * @returns React Query result with ResearchProgress data.
  */
 function useResearchIdentity() {
+  const queryClient = useQueryClient();
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const [identity, setIdentity] = useState<ResearchIdentity | null>(null);
   const [identityFailed, setIdentityFailed] = useState(false);
@@ -158,6 +160,13 @@ function useResearchIdentity() {
       cancelled = true;
     };
   }, [isAuthLoading, isEligible, isAuthenticated, fhirId]);
+
+  // Drop cached progress that belongs to a previous identity (for example a
+  // guest session that became a patient) while keeping shared count queries.
+  useEffect(() => {
+    if (!identity) return;
+    pruneForeignResearchQueries(queryClient, identity);
+  }, [identity, queryClient]);
 
   return { identity, identityFailed, isEligible };
 }
