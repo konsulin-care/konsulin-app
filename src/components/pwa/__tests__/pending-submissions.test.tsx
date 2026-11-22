@@ -4,7 +4,9 @@ import { ownerOf } from '@/lib/submission-owner';
 import {
   listOwnedSubmissions,
   listenForSyncReplay,
-  replayPendingSubmissions
+  removeSubmission,
+  replayPendingSubmissions,
+  retrySubmission
 } from '@/lib/submission-queue';
 import { registerSubmissionReplayHandlers } from '@/lib/submission-replay';
 import {
@@ -12,7 +14,8 @@ import {
   render,
   renderHook,
   screen,
-  waitFor
+  waitFor,
+  within
 } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PendingSubmissionsBanner, {
@@ -22,7 +25,9 @@ import PendingSubmissionsBanner, {
 vi.mock('@/lib/submission-queue', () => ({
   listOwnedSubmissions: vi.fn(),
   replayPendingSubmissions: vi.fn(),
-  listenForSyncReplay: vi.fn(() => vi.fn())
+  listenForSyncReplay: vi.fn(() => vi.fn()),
+  retrySubmission: vi.fn(),
+  removeSubmission: vi.fn()
 }));
 
 vi.mock('@/lib/submission-replay', () => ({
@@ -40,7 +45,24 @@ vi.mock('@/i18n', () => ({
         const translations: Record<string, Record<string, string>> = {
           common: {
             'pwa.waiting_to_sync': '{count} submissions waiting to sync',
-            'pwa.sync_now': 'Sync now'
+            'pwa.sync_now': 'Sync now',
+            'pwa.parked_to_sync': '{count} could not be sent',
+            'pwa.review': 'Review',
+            'pwa.parked_title': 'Could not be sent',
+            'pwa.parked_description': 'These submissions could not be sent.',
+            'pwa.parked_empty': 'No submissions need review.',
+            'pwa.parked_details': 'Details',
+            'pwa.reason_invalid': 'Rejected as invalid',
+            'pwa.reason_missing': 'Questionnaire no longer exists',
+            'pwa.reason_max_attempts': 'Could not send after several tries',
+            'pwa.reason_generic': 'Could not be sent',
+            'pwa.retry': 'Retry',
+            'pwa.discard': 'Discard',
+            'pwa.discard_title': 'Discard this submission?',
+            'pwa.discard_description':
+              'This queued submission will be removed.',
+            'pwa.discard_confirm': 'Discard',
+            'pwa.cancel_discard': 'Cancel'
           }
         };
         const template = translations[namespace]?.[key] ?? key;
@@ -260,5 +282,106 @@ describe('PendingSubmissionsBanner', () => {
     await screen.findByText(/2/);
     expect(registerSubmissionReplayHandlers).toHaveBeenCalled();
     expect(listenForSyncReplay).toHaveBeenCalled();
+  });
+});
+
+describe('PendingSubmissionsBanner parked submissions', () => {
+  /** Builds a parked item with a label, timestamp and last error. */
+  function makeParked(
+    id: string,
+    label: string,
+    createdAt: number,
+    lastError: { status?: number; message: string }
+  ): PendingSubmission {
+    return {
+      ...makeItem(id, 'Patient/p1', 'parked'),
+      label,
+      createdAt,
+      lastError
+    };
+  }
+
+  beforeEach(() => {
+    vi.mocked(replayPendingSubmissions).mockResolvedValue();
+    vi.mocked(listenForSyncReplay).mockReturnValue(vi.fn());
+    vi.mocked(registerSubmissionReplayHandlers).mockReturnValue();
+    vi.mocked(retrySubmission).mockResolvedValue();
+    vi.mocked(removeSubmission).mockResolvedValue();
+    setAuth({
+      isLoading: false,
+      isAuthenticated: true,
+      role: 'Patient',
+      fhirId: 'p1'
+    });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('shows only the parked part when nothing is waiting', async () => {
+    vi.mocked(listOwnedSubmissions).mockResolvedValue([
+      makeParked('a', 'PHQ-9', 1, { status: 400, message: 'invalid' })
+    ]);
+
+    render(<PendingSubmissionsBanner />);
+
+    expect(await screen.findByText(/1 could not be sent/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /review/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /sync now/i })).toBeNull();
+  });
+
+  it('lists each parked item with its label, date and mapped reason', async () => {
+    const createdAt = Date.UTC(2024, 0, 2, 3, 4);
+    vi.mocked(listOwnedSubmissions).mockResolvedValue([
+      makeParked('a', 'PHQ-9', createdAt, {
+        status: 400,
+        message: 'invalid answer'
+      }),
+      makeParked('b', 'GAD-7', createdAt, {
+        status: 404,
+        message: 'not found'
+      })
+    ]);
+
+    render(<PendingSubmissionsBanner />);
+    fireEvent.click(await screen.findByRole('button', { name: /review/i }));
+
+    expect(await screen.findByText('PHQ-9')).toBeTruthy();
+    expect(screen.getByText('GAD-7')).toBeTruthy();
+    expect(screen.getByText('Rejected as invalid')).toBeTruthy();
+    expect(screen.getByText('Questionnaire no longer exists')).toBeTruthy();
+    const expectedDate = new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(new Date(createdAt));
+    expect(screen.getAllByText(expectedDate)).toHaveLength(2);
+    expect(screen.getByText('invalid answer')).toBeTruthy();
+  });
+
+  it('retries one item and discards only the confirmed item', async () => {
+    vi.mocked(listOwnedSubmissions).mockResolvedValue([
+      makeParked('a', 'PHQ-9', 1, { status: 400, message: 'invalid' }),
+      makeParked('b', 'GAD-7', 2, { status: 500, message: 'server' })
+    ]);
+
+    render(<PendingSubmissionsBanner />);
+    fireEvent.click(await screen.findByRole('button', { name: /review/i }));
+    await screen.findByText('PHQ-9');
+
+    fireEvent.click(screen.getAllByRole('button', { name: /retry/i })[0]);
+    await waitFor(() =>
+      expect(retrySubmission).toHaveBeenCalledWith('a', {
+        ownerKey: 'Patient/p1',
+        isGuest: false
+      })
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: /discard/i })[0]);
+    const confirm = await screen.findByRole('alertdialog');
+    fireEvent.click(within(confirm).getByRole('button', { name: /discard/i }));
+
+    await waitFor(() => expect(removeSubmission).toHaveBeenCalledWith('a'));
+    expect(removeSubmission).not.toHaveBeenCalledWith('b');
   });
 });
