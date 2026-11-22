@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unnecessary-type-parameters, unicorn/prefer-add-event-listener */
+import { ownerOf } from '@/lib/submission-owner';
 import { getStore, openDB } from './connection';
-import type { StoreName } from './types';
+import type { PendingSubmission, StoreName } from './types';
 import { STORES } from './types';
+
+/** Optional cleanup settings for {@link clearUserData}. */
+export interface ClearUserDataOptions {
+  /** Owner key whose pending submissions should be discarded. */
+  queueOwnerKey?: string;
+}
 
 /**
  * Gets a single value by key from an IndexedDB store.
@@ -138,14 +145,27 @@ export async function cursorDeleteAll(
 /**
  * Clears all user data from all stores for a given owner ID.
  *
+ * Pending submissions are derived from their payload at cleanup time and are
+ * only removed when a `queueOwnerKey` is supplied. Omitting the option keeps
+ * the offline queue intact (for example on token expiry).
+ *
  * @param ownerId - The owner ID to clear data for.
+ * @param options - Optional queue cleanup settings.
  */
-export async function clearUserData(ownerId: string): Promise<void> {
+export async function clearUserData(
+  ownerId: string,
+  options: ClearUserDataOptions = {}
+): Promise<void> {
+  const { queueOwnerKey } = options;
   await dbDelete(STORES.uiPreferences, ['last-interview-result']);
 
   const allStores = Object.values(STORES);
   for (const storeName of allStores) {
     await cursorDeleteAll(storeName, (value: Record<string, unknown>) => {
+      if (storeName === STORES.pendingSubmissions) {
+        if (!queueOwnerKey) return false;
+        return ownerOf(value as unknown as PendingSubmission) === queueOwnerKey;
+      }
       if (storeName === STORES.guestSessions) {
         return value.guest_id === ownerId;
       }

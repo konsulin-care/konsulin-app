@@ -4,6 +4,7 @@ import { LoadingSpinnerIcon } from '@/components/icons';
 import { useAuth } from '@/context/auth/authContext';
 import { useProfile } from '@/context/profile/profileContext';
 import { clearUserData } from '@/lib/indexeddb';
+import { ownerKeyFor } from '@/lib/submission-owner';
 import { purgeResearchData } from '@/services/api/privacy';
 import { clearLastInterviewResult } from '@/utils/recommendation-interview';
 import { clearReferralLocalState } from '@/utils/referral';
@@ -32,10 +33,15 @@ export default function RemoveAccount() {
     /** Purges server data, then clears local state and session. */
     const handleRemoveAccount = async () => {
       const ownerId = state.userInfo?.userId ?? '';
+      const queueOwnerKey = ownerKeyFor({
+        isAuthenticated: state.isAuthenticated,
+        role: state.userInfo?.role_name,
+        fhirId: state.userInfo?.fhirId
+      });
       try {
         await purgeResearchData();
         clearReferralLocalState(window.localStorage);
-        await clearUserData(ownerId);
+        await clearUserData(ownerId, { queueOwnerKey });
         await clearLastInterviewResult();
         // Account is already deleted server-side; local sign-out is best-effort.
         await Session.signOut().catch((err: unknown) => {

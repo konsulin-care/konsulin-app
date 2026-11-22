@@ -41,7 +41,10 @@ vi.mock('supertokens-auth-react/recipe/session', () => ({
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
-    state: { userInfo: { userId: 'u1' } },
+    state: {
+      isAuthenticated: true,
+      userInfo: { userId: 'u1', role_name: 'Patient', fhirId: 'p1' }
+    },
     dispatch: mockDispatch
   })
 }));
@@ -94,7 +97,9 @@ describe('remove-account page', () => {
 
     await waitFor(() => expect(mockPurge).toHaveBeenCalledTimes(1));
     expect(mockClearReferral).toHaveBeenCalledWith(window.localStorage);
-    expect(mockClearUserData).toHaveBeenCalledWith('u1');
+    expect(mockClearUserData).toHaveBeenCalledWith('u1', {
+      queueOwnerKey: 'Patient/p1'
+    });
     expect(mockSignOut).toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith('/auth/cookie/csrf-token');
     expect(mockFetch).toHaveBeenCalledWith(
