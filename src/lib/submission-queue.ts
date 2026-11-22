@@ -36,6 +36,9 @@ const REPLAY_LOCK = 'konsulin-replay';
 /** Owner key of guest items that still need an anonymous session binding. */
 const UNBOUND_GUEST_OWNER = 'guest:unbound';
 
+/** Number of failed attempts before an item is parked for manual review. */
+const MAX_ATTEMPTS = 8;
+
 /** Shared replay promise used when the Web Locks API is unavailable. */
 let replayInFlight: Promise<void> | null = null;
 
@@ -173,33 +176,92 @@ function failedEntry(
   if (isParkableStatus(status)) {
     next.status = 'parked';
     next.lastError = { status, message: errorMessageOf(error) };
+    return next;
+  }
+  if (attempts >= MAX_ATTEMPTS) {
+    next.status = 'parked';
+    next.lastError = { status, message: 'max-attempts' };
   }
   return next;
 }
 
 /**
- * Drains the queue once: replays every item through its registered handler.
- * Items owned by another identity are left untouched. Successful submissions
- * are removed; failed ones keep their entry and are classified for retry or
- * manual review. Unknown kinds are skipped.
+ * Replays one queue item through its registered handler.
+ * Successful submissions are removed; failed ones are stored with their
+ * updated attempt count and review status. Items without a handler are left
+ * untouched.
+ *
+ * @param item - The pending submission to replay.
+ */
+async function replayItem(item: PendingSubmission): Promise<void> {
+  const handler = handlers.get(item.kind);
+  if (!handler) return;
+  try {
+    await handler(item.payload);
+    await removeSubmission(item.id);
+  } catch (error) {
+    console.warn('[submission-queue] replay failed for', item.id, error);
+    await dbSet(
+      STORES.pendingSubmissions,
+      failedEntry(item, error, Date.now())
+    );
+  }
+}
+
+/**
+ * Drains the queue once: replays every waiting item through its registered
+ * handler. Parked items await manual review and are never auto-replayed.
+ * Items owned by another identity are left untouched. Unknown kinds are
+ * skipped.
  */
 async function drainQueue(identity: ReplayIdentity): Promise<void> {
   const items = await listPendingSubmissions();
   for (const item of items) {
+    if (item.status === 'parked') continue;
     if (!ownsItem(item, identity)) continue;
-    const handler = handlers.get(item.kind);
-    if (!handler) continue;
-    try {
-      await handler(item.payload);
-      await removeSubmission(item.id);
-    } catch (error) {
-      console.warn('[submission-queue] replay failed for', item.id, error);
-      await dbSet(
-        STORES.pendingSubmissions,
-        failedEntry(item, error, Date.now())
-      );
-    }
+    await replayItem(item);
   }
+}
+
+/**
+ * Lists the queued submissions owned by the given identity.
+ *
+ * @param ownerKey - Owner key of the current identity.
+ * @param isGuest - Whether the current identity is a guest session.
+ * @returns The queued submissions visible to that identity.
+ */
+export async function listOwnedSubmissions(
+  ownerKey: string,
+  isGuest: boolean
+): Promise<PendingSubmission[]> {
+  const items = await listPendingSubmissions();
+  const identity: ReplayIdentity = { ownerKey, isGuest };
+  return items.filter(item => ownsItem(item, identity));
+}
+
+/**
+ * Resets a parked submission to waiting and replays only that item.
+ *
+ * @param id - Id of the queued submission to retry.
+ * @param identity - Optional identity used to reject cross-owner retries.
+ */
+export async function retrySubmission(
+  id: string,
+  identity?: ReplayIdentity
+): Promise<void> {
+  const items = await listPendingSubmissions();
+  const item = items.find(candidate => candidate.id === id);
+  if (!item) return;
+  if (identity && !ownsItem(item, identity)) return;
+
+  const reset: PendingSubmission = {
+    ...item,
+    attempts: 0,
+    status: 'waiting'
+  };
+  delete reset.lastError;
+  await dbSet(STORES.pendingSubmissions, reset);
+  await replayItem(reset);
 }
 
 /**

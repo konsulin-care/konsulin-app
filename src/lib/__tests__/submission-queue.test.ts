@@ -14,13 +14,15 @@ vi.mock('@/lib/indexeddb', () => ({
 import { dbDelete, dbGetAll, dbGetAllKeys, dbSet } from '@/lib/indexeddb';
 import {
   enqueueSubmission,
+  listOwnedSubmissions,
   listPendingSubmissions,
   listenForSyncReplay,
   pendingCount,
   registerBackgroundSync,
   registerSubmissionHandler,
   removeSubmission,
-  replayPendingSubmissions
+  replayPendingSubmissions,
+  retrySubmission
 } from '@/lib/submission-queue';
 import { ApiError } from '@/services/api-error';
 
@@ -330,6 +332,94 @@ describe('submission queue', () => {
       expect(handler).toHaveBeenCalledTimes(1);
       expect(mockDbDelete).toHaveBeenCalledWith(storeName, 'a');
       expect(mockDbSet).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('retry and parked items', () => {
+    it('parks an item when a failure brings attempts to the cap', async () => {
+      registerSubmissionHandler(
+        'assessment',
+        vi
+          .fn<() => Promise<void>>()
+          .mockRejectedValue(new Error('network down'))
+      );
+      mockDbGetAll.mockResolvedValue([makeItem({ id: 'a', attempts: 7 })]);
+      mockDbSet.mockResolvedValue();
+
+      await replayPendingSubmissions(guestIdentity);
+
+      expect(mockDbDelete).not.toHaveBeenCalled();
+      expect(mockDbSet).toHaveBeenCalledWith(
+        storeName,
+        expect.objectContaining({
+          id: 'a',
+          attempts: 8,
+          status: 'parked',
+          lastError: expect.objectContaining({ message: 'max-attempts' })
+        })
+      );
+    });
+
+    it('never calls a handler for a parked item during automatic replay', async () => {
+      const handler = vi.fn<() => Promise<void>>().mockResolvedValue();
+      registerSubmissionHandler('assessment', handler);
+      mockDbGetAll.mockResolvedValue([
+        makeItem({ id: 'a', status: 'parked', attempts: 8 })
+      ]);
+
+      await replayPendingSubmissions(guestIdentity);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(mockDbDelete).not.toHaveBeenCalled();
+      expect(mockDbSet).not.toHaveBeenCalled();
+    });
+
+    it('resets a parked item and replays only that item', async () => {
+      const handler = vi.fn<() => Promise<void>>().mockResolvedValue();
+      registerSubmissionHandler('assessment', handler);
+      mockDbGetAll.mockResolvedValue([
+        makeItem({
+          id: 'a',
+          payload: { target: true },
+          attempts: 8,
+          status: 'parked',
+          lastError: { message: 'max-attempts' }
+        }),
+        makeItem({ id: 'b', payload: { target: false }, status: 'parked' })
+      ]);
+      mockDbSet.mockResolvedValue();
+      mockDbDelete.mockResolvedValue();
+
+      await retrySubmission('a', guestIdentity);
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith({ target: true });
+      expect(mockDbSet).toHaveBeenCalledWith(
+        storeName,
+        expect.objectContaining({ id: 'a', attempts: 0, status: 'waiting' })
+      );
+      expect(mockDbDelete).toHaveBeenCalledWith(storeName, 'a');
+    });
+  });
+
+  describe('listOwnedSubmissions', () => {
+    it('returns only items owned by the given identity', async () => {
+      mockDbGetAll.mockResolvedValue([
+        makeItem({
+          id: 'mine',
+          kind: 'questionnaire-response',
+          payload: { author: { reference: 'Patient/patient-1' } }
+        }),
+        makeItem({
+          id: 'theirs',
+          kind: 'questionnaire-response',
+          payload: { author: { reference: 'Patient/patient-2' } }
+        })
+      ]);
+
+      const items = await listOwnedSubmissions('Patient/patient-1', false);
+
+      expect(items.map(item => item.id)).toEqual(['mine']);
     });
   });
 
