@@ -19,6 +19,21 @@ type SyncManagerLike = {
   register(tag: string): Promise<void>;
 };
 
+/** Minimal Web Locks surface used to serialize replay across tabs. */
+type LockManagerLike = {
+  request(
+    name: string,
+    options: { ifAvailable: boolean },
+    callback: (lock: unknown) => Promise<void>
+  ): Promise<void>;
+};
+
+/** Name of the lock that guards a queue replay. */
+const REPLAY_LOCK = 'konsulin-replay';
+
+/** Shared replay promise used when the Web Locks API is unavailable. */
+let replayInFlight: Promise<void> | null = null;
+
 /** Handlers replay a queued payload and reject when it still cannot be sent. */
 type SubmissionHandler = (payload: unknown) => Promise<void>;
 
@@ -90,12 +105,20 @@ export function registerSubmissionHandler(
   handlers.set(kind, handler);
 }
 
+/** Returns the Web Locks manager, or null when the API is unavailable. */
+function getLockManager(): LockManagerLike | null {
+  if (typeof navigator === 'undefined') return null;
+  const locks = (navigator as Navigator & { locks?: LockManagerLike }).locks;
+  if (!locks || typeof locks.request !== 'function') return null;
+  return locks;
+}
+
 /**
- * Replays all queued submissions through their registered handlers.
+ * Drains the queue once: replays every item through its registered handler.
  * Successful submissions are removed; failed ones keep their entry
  * with an incremented attempt count. Unknown kinds are skipped.
  */
-export async function replayPendingSubmissions(): Promise<void> {
+async function drainQueue(): Promise<void> {
   const items = await listPendingSubmissions();
   for (const item of items) {
     const handler = handlers.get(item.kind);
@@ -111,6 +134,34 @@ export async function replayPendingSubmissions(): Promise<void> {
       });
     }
   }
+}
+
+/**
+ * Replays all queued submissions through their registered handlers.
+ * Serialized across tabs with the Web Locks API (`ifAvailable`), falling
+ * back to a shared module-level promise when the API is unavailable.
+ * Returns without sending when another tab already holds the lock.
+ */
+export async function replayPendingSubmissions(): Promise<void> {
+  const locks = getLockManager();
+  if (locks) {
+    await locks.request(REPLAY_LOCK, { ifAvailable: true }, async lock => {
+      if (!lock) return;
+      await drainQueue();
+    });
+    return;
+  }
+
+  if (replayInFlight !== null) {
+    await replayInFlight;
+    return;
+  }
+
+  const run = drainQueue().finally(() => {
+    replayInFlight = null;
+  });
+  replayInFlight = run;
+  await run;
 }
 
 /**

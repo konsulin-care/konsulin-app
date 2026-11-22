@@ -216,6 +216,105 @@ describe('submission queue', () => {
     });
   });
 
+  describe('replay serialization', () => {
+    type LockCallback = (lock: unknown) => Promise<void>;
+    type LockRequestLike = (
+      name: string,
+      options: { ifAvailable: boolean },
+      callback: LockCallback
+    ) => Promise<void>;
+
+    /** Installs a navigator.locks stub; returns a restore function. */
+    function stubLocks(request: LockRequestLike): () => void {
+      Object.defineProperty(navigator, 'locks', {
+        configurable: true,
+        value: { request }
+      });
+      return () => {
+        Reflect.deleteProperty(navigator, 'locks');
+      };
+    }
+
+    it('runs one shared replay for concurrent calls when locks are undefined', async () => {
+      Reflect.deleteProperty(navigator, 'locks');
+
+      const handler = vi.fn<() => Promise<void>>().mockResolvedValue();
+      registerSubmissionHandler('assessment', handler);
+      mockDbGetAll.mockResolvedValue([
+        makeItem({ id: 'a' }),
+        makeItem({ id: 'b' })
+      ]);
+      mockDbDelete.mockResolvedValue();
+
+      await Promise.all([
+        replayPendingSubmissions(),
+        replayPendingSubmissions()
+      ]);
+
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(mockDbDelete).toHaveBeenCalledTimes(2);
+    });
+
+    it('returns without sending when a null lock is granted', async () => {
+      const request = vi.fn(
+        async (
+          _name: string,
+          _options: { ifAvailable: boolean },
+          callback: LockCallback
+        ): Promise<void> => {
+          await callback(null);
+        }
+      );
+      const restore = stubLocks(request);
+      const handler = vi.fn<() => Promise<void>>().mockResolvedValue();
+      registerSubmissionHandler('assessment', handler);
+      mockDbGetAll.mockResolvedValue([makeItem({ id: 'a' })]);
+
+      try {
+        await expect(replayPendingSubmissions()).resolves.toBeUndefined();
+      } finally {
+        restore();
+      }
+
+      expect(request).toHaveBeenCalledWith(
+        'konsulin-replay',
+        { ifAvailable: true },
+        expect.any(Function)
+      );
+      expect(handler).not.toHaveBeenCalled();
+      expect(mockDbGetAll).not.toHaveBeenCalled();
+    });
+
+    it('replays every queued item when the lock is granted', async () => {
+      const request = vi.fn(
+        async (
+          _name: string,
+          _options: { ifAvailable: boolean },
+          callback: LockCallback
+        ): Promise<void> => {
+          await callback({ name: 'konsulin-replay' });
+        }
+      );
+      const restore = stubLocks(request);
+      const handler = vi.fn<() => Promise<void>>().mockResolvedValue();
+      registerSubmissionHandler('assessment', handler);
+      mockDbGetAll.mockResolvedValue([
+        makeItem({ id: 'a' }),
+        makeItem({ id: 'b' })
+      ]);
+      mockDbDelete.mockResolvedValue();
+
+      try {
+        await replayPendingSubmissions();
+      } finally {
+        restore();
+      }
+
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(mockDbDelete).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('listenForSyncReplay', () => {
     it('replays the queue when a SYNC_REPLAY message arrives', async () => {
       mockDbGetAll.mockResolvedValue([]);
