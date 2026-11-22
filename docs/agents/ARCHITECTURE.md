@@ -52,6 +52,7 @@ Backend API (Go + SuperTokens Go SDK)
 | ------------------------------------- | -------------------------------------------------------- |
 | Design token system                   | `@docs/ADR/026-design-token-system.md`                   |
 | MUI renderer theme                    | `@docs/ADR/027-mui-renderer-theme.md`                    |
+| Client cache persistence              | `@docs/ADR/028-client-cache-persistence.md`              |
 | Domain-gated specialty routing        | `@docs/ADR/024-domain-gated-specialty-routing.md`        |
 | Intent-aware recommendation selection | `@docs/ADR/022-intent-aware-recommendation-selection.md` |
 | BFF API path families                 | `@docs/ADR/021-bff-api-path-families.md`                 |
