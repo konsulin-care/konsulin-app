@@ -1,49 +1,99 @@
 'use client';
 
+import { useAuth } from '@/context/auth/authContext';
 import { useTranslations } from '@/i18n';
+import { ownerKeyFor, type ReplayIdentity } from '@/lib/submission-owner';
 import {
+  listOwnedSubmissions,
   listenForSyncReplay,
-  pendingCount,
   replayPendingSubmissions
 } from '@/lib/submission-queue';
 import { registerSubmissionReplayHandlers } from '@/lib/submission-replay';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 /** Number of queued submissions and a manual retry trigger. */
 export type PendingSubmissionsState = {
-  count: number;
+  waitingCount: number;
+  parkedCount: number;
   syncNow: () => Promise<void>;
 };
 
+/** Counts waiting and parked items for the current owner's queue. */
+async function loadCounts(
+  identity: ReplayIdentity
+): Promise<{ waitingCount: number; parkedCount: number }> {
+  const items = await listOwnedSubmissions(identity.ownerKey, identity.isGuest);
+  let waitingCount = 0;
+  let parkedCount = 0;
+  for (const item of items) {
+    if (item.status === 'parked') {
+      parkedCount += 1;
+    } else {
+      waitingCount += 1;
+    }
+  }
+  return { waitingCount, parkedCount };
+}
+
 /**
- * Tracks queued offline submissions. Registers replay handlers and the
- * SW message listener once, replays on page load and on the online
- * event, and exposes a manual retry.
+ * Tracks queued offline submissions owned by the current identity.
+ * Waits for auth to resolve, registers replay handlers and the SW message
+ * listener once, replays on page load and on the online event, and exposes
+ * the current owner's waiting and parked counts plus a manual retry.
+ *
+ * @returns Waiting and parked counts and a manual sync trigger.
  */
 export function usePendingSubmissions(): PendingSubmissionsState {
-  const [count, setCount] = useState(0);
+  const { isLoading, state } = useAuth();
+  const [waitingCount, setWaitingCount] = useState(0);
+  const [parkedCount, setParkedCount] = useState(0);
 
-  const syncNow = useCallback(async () => {
-    await replayPendingSubmissions();
-    setCount(await pendingCount());
+  const identity = useMemo<ReplayIdentity>(() => {
+    const userInfo = state.userInfo;
+    return {
+      ownerKey: ownerKeyFor({
+        isAuthenticated: state.isAuthenticated,
+        role: userInfo.role_name,
+        fhirId: userInfo.fhirId
+      }),
+      isGuest: !state.isAuthenticated
+    };
+  }, [state.isAuthenticated, state.userInfo]);
+
+  /** Refreshes the counts from the current owner's queue items. */
+  const refresh = useCallback(async (target: ReplayIdentity): Promise<void> => {
+    const counts = await loadCounts(target);
+    setWaitingCount(counts.waitingCount);
+    setParkedCount(counts.parkedCount);
   }, []);
 
+  const syncNow = useCallback(async (): Promise<void> => {
+    if (isLoading) return;
+    await replayPendingSubmissions(identity);
+    await refresh(identity);
+  }, [identity, isLoading, refresh]);
+
   useEffect(() => {
+    // Wait for auth to resolve before replaying anything.
+    if (isLoading) return () => {};
+
     registerSubmissionReplayHandlers();
-    const unsubscribe = listenForSyncReplay();
+    const unsubscribe = listenForSyncReplay(() => identity);
 
     let cancelled = false;
 
-    /** Refreshes the queued count unless the effect was cleaned up. */
-    const refresh = async () => {
-      const next = await pendingCount();
-      if (!cancelled) setCount(next);
+    /** Refreshes the counts unless the effect was cleaned up. */
+    const refreshIfActive = async (): Promise<void> => {
+      const counts = await loadCounts(identity);
+      if (cancelled) return;
+      setWaitingCount(counts.waitingCount);
+      setParkedCount(counts.parkedCount);
     };
 
-    /** Replays queued submissions, then refreshes the count. */
-    const replay = async () => {
-      await replayPendingSubmissions();
-      await refresh();
+    /** Replays queued submissions for this identity, then refreshes counts. */
+    const replay = async (): Promise<void> => {
+      await replayPendingSubmissions(identity);
+      await refreshIfActive();
     };
 
     // Page-load replay: flush anything queued while the app was offline.
@@ -51,7 +101,7 @@ export function usePendingSubmissions(): PendingSubmissionsState {
     void replay();
 
     /** Fires a replay when the browser comes back online. */
-    const onOnline = () => {
+    const onOnline = (): void => {
       // skipcq: JS-0098 - fire-and-forget replay on reconnect
       void replay();
     };
@@ -62,17 +112,17 @@ export function usePendingSubmissions(): PendingSubmissionsState {
       window.removeEventListener('online', onOnline);
       unsubscribe();
     };
-  }, []);
+  }, [identity, isLoading]);
 
-  return { count, syncNow };
+  return { waitingCount, parkedCount, syncNow };
 }
 
 /** Banner showing queued submissions with a manual sync button. */
 export default function PendingSubmissionsBanner() {
-  const { count, syncNow } = usePendingSubmissions();
+  const { waitingCount, syncNow } = usePendingSubmissions();
   const t = useTranslations('common');
 
-  if (count === 0) return null;
+  if (waitingCount === 0) return null;
 
   /** Triggers a manual sync of queued submissions. */
   const handleSyncNow = () => {
@@ -82,7 +132,7 @@ export default function PendingSubmissionsBanner() {
 
   return (
     <output className='border-border bg-warning-tint text-warning-deep flex items-center justify-between gap-2 border-b px-4 py-2 text-sm'>
-      <span>{t('pwa.waiting_to_sync', { count })}</span>
+      <span>{t('pwa.waiting_to_sync', { count: waitingCount })}</span>
       <button
         type='button'
         onClick={handleSyncNow}

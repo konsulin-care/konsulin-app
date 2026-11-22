@@ -13,6 +13,7 @@ vi.mock('@/context/auth/authContext', () => ({
 
 vi.mock('@/lib/submission-queue', () => ({
   pendingCount: vi.fn<() => Promise<number>>().mockResolvedValue(0),
+  listOwnedSubmissions: vi.fn<() => Promise<unknown[]>>().mockResolvedValue([]),
   replayPendingSubmissions: vi.fn<() => Promise<void>>().mockResolvedValue(),
   listenForSyncReplay: vi.fn(() => vi.fn())
 }));

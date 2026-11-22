@@ -60,7 +60,12 @@ vi.mock('@/components/app-chrome', () => {
 });
 
 vi.mock('@/context/auth/authContext', () => ({
-  AuthProvider: ({ children }: { children: React.ReactNode }) => children
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+  useAuth: vi.fn(() => ({
+    isLoading: false,
+    dispatch: vi.fn(),
+    state: { isAuthenticated: false, userInfo: {} }
+  }))
 }));
 
 vi.mock('@/context/booking/bookingContext', () => ({
@@ -81,6 +86,7 @@ vi.mock('nextjs-toploader', () => ({
 
 vi.mock('@/lib/submission-queue', () => ({
   pendingCount: vi.fn<() => Promise<number>>().mockResolvedValue(0),
+  listOwnedSubmissions: vi.fn<() => Promise<unknown[]>>().mockResolvedValue([]),
   replayPendingSubmissions: vi.fn<() => Promise<void>>().mockResolvedValue(),
   listenForSyncReplay: vi.fn(() => vi.fn())
 }));
