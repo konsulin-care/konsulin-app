@@ -38,7 +38,7 @@ Subdirectories may contain their own AGENTS.md with scope-specific instructions.
 Before finishing any task, run:
 
 ```sh
-npx eslint --max-warnings 5 src/<affected-dir>
+npx eslint --max-warnings 0 src/
 ```
 
 Fix any new errors. Do not disable rules for new code.

@@ -20,22 +20,22 @@ date: 2026-05-26
   `questionnaire=` filter in one query, never one request per questionnaire
 - N+1 queries when resolving referenced resources — batch in a single
   bundle or use `_include` parameter
-- Large Bundle responses overwhelm mobile memory — always paginate with
-  `_count` parameter and `Bundle.link[rel=next]`
+- Large Bundle responses overwhelm mobile memory — paginate with `_count`
+  and follow `Bundle.link[rel=next]`
 - PractitionerRole contains nested availability by location — parse
   carefully for clinic-scoped vs practitioner-scoped scheduling
-- Missing `_summary` parameter returns full resources — use `_summary=count`
-  for list endpoints when only metadata needed
-- Blaze FHIR silently ignores the `:contains` modifier on search parameters
-  (e.g., `address-state:contains=Jak` returns ALL resources unfiltered).
-  Use exact match only — no fuzzy/contains search on FHIR search params.
+- Missing `_summary` returns full resources — use `_summary=count` for
+  list endpoints when only metadata is needed
+- Blaze FHIR silently ignores the `:contains` modifier on search params
+  (e.g. `address-state:contains=Jak` returns ALL resources). Use exact
+  match only — no fuzzy search on FHIR search params.
 
 # Offline/PWA Pitfalls
 
 - Service worker cache invalidation — version SW files with cache busting
 - IndexedDB schema versioning — use versioned stores and migration
-- stale-while-revalidate strategy may show old data — use NetworkFirst
-  for navigation requests
+- stale-while-revalidate may show old data — use NetworkFirst for
+  navigation requests
 - AEHRC renderer loads terminology server URL — must be configurable
   in the React SPA env, not Go env
 
@@ -44,82 +44,57 @@ date: 2026-05-26
 - React SPA loaded on every assessment route visit — bundle cached by SW
 - Cross-origin requests from React SPA to Go proxy require same-origin
   or CORS headers
-- AEHRC builds form via `useBuildForm()` — ensure Questionnaire JSON
-  is fully loaded before mounting the component
-- Admin JS files from aehrc renderer may conflict with HTMX headers
+- AEHRC builds the form via `useBuildForm()` — ensure Questionnaire JSON
+  is fully loaded before mounting
+- Admin JS files from the aehrc renderer may conflict with HTMX headers
 
 # Tailwind v4 CSS Pitfalls
 
-- `data-[*]:` variants work with theme utilities
-  (e.g. `data-[state=open]:bg-accent`) and with custom utilities
-  declared via `@utility` (e.g. `@utility foo { ... }` →
-  `data-[state=open]:foo`).
-- Plain classes declared inside `@layer utilities { ... }` are not
-  registered utilities, so `data-[state=open]:foo-custom` silently
-  emits nothing. **Fix**: declare custom utilities with `@utility`.
-- This applies to ALL state-driven styling: `data-state`, `aria-*`,
-  or any `[data-*]` attribute — tabs, drawers, modals, accordions.
+- `data-[*]:` variants work with theme utilities and custom utilities
+  declared via `@utility` (e.g. `@utility foo { ... }`).
+- Plain classes inside `@layer utilities { ... }` are not registered
+  utilities, so `data-[state=open]:foo-custom` silently emits nothing.
+  **Fix**: declare custom utilities with `@utility`.
+- Applies to ALL state-driven styling: `data-state`, `aria-*`, or any
+  `[data-*]` attribute — tabs, drawers, modals, accordions.
 
 # TypeScript/React Pitfalls
 
 - **Vitest `vi.mock` cannot be extracted to shared utilities** — Vitest
-  hoists all `vi.mock()` calls to the top of the module regardless of
-  where they appear in code. If you put `vi.mock` in a shared utility
-  file and import it, the mocks execute at the top of that utility
-  module, not the calling test file. This causes conflicts when test
-  files also have their own `vi.mock` calls for the same module, or
-  the shared mock doesn't include all exports the test needs (e.g.,
-  `useSearchParams`). **Fix**: keep `vi.mock` calls in each test file
-  at the top level. Only extract non-mock utilities (`renderWithQuery`,
-  `wrapper`, constants) to shared files.
+  hoists `vi.mock()` calls to module top level. A shared utility runs its
+  mocks in that module, not the caller, causing conflicts. **Fix**: keep
+  `vi.mock` calls inline at the top of each test file; only extract
+  non-mock helpers (`renderWithQuery`, `wrapper`, constants).
 - **Void-returning arrow shorthands in JSX** — `onClick={e => handler(e)}`
-  implicitly returns `undefined` when the handler returns `void`. Always
-  use braces: `onClick={e => { handler(e); }}`.
+  implicitly returns `undefined`. Always use braces:
+  `onClick={e => { handler(e); }}`.
 - **Redundant null checks on initialized state** — `useState<T>([])`
-  guarantees the value is always an array. A guard like
-  `if (!items || items.length === 0)` has a dead `!items` branch.
-  Trust your initializer: `if (items.length === 0)`.
+  guarantees an array. A guard like `if (!items || items.length === 0)`
+  has a dead `!items` branch. Trust the initializer.
 - **Local variable `children` shadows React concept** — rename to
-  `childElements`, `items`, or `slots` to avoid confusion with React's
-  `children` prop.
+  `childElements`, `items`, or `slots`.
 - **Dynamic property access without prototype guard** — writing
   `obj[key] = val` where `key` could be `__proto__` or `constructor`
-  risks prototype pollution. Use `Map<K, V>` for dynamic-key maps, or
-  guard writes with `Object.hasOwn(obj, key)` before assignment.
+  risks prototype pollution. Use `Map<K, V>`, or guard writes with
+  `Object.hasOwn(obj, key)`.
 - **Stale-closure safety nets vs. redundant checks** — in `useEffect`
-  cleanup/observer callbacks, re-checking a condition already guarded
-  at effect scope is redundant. Remove the redundant check or accept
-  the lint warning explicitly with a comment.
+  cleanup/observer callbacks, re-checking a condition already guarded at
+  effect scope is redundant. Remove it or accept the lint warning.
+
+# Date & Time Zone Pitfalls
+
+- **vitest.config.ts forces `TZ=UTC`** — tests that compare local dates
+  silently assume UTC and miss time-zone drift. Pass
+  `timeZone: 'Asia/Jakarta'` explicitly to `localDateOf`, or set
+  `process.env.TZ = 'Asia/Jakarta'` inside the test and restore it after.
+- **Never use `toISOString().slice(0, 10)` for local dates** — it yields
+  the UTC day, which can be one day off in WIB/WITA/WIT. Use date-fns
+  `format(date, 'yyyy-MM-dd')` for date pickers and "today".
 
 # Test Duplication Pitfalls
 
-- **Codacy flags `vi.mock` blocks as duplication** — this is expected
-  and acceptable. Vitest hoists `vi.mock()` calls to module top level,
-  so they cannot be extracted to shared utilities. Each test file must
-  declare its own mocks inline. Trying to extract them breaks hoisting
-  and causes mock execution in the wrong module scope.
-- **What CAN be extracted** — shared test data factories, constants,
-  and render helpers. Put these in `src/__tests__/fixtures/`:
-  - FHIR resource builders: `makeResearchStudy()`, `makeBatchPlan()`
-  - Bundle builders: `makeStudiesBatchResponse()`, `makeQRSearchSet()`
-  - Constants: `EMPTY_BATCH_RESPONSE`, `RESEARCHER_AUTH_STATE`
-  - Render wrappers: `renderWithQuery()`, `wrapper()`
-- **What CANNOT be extracted** — `vi.mock()` factory functions, mock
-  module definitions, test-specific assertions. Keep these inline.
-- **Pattern for shared factories**:
-
-  ```typescript
-  // src/__tests__/fixtures/research-api-mocks.ts
-  export function makeResearchStudy(id: string, periodStart: string) {
-    return { resourceType: 'ResearchStudy' as const, id, status: 'active' as const, ... };
-  }
-
-  // In test file:
-  import { makeResearchStudy } from '@/__tests__/fixtures/research-api-mocks';
-  const study = makeResearchStudy('study-1', '2026-01-01');
-  ```
-
-- **Duplication priority** — focus extraction on:
-  1. Mock data factories (highest impact)
-  2. `beforeEach` setup patterns (medium impact)
-  3. `vi.mock` blocks (do NOT extract, accept duplication)
+- **Codacy flags `vi.mock` blocks as duplication** — expected; see above.
+- **What CAN be extracted** — factories, constants, and render helpers in
+  `src/__tests__/fixtures/` (e.g. `makeResearchStudy()`, `wrapper()`).
+- **What CANNOT be extracted** — `vi.mock()` factories and assertions.
+- **Priority** — extract data factories first, then `beforeEach` patterns.
