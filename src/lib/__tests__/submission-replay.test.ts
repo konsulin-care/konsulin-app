@@ -29,6 +29,7 @@ import {
   SOAP_BUNDLE_KIND
 } from '@/lib/submission-replay';
 import { getAPI } from '@/services/api';
+import { ApiError } from '@/services/api-error';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -101,16 +102,24 @@ describe('soap bundle replay', () => {
 });
 
 describe('isNetworkError', () => {
-  it('treats ERR_NETWORK codes as network failures', () => {
-    expect(isNetworkError({ code: 'ERR_NETWORK' })).toBe(true);
+  it('returns false for an ApiError with status 400', () => {
+    expect(isNetworkError(new ApiError({ response: { status: 400 } }))).toBe(
+      false
+    );
   });
 
-  it('treats errors without a response as network failures', () => {
+  it('returns false for an ApiError with status 500', () => {
+    expect(isNetworkError(new ApiError({ response: { status: 500 } }))).toBe(
+      false
+    );
+  });
+
+  it('returns true for an ApiError with code ERR_NETWORK and no status', () => {
+    expect(isNetworkError(new ApiError({ code: 'ERR_NETWORK' }))).toBe(true);
+  });
+
+  it('treats errors without a status as network failures', () => {
     expect(isNetworkError({ message: 'Network Error' })).toBe(true);
-  });
-
-  it('treats HTTP errors with a response as non-network failures', () => {
-    expect(isNetworkError({ response: { status: 500 } })).toBe(false);
   });
 
   it('treats non-objects as non-network failures', () => {

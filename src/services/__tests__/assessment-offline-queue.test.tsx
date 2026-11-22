@@ -5,6 +5,7 @@ import type { AxiosInstance } from 'axios';
 import type { Bundle, QuestionnaireResponse } from 'fhir/r4';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAPI } from '../api';
+import { ApiError } from '../api-error';
 import { useSubmitQuestionnaire, useSubmitSoapBundle } from '../api/assessment';
 
 vi.mock('../api', () => ({ getAPI: vi.fn() }));
@@ -102,10 +103,11 @@ describe('offline submission queue', () => {
   });
 
   it('rethrows non-network errors without queueing', async () => {
-    const mockPost = vi.fn().mockRejectedValue({
-      response: { status: 500 },
-      message: 'Server error'
-    });
+    const mockPost = vi
+      .fn()
+      .mockRejectedValue(
+        new ApiError({ response: { status: 400 }, message: 'Bad request' })
+      );
     vi.mocked(getAPI).mockResolvedValue({
       post: mockPost
     } as unknown as AxiosInstance);
