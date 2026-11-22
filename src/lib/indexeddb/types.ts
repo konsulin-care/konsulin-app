@@ -28,6 +28,10 @@ export type PendingSubmission<T = unknown> = {
   payload: T;
   createdAt: number;
   attempts: number;
+  status?: 'waiting' | 'parked';
+  lastError?: { status?: number; message: string };
+  lastAttemptAt?: number;
+  label?: string;
 };
 
 /** Schema definitions for each object store. */
