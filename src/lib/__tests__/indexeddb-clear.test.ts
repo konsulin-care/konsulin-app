@@ -103,6 +103,21 @@ vi.mock('@/lib/indexeddb/connection', () => {
     return transaction;
   };
 
+  /** Builds a request that clears a store on the next tick. */
+  const makeClearRequest = (name: string): FakeRequest => {
+    const request: FakeRequest = {
+      result: undefined,
+      error: null,
+      onsuccess: null,
+      onerror: null
+    };
+    setTimeout(() => {
+      dataFor(name).clear();
+      if (request.onsuccess) request.onsuccess();
+    }, 0);
+    return request;
+  };
+
   const db = {
     transaction: (name: string) => makeTransaction(name)
   };
@@ -110,7 +125,8 @@ vi.mock('@/lib/indexeddb/connection', () => {
   return {
     openDB: () => Promise.resolve(db),
     getStore: (_db: unknown, name: string) => ({
-      delete: (key: unknown) => makeDeleteRequest(name, key)
+      delete: (key: unknown) => makeDeleteRequest(name, key),
+      clear: () => makeClearRequest(name)
     })
   };
 });
@@ -205,5 +221,21 @@ describe('clearUserData pending submissions', () => {
     await clearUserData('user-1');
 
     expect([...pending.keys()]).toEqual(['patient-1', 'patient-2']);
+  });
+
+  it('empties the whole query_cache store', async () => {
+    mockDbState.stores.set(
+      STORES.queryCache,
+      new Map<string, unknown>([
+        ['["research","x","1","mode"]', { key: 'a' }],
+        ['["questionnaire-titles"]', { key: 'b' }]
+      ])
+    );
+
+    await clearUserData('user-1');
+
+    expect([
+      ...(mockDbState.stores.get(STORES.queryCache)?.keys() ?? [])
+    ]).toEqual([]);
   });
 });

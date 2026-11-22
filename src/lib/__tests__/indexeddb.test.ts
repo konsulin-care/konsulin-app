@@ -37,15 +37,25 @@ function createMockRequest(result?: IDBDatabase, error?: DOMException) {
   return request;
 }
 
-describe('schema v3', () => {
+describe('schema v4', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
   });
 
-  it('exports DB_VERSION 3', async () => {
+  it('exports DB_VERSION 4', async () => {
     const mod = await import('@/lib/indexeddb');
-    expect(mod.DB_VERSION).toBe(3);
+    expect(mod.DB_VERSION).toBe(4);
+  });
+
+  it('declares the query_cache store with key keyPath', async () => {
+    const mod = await import('@/lib/indexeddb');
+    expect(mod.STORES.queryCache).toBe('query_cache');
+    const schema = mod.STORE_SCHEMAS.find(
+      (s: { name: string }) => s.name === 'query_cache'
+    );
+    expect(schema).toBeDefined();
+    expect(schema.keyPath).toBe('key');
   });
 
   it('declares the pending_submissions store with id keyPath', async () => {
@@ -58,9 +68,9 @@ describe('schema v3', () => {
     expect(schema.keyPath).toBe('id');
   });
 
-  it('creates only the pending_submissions store during v2 -> v3 upgrade', async () => {
+  it('adds only query_cache during v3 -> v4 upgrade', async () => {
     const mod = await import('@/lib/indexeddb');
-    const v2Stores = new Set([
+    const v3Stores = new Set([
       'guest_sessions',
       'assessment_drafts',
       'soap_drafts',
@@ -68,14 +78,15 @@ describe('schema v3', () => {
       'temp_booking',
       'ui_preferences',
       'navigation_state',
-      'user_profile'
+      'user_profile',
+      'pending_submissions'
     ]);
     const createObjectStore = vi.fn();
     const mockDb = {
       name: 'konsulin',
-      version: 3,
+      version: 4,
       objectStoreNames: {
-        contains: vi.fn((name: string) => v2Stores.has(name))
+        contains: vi.fn((name: string) => v3Stores.has(name))
       },
       createObjectStore,
       addEventListener: vi.fn(),
@@ -99,10 +110,10 @@ describe('schema v3', () => {
 
     await mod.openDB();
 
-    // Existing v2 stores are left untouched; only the new store is created.
+    // Existing v3 stores are left untouched; only the new store is created.
     expect(createObjectStore).toHaveBeenCalledTimes(1);
-    expect(createObjectStore).toHaveBeenCalledWith('pending_submissions', {
-      keyPath: 'id'
+    expect(createObjectStore).toHaveBeenCalledWith('query_cache', {
+      keyPath: 'key'
     });
   });
 });
@@ -122,7 +133,7 @@ describe('openDB', () => {
   it('opens DB with a single indexedDB.open call in normal case', async () => {
     const mockDb = {
       name: 'konsulin',
-      version: 3,
+      version: 4,
       objectStoreNames: { contains: vi.fn().mockReturnValue(true) },
       addEventListener: vi.fn(),
       close: vi.fn(),
@@ -147,7 +158,7 @@ describe('openDB', () => {
     expect(db).toBe(mockDb);
     // Normal path: directly opens with DB_VERSION, no discovery
     expect(mockIndexedDB.open).toHaveBeenCalledTimes(1);
-    expect(mockIndexedDB.open).toHaveBeenCalledWith('konsulin', 3);
+    expect(mockIndexedDB.open).toHaveBeenCalledWith('konsulin', 4);
   });
 
   it('reuses the same DB promise on subsequent calls', async () => {
@@ -244,7 +255,7 @@ describe('openDB', () => {
     };
 
     const versionError = new DOMException(
-      'The requested version (3) is less than the existing version (5).',
+      'The requested version (4) is less than the existing version (5).',
       'VersionError'
     );
 
@@ -253,7 +264,7 @@ describe('openDB', () => {
       openCount++;
       const req = createMockRequest();
 
-      if (openCount === 1 && version === 3) {
+      if (openCount === 1 && version === 4) {
         // First attempt: VersionError
         req.error = versionError;
         setTimeout(() => {

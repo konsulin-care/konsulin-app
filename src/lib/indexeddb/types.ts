@@ -2,7 +2,7 @@
 export const DB_NAME = 'konsulin';
 
 /** Database version constant. */
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 /** Store name constants for IndexedDB object stores. */
 export const STORES = {
@@ -14,7 +14,8 @@ export const STORES = {
   uiPreferences: 'ui_preferences',
   navigationState: 'navigation_state',
   userProfile: 'user_profile',
-  pendingSubmissions: 'pending_submissions'
+  pendingSubmissions: 'pending_submissions',
+  queryCache: 'query_cache'
 } as const;
 
 /** Union type of all valid store names. */
@@ -45,5 +46,6 @@ export const STORE_SCHEMAS: { name: StoreName; keyPath: string | string[] }[] =
     { name: STORES.uiPreferences, keyPath: ['ownerId', 'prefKey'] },
     { name: STORES.navigationState, keyPath: ['ownerId', 'stateKey'] },
     { name: STORES.userProfile, keyPath: 'userId' },
-    { name: STORES.pendingSubmissions, keyPath: 'id' }
+    { name: STORES.pendingSubmissions, keyPath: 'id' },
+    { name: STORES.queryCache, keyPath: 'key' }
   ];

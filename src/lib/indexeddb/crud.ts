@@ -158,9 +158,11 @@ export async function clearUserData(
 ): Promise<void> {
   const { queueOwnerKey } = options;
   await dbDelete(STORES.uiPreferences, ['last-interview-result']);
+  await dbClearAll(STORES.queryCache);
 
   const allStores = Object.values(STORES);
   for (const storeName of allStores) {
+    if (storeName === STORES.queryCache) continue;
     await cursorDeleteAll(storeName, (value: Record<string, unknown>) => {
       if (storeName === STORES.pendingSubmissions) {
         if (!queueOwnerKey) return false;
