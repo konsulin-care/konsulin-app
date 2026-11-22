@@ -5,8 +5,6 @@ import { useEffect, useState } from 'react';
 
 type ClinicContext = {
   clinicId: string;
-  /** @deprecated Always empty string. No longer persisted. */
-  locationId: string;
 };
 
 /**
@@ -14,7 +12,7 @@ type ClinicContext = {
  *
  * Reads `clinic_organization` (the admin's bound org from
  * Person.managingOrganization) from `uiPreferences` store once on mount.
- * Returns empty strings when not yet stored.
+ * Returns an empty string when not yet stored.
  */
 export function useClinicContext(): ClinicContext {
   const [clinicId, setClinicId] = useState('');
@@ -30,5 +28,5 @@ export function useClinicContext(): ClinicContext {
       });
   }, []);
 
-  return { clinicId, locationId: '' };
+  return { clinicId };
 }

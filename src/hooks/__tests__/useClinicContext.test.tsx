@@ -37,6 +37,17 @@ describe('useClinicContext', () => {
     });
   });
 
+  it('exposes only clinicId on the returned context', async () => {
+    vi.mocked(dbGet).mockResolvedValueOnce({ value: 'org-1' });
+
+    const { result } = renderHook(() => useClinicContext());
+
+    await waitFor(() => {
+      expect(result.current.clinicId).toBe('org-1');
+    });
+    expect(Object.keys(result.current)).toEqual(['clinicId']);
+  });
+
   it('queries IndexedDB with clinic_organization key', async () => {
     vi.mocked(dbGet).mockResolvedValue(null);
 
