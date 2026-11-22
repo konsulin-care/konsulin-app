@@ -10,6 +10,19 @@ const GUEST_OWNER_PREFIX = 'guest:';
 /** Owner key used when a guest payload cannot be bound to an identity. */
 const UNBOUND_GUEST_OWNER = 'guest:unbound';
 
+/** Auth fields used to derive the owner key of the current session. */
+export interface OwnerIdentity {
+  isAuthenticated: boolean;
+  role?: string;
+  fhirId?: string;
+}
+
+/** Identity used to scope a queue replay to the current owner. */
+export interface ReplayIdentity {
+  ownerKey: string;
+  isGuest: boolean;
+}
+
 /** Narrows an unknown value to a plain record. */
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (typeof value !== 'object' || value === null) return null;
@@ -42,6 +55,23 @@ function guestOwnerOf(resource: Record<string, unknown>): string {
     }
   }
   return UNBOUND_GUEST_OWNER;
+}
+
+/**
+ * Derives the owner key for the current auth identity.
+ *
+ * Authenticated patients own `Patient/<fhirId>`; every other authenticated
+ * role (Practitioner, Researcher, Clinic Admin) owns `Practitioner/<fhirId>`.
+ * Guests fall back to the unbound guest key because their anonymous session
+ * identifier is not part of the auth identity.
+ *
+ * @param identity - Auth fields describing the active session.
+ * @returns The owner key used to scope replay and cleanup.
+ */
+export function ownerKeyFor(identity: OwnerIdentity): string {
+  if (!identity.isAuthenticated) return UNBOUND_GUEST_OWNER;
+  const resourceType = identity.role === 'Patient' ? 'Patient' : 'Practitioner';
+  return `${resourceType}/${identity.fhirId ?? ''}`;
 }
 
 /** Returns the guest owner key of the first bundle entry with an author. */

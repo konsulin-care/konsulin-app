@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { PendingSubmission } from '@/lib/indexeddb';
-import { ownerOf } from '@/lib/submission-owner';
+import { ownerKeyFor, ownerOf } from '@/lib/submission-owner';
 
 /** Builds a pending submission carrying an arbitrary payload. */
 function makeItem(kind: string, payload: unknown): PendingSubmission<unknown> {
@@ -14,6 +14,30 @@ function makeItem(kind: string, payload: unknown): PendingSubmission<unknown> {
     attempts: 0
   };
 }
+
+describe('ownerKeyFor', () => {
+  it('returns the Patient owner key for an authenticated patient', () => {
+    expect(
+      ownerKeyFor({ isAuthenticated: true, role: 'Patient', fhirId: 'p1' })
+    ).toBe('Patient/p1');
+  });
+
+  it('returns the Practitioner owner key for a researcher', () => {
+    expect(
+      ownerKeyFor({
+        isAuthenticated: true,
+        role: 'Researcher',
+        fhirId: 'x1'
+      })
+    ).toBe('Practitioner/x1');
+  });
+
+  it('returns the unbound guest key for an unauthenticated identity', () => {
+    expect(ownerKeyFor({ isAuthenticated: false, role: 'Guest' })).toBe(
+      'guest:unbound'
+    );
+  });
+});
 
 describe('ownerOf', () => {
   it('returns the payload author reference for a questionnaire response', () => {

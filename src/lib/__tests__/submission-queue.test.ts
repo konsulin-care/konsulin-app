@@ -30,6 +30,9 @@ const mockDbGetAllKeys = vi.mocked(dbGetAllKeys);
 
 const storeName = 'pending_submissions';
 
+const guestIdentity = { ownerKey: 'guest:guest-1', isGuest: true };
+const patientIdentity = { ownerKey: 'Patient/patient-1', isGuest: false };
+
 function makeItem(
   overrides: Partial<PendingSubmission> = {}
 ): PendingSubmission {
@@ -177,7 +180,7 @@ describe('submission queue', () => {
       ]);
       mockDbDelete.mockResolvedValue();
 
-      await replayPendingSubmissions();
+      await replayPendingSubmissions(guestIdentity);
 
       expect(handler).toHaveBeenCalledWith({ q: 1 });
       expect(mockDbDelete).toHaveBeenCalledWith(storeName, 'a');
@@ -195,7 +198,7 @@ describe('submission queue', () => {
       mockDbGetAll.mockResolvedValue([makeItem({ id: 'a', attempts: 2 })]);
       mockDbSet.mockResolvedValue();
 
-      await replayPendingSubmissions();
+      await replayPendingSubmissions(guestIdentity);
 
       expect(mockDbDelete).not.toHaveBeenCalled();
       expect(mockDbSet).toHaveBeenCalledWith(
@@ -209,9 +212,66 @@ describe('submission queue', () => {
         makeItem({ id: 'a', kind: 'unknown-kind' })
       ]);
 
-      await expect(replayPendingSubmissions()).resolves.toBeUndefined();
+      await expect(
+        replayPendingSubmissions(guestIdentity)
+      ).resolves.toBeUndefined();
 
       expect(mockDbDelete).not.toHaveBeenCalled();
+      expect(mockDbSet).not.toHaveBeenCalled();
+    });
+
+    it('skips an item whose owner differs from the identity and keeps it', async () => {
+      const handler = vi.fn<() => Promise<void>>().mockResolvedValue();
+      registerSubmissionHandler('assessment', handler);
+      mockDbGetAll.mockResolvedValue([
+        makeItem({
+          id: 'a',
+          kind: 'questionnaire-response',
+          payload: { author: { reference: 'Patient/someone-else' } }
+        })
+      ]);
+
+      await replayPendingSubmissions(patientIdentity);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(mockDbDelete).not.toHaveBeenCalled();
+      expect(mockDbSet).not.toHaveBeenCalled();
+    });
+
+    it('skips a guest:unbound item for an authenticated identity', async () => {
+      const handler = vi.fn<() => Promise<void>>().mockResolvedValue();
+      registerSubmissionHandler('questionnaire-response', handler);
+      mockDbGetAll.mockResolvedValue([
+        makeItem({
+          id: 'a',
+          kind: 'questionnaire-response',
+          payload: { resourceType: 'QuestionnaireResponse' }
+        })
+      ]);
+
+      await replayPendingSubmissions(patientIdentity);
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(mockDbDelete).not.toHaveBeenCalled();
+      expect(mockDbSet).not.toHaveBeenCalled();
+    });
+
+    it('sends a guest:unbound item when the identity is a guest', async () => {
+      const handler = vi.fn<() => Promise<void>>().mockResolvedValue();
+      registerSubmissionHandler('questionnaire-response', handler);
+      mockDbGetAll.mockResolvedValue([
+        makeItem({
+          id: 'a',
+          kind: 'questionnaire-response',
+          payload: { resourceType: 'QuestionnaireResponse' }
+        })
+      ]);
+      mockDbDelete.mockResolvedValue();
+
+      await replayPendingSubmissions(guestIdentity);
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(mockDbDelete).toHaveBeenCalledWith(storeName, 'a');
       expect(mockDbSet).not.toHaveBeenCalled();
     });
   });
@@ -247,8 +307,8 @@ describe('submission queue', () => {
       mockDbDelete.mockResolvedValue();
 
       await Promise.all([
-        replayPendingSubmissions(),
-        replayPendingSubmissions()
+        replayPendingSubmissions(guestIdentity),
+        replayPendingSubmissions(guestIdentity)
       ]);
 
       expect(handler).toHaveBeenCalledTimes(2);
@@ -271,7 +331,9 @@ describe('submission queue', () => {
       mockDbGetAll.mockResolvedValue([makeItem({ id: 'a' })]);
 
       try {
-        await expect(replayPendingSubmissions()).resolves.toBeUndefined();
+        await expect(
+          replayPendingSubmissions(guestIdentity)
+        ).resolves.toBeUndefined();
       } finally {
         restore();
       }
@@ -305,7 +367,7 @@ describe('submission queue', () => {
       mockDbDelete.mockResolvedValue();
 
       try {
-        await replayPendingSubmissions();
+        await replayPendingSubmissions(guestIdentity);
       } finally {
         restore();
       }
@@ -320,7 +382,7 @@ describe('submission queue', () => {
       mockDbGetAll.mockResolvedValue([]);
       const { emit } = stubServiceWorker();
 
-      listenForSyncReplay();
+      listenForSyncReplay(() => guestIdentity);
       emit('message', { type: 'SYNC_REPLAY' });
 
       await vi.waitFor(() => {
@@ -332,7 +394,7 @@ describe('submission queue', () => {
       mockDbGetAll.mockResolvedValue([]);
       const { emit } = stubServiceWorker();
 
-      listenForSyncReplay();
+      listenForSyncReplay(() => guestIdentity);
       emit('message', { type: 'SOMETHING_ELSE' });
 
       await new Promise(resolve => setTimeout(resolve, 10));
@@ -341,8 +403,19 @@ describe('submission queue', () => {
 
     it('returns a no-op unsubscribe when serviceWorker is missing', () => {
       Reflect.deleteProperty(navigator, 'serviceWorker');
-      const unsubscribe = listenForSyncReplay();
+      const unsubscribe = listenForSyncReplay(() => guestIdentity);
       expect(typeof unsubscribe).toBe('function');
+    });
+
+    it('skips replay when the identity is not available yet', async () => {
+      mockDbGetAll.mockResolvedValue([]);
+      const { emit } = stubServiceWorker();
+
+      listenForSyncReplay(() => null);
+      emit('message', { type: 'SYNC_REPLAY' });
+
+      await new Promise(resolve => setTimeout(resolve, 10));
+      expect(mockDbGetAll).not.toHaveBeenCalled();
     });
   });
 

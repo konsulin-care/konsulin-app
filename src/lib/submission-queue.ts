@@ -7,6 +7,7 @@ import {
   STORES,
   type PendingSubmission
 } from '@/lib/indexeddb';
+import { ownerOf, type ReplayIdentity } from '@/lib/submission-owner';
 
 /** Background Sync tag used to trigger a replay when connectivity returns. */
 export const SYNC_TAG = 'replay-pending';
@@ -30,6 +31,9 @@ type LockManagerLike = {
 
 /** Name of the lock that guards a queue replay. */
 const REPLAY_LOCK = 'konsulin-replay';
+
+/** Owner key of guest items that still need an anonymous session binding. */
+const UNBOUND_GUEST_OWNER = 'guest:unbound';
 
 /** Shared replay promise used when the Web Locks API is unavailable. */
 let replayInFlight: Promise<void> | null = null;
@@ -114,13 +118,26 @@ function getLockManager(): LockManagerLike | null {
 }
 
 /**
- * Drains the queue once: replays every item through its registered handler.
- * Successful submissions are removed; failed ones keep their entry
- * with an incremented attempt count. Unknown kinds are skipped.
+ * Decides whether an item belongs to the identity performing the replay.
+ * Unbound guest items are only visible to a guest session; every other item
+ * must match the identity owner key exactly.
  */
-async function drainQueue(): Promise<void> {
+function ownsItem(item: PendingSubmission, identity: ReplayIdentity): boolean {
+  const ownerKey = ownerOf(item);
+  if (ownerKey === UNBOUND_GUEST_OWNER) return identity.isGuest;
+  return ownerKey === identity.ownerKey;
+}
+
+/**
+ * Drains the queue once: replays every item through its registered handler.
+ * Items owned by another identity are left untouched. Successful submissions
+ * are removed; failed ones keep their entry with an incremented attempt
+ * count. Unknown kinds are skipped.
+ */
+async function drainQueue(identity: ReplayIdentity): Promise<void> {
   const items = await listPendingSubmissions();
   for (const item of items) {
+    if (!ownsItem(item, identity)) continue;
     const handler = handlers.get(item.kind);
     if (!handler) continue;
     try {
@@ -140,14 +157,20 @@ async function drainQueue(): Promise<void> {
  * Replays all queued submissions through their registered handlers.
  * Serialized across tabs with the Web Locks API (`ifAvailable`), falling
  * back to a shared module-level promise when the API is unavailable.
- * Returns without sending when another tab already holds the lock.
+ * Returns without sending when another tab already holds the lock, or when
+ * no identity is supplied (auth still loading or an outdated caller).
+ *
+ * @param identity - Owner key and guest flag scoping which items are sent.
  */
-export async function replayPendingSubmissions(): Promise<void> {
+export async function replayPendingSubmissions(
+  identity?: ReplayIdentity
+): Promise<void> {
+  if (!identity) return;
   const locks = getLockManager();
   if (locks) {
     await locks.request(REPLAY_LOCK, { ifAvailable: true }, async lock => {
       if (!lock) return;
-      await drainQueue();
+      await drainQueue(identity);
     });
     return;
   }
@@ -157,7 +180,7 @@ export async function replayPendingSubmissions(): Promise<void> {
     return;
   }
 
-  const run = drainQueue().finally(() => {
+  const run = drainQueue(identity).finally(() => {
     replayInFlight = null;
   });
   replayInFlight = run;
@@ -188,9 +211,16 @@ export async function registerBackgroundSync(): Promise<void> {
 
 /**
  * Listens for SYNC_REPLAY messages from the service worker and replays
- * the queue. Returns an unsubscribe function.
+ * the queue for the identity returned at message time. Returns an
+ * unsubscribe function.
+ *
+ * @param getIdentity - Supplies the current replay identity, or null while
+ * auth is still loading so the replay is skipped. Defaults to null so
+ * callers that have not wired auth yet simply skip the replay.
  */
-export function listenForSyncReplay(): () => void {
+export function listenForSyncReplay(
+  getIdentity: () => ReplayIdentity | null = () => null
+): () => void {
   if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
     return () => {
       // No service worker available — nothing to unsubscribe.
@@ -200,9 +230,10 @@ export function listenForSyncReplay(): () => void {
   /** Replays the queue when the service worker broadcasts a sync message. */
   const onMessage = (event: MessageEvent): void => {
     const data = event.data as { type?: string } | null;
-    if (data?.type === SYNC_REPLAY_MESSAGE) {
-      replayPendingSubmissions();
-    }
+    if (data?.type !== SYNC_REPLAY_MESSAGE) return;
+    const identity = getIdentity();
+    if (!identity) return;
+    replayPendingSubmissions(identity);
   };
   navigator.serviceWorker.addEventListener('message', onMessage);
   return () => {
