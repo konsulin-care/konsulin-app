@@ -7,6 +7,7 @@
 
 // Types and constants
 export {
+  DB_NAME,
   DB_VERSION,
   STORES,
   STORE_SCHEMAS,
