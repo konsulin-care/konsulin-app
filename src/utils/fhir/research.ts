@@ -1,4 +1,5 @@
 import { xpForDuration } from '@/constants/research';
+import { localDateOf } from '@/utils/local-date';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { questionnaireIdOf } from './questionnaire-url';
@@ -185,18 +186,24 @@ export function isDateInRange(
  *
  * @param response - Completed QuestionnaireResponse projection.
  * @param batch - Target batch.
+ * @param timeZone - IANA time zone used to derive the authored calendar date.
  * @returns True when the response counts toward the batch.
  */
 export function isResponseInBatch(
   response: ResearchResponse,
-  batch: ResearchBatch
+  batch: ResearchBatch,
+  timeZone?: string
 ): boolean {
   const questionnaireId = extractQuestionnaireId(response.questionnaire);
   if (!questionnaireId || !batch.questionnaireIds.includes(questionnaireId)) {
     return false;
   }
   if (!response.authored) return false;
-  return isDateInRange(response.authored.slice(0, 10), batch.start, batch.end);
+  return isDateInRange(
+    localDateOf(response.authored, timeZone),
+    batch.start,
+    batch.end
+  );
 }
 
 /**

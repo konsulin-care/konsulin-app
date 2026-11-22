@@ -206,6 +206,17 @@ describe('isResponseInBatch', () => {
       isResponseInBatch(makeResponse('r1', 'Questionnaire/phq2'), batch)
     ).toBe(false);
   });
+
+  it('counts a response authored at 00:30 WIB on the batch start day when given Asia/Jakarta', () => {
+    // 2026-07-31T17:30:00Z is 2026-08-01 00:30 in Asia/Jakarta.
+    const response = makeResponse(
+      'r-jakarta',
+      'Questionnaire/phq2',
+      '2026-07-31T17:30:00Z'
+    );
+    expect(isResponseInBatch(response, batch)).toBe(false);
+    expect(isResponseInBatch(response, batch, 'Asia/Jakarta')).toBe(true);
+  });
 });
 
 describe('mergeResponses', () => {

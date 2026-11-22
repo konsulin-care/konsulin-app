@@ -1,3 +1,4 @@
+import { localDateOf } from '@/utils/local-date';
 import { format, parseISO } from 'date-fns';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import {
@@ -31,17 +32,21 @@ export interface ReportResponse {
  *
  * @param responses - Completed responses to bucket.
  * @param batches - The study's batches.
+ * @param timeZone - IANA time zone used to derive the authored calendar date.
  * @returns Map of batch id to its responses.
  */
 export function bucketResponsesByBatch<T extends ReportResponse>(
   responses: readonly T[],
-  batches: readonly ResearchBatch[]
+  batches: readonly ResearchBatch[],
+  timeZone?: string
 ): Map<string, T[]> {
   const buckets = new Map<string, T[]>();
 
   for (const response of responses) {
     const questionnaireId = extractQuestionnaireId(response.questionnaire);
-    const authored = response.authored?.slice(0, 10);
+    const authored = response.authored
+      ? localDateOf(response.authored, timeZone)
+      : undefined;
 
     const inBatch = authored
       ? batches.find(

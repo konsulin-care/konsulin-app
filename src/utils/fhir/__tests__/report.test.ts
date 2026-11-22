@@ -96,6 +96,14 @@ describe('bucketResponsesByBatch', () => {
     );
     expect(buckets.get('b1')).toHaveLength(2);
   });
+
+  it('puts a 00:30 WIB first-day response in that batch when given Asia/Jakarta', () => {
+    // 2026-07-31T17:30:00Z is 2026-08-01 00:30 in Asia/Jakarta.
+    const response = resp('r-jakarta', 'phq2', '2026-07-31T17:30:00Z');
+    expect(bucketResponsesByBatch([response], BATCHES).size).toBe(0);
+    const buckets = bucketResponsesByBatch([response], BATCHES, 'Asia/Jakarta');
+    expect(buckets.get('b1')).toEqual([response]);
+  });
 });
 
 describe('deduplicateBuckets', () => {
