@@ -8,6 +8,7 @@ import {
   type PendingSubmission
 } from '@/lib/indexeddb';
 import { ownerOf, type ReplayIdentity } from '@/lib/submission-owner';
+import { errorStatus } from '@/lib/submission-replay';
 
 /** Background Sync tag used to trigger a replay when connectivity returns. */
 export const SYNC_TAG = 'replay-pending';
@@ -128,11 +129,59 @@ function ownsItem(item: PendingSubmission, identity: ReplayIdentity): boolean {
   return ownerKey === identity.ownerKey;
 }
 
+/** Returns the human-readable message of a thrown value. */
+function errorMessageOf(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return 'unknown error';
+}
+
+/** True when a status means the request was rejected as unauthenticated. */
+function isAuthRejection(status: number | undefined): boolean {
+  return status === 401 || status === 403;
+}
+
+/** True when a status is a client error that should be parked for review. */
+function isParkableStatus(status: number | undefined): status is number {
+  return (
+    status !== undefined &&
+    status >= 400 &&
+    status < 500 &&
+    !isAuthRejection(status)
+  );
+}
+
+/**
+ * Builds the queue entry to store after a failed replay attempt.
+ * Network errors and 5xx responses retry with a higher attempt count, while
+ * 401/403 responses keep the count unchanged. Other 4xx responses are parked
+ * for manual review with their status and message recorded.
+ */
+function failedEntry(
+  item: PendingSubmission,
+  error: unknown,
+  attemptedAt: number
+): PendingSubmission {
+  const status = errorStatus(error);
+  const attempts = isAuthRejection(status) ? item.attempts : item.attempts + 1;
+  const next: PendingSubmission = {
+    ...item,
+    attempts,
+    status: 'waiting',
+    lastAttemptAt: attemptedAt
+  };
+  if (isParkableStatus(status)) {
+    next.status = 'parked';
+    next.lastError = { status, message: errorMessageOf(error) };
+  }
+  return next;
+}
+
 /**
  * Drains the queue once: replays every item through its registered handler.
  * Items owned by another identity are left untouched. Successful submissions
- * are removed; failed ones keep their entry with an incremented attempt
- * count. Unknown kinds are skipped.
+ * are removed; failed ones keep their entry and are classified for retry or
+ * manual review. Unknown kinds are skipped.
  */
 async function drainQueue(identity: ReplayIdentity): Promise<void> {
   const items = await listPendingSubmissions();
@@ -145,10 +194,10 @@ async function drainQueue(identity: ReplayIdentity): Promise<void> {
       await removeSubmission(item.id);
     } catch (error) {
       console.warn('[submission-queue] replay failed for', item.id, error);
-      await dbSet(STORES.pendingSubmissions, {
-        ...item,
-        attempts: item.attempts + 1
-      });
+      await dbSet(
+        STORES.pendingSubmissions,
+        failedEntry(item, error, Date.now())
+      );
     }
   }
 }

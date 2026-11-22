@@ -22,6 +22,7 @@ import {
   removeSubmission,
   replayPendingSubmissions
 } from '@/lib/submission-queue';
+import { ApiError } from '@/services/api-error';
 
 const mockDbSet = vi.mocked(dbSet);
 const mockDbDelete = vi.mocked(dbDelete);
@@ -188,7 +189,7 @@ describe('submission queue', () => {
       expect(mockDbSet).not.toHaveBeenCalled();
     });
 
-    it('keeps the submission and increments attempts when the handler fails', async () => {
+    it('keeps a network failure waiting with attempts incremented and lastAttemptAt set', async () => {
       registerSubmissionHandler(
         'assessment',
         vi
@@ -203,7 +204,63 @@ describe('submission queue', () => {
       expect(mockDbDelete).not.toHaveBeenCalled();
       expect(mockDbSet).toHaveBeenCalledWith(
         storeName,
-        expect.objectContaining({ id: 'a', attempts: 3 })
+        expect.objectContaining({
+          id: 'a',
+          attempts: 3,
+          status: 'waiting',
+          lastAttemptAt: expect.any(Number)
+        })
+      );
+    });
+
+    it.each([401, 403])(
+      'keeps a %s failure waiting with attempts unchanged',
+      async status => {
+        registerSubmissionHandler(
+          'assessment',
+          vi
+            .fn<() => Promise<void>>()
+            .mockRejectedValue(new ApiError({ response: { status } }))
+        );
+        mockDbGetAll.mockResolvedValue([makeItem({ id: 'a', attempts: 2 })]);
+        mockDbSet.mockResolvedValue();
+
+        await replayPendingSubmissions(guestIdentity);
+
+        expect(mockDbDelete).not.toHaveBeenCalled();
+        expect(mockDbSet).toHaveBeenCalledWith(
+          storeName,
+          expect.objectContaining({
+            id: 'a',
+            attempts: 2,
+            status: 'waiting',
+            lastAttemptAt: expect.any(Number)
+          })
+        );
+      }
+    );
+
+    it('parks a 400 failure with the status and message', async () => {
+      registerSubmissionHandler(
+        'assessment',
+        vi
+          .fn<() => Promise<void>>()
+          .mockRejectedValue(new ApiError({ response: { status: 400 } }))
+      );
+      mockDbGetAll.mockResolvedValue([makeItem({ id: 'a', attempts: 1 })]);
+      mockDbSet.mockResolvedValue();
+
+      await replayPendingSubmissions(guestIdentity);
+
+      expect(mockDbDelete).not.toHaveBeenCalled();
+      expect(mockDbSet).toHaveBeenCalledWith(
+        storeName,
+        expect.objectContaining({
+          id: 'a',
+          status: 'parked',
+          lastError: { status: 400, message: expect.any(String) },
+          lastAttemptAt: expect.any(Number)
+        })
       );
     });
 
