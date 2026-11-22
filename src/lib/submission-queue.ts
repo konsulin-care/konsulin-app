@@ -66,16 +66,44 @@ function generateId(createdAt: number): string {
   return `pending-${createdAt}`;
 }
 
+/** Optional metadata stored with a queued submission. */
+export interface EnqueueOptions {
+  ownerId?: string;
+  label?: string;
+}
+
+/**
+ * Requests persistent storage when the queue was previously empty.
+ * Best effort only: a rejected or unsupported request must not fail the
+ * enqueue itself.
+ */
+async function requestPersistence(): Promise<void> {
+  try {
+    await navigator.storage?.persist?.();
+  } catch {
+    // Persistence is an optimization; ignore failures.
+  }
+}
+
 /**
  * Stores a submission that failed to send so it can be replayed later.
- * Also registers a background sync tag where supported (best effort).
+ * Also registers a background sync tag where supported (best effort) and
+ * asks for persistent storage when the queue was empty before this entry.
+ *
+ * @param kind - Submission kind used to route the replay handler.
+ * @param payload - Fully prepared payload to send on replay.
+ * @param options - Optional owner key and display label for the queue item.
+ * @returns The stored pending submission.
  */
 export async function enqueueSubmission(
   kind: string,
   payload: unknown,
-  ownerId = ''
+  options: EnqueueOptions = {}
 ): Promise<PendingSubmission> {
+  const { ownerId = '', label } = options;
   const createdAt = Date.now();
+  const existingKeys = await dbGetAllKeys(STORES.pendingSubmissions);
+  const wasEmpty = existingKeys.length === 0;
   const entry: PendingSubmission = {
     id: generateId(createdAt),
     ownerId,
@@ -84,7 +112,9 @@ export async function enqueueSubmission(
     createdAt,
     attempts: 0
   };
+  if (label !== undefined) entry.label = label;
   await dbSet(STORES.pendingSubmissions, entry);
+  if (wasEmpty) await requestPersistence();
   registerBackgroundSync();
   return entry;
 }

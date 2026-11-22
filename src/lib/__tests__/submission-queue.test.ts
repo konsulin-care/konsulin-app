@@ -82,6 +82,7 @@ function stubServiceWorker() {
 describe('submission queue', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDbGetAllKeys.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -95,7 +96,7 @@ describe('submission queue', () => {
       const entry = await enqueueSubmission(
         'assessment',
         { item: [{ answer: 1 }] },
-        'guest-1'
+        { ownerId: 'guest-1' }
       );
 
       expect(mockDbSet).toHaveBeenCalledWith(storeName, entry);
@@ -142,6 +143,71 @@ describe('submission queue', () => {
           Object.defineProperty(globalThis, 'crypto', cryptoDescriptor);
         }
       }
+    });
+
+    it('stores the given label on the pending item', async () => {
+      mockDbSet.mockResolvedValue();
+
+      const entry = await enqueueSubmission(
+        'assessment',
+        {},
+        {
+          label: 'PHQ-2'
+        }
+      );
+
+      expect(entry.label).toBe('PHQ-2');
+      expect(mockDbSet).toHaveBeenCalledWith(storeName, entry);
+    });
+
+    it('requests persistent storage when queueing into an empty queue', async () => {
+      mockDbSet.mockResolvedValue();
+      mockDbGetAllKeys.mockResolvedValue([]);
+      const persist = vi.fn<() => Promise<boolean>>().mockResolvedValue(true);
+      const storageDescriptor = Object.getOwnPropertyDescriptor(
+        navigator,
+        'storage'
+      );
+      Object.defineProperty(navigator, 'storage', {
+        configurable: true,
+        value: { persist }
+      });
+      try {
+        await enqueueSubmission('assessment', {});
+      } finally {
+        if (storageDescriptor) {
+          Object.defineProperty(navigator, 'storage', storageDescriptor);
+        } else {
+          Reflect.deleteProperty(navigator, 'storage');
+        }
+      }
+
+      expect(persist).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not request persistent storage when items already exist', async () => {
+      mockDbSet.mockResolvedValue();
+      mockDbGetAllKeys.mockResolvedValue(['existing']);
+      const persist = vi.fn<() => Promise<boolean>>().mockResolvedValue(true);
+      const storageDescriptor = Object.getOwnPropertyDescriptor(
+        navigator,
+        'storage'
+      );
+      Object.defineProperty(navigator, 'storage', {
+        configurable: true,
+        value: { persist }
+      });
+      try {
+        await enqueueSubmission('assessment', {});
+      } finally {
+        if (storageDescriptor) {
+          Object.defineProperty(navigator, 'storage', storageDescriptor);
+        } else {
+          Reflect.deleteProperty(navigator, 'storage');
+        }
+      }
+
+      expect(persist).not.toHaveBeenCalled();
     });
   });
 

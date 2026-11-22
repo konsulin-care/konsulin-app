@@ -78,9 +78,12 @@ describe('offline submission queue', () => {
       attempts: 0
     });
 
-    const { result } = renderHook(() => useSubmitQuestionnaire('phq2', true), {
-      wrapper: createWrapper()
-    });
+    const { result } = renderHook(
+      () => useSubmitQuestionnaire('phq2', true, 'PHQ-2'),
+      {
+        wrapper: createWrapper()
+      }
+    );
 
     let outcome: unknown;
     await act(async () => {
@@ -93,13 +96,14 @@ describe('offline submission queue', () => {
       expect.objectContaining({ status: 'completed' })
     );
     expect(mockEnqueue).toHaveBeenCalledTimes(1);
-    const [kind, payload] = mockEnqueue.mock.calls[0];
+    const [kind, payload, options] = mockEnqueue.mock.calls[0];
     expect(kind).toBe('questionnaire-response');
     expect(payload).toMatchObject({
       resourceType: 'QuestionnaireResponse',
       status: 'completed',
       questionnaire: 'https://konsulin.care/fhir/Questionnaire/phq2'
     });
+    expect(options).toMatchObject({ label: 'PHQ-2' });
   });
 
   it('rethrows non-network errors without queueing', async () => {
@@ -187,8 +191,9 @@ describe('offline submission queue', () => {
     expect(outcome).toMatchObject({ queued: true });
     expect(mockPost).toHaveBeenCalledWith('/fhir', bundle);
     expect(mockEnqueue).toHaveBeenCalledTimes(1);
-    const [kind, payload] = mockEnqueue.mock.calls[0];
+    const [kind, payload, options] = mockEnqueue.mock.calls[0];
     expect(kind).toBe('soap-bundle');
     expect(payload).toEqual(bundle);
+    expect(options).toEqual({ label: 'Session note' });
   });
 });

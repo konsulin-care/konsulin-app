@@ -232,7 +232,9 @@ export const useSubmitSoapBundle = () => {
         return response.data;
       } catch (error) {
         if (isNetworkError(error)) {
-          await enqueueSubmission(SOAP_BUNDLE_KIND, bundle);
+          await enqueueSubmission(SOAP_BUNDLE_KIND, bundle, {
+            label: 'Session note'
+          });
           return OFFLINE_QUEUED as unknown as Bundle;
         }
         throw error;
@@ -244,7 +246,8 @@ export const useSubmitSoapBundle = () => {
 /** Submit a completed questionnaire response. */
 export const useSubmitQuestionnaire = (
   questionnaireId: string,
-  isAuthenticated: boolean
+  isAuthenticated: boolean,
+  label?: string
 ) => {
   const queryClient = useQueryClient();
 
@@ -300,11 +303,10 @@ export const useSubmitQuestionnaire = (
         // Network-level failure: queue for replay instead of failing the
         // submission. The marker keeps the mutation's public type stable.
         if (isNetworkError(error)) {
-          await enqueueSubmission(
-            QUESTIONNAIRE_RESPONSE_KIND,
-            payload,
-            ownerId
-          );
+          await enqueueSubmission(QUESTIONNAIRE_RESPONSE_KIND, payload, {
+            ownerId,
+            label
+          });
           return OFFLINE_QUEUED as unknown as QuestionnaireResponse;
         }
         throw error;
