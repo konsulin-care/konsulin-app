@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { Dispatch } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -265,8 +265,12 @@ describe('ResultView', () => {
     render(<ResultView />);
 
     await screen.findByTestId('score-display');
+    // The FAB action is dispatched from a passive effect, so wait for it
+    // instead of reading mockDispatch right after the DOM appears.
+    await waitFor(() => {
+      expect(findClaimAction(mockDispatch.mock.calls)).toBeDefined();
+    });
     const claimAction = findClaimAction(mockDispatch.mock.calls);
-    expect(claimAction).toBeDefined();
     expect(claimAction?.config.label).toBe('Simpan Laporan');
     expect(claimAction?.config.variant).toBe('primary');
     expect(typeof claimAction?.config.onAction).toBe('function');
@@ -284,6 +288,14 @@ describe('ResultView', () => {
     render(<ResultView />);
 
     await screen.findByTestId('score-display');
+    // Wait until the effect has flushed (clearing the action) so the absence
+    // below is a real assertion, not a race against the passive effect.
+    await waitFor(() => {
+      expect(mockDispatch).toHaveBeenCalledWith({
+        type: 'SET_ACTION',
+        config: null
+      });
+    });
     expect(findClaimAction(mockDispatch.mock.calls)).toBeUndefined();
   });
 
