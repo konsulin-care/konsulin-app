@@ -19,7 +19,9 @@ export const FhirExtensionUrls = {
   locationImage: 'http://konsulin.care/fhir/StructureDefinition/locationImage', //NOSONAR
   questionnaireImage:
     'http://konsulin.care/fhir/StructureDefinition/questionnaireImage', //NOSONAR
-  referralBatch: 'http://konsulin.care/fhir/StructureDefinition/referralBatch' //NOSONAR
+  referralBatch: 'http://konsulin.care/fhir/StructureDefinition/referralBatch', //NOSONAR
+  researchTargetParticipants:
+    'http://konsulin.care/fhir/StructureDefinition/researchTargetParticipants' //NOSONAR
 } as const;
 
 /**
