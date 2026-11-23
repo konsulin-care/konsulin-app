@@ -268,63 +268,83 @@ function subsetCountNeeded(
   return count;
 }
 
+/** Localizable mission copy: message key, params, level key, and batch date. */
+export interface MissionCopy {
+  /** research-namespace message key for the mission line. */
+  key: string;
+  /** Placeholder values interpolated into the mission message. */
+  params: Record<string, string | number>;
+  /** Level label key for non-guest missions; absent for guests. */
+  levelKey?: string;
+  /** Next batch start date, yyyy-mm-dd, when the mission names one. */
+  date?: string;
+}
+
 /**
- * Builds the mission line: the most efficient path to the next level.
+ * Builds the mission copy: the most efficient path to the next level.
  *
  * The mission is contextual to the active batch: only the remaining (not yet
  * completed) questionnaires with a known duration are considered, each worth
  * duration × XP_PER_MINUTE, multiplied by the number of studies deploying it
- * (studyCount). A single questionnaire that closes the XP gap is
- * named; otherwise the smallest greedy subset is counted; when even the whole
- * batch is not enough, the batch XP plus the referral shortfall is shown.
- * Guests never see a title name — they level up toward registration.
+ * (studyCount). A single questionnaire that closes the XP gap is named;
+ * otherwise the smallest greedy subset is counted; when even the whole batch
+ * is not enough, the batch XP is shown. With nothing left to complete, the
+ * mission points at the next batch date or a share invite, never at a referral
+ * count. Non-guest missions carry the next level's label key.
  *
- * @param opts - Total XP, remaining batch questionnaires, and guest flag.
- * @returns The mission text.
+ * @param opts - Total XP, remaining batch questionnaires, guest flag, and the
+ *   next batch start date (null when no batch is upcoming).
+ * @returns The localizable mission copy.
  */
 export function buildMission(opts: {
   totalXp: number;
   questionnaires: readonly MissionQuestionnaire[];
   isGuest: boolean;
-}): string {
-  const { totalXp, questionnaires, isGuest } = opts;
-  const xpNeeded = getResearchLevelProgress(totalXp).toNext;
+  nextBatchStart: string | null;
+}): MissionCopy {
+  const { totalXp, questionnaires, isGuest, nextBatchStart } = opts;
   const next = getNextResearchLevel(totalXp);
+  const levelKey = isGuest ? undefined : next?.labelKey;
 
   if (next === null) {
-    return isGuest
-      ? 'You reached the highest level. Keep contributing!'
-      : `You reached ${getResearchLevel(totalXp).label}, the highest title. Keep contributing!`;
+    const key = isGuest ? 'mission.top_level_guest' : 'mission.top_level';
+    const topLevelKey = isGuest
+      ? undefined
+      : getResearchLevel(totalXp).labelKey;
+    return { key, params: {}, levelKey: topLevelKey };
   }
 
-  const target = isGuest ? 'level up' : `reach ${next.label}`;
   const available = withKnownXp(questionnaires);
 
   if (available.length === 0) {
-    return isGuest
-      ? 'Check back for the next batch to level up'
-      : `Complete ${xpNeeded} referrals to ${target}`;
+    if (questionnaires.length > 0) {
+      return { key: 'mission.complete_remaining', params: {}, levelKey };
+    }
+    if (nextBatchStart) {
+      return {
+        key: 'mission.next_batch',
+        params: {},
+        levelKey,
+        date: nextBatchStart
+      };
+    }
+    return { key: 'mission.invite', params: {}, levelKey };
   }
 
+  const xpNeeded = getResearchLevelProgress(totalXp).toNext;
   const single = smallestClosing(available, xpNeeded);
   if (single) {
-    return isGuest
-      ? `Complete ${single.title} (+${single.xp} XP) to ${target}`
-      : `Complete ${single.title} (+${single.xp} XP) or ${xpNeeded} referrals to ${target}`;
+    const { title, xp } = single;
+    return { key: 'mission.single', params: { title, xp }, levelKey };
   }
 
   const batchXp = available.reduce((sum, q) => sum + q.xp, 0);
   if (batchXp >= xpNeeded) {
     const count = subsetCountNeeded(available, xpNeeded);
-    return isGuest
-      ? `Complete ${count} questionnaires to ${target}`
-      : `Complete ${count} questionnaires or ${xpNeeded} referrals to ${target}`;
+    return { key: 'mission.subset', params: { count }, levelKey };
   }
 
-  const shortfall = xpNeeded - batchXp;
-  return isGuest
-    ? `Complete this batch (+${batchXp} XP) — ${shortfall} more XP to ${target}`
-    : `Complete this batch (+${batchXp} XP) and ${shortfall} referrals to ${target}`;
+  return { key: 'mission.whole_batch', params: { xp: batchXp }, levelKey };
 }
 
 // ─── Researcher Gamification ────────────────────────────────────────────────

@@ -1,13 +1,20 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
+import { formatBatchDate } from '@/utils/format-batch-date';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ContributionDashboard from '../contribution-dashboard';
 import {
   makeProgress,
   makeStudyB,
   makeStudyProgress
 } from './research-fixtures';
+
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 
 const { mockUseAuth, mockUseCircleStats } = vi.hoisted(() => ({
   mockUseAuth: vi.fn<
@@ -47,6 +54,10 @@ function renderDashboard(
     />
   );
 }
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 beforeEach(() => {
   mockUseAuth.mockReset();
@@ -187,6 +198,47 @@ describe('ContributionDashboard', () => {
     );
   });
 
+  it('renders the translated next batch date when no questionnaire remains', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-15'));
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { fhirId: 'PAT-1' } },
+      isLoading: false
+    });
+
+    renderDashboard(
+      { questionnaireResponses: [] },
+      makeStudyProgress({
+        batches: [
+          {
+            id: 'batch-1',
+            start: '2026-08-01',
+            end: '2026-08-31',
+            questionnaireIds: []
+          },
+          {
+            id: 'batch-2',
+            start: '2026-09-01',
+            end: '2026-09-30',
+            questionnaireIds: ['phq2']
+          }
+        ],
+        currentBatch: {
+          id: 'batch-1',
+          start: '2026-08-01',
+          end: '2026-08-31',
+          questionnaireIds: []
+        },
+        completedQuestionnaireIds: []
+      })
+    );
+
+    const expectedDate = formatBatchDate('2026-09-01', 'id');
+    expect(screen.getByTestId('dashboard-mission').textContent).toBe(
+      `The next batch opens ${expectedDate}. Check back then.`
+    );
+  });
+
   it('names the single remaining questionnaire and never suggests completed ones', () => {
     mockUseAuth.mockReturnValue({
       state: { userInfo: { fhirId: 'PAT-1' } },
@@ -204,23 +256,23 @@ describe('ContributionDashboard', () => {
     // the remaining Big Five Inventory instead of suggesting phq2 again.
     const mission = screen.getByTestId('dashboard-mission').textContent ?? '';
     expect(mission).toBe(
-      'Complete Big Five Inventory (+75 XP) or 8 referrals to reach Pathfinder'
+      'Complete Big Five Inventory (+75 XP) to reach Pathfinder'
     );
     expect(mission).toContain('Big Five Inventory');
     expect(mission).not.toContain('PHQ-2');
   });
 
-  it('tells guests to wait for the next batch without an active batch', () => {
+  it('invites friends without a count for guests with no active batch', () => {
     mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
 
     renderDashboard({ questionnaireResponses: [] }, null, INFO_MAP);
 
-    expect(screen.getByTestId('dashboard-mission').textContent).toBe(
-      'Check back for the next batch to level up'
-    );
+    const mission = screen.getByTestId('dashboard-mission').textContent ?? '';
+    expect(mission).toBe('Invite friends to join this study.');
+    expect(mission).not.toMatch(/\d/);
   });
 
-  it('names the batch XP and referral shortfall when the batch is not enough', () => {
+  it('names the whole batch XP when the batch is not enough', () => {
     mockUseAuth.mockReturnValue({
       state: { userInfo: { fhirId: 'PAT-1' } },
       isLoading: false
@@ -241,9 +293,9 @@ describe('ContributionDashboard', () => {
       new Map([['gad7', { title: 'GAD-7', durationMinutes: 3 }]])
     );
 
-    // 3 minutes → 15 XP from the batch; 30 XP needed → 15 referral shortfall.
+    // 3 minutes → 15 XP from the batch; 30 XP needed, so sharing is the rest.
     expect(screen.getByTestId('dashboard-mission').textContent).toBe(
-      'Complete this batch (+15 XP) and 15 referrals to reach Pathfinder'
+      'Complete this batch (+15 XP), then share the study to reach Pathfinder'
     );
   });
 
@@ -274,7 +326,7 @@ describe('ContributionDashboard', () => {
     // 83 XP needed; 40 + 60 XP available → both questionnaires together close
     // the gap, but neither does alone.
     expect(screen.getByTestId('dashboard-mission').textContent).toBe(
-      'Complete 2 questionnaires or 83 referrals to reach Pathfinder'
+      'Complete 2 questionnaires to reach Pathfinder'
     );
   });
 
@@ -321,7 +373,7 @@ describe('ContributionDashboard', () => {
     );
 
     expect(screen.getByTestId('dashboard-mission').textContent).toBe(
-      'Complete PHQ-2 (+80 XP) or 8 referrals to reach Pathfinder'
+      'Complete PHQ-2 (+80 XP) to reach Pathfinder'
     );
   });
 

@@ -15,10 +15,15 @@ import {
 } from '@/constants/research';
 import { useAuth } from '@/context/auth/authContext';
 import { useResearchXp } from '@/hooks/useResearchXp';
+import { useTranslations } from '@/i18n';
+import { useLocale } from '@/lib/locale';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
+import { getNextBatch } from '@/utils/fhir/research-schedule';
+import { formatBatchDate } from '@/utils/format-batch-date';
 import { generateAvatarPlaceholder } from '@/utils/helper';
+import { localDateOf } from '@/utils/local-date';
 import { Check, Target, Trophy, Users, type LucideIcon } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 
@@ -51,7 +56,7 @@ function LevelHalo({
           cy='36'
           r={radius}
           fill='none'
-          stroke='#E5E7EB'
+          stroke='var(--color-border)'
           strokeWidth='8'
         />
         <circle
@@ -83,7 +88,7 @@ function LevelHalo({
       </div>
       <span
         data-testid='dashboard-level'
-        className='bg-secondary absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap text-white'
+        className='bg-secondary absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full px-2 py-0.5 text-xs font-bold whitespace-nowrap text-white'
       >
         Lv {level}
       </span>
@@ -95,7 +100,7 @@ function LevelHalo({
 function TitleIcon({ icon: Icon }: Readonly<{ icon: LucideIcon }>) {
   return (
     <span className='bg-secondary/10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full'>
-      <Icon className='text-secondary h-3.5 w-3.5' />
+      <Icon className='text-turquoise-deep h-3.5 w-3.5' />
     </span>
   );
 }
@@ -109,7 +114,7 @@ function TitleBadge({
       <TitleIcon icon={title.icon} />
       <span
         data-testid='dashboard-title'
-        className='text-sm font-bold text-black'
+        className='text-foreground text-sm font-bold'
       >
         {title.label}
       </span>
@@ -141,11 +146,13 @@ function TitleWithRewards({
           className='flex cursor-pointer items-center gap-2'
         >
           <TitleIcon icon={title.icon} />
-          <span className='text-sm font-bold text-black'>{title.label}</span>
+          <span className='text-foreground text-sm font-bold'>
+            {title.label}
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent side='bottom' align='start' className='w-64'>
-        <p className='text-xs font-bold text-black'>
+        <p className='text-foreground text-xs font-bold'>
           As a {title.label}, you will receive:
         </p>
         <ul className='mt-2 flex flex-col gap-1.5'>
@@ -153,9 +160,9 @@ function TitleWithRewards({
             <li
               key={level.threshold}
               data-testid='dashboard-reward-item'
-              className='flex items-start gap-2 text-[11px] text-gray-600'
+              className='text-muted-foreground flex items-start gap-2 text-xs'
             >
-              <Check className='text-secondary mt-0.5 h-3.5 w-3.5 shrink-0' />
+              <Check className='text-turquoise-deep mt-0.5 h-3.5 w-3.5 shrink-0' />
               <span>{level.reward}</span>
             </li>
           ))}
@@ -176,8 +183,8 @@ function StatRow({
   children: ReactNode;
 }>) {
   return (
-    <div className='flex items-center gap-2 text-xs text-gray-600'>
-      <Icon className='h-3.5 w-3.5 shrink-0 text-gray-500' />
+    <div className='text-muted-foreground flex items-center gap-2 text-xs'>
+      <Icon className='text-muted-foreground h-3.5 w-3.5 shrink-0' />
       <span data-testid={testId} className='min-w-0'>
         {children}
       </span>
@@ -188,9 +195,12 @@ function StatRow({
 /** Mission line: the most efficient path to the next level. */
 function Mission({ text }: Readonly<{ text: string }>) {
   return (
-    <div className='mt-3 flex items-center gap-2 rounded-xl bg-white px-3 py-2'>
-      <Target className='text-secondary h-3.5 w-3.5 shrink-0' />
-      <p data-testid='dashboard-mission' className='text-[11px] text-gray-600'>
+    <div className='bg-card mt-3 flex items-center gap-2 rounded-xl px-3 py-2'>
+      <Target className='text-turquoise-deep h-3.5 w-3.5 shrink-0' />
+      <p
+        data-testid='dashboard-mission'
+        className='text-muted-foreground text-xs'
+      >
         {text}
       </p>
     </div>
@@ -218,6 +228,8 @@ export default function ContributionDashboard({
   activeStudy: StudyProgress | null;
   questionnaireInfo: ReadonlyMap<string, QuestionnaireInfo>;
 }>) {
+  const t = useTranslations('research');
+  const locale = useLocale();
   const { state: authState } = useAuth();
   const { totalXp, converted, isPatient, title } = useResearchXp(
     progress,
@@ -246,10 +258,25 @@ export default function ContributionDashboard({
     progress.studies,
     questionnaireInfo
   ]);
+  const today = localDateOf(new Date().toISOString());
+  const nextBatchStart =
+    getNextBatch(activeStudy?.batches ?? [], today)?.start ?? null;
   const mission = buildMission({
     totalXp,
     questionnaires: missionQuestionnaires,
-    isGuest: !isPatient
+    isGuest: !isPatient,
+    nextBatchStart
+  });
+  const level = mission.levelKey ? t(mission.levelKey) : '';
+  const goal = mission.levelKey
+    ? t('mission.goal_level', { level })
+    : t('mission.goal_level_up');
+  const date = mission.date ? formatBatchDate(mission.date, locale) : '';
+  const missionText = t(mission.key, {
+    ...mission.params,
+    goal,
+    level,
+    date
   });
 
   const avatar: AvatarData = useMemo(() => {
@@ -261,7 +288,8 @@ export default function ContributionDashboard({
     return {
       photoUrl: authState?.userInfo?.profile_picture,
       initials: placeholder.initials ?? 'GU',
-      backgroundColor: placeholder.backgroundColor ?? '#13c2c2',
+      backgroundColor:
+        placeholder.backgroundColor ?? 'var(--color-turquoise-deep)',
       seed: placeholder.seed ?? 'guest'
     };
   }, [authState?.userInfo]);
@@ -273,7 +301,7 @@ export default function ContributionDashboard({
   return (
     <section
       data-testid='contribution-dashboard'
-      className='card mt-4 border-0 bg-[#F9F9F9] p-4'
+      className='card bg-muted mt-4 border-0 p-4'
     >
       <div className='flex items-center gap-4'>
         <LevelHalo
@@ -297,7 +325,7 @@ export default function ContributionDashboard({
           </StatRow>
         </div>
       </div>
-      <Mission text={mission} />
+      <Mission text={missionText} />
     </section>
   );
 }

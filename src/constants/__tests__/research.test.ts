@@ -224,54 +224,99 @@ describe('getResearchLevelFraction', () => {
 });
 
 describe('buildMission', () => {
-  it('acknowledges the highest title when maxed out', () => {
+  it('acknowledges the highest title with the current level key', () => {
     expect(
-      buildMission({ totalXp: 700, questionnaires: [], isGuest: false })
-    ).toBe('You reached Pioneer, the highest title. Keep contributing!');
+      buildMission({
+        totalXp: 700,
+        questionnaires: [],
+        isGuest: false,
+        nextBatchStart: null
+      })
+    ).toEqual({
+      key: 'mission.top_level',
+      params: {},
+      levelKey: 'level.pioneer'
+    });
   });
 
-  it('acknowledges the highest level without a title for guests', () => {
+  it('acknowledges the highest level without a level key for guests', () => {
     expect(
-      buildMission({ totalXp: 700, questionnaires: [], isGuest: true })
-    ).toBe('You reached the highest level. Keep contributing!');
+      buildMission({
+        totalXp: 700,
+        questionnaires: [],
+        isGuest: true,
+        nextBatchStart: null
+      })
+    ).toEqual({ key: 'mission.top_level_guest', params: {} });
   });
 
-  it('falls back to referrals when no batch questionnaire is available', () => {
+  it('names the next batch date when no questionnaire remains', () => {
     expect(
-      buildMission({ totalXp: 88, questionnaires: [], isGuest: false })
-    ).toBe('Complete 12 referrals to reach Pathfinder');
+      buildMission({
+        totalXp: 88,
+        questionnaires: [],
+        isGuest: false,
+        nextBatchStart: '2026-09-01'
+      })
+    ).toEqual({
+      key: 'mission.next_batch',
+      params: {},
+      levelKey: 'level.pathfinder',
+      date: '2026-09-01'
+    });
   });
 
-  it('states the ladder gap of 150 XP to the next level at 450 XP', () => {
-    expect(
-      buildMission({ totalXp: 450, questionnaires: [], isGuest: false })
-    ).toBe('Complete 150 referrals to reach Pioneer');
+  it('invites friends without a count when no next batch exists', () => {
+    const mission = buildMission({
+      totalXp: 88,
+      questionnaires: [],
+      isGuest: false,
+      nextBatchStart: null
+    });
+
+    expect(mission).toEqual({
+      key: 'mission.invite',
+      params: {},
+      levelKey: 'level.pathfinder'
+    });
+    expect(mission.date).toBeUndefined();
   });
 
-  it('tells guests to wait for the next batch when nothing is available', () => {
+  it('invites guests without a level key when no next batch exists', () => {
     expect(
-      buildMission({ totalXp: 88, questionnaires: [], isGuest: true })
-    ).toBe('Check back for the next batch to level up');
+      buildMission({
+        totalXp: 88,
+        questionnaires: [],
+        isGuest: true,
+        nextBatchStart: null
+      })
+    ).toEqual({ key: 'mission.invite', params: {} });
   });
 
-  it('ignores questionnaires without a known duration', () => {
+  it('asks to complete the remaining questionnaires when none has known XP', () => {
     expect(
       buildMission({
         totalXp: 88,
         questionnaires: [{ id: 'phq2', title: 'PHQ-2', durationMinutes: null }],
-        isGuest: false
+        isGuest: false,
+        nextBatchStart: '2026-09-01'
       })
-    ).toBe('Complete 12 referrals to reach Pathfinder');
+    ).toEqual({
+      key: 'mission.complete_remaining',
+      params: {},
+      levelKey: 'level.pathfinder'
+    });
   });
 
-  it('ignores zero-duration questionnaires', () => {
+  it('ignores zero-duration questionnaires as remaining-without-XP', () => {
     expect(
       buildMission({
         totalXp: 88,
         questionnaires: [{ id: 'phq2', title: 'PHQ-2', durationMinutes: 0 }],
-        isGuest: false
-      })
-    ).toBe('Complete 12 referrals to reach Pathfinder');
+        isGuest: false,
+        nextBatchStart: null
+      }).key
+    ).toBe('mission.complete_remaining');
   });
 
   it('names the single questionnaire that closes the XP gap', () => {
@@ -282,9 +327,14 @@ describe('buildMission', () => {
           { id: 'phq2', title: 'PHQ-2', durationMinutes: 8 },
           { id: 'bfi', title: 'Big Five Inventory', durationMinutes: 15 }
         ],
-        isGuest: false
+        isGuest: false,
+        nextBatchStart: null
       })
-    ).toBe('Complete PHQ-2 (+40 XP) or 8 referrals to reach Pathfinder');
+    ).toEqual({
+      key: 'mission.single',
+      params: { title: 'PHQ-2', xp: 40 },
+      levelKey: 'level.pathfinder'
+    });
   });
 
   it('picks the most efficient questionnaire when several close the gap', () => {
@@ -296,19 +346,21 @@ describe('buildMission', () => {
           { id: 'gad7', title: 'GAD-7', durationMinutes: 12 },
           { id: 'bfi', title: 'Big Five Inventory', durationMinutes: 20 }
         ],
-        isGuest: false
-      })
-    ).toBe('Complete PHQ-2 (+25 XP) or 12 referrals to reach Pathfinder');
+        isGuest: false,
+        nextBatchStart: null
+      }).params
+    ).toEqual({ title: 'PHQ-2', xp: 25 });
   });
 
-  it('keeps the guest level-up phrasing for single questionnaires', () => {
+  it('keeps the single-questionnaire copy for guests without a level key', () => {
     expect(
       buildMission({
         totalXp: 92,
         questionnaires: [{ id: 'phq2', title: 'PHQ-2', durationMinutes: 8 }],
-        isGuest: true
+        isGuest: true,
+        nextBatchStart: null
       })
-    ).toBe('Complete PHQ-2 (+40 XP) to level up');
+    ).toEqual({ key: 'mission.single', params: { title: 'PHQ-2', xp: 40 } });
   });
 
   it('counts the smallest questionnaire subset that closes the gap', () => {
@@ -320,26 +372,17 @@ describe('buildMission', () => {
           { id: 'gad7', title: 'GAD-7', durationMinutes: 3 },
           { id: 'bfi', title: 'Big Five Inventory', durationMinutes: 4 }
         ],
-        isGuest: false
+        isGuest: false,
+        nextBatchStart: null
       })
-    ).toBe('Complete 2 questionnaires or 30 referrals to reach Pathfinder');
+    ).toEqual({
+      key: 'mission.subset',
+      params: { count: 2 },
+      levelKey: 'level.pathfinder'
+    });
   });
 
-  it('counts the subset without referrals for guests', () => {
-    expect(
-      buildMission({
-        totalXp: 70,
-        questionnaires: [
-          { id: 'phq2', title: 'PHQ-2', durationMinutes: 2 },
-          { id: 'gad7', title: 'GAD-7', durationMinutes: 3 },
-          { id: 'bfi', title: 'Big Five Inventory', durationMinutes: 4 }
-        ],
-        isGuest: true
-      })
-    ).toBe('Complete 2 questionnaires to level up');
-  });
-
-  it('names the whole batch plus the referral shortfall when it is not enough', () => {
+  it('names the whole batch XP when it is not enough', () => {
     expect(
       buildMission({
         totalXp: 70,
@@ -347,22 +390,14 @@ describe('buildMission', () => {
           { id: 'phq2', title: 'PHQ-2', durationMinutes: 2 },
           { id: 'gad7', title: 'GAD-7', durationMinutes: 3 }
         ],
-        isGuest: false
+        isGuest: false,
+        nextBatchStart: null
       })
-    ).toBe('Complete this batch (+25 XP) and 5 referrals to reach Pathfinder');
-  });
-
-  it('names the batch XP shortfall for guests without referrals', () => {
-    expect(
-      buildMission({
-        totalXp: 70,
-        questionnaires: [
-          { id: 'phq2', title: 'PHQ-2', durationMinutes: 2 },
-          { id: 'gad7', title: 'GAD-7', durationMinutes: 3 }
-        ],
-        isGuest: true
-      })
-    ).toBe('Complete this batch (+25 XP) — 5 more XP to level up');
+    ).toEqual({
+      key: 'mission.whole_batch',
+      params: { xp: 25 },
+      levelKey: 'level.pathfinder'
+    });
   });
 
   it('multiplies a shared questionnaire XP by its study count', () => {
@@ -372,12 +407,13 @@ describe('buildMission', () => {
         questionnaires: [
           { id: 'phq2', title: 'PHQ-2', durationMinutes: 8, studyCount: 2 }
         ],
-        isGuest: false
-      })
-    ).toBe('Complete PHQ-2 (+80 XP) or 8 referrals to reach Pathfinder');
+        isGuest: false,
+        nextBatchStart: null
+      }).params
+    ).toEqual({ title: 'PHQ-2', xp: 80 });
   });
 
-  it('includes multiplied XP in the batch shortfall total', () => {
+  it('includes multiplied XP in the whole-batch total', () => {
     expect(
       buildMission({
         totalXp: 0,
@@ -385,8 +421,52 @@ describe('buildMission', () => {
           { id: 'phq2', title: 'PHQ-2', durationMinutes: 2, studyCount: 3 },
           { id: 'gad7', title: 'GAD-7', durationMinutes: 3 }
         ],
-        isGuest: false
-      })
-    ).toBe('Complete this batch (+45 XP) and 55 referrals to reach Pathfinder');
+        isGuest: false,
+        nextBatchStart: null
+      }).params
+    ).toEqual({ xp: 45 });
+  });
+
+  it('never carries a referral count for patients or guests', () => {
+    const cases: {
+      isGuest: boolean;
+      questionnaires: {
+        id: string;
+        title: string;
+        durationMinutes: number | null;
+      }[];
+    }[] = [
+      { isGuest: false, questionnaires: [] },
+      { isGuest: true, questionnaires: [] },
+      {
+        isGuest: false,
+        questionnaires: [{ id: 'phq2', title: 'PHQ-2', durationMinutes: 8 }]
+      },
+      {
+        isGuest: true,
+        questionnaires: [{ id: 'phq2', title: 'PHQ-2', durationMinutes: 8 }]
+      },
+      {
+        isGuest: false,
+        questionnaires: [{ id: 'phq2', title: 'PHQ-2', durationMinutes: null }]
+      },
+      {
+        isGuest: true,
+        questionnaires: [{ id: 'phq2', title: 'PHQ-2', durationMinutes: null }]
+      }
+    ];
+
+    for (const { isGuest, questionnaires } of cases) {
+      const mission = buildMission({
+        totalXp: 88,
+        questionnaires,
+        isGuest,
+        nextBatchStart: null
+      });
+
+      expect(Object.keys(mission.params)).not.toContain('referrals');
+      expect(Object.keys(mission.params)).not.toContain('referral');
+      expect(JSON.stringify(mission.params)).not.toMatch(/referral/i);
+    }
   });
 });
