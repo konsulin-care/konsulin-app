@@ -24,9 +24,9 @@ export default function ReferralNotice() {
   return (
     <section
       data-testid='referral-notice'
-      className='mt-2 rounded-xl border border-[#13c2c2]/30 bg-[#13c2c2]/5 p-4'
+      className='border-turquoise-deep/30 bg-accent mt-2 rounded-xl border p-4'
     >
-      <p className='text-xs text-gray-600'>{t('referral_notice')}</p>
+      <p className='text-charcoal-700 text-xs'>{t('referral_notice')}</p>
     </section>
   );
 }

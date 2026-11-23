@@ -93,7 +93,7 @@ export default function EditPage() {
         <PageHeader />
         <ContentWraper className='pt-4'>
           <div className='px-4'>
-            <p className='text-sm text-gray-500'>Study not found.</p>
+            <p className='text-foreground text-sm'>Study not found.</p>
           </div>
         </ContentWraper>
       </>
@@ -106,7 +106,7 @@ export default function EditPage() {
         <PageHeader />
         <ContentWraper className='pt-4'>
           <div className='px-4'>
-            <p className='text-sm text-gray-500'>Loading study...</p>
+            <p className='text-muted-foreground text-sm'>Loading study...</p>
           </div>
         </ContentWraper>
       </>
