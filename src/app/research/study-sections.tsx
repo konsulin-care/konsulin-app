@@ -5,12 +5,12 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip';
 import { useTranslations } from '@/i18n';
+import { useLocale } from '@/lib/locale';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { withKAnonymityFloor } from '@/services/api/research-counts';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import type { StudyProgress } from '@/utils/fhir/research';
-import { daysUntilBatch } from '@/utils/fhir/research';
-import { differenceInCalendarDays, parseISO } from 'date-fns';
+import { formatBatchDate } from '@/utils/format-batch-date';
 import { CheckCircle2, Circle, Info } from 'lucide-react';
 
 /**
@@ -62,7 +62,7 @@ function ParticipantCountInfo() {
           <button
             type='button'
             aria-label={t('batch_progress.about_count')}
-            className='cursor-pointer text-gray-400 hover:text-gray-600'
+            className='text-muted-foreground hover:text-charcoal-700 cursor-pointer'
           >
             <Info className='h-3 w-3' />
           </button>
@@ -73,7 +73,7 @@ function ParticipantCountInfo() {
   );
 }
 
-/** Current batch index, closing deadline, progress bar, and participant counts. */
+/** Current batch line and participant count for a study. */
 export function BatchProgress({
   progress,
   completionCounts,
@@ -85,43 +85,27 @@ export function BatchProgress({
   participantCount?: number;
 }>) {
   const t = useTranslations('research');
+  const locale = useLocale();
   const { currentBatch } = progress;
   if (!currentBatch) return null;
-
-  const totalDays = differenceInCalendarDays(
-    parseISO(currentBatch.end),
-    parseISO(currentBatch.start)
-  );
-  const elapsedDays = differenceInCalendarDays(
-    new Date(),
-    parseISO(currentBatch.start)
-  );
-  const completedPercent =
-    totalDays > 0
-      ? Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100))
-      : 0;
 
   const resolvedParticipantCount = resolveParticipantCount(
     participantCount,
     completionCounts
   );
+  const batchKey = progress.isComplete
+    ? 'batch_line.completed'
+    : 'batch_line.current';
 
   return (
-    <div className='flex flex-col gap-1 text-[11px] text-gray-600'>
-      <div className='flex items-center justify-between'>
-        <span className='font-bold text-black'>
-          Batch {progress.batches.indexOf(currentBatch) + 1}
-          {progress.isComplete ? ' completed' : ''}
-        </span>
-        <span>Closes in {daysUntilBatch(currentBatch.end)} days</span>
-      </div>
-      <div className='h-1.5 w-full overflow-hidden rounded-full bg-gray-200'>
-        <div
-          data-testid='batch-progress-bar'
-          className='h-full rounded-full bg-[#13c2c2]'
-          style={{ width: `${completedPercent}%` }}
-        />
-      </div>
+    <div className='text-muted-foreground flex flex-col gap-1 text-xs'>
+      <span data-testid='batch-line' className='text-foreground font-bold'>
+        {t(batchKey, {
+          index: progress.batches.indexOf(currentBatch) + 1,
+          total: progress.batches.length,
+          date: formatBatchDate(currentBatch.end, locale)
+        })}
+      </span>
       {resolvedParticipantCount !== null && resolvedParticipantCount > 0 && (
         <div className='flex items-center gap-1'>
           <span>
@@ -147,12 +131,12 @@ export function TimelineStrip({
           const isCurrent = progress.currentBatch?.id === entry.batchId;
           const isDone = isCurrent ? progress.isComplete : entry.participated;
 
-          let chipClass = 'bg-gray-100 text-black font-bold opacity-50';
+          let chipClass = 'bg-muted text-foreground font-bold opacity-50';
           if (isDone) {
             chipClass = 'bg-secondary text-white';
           } else if (isCurrent) {
             chipClass =
-              'bg-gray-100 text-black font-bold ring-2 ring-secondary';
+              'bg-muted text-foreground font-bold ring-2 ring-secondary';
           }
 
           return (
@@ -215,9 +199,9 @@ function QuestionnaireRow({
     <li className='flex flex-col gap-0.5 text-xs'>
       <div className='flex items-center gap-2'>
         {done ? (
-          <CheckCircle2 className='h-4 w-4 shrink-0 text-[#13c2c2]' />
+          <CheckCircle2 className='text-turquoise-deep h-4 w-4 shrink-0' />
         ) : (
-          <Circle className='h-4 w-4 shrink-0 text-gray-300' />
+          <Circle className='text-muted-foreground h-4 w-4 shrink-0' />
         )}
         {title ? (
           <button
@@ -226,19 +210,19 @@ function QuestionnaireRow({
               e.stopPropagation();
               onQuestionnaireClick(studyId, id);
             }}
-            className='pointer-events-auto cursor-pointer text-left font-bold text-gray-800 hover:underline'
+            className='text-charcoal-700 pointer-events-auto cursor-pointer text-left font-bold hover:underline'
           >
             {title}
           </button>
         ) : (
           <span
             data-testid={`questionnaire-title-skeleton-${id}`}
-            className='h-3.5 w-24 animate-pulse rounded bg-gray-200'
+            className='bg-muted h-3.5 w-24 animate-pulse rounded'
           />
         )}
       </div>
       {showOverlapHints && otherStudies.length > 0 && (
-        <span className='pl-6 text-[10px] text-gray-500'>
+        <span className='text-muted-foreground pl-6 text-xs'>
           Also counts toward {otherStudies.join(', ')}
         </span>
       )}

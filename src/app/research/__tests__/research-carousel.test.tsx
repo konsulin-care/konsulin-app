@@ -1,5 +1,6 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
+import { formatBatchDate } from '@/utils/format-batch-date';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchCarousel from '../research-carousel';
@@ -103,7 +104,9 @@ describe('ResearchCarousel', () => {
     expect(
       screen.getByText(/A longitudinal survey of mental health/)
     ).toBeTruthy();
-    expect(screen.getByText(/Closes in \d+ days/i)).toBeTruthy();
+    expect(screen.getByTestId('batch-line')).toHaveTextContent(
+      `Batch 1 of 1 · Closes ${formatBatchDate(BATCH_1.end, 'id')}`
+    );
     expect(screen.getByText('Total participants: 42')).toBeTruthy();
     expect(mockUseStudyParticipantCount).toHaveBeenCalledWith('research');
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
@@ -241,15 +244,15 @@ describe('ResearchCarousel', () => {
 
     const activeChip = screen.getByTestId('batch-chip-batch-1');
     expect(activeChip).toHaveTextContent('B1');
-    expect(activeChip).toHaveClass('bg-gray-100', 'text-black', 'font-bold');
+    expect(activeChip).toHaveClass('bg-muted', 'text-foreground', 'font-bold');
     expect(activeChip).toHaveClass('ring-2', 'ring-secondary');
     expect(activeChip).not.toHaveClass('opacity-50');
 
     const upcomingChip = screen.getByTestId('batch-chip-batch-2');
     expect(upcomingChip).toHaveTextContent('B2');
     expect(upcomingChip).toHaveClass(
-      'bg-gray-100',
-      'text-black',
+      'bg-muted',
+      'text-foreground',
       'font-bold',
       'opacity-50'
     );

@@ -8,10 +8,12 @@ vi.mock('@/i18n', async () => {
 
 import { wrapper } from '@/__tests__/react-test-utils';
 import type { FabAction } from '@/context/fabContext';
+import { formatBatchDate } from '@/utils/format-batch-date';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 import {
+  BATCH_1,
   makeProgress,
   makeResearcherDashboardData,
   makeStudyB,
@@ -167,7 +169,9 @@ describe('ResearchPage', () => {
     expect(
       screen.getByText(/A longitudinal survey of mental health/)
     ).toBeTruthy();
-    expect(screen.getByText(/Closes in \d+ days/i)).toBeTruthy();
+    expect(screen.getByTestId('batch-line')).toHaveTextContent(
+      `Batch 1 of 1 · Closes ${formatBatchDate(BATCH_1.end, 'id')}`
+    );
     expect(screen.getAllByText('1/2 questionnaires').length).toBeGreaterThan(0);
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
   });
@@ -540,7 +544,9 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper });
 
-    expect(screen.getByText(/Batch 1 completed/)).toBeTruthy();
+    expect(screen.getByTestId('batch-line')).toHaveTextContent(
+      `Batch 1 of 1 completed · Closes ${formatBatchDate(BATCH_1.end, 'id')}`
+    );
     expect(screen.queryByText(/Next batch opens soon/)).toBeNull();
     expect(
       dispatchedActions.findLast(

@@ -1,4 +1,5 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
+import { formatBatchDate } from '@/utils/format-batch-date';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -51,8 +52,10 @@ function renderList(
   );
 }
 
+const CLOSES_DATE = formatBatchDate(BATCH_1.end, 'id');
+
 describe('BatchProgress', () => {
-  it('labels a completed batch with the completed suffix and no green badge', () => {
+  it('labels a completed batch with the completed suffix and date', () => {
     render(
       <BatchProgress
         progress={makeStudyProgress({
@@ -64,28 +67,28 @@ describe('BatchProgress', () => {
       />
     );
 
-    expect(screen.getByText('Batch 1 completed')).toBeTruthy();
+    expect(screen.getByTestId('batch-line')).toHaveTextContent(
+      `Batch 1 of 1 completed · Closes ${CLOSES_DATE}`
+    );
     expect(screen.queryByText('Batch complete')).toBeNull();
   });
 
-  it('keeps the plain batch label while the batch is in progress', () => {
+  it('keeps the current batch label while the batch is in progress', () => {
     render(<BatchProgress progress={makeStudyProgress()} />);
 
-    expect(screen.getByText('Batch 1')).toBeTruthy();
+    expect(screen.getByTestId('batch-line')).toHaveTextContent(
+      `Batch 1 of 1 · Closes ${CLOSES_DATE}`
+    );
     expect(screen.queryByText(/completed/)).toBeNull();
   });
 
-  it('shows time-based progress in batch', () => {
-    // Batch is 2026-08-01 to 2026-08-31 (30 days total)
-    // Mock today to be 2026-08-11 (10 days elapsed = 33.3%)
+  it('renders no elapsed-days progress bar', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-11'));
 
     render(<BatchProgress progress={makeStudyProgress()} />);
 
-    // Progress bar should reflect time elapsed (10/30 = 33.3%)
-    const progressBar = screen.getByTestId('batch-progress-bar');
-    expect(progressBar).toHaveStyle({ width: '33.33333333333333%' });
+    expect(screen.queryByTestId('batch-progress-bar')).toBeNull();
 
     vi.useRealTimers();
   });
