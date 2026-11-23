@@ -1,9 +1,3 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip';
 import { useTranslations } from '@/i18n';
 import { useLocale } from '@/lib/locale';
 import type { QuestionnaireInfo } from '@/services/api/research';
@@ -11,7 +5,8 @@ import { withKAnonymityFloor } from '@/services/api/research-counts';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { formatBatchDate } from '@/utils/format-batch-date';
-import { CheckCircle2, Circle, Info } from 'lucide-react';
+import { CheckCircle2, Circle } from 'lucide-react';
+import { ParticipantCountInfo } from './participant-count-info';
 
 /**
  * Limits a description to maxLength characters, appending an ellipsis.
@@ -49,28 +44,6 @@ function resolveParticipantCount(
   }
   if (!completionCounts || completionCounts.size === 0) return null;
   return Math.max(...completionCounts.values());
-}
-
-/** Info trigger with the cached-count disclaimer tooltip. */
-function ParticipantCountInfo() {
-  const t = useTranslations('research');
-
-  return (
-    <TooltipProvider delayDuration={0}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type='button'
-            aria-label={t('batch_progress.about_count')}
-            className='text-muted-foreground hover:text-charcoal-700 cursor-pointer'
-          >
-            <Info className='h-3 w-3' />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent>{t('batch_progress.cached_disclaimer')}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
 }
 
 /** Current batch line and participant count for a study. */
