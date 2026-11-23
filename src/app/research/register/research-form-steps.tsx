@@ -36,7 +36,7 @@ export function Step1({
           id='title'
           {...register('title')}
           placeholder={t('study_title_placeholder')}
-          className='bg-card'
+          className='bg-card text-foreground'
         />
         {errors.title && (
           <p className='text-danger text-sm'>{t(errors.title.message ?? '')}</p>
@@ -48,7 +48,7 @@ export function Step1({
           id='description'
           {...register('description')}
           placeholder={t('study_description_placeholder')}
-          className='focus:ring-primary border-border bg-card block w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none'
+          className='focus:ring-primary border-border bg-card text-foreground block w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none'
           rows={3}
         />
       </div>
@@ -65,6 +65,7 @@ export function Step1({
             setValueAs: v => (v === '' ? undefined : Number(v))
           })}
           placeholder={t('target_participants_placeholder')}
+          className='text-foreground'
         />
         {errors.targetParticipants && (
           <p className='text-danger text-sm'>

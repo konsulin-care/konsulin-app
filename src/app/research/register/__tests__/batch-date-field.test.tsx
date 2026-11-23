@@ -43,6 +43,24 @@ describe('BatchDateField - date picker button', () => {
     expect(endDateButtons.length).toBeGreaterThanOrEqual(1);
   });
 
+  it('renders date picker buttons with border-input and text-foreground', () => {
+    renderWithQuery(
+      <Step3
+        fields={[MOCK_FIELD]}
+        errors={{}}
+        batches={[MOCK_BATCH]}
+        setValue={vi.fn()}
+        onAddBatch={vi.fn()}
+        onRemoveBatch={vi.fn()}
+      />
+    );
+
+    const startDateButton = screen.getByRole('button', {
+      name: /select start date/i
+    });
+    expect(startDateButton).toHaveClass('border-input', 'text-foreground');
+  });
+
   it('does not render native date inputs', () => {
     renderWithQuery(
       <Step3

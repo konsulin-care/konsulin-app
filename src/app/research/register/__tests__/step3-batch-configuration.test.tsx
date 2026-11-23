@@ -5,8 +5,10 @@ import {
   renderWithQuery
 } from '@/__tests__/react-test-utils';
 import { screen } from '@testing-library/react';
+import type { UseFormReturn } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
-import { Step3 } from '../research-form-steps';
+import type { FormData } from '../research-form';
+import { Step1, Step3 } from '../research-form-steps';
 
 vi.mock('@/i18n', async () =>
   (await import('@/__tests__/mocks/i18n-mock')).i18nMockFactory()
@@ -124,6 +126,43 @@ describe('Step3 - Batch Configuration', () => {
     expect(screen.getByText('PHQ-9')).toBeInTheDocument();
     const comboboxes = screen.queryAllByRole('combobox');
     expect(comboboxes).toHaveLength(0);
+  });
+
+  it('renders the batch card with border-border and muted labels', () => {
+    renderWithQuery(
+      <Step3
+        fields={[MOCK_FIELD]}
+        errors={{}}
+        batches={[MOCK_BATCH]}
+        setValue={vi.fn()}
+        onAddBatch={vi.fn()}
+        onRemoveBatch={vi.fn()}
+        availableQuestionnaires={MOCK_QUESTIONNAIRES}
+        selectedQuestionnaireIds={['phq9', 'gad7']}
+        lockedBatchIndices={[0]}
+      />
+    );
+
+    const card = screen.getByText(/batch 1/i).closest('.rounded-lg');
+    expect(card).toHaveClass('border-border');
+    expect(screen.getByText('(locked)')).toHaveClass(
+      'text-xs',
+      'text-muted-foreground'
+    );
+  });
+
+  it('renders step 1 inputs with border-input and text-foreground', () => {
+    const register = vi.fn() as unknown as UseFormReturn<FormData>['register']; // NOSONAR: test double for react-hook-form register
+    renderWithQuery(<Step1 register={register} errors={{}} />);
+
+    expect(screen.getByLabelText(/^title$/i)).toHaveClass(
+      'border-input',
+      'text-foreground'
+    );
+    expect(screen.getByLabelText(/target participants/i)).toHaveClass(
+      'border-input',
+      'text-foreground'
+    );
   });
 
   it('renders multiple batches with separate comboboxes', () => {

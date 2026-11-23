@@ -57,9 +57,7 @@ export function BatchDateField({
         })}
         disabled={isLocked}
       />
-      {error && (
-        <p className='text-xs text-red-500'>{t(error.message ?? '')}</p>
-      )}
+      {error && <p className='text-danger text-xs'>{t(error.message ?? '')}</p>}
     </div>
   );
 }
@@ -95,12 +93,14 @@ export function BatchItem({
   };
 
   return (
-    <div className='space-y-2 rounded-lg border p-4'>
+    <div className='border-border text-foreground space-y-2 rounded-lg border p-4'>
       <div className='flex items-center justify-between'>
         <h3 className='text-sm font-medium'>
           {t('batch_number', { index: index + 1 })}
           {isLocked && (
-            <span className='ml-2 text-xs text-gray-500'>{t('locked')}</span>
+            <span className='text-muted-foreground ml-2 text-xs'>
+              {t('locked')}
+            </span>
           )}
         </h3>
         {index > 0 && !isLocked && (
@@ -138,7 +138,7 @@ export function BatchItem({
         <div className='space-y-1'>
           <Label>{t('questionnaires_label')}</Label>
           {isLocked ? (
-            <p className='text-sm text-gray-700'>
+            <p className='text-charcoal-700 text-sm'>
               {batchValues.questionnaireIds
                 .map(
                   id =>
