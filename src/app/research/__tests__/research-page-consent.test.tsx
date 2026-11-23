@@ -96,12 +96,16 @@ vi.mock('react-toastify', () => ({
   toast: { error: vi.fn(), success: vi.fn() }
 }));
 
-vi.mock('@/services/api/research-counts', () => ({
-  usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
-  useStudyParticipantCount: mockUseStudyParticipantCount,
-  withKAnonymityFloor: (total: number) => (total >= 5 ? total : null),
-  COMPLETION_COUNT_FLOOR: 5
-}));
+vi.mock('@/services/api/research-counts', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/services/api/research-counts')>();
+  return {
+    ...actual,
+    usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
+    useStudyParticipantCount: mockUseStudyParticipantCount,
+    withKAnonymityFloor: (total: number) => (total >= 5 ? total : null)
+  };
+});
 
 /** Mutation mock whose mutate resolves with the given outcome. */
 function consentMutationMock(

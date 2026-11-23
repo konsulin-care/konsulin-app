@@ -82,11 +82,15 @@ vi.mock('@/services/api/circle', () => ({
   useCircleStats: mockUseCircleStats
 }));
 
-vi.mock('@/services/api/research-counts', () => ({
-  usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
-  useStudyParticipantCount: mockUseStudyParticipantCount,
-  COMPLETION_COUNT_FLOOR: 5
-}));
+vi.mock('@/services/api/research-counts', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/services/api/research-counts')>();
+  return {
+    ...actual,
+    usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
+    useStudyParticipantCount: mockUseStudyParticipantCount
+  };
+});
 
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => mockUseAuth()
@@ -676,6 +680,23 @@ describe('ResearchPage', () => {
     expect(screen.queryByText(/Also counts toward/)).toBeNull();
   });
 
+  it('renders the collective goal instead of a total participants line for patients', () => {
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { fhirId: 'patient-123', role_name: 'Patient' } },
+      isLoading: false
+    });
+    mockUseStudyParticipantCount.mockReturnValue({ data: 10 });
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    expect(screen.getByText('10 people have joined.')).toBeInTheDocument();
+    expect(screen.queryByText(/Total participants:/)).toBeNull();
+  });
+
   it('passes completion counts to StudyDetailView for researcher', async () => {
     mockUseAuth.mockReturnValue({
       state: { userInfo: { role_name: 'Researcher' } },
@@ -707,10 +728,10 @@ describe('ResearchPage', () => {
       })
     );
 
-    // Verify total participants is displayed (max of 12, 3 = 12)
-    expect(
-      await screen.findByText('Total participants: 12')
-    ).toBeInTheDocument();
+    expect(mockUsePerQuestionnaireCounts).toHaveBeenCalledWith([
+      'phq2',
+      'big-five-inventory'
+    ]);
   });
 
   it('does not fetch completion counts for patient role', () => {

@@ -49,8 +49,9 @@ function makeUpcomingBatch(id: string, start: string, end: string) {
   return { id, start, end, questionnaireIds: ['phq2'] };
 }
 
-const BATCH_2 = makeUpcomingBatch('batch-2', '2026-09-01', '2026-09-30');
-const BATCH_3 = makeUpcomingBatch('batch-3', '2026-10-01', '2026-10-31');
+const BATCH_2 = makeUpcomingBatch('batch-2', '2099-09-01', '2099-09-30');
+const BATCH_3 = makeUpcomingBatch('batch-3', '2099-10-01', '2099-10-31');
+const PAST_BATCH = makeUpcomingBatch('batch-past', '2020-01-01', '2020-01-31');
 const OPEN_STUDY_NAME = 'Open study Konsulin Mental Health Survey';
 
 function renderCarousel(
@@ -65,6 +66,9 @@ function renderCarousel(
   options: {
     titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
     isTitlesLoading?: boolean;
+    isPatient?: boolean;
+    waiting?: readonly { questionnaire?: string; authored?: string }[];
+    consentedStudyIds?: ReadonlySet<string>;
   } = {}
 ) {
   return render(
@@ -74,9 +78,11 @@ function renderCarousel(
       onSlideChange={overrides.onSlideChange ?? onSlideChange}
       onStudyClick={overrides.onStudyClick ?? vi.fn()}
       onQuestionnaireClick={overrides.onQuestionnaireClick ?? vi.fn()}
-      isPatient={false}
+      isPatient={options.isPatient ?? false}
       titleMap={options.titleMap ?? TITLE_MAP}
       isTitlesLoading={options.isTitlesLoading ?? false}
+      waiting={options.waiting}
+      consentedStudyIds={options.consentedStudyIds}
     />
   );
 }
@@ -107,17 +113,62 @@ describe('ResearchCarousel', () => {
     expect(screen.getByTestId('batch-line')).toHaveTextContent(
       `Batch 1 of 1 · Closes ${formatBatchDate(BATCH_1.end, 'id')}`
     );
-    expect(screen.getByText('Total participants: 42')).toBeTruthy();
-    expect(mockUseStudyParticipantCount).toHaveBeenCalledWith('research');
+    expect(screen.queryByText(/Total participants:/)).toBeNull();
+    expect(mockUseStudyParticipantCount).toHaveBeenCalledWith('research', {
+      enabled: false
+    });
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
     expect(screen.getByText('PHQ-2')).toBeTruthy();
     expect(screen.getByText('Big Five Inventory')).toBeTruthy();
     expect(screen.getByText(/Tap to share this survey/i)).toBeTruthy();
   });
 
+  it('renders the collective goal for a patient and no legacy total line', () => {
+    renderCarousel([makeStudyProgress()], 'research', {}, vi.fn(), {
+      isPatient: true
+    });
+
+    expect(screen.getByText('42 people have joined.')).toBeTruthy();
+    expect(screen.queryByText(/Total participants:/)).toBeNull();
+  });
+
+  it('hides the count and collective goal for guests', () => {
+    renderCarousel([makeStudyProgress()], 'research');
+
+    expect(screen.queryByTestId('collective-goal')).toBeNull();
+    expect(screen.queryByText(/people have joined/)).toBeNull();
+    expect(screen.queryByText(/Total participants:/)).toBeNull();
+  });
+
+  it('marks a batch with a waiting response as syncing', () => {
+    renderCarousel(
+      [
+        makeStudyProgress({
+          batches: [BATCH_2],
+          currentBatch: BATCH_2,
+          history: []
+        })
+      ],
+      'research',
+      {},
+      vi.fn(),
+      {
+        waiting: [
+          { questionnaire: 'phq2', authored: '2099-09-15T08:00:00.000Z' }
+        ]
+      }
+    );
+
+    const syncingChip = screen.getByTestId('batch-chip-batch-2');
+    expect(syncingChip).toHaveAttribute('data-status', 'syncing');
+    expect(syncingChip.parentElement).toHaveTextContent('Waiting to sync');
+  });
+
   it('never renders a zero participant total', () => {
     mockUseStudyParticipantCount.mockReturnValue({ data: 0 });
-    renderCarousel([makeStudyProgress()], 'research');
+    renderCarousel([makeStudyProgress()], 'research', {}, vi.fn(), {
+      isPatient: true
+    });
 
     expect(screen.queryByText('Total participants: 0')).toBeNull();
     expect(screen.queryByText(/Total participants:/)).toBeNull();
@@ -197,11 +248,11 @@ describe('ResearchCarousel', () => {
     ).toBeTruthy();
   });
 
-  it('styles the share text black', () => {
+  it('styles the share text with the foreground token', () => {
     renderCarousel([makeStudyProgress()], 'research');
 
     expect(screen.getByTestId('research-share-research')).toHaveClass(
-      'text-black'
+      'text-foreground'
     );
   });
 
@@ -211,29 +262,29 @@ describe('ResearchCarousel', () => {
     expect(document.querySelector('.research-carousel')).toBeTruthy();
   });
 
-  it('styles the active batch chip bold black and upcoming chips at half opacity', () => {
+  it('marks done and upcoming batches through data-status attributes', () => {
     renderCarousel(
       [
         makeStudyProgress({
-          batches: [BATCH_1, BATCH_2, BATCH_3],
-          currentBatch: BATCH_1,
+          batches: [PAST_BATCH, BATCH_2, BATCH_3],
+          currentBatch: BATCH_2,
           history: [
             {
-              batchId: 'batch-1',
-              start: '2026-08-01',
-              end: '2026-08-31',
+              batchId: PAST_BATCH.id,
+              start: PAST_BATCH.start,
+              end: PAST_BATCH.end,
               participated: true
             },
             {
-              batchId: 'batch-2',
-              start: '2026-09-01',
-              end: '2026-09-30',
+              batchId: BATCH_2.id,
+              start: BATCH_2.start,
+              end: BATCH_2.end,
               participated: false
             },
             {
-              batchId: 'batch-3',
-              start: '2026-10-01',
-              end: '2026-10-31',
+              batchId: BATCH_3.id,
+              start: BATCH_3.start,
+              end: BATCH_3.end,
               participated: false
             }
           ]
@@ -242,56 +293,13 @@ describe('ResearchCarousel', () => {
       'research'
     );
 
-    const activeChip = screen.getByTestId('batch-chip-batch-1');
-    expect(activeChip).toHaveTextContent('B1');
-    expect(activeChip).toHaveClass('bg-muted', 'text-foreground', 'font-bold');
-    expect(activeChip).toHaveClass('ring-2', 'ring-secondary');
-    expect(activeChip).not.toHaveClass('opacity-50');
+    const doneChip = screen.getByTestId('batch-chip-batch-past');
+    expect(doneChip).toHaveAttribute('data-status', 'done');
+    expect(doneChip.parentElement).toHaveTextContent('Done');
 
     const upcomingChip = screen.getByTestId('batch-chip-batch-2');
-    expect(upcomingChip).toHaveTextContent('B2');
-    expect(upcomingChip).toHaveClass(
-      'bg-muted',
-      'text-foreground',
-      'font-bold',
-      'opacity-50'
-    );
-  });
-
-  it('keeps completed batch chips teal with a white label', () => {
-    renderCarousel(
-      [
-        makeStudyProgress({
-          batches: [BATCH_1, BATCH_2, BATCH_3],
-          currentBatch: BATCH_3,
-          history: [
-            {
-              batchId: 'batch-1',
-              start: '2026-08-01',
-              end: '2026-08-31',
-              participated: true
-            },
-            {
-              batchId: 'batch-2',
-              start: '2026-09-01',
-              end: '2026-09-30',
-              participated: true
-            },
-            {
-              batchId: 'batch-3',
-              start: '2026-10-01',
-              end: '2026-10-31',
-              participated: false
-            }
-          ]
-        })
-      ],
-      'research'
-    );
-
-    const doneChip = screen.getByTestId('batch-chip-batch-1');
-    expect(doneChip).toHaveClass('bg-secondary', 'text-white');
-    expect(doneChip).toHaveTextContent('B1');
+    expect(upcomingChip).toHaveAttribute('data-status', 'upcoming');
+    expect(upcomingChip.parentElement).toHaveTextContent('Upcoming');
   });
 
   it('spaces slides 16px apart for a breathing room between cards', () => {

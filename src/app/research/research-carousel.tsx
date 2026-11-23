@@ -2,19 +2,26 @@
 
 import ShareResearchButton from '@/components/research/share-research-button';
 import type { QuestionnaireInfo } from '@/services/api/research';
-import { useStudyParticipantCount } from '@/services/api/research-counts';
 import type { StudyProgress } from '@/utils/fhir/research';
+import {
+  waitingBatchIds,
+  type WaitingResponse
+} from '@/utils/fhir/research-schedule';
 import { FlaskConical } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import 'swiper/css';
 import { Swiper, SwiperSlide, type SwiperClass } from 'swiper/react';
+import BatchTrail from './batch-trail';
+import { CollectiveGoal } from './collective-goal';
 import {
   BatchProgress,
   buildOverlapMap,
   QuestionnaireList,
-  TimelineStrip,
   truncateDescription
 } from './study-sections';
+
+/** Stable empty consent set so slides share one instance. */
+const EMPTY_CONSENTED_IDS: ReadonlySet<string> = new Set<string>();
 
 interface ResearchCarouselProps {
   studies: StudyProgress[];
@@ -28,16 +35,20 @@ interface ResearchCarouselProps {
   titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
   /** True while questionnaire titles are being fetched. */
   isTitlesLoading?: boolean;
+  /** Queued responses awaiting sync, used to mark waiting batches. */
+  waiting?: readonly WaitingResponse[];
+  /** Study ids the patient has consented to, for the collective goal. */
+  consentedStudyIds?: ReadonlySet<string>;
 }
 
 /** Icon, title, and description block of a study slide. */
 function StudyHeader({ study }: Readonly<{ study: StudyProgress['study'] }>) {
   return (
     <div className='flex items-start gap-2'>
-      <FlaskConical className='mt-0.5 h-5 w-5 shrink-0 text-black' />
+      <FlaskConical className='text-foreground mt-0.5 h-5 w-5 shrink-0' />
       <div className='flex min-w-0 flex-col'>
-        <h3 className='text-sm font-bold text-black'>{study.title}</h3>
-        <p className='text-[11px] leading-4 text-gray-500'>
+        <h3 className='text-foreground text-sm font-bold'>{study.title}</h3>
+        <p className='text-muted-foreground text-xs leading-4'>
           {truncateDescription(study.description)}
         </p>
       </div>
@@ -54,6 +65,8 @@ function StudySlide({
   overlapMap,
   titleMap,
   isTitlesLoading,
+  waiting,
+  consentedStudyIds,
   onStudyClick,
   onQuestionnaireClick
 }: Readonly<{
@@ -64,18 +77,18 @@ function StudySlide({
   overlapMap: Map<string, string[]>;
   titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
   isTitlesLoading?: boolean;
+  waiting: readonly WaitingResponse[];
+  consentedStudyIds: ReadonlySet<string>;
   onStudyClick: (studyId: string) => void;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
 }>) {
-  const { data: participantCount } = useStudyParticipantCount(
-    progress.study.id
-  );
+  const waitingIds = waitingBatchIds(progress.batches, waiting);
 
   return (
     <div
       data-testid={`research-slide-${progress.study.id}`}
       data-active={isActive}
-      className={`card border-border focus-within:ring-secondary relative flex h-full flex-col gap-2 bg-white p-4 transition-all duration-300 focus-within:ring-2 ${
+      className={`card border-border focus-within:ring-secondary bg-card relative flex h-full flex-col gap-2 p-4 transition-all duration-300 focus-within:ring-2 ${
         isActive ? 'opacity-100' : 'opacity-70'
       }`}
     >
@@ -89,11 +102,13 @@ function StudySlide({
       />
       <div className='pointer-events-none relative z-10 flex flex-col gap-2'>
         <StudyHeader study={progress.study} />
-        <BatchProgress
-          progress={progress}
-          participantCount={participantCount}
+        <BatchProgress progress={progress} />
+        <CollectiveGoal
+          study={progress.study}
+          isGuest={!isPatient}
+          isConsented={consentedStudyIds.has(progress.study.id)}
         />
-        <TimelineStrip progress={progress} />
+        <BatchTrail progress={progress} waitingBatchIds={waitingIds} />
         <QuestionnaireList
           progress={progress}
           overlapMap={overlapMap}
@@ -108,7 +123,7 @@ function StudySlide({
           fhirId={fhirId}
           studyId={progress.study.id}
           dataTestId={`research-share-${progress.study.id}`}
-          className='pointer-events-auto mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-2 text-[10px] text-black'
+          className='border-border text-foreground pointer-events-auto mt-auto flex cursor-pointer items-center justify-center gap-1.5 border-t pt-2 text-xs'
         />
       </div>
     </div>
@@ -125,7 +140,9 @@ export default function ResearchCarousel({
   isPatient,
   fhirId,
   titleMap,
-  isTitlesLoading
+  isTitlesLoading,
+  waiting = [],
+  consentedStudyIds = EMPTY_CONSENTED_IDS
 }: Readonly<ResearchCarouselProps>) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [swiper, setSwiper] = useState<SwiperClass | null>(null);
@@ -167,6 +184,8 @@ export default function ResearchCarousel({
                 overlapMap={overlapMap}
                 titleMap={titleMap}
                 isTitlesLoading={isTitlesLoading}
+                waiting={waiting}
+                consentedStudyIds={consentedStudyIds}
                 onStudyClick={onStudyClick}
                 onQuestionnaireClick={onQuestionnaireClick}
               />
@@ -183,8 +202,8 @@ export default function ResearchCarousel({
             aria-label={`Go to slide ${index + 1}`}
             className={`cursor-pointer rounded-full transition-all duration-300 ${
               index === activeIndex
-                ? 'h-[6px] w-6 bg-[#0abdc3]'
-                : 'h-2 w-2 bg-gray-300'
+                ? 'bg-turquoise-deep h-[6px] w-6'
+                : 'bg-muted h-2 w-2'
             }`}
           />
         ))}
