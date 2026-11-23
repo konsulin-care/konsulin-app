@@ -1,4 +1,5 @@
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
+import { scanSource } from '@/styles/__tests__/raw-color-scan';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearcherCarousel from '../researcher-carousel';
@@ -126,5 +127,21 @@ describe('ResearcherCarousel', () => {
     );
 
     expect(screen.getByText('7 participants')).toBeInTheDocument();
+  });
+
+  it('renders design-token classes without raw colours', () => {
+    const { container } = render(
+      <ResearcherCarousel
+        studies={mockStudies}
+        activeId='study-1'
+        onSlideChange={vi.fn()}
+        onStudyClick={vi.fn()}
+      />
+    );
+
+    const dots = screen.getAllByRole('button', { name: /go to slide/i });
+    expect(dots[0]?.className).toContain('bg-turquoise-deep');
+    expect(dots[1]?.className).toContain('bg-muted');
+    expect(scanSource(container.innerHTML)).toEqual([]);
   });
 });

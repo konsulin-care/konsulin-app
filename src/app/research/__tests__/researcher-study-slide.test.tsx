@@ -1,4 +1,5 @@
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
+import { scanSource } from '@/styles/__tests__/raw-color-scan';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearcherStudySlide from '../researcher-study-slide';
@@ -130,5 +131,44 @@ describe('ResearcherStudySlide', () => {
     );
 
     expect(screen.getByText(/— participants/u)).toBeInTheDocument();
+  });
+
+  it('uses singular keys for a count of one', () => {
+    const singularStudy: ResearchStudyWithBatches = {
+      ...mockStudy,
+      batches: [mockStudy.batches[0]],
+      currentBatch: {
+        id: 'batch-1',
+        start: '2026-01-01',
+        end: '2026-12-31',
+        questionnaireIds: ['phq2']
+      },
+      daysRemaining: 1
+    };
+
+    render(
+      <ResearcherStudySlide
+        study={singularStudy}
+        isActive
+        onClick={vi.fn()}
+        participantCount={1}
+      />
+    );
+
+    expect(screen.getByText('1 batch')).toBeInTheDocument();
+    expect(screen.getByText('Batch closes in 1 day')).toBeInTheDocument();
+    expect(screen.getByText('1 participant')).toBeInTheDocument();
+    expect(screen.getByText('1 questionnaire')).toBeInTheDocument();
+  });
+
+  it('renders design-token classes without raw colours', () => {
+    const { container } = render(
+      <ResearcherStudySlide study={mockStudy} isActive onClick={vi.fn()} />
+    );
+
+    const card = screen.getByTestId('researcher-slide-study-1');
+    expect(card.className).toContain('bg-card');
+    expect(card.className).toContain('ring-turquoise-deep');
+    expect(scanSource(container.innerHTML)).toEqual([]);
   });
 });

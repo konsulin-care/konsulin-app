@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from '@/i18n';
 import { useStudyParticipantCount } from '@/services/api/research-counts';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import { useEffect, useState } from 'react';
@@ -44,6 +45,7 @@ export default function ResearcherCarousel({
   onSlideChange,
   onStudyClick
 }: Readonly<ResearcherCarouselProps>) {
+  const t = useTranslations('research');
   const [activeIndex, setActiveIndex] = useState(0);
   const [swiper, setSwiper] = useState<SwiperClass | null>(null);
   const initialIndex = Math.max(
@@ -90,11 +92,11 @@ export default function ResearcherCarousel({
             key={study.study.id}
             type='button'
             onClick={() => swiper?.slideTo(index)}
-            aria-label={`Go to slide ${index + 1}`}
+            aria-label={t('carousel.go_to_slide', { index: index + 1 })}
             className={`cursor-pointer rounded-full transition-all duration-300 ${
               index === activeIndex
-                ? 'h-[6px] w-6 bg-[#0abdc3]'
-                : 'h-2 w-2 bg-gray-300'
+                ? 'bg-turquoise-deep h-[6px] w-6'
+                : 'bg-muted h-2 w-2'
             }`}
           />
         ))}
