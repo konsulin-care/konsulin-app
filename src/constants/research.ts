@@ -479,24 +479,6 @@ export function buildResearcherMissionCopy(opts: {
     return { key, gap };
   }
 
-  // All milestones hit — show zero gap
-  return { key: 'researcher_mission.enroll_zero', gap: 0 };
-}
-
-/**
- * Builds the English mission line for a researcher: the nearest milestone.
- *
- * @param opts - Impact points and total participants across all studies.
- * @returns The mission text.
- */
-export function buildResearcherMission(opts: {
-  impactPoints: number;
-  totalParticipants: number;
-}): string {
-  const copy = buildResearcherMissionCopy(opts);
-  if (copy.key === 'researcher_mission.enroll_zero') {
-    return 'Enroll 0 participants to hit the next milestone.';
-  }
-  const noun = copy.gap === 1 ? 'participant' : 'participants';
-  return `Enroll ${copy.gap} ${noun} to hit the next milestone.`;
+  // All milestones hit — celebrate without asking for more enrollments.
+  return { key: 'researcher_mission.all_milestones', gap: 0 };
 }

@@ -4,7 +4,6 @@ import {
   RESEARCHER_IMPACT_PER_BATCH,
   RESEARCHER_IMPACT_PER_PARTICIPANT,
   RESEARCHER_MILESTONES,
-  buildResearcherMission,
   getImpactInLevel,
   getResearcherLevel,
   getResearcherLevelFraction,
@@ -32,7 +31,6 @@ export interface ResearcherImpactResult {
   levelFraction: number;
   impactInLevel: number;
   perStudy: StudyImpact[];
-  mission: string;
   isLoading: boolean;
 }
 
@@ -45,7 +43,7 @@ export interface ResearcherImpactResult {
  * @param activeStudyId - Currently focused study from the carousel.
  * @param practitionerId - FHIR Practitioner id for referral stats.
  * @param totalParticipants - Total participants across all studies.
- * @returns Impact points, level info, per-study breakdown, and mission text.
+ * @returns Impact points, level info, and per-study breakdown.
  */
 export function useResearcherImpact(
   studies: ResearchStudyWithBatches[],
@@ -129,11 +127,6 @@ export function useResearcherImpact(
   const levelFraction = getResearcherLevelFraction(totalImpact);
   const impactInLevel = getImpactInLevel(totalImpact);
 
-  const mission = buildResearcherMission({
-    impactPoints: totalImpact,
-    totalParticipants
-  });
-
   return {
     totalImpact,
     level,
@@ -141,7 +134,6 @@ export function useResearcherImpact(
     levelFraction,
     impactInLevel,
     perStudy,
-    mission,
     isLoading: activeLoading || referralsLoading
   };
 }

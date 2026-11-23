@@ -174,14 +174,13 @@ describe('useResearcherImpact', () => {
     expect(typeof result.current.isLoading).toBe('boolean');
   });
 
-  it('builds a mission string', () => {
+  it('does not expose a mission field', () => {
     const studies = [makeStudy('study-1')];
     const { result } = renderHook(
       () => useResearcherImpact(studies, 'study-1', 'practitioner-1'),
       { wrapper: createWrapper() }
     );
-    expect(typeof result.current.mission).toBe('string');
-    expect(result.current.mission.length).toBeGreaterThan(0);
+    expect(result.current).not.toHaveProperty('mission');
   });
 
   it('uses totalParticipants for totalImpact calculation', () => {
@@ -209,17 +208,5 @@ describe('useResearcherImpact', () => {
       { wrapper: createWrapper() }
     );
     expect(result1.current.totalImpact).toBe(result2.current.totalImpact);
-  });
-
-  it('builds mission using totalParticipants', () => {
-    const studies = [makeStudy('study-1')];
-    const { result } = renderHook(
-      () => useResearcherImpact(studies, 'study-1', 'practitioner-1', 4),
-      { wrapper: createWrapper() }
-    );
-    // totalParticipants = 4, gap to 10 = 6
-    expect(result.current.mission).toBe(
-      'Enroll 6 participants to hit the next milestone.'
-    );
   });
 });

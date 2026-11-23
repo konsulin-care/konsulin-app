@@ -4,7 +4,6 @@ import {
   RESEARCHER_IMPACT_PER_PARTICIPANT,
   RESEARCHER_LEVELS,
   RESEARCHER_MILESTONES,
-  buildResearcherMission,
   buildResearcherMissionCopy,
   getImpactInLevel,
   getResearcherLevel,
@@ -263,53 +262,8 @@ describe('buildResearcherMissionCopy', () => {
       totalParticipants: 100
     });
     expect(mission).toEqual({
-      key: 'researcher_mission.enroll_zero',
+      key: 'researcher_mission.all_milestones',
       gap: 0
     });
-  });
-});
-
-describe('buildResearcherMission', () => {
-  const baseOpts = {
-    impactPoints: 0,
-    totalParticipants: 0
-  };
-
-  it('returns mission for zero participants', () => {
-    const mission = buildResearcherMission(baseOpts);
-    expect(typeof mission).toBe('string');
-    expect(mission.length).toBeGreaterThan(0);
-  });
-
-  it('returns simplified CTA with gap to next milestone', () => {
-    const mission = buildResearcherMission({
-      ...baseOpts,
-      totalParticipants: 4
-    });
-    expect(mission).toBe('Enroll 6 participants to hit the next milestone.');
-  });
-
-  it('uses singular noun for a one-participant gap', () => {
-    const mission = buildResearcherMission({
-      ...baseOpts,
-      totalParticipants: 9
-    });
-    expect(mission).toBe('Enroll 1 participant to hit the next milestone.');
-  });
-
-  it('shows correct gap between first and second milestone', () => {
-    const mission = buildResearcherMission({
-      ...baseOpts,
-      totalParticipants: 25
-    });
-    expect(mission).toBe('Enroll 25 participants to hit the next milestone.');
-  });
-
-  it('returns completion message when all milestones are hit', () => {
-    const mission = buildResearcherMission({
-      ...baseOpts,
-      totalParticipants: 100
-    });
-    expect(mission).toBe('Enroll 0 participants to hit the next milestone.');
   });
 });
