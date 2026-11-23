@@ -1,4 +1,6 @@
+import { setResearchTarget } from '@/utils/fhir/research-target';
 import { render, screen } from '@testing-library/react';
+import type { ResearchStudy } from 'fhir/r4';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectiveGoal } from '../collective-goal';
 import { makeStudyProgress } from './research-fixtures';
@@ -38,12 +40,13 @@ const STUDY = makeStudyProgress().study;
  */
 function renderGoal(
   result: { data?: number; isError: boolean },
-  flags: { isGuest?: boolean; isConsented?: boolean } = {}
+  flags: { isGuest?: boolean; isConsented?: boolean } = {},
+  study: ResearchStudy = STUDY
 ) {
   mockUseStudyParticipantCount.mockReturnValue(result);
   render(
     <CollectiveGoal
-      study={STUDY}
+      study={study}
       isGuest={flags.isGuest ?? false}
       isConsented={flags.isConsented ?? false}
     />
@@ -117,5 +120,44 @@ describe('CollectiveGoal', () => {
     expect(
       screen.getByRole('button', { name: 'About this count' })
     ).toBeInTheDocument();
+  });
+
+  it('renders the target bar and ticks at or above the floor', () => {
+    renderGoal({ data: 7, isError: false }, {}, setResearchTarget(STUDY, 100));
+
+    const bar = screen.getByRole('progressbar', {
+      name: 'Participant goal'
+    });
+    expect(bar.className).toContain('bg-muted');
+    expect(bar.querySelector('.bg-turquoise-deep')).not.toBeNull();
+    expect(screen.getAllByTestId('goal-tick')).toHaveLength(3);
+    expect(screen.getByText('7 of 100')).toBeInTheDocument();
+  });
+
+  it('shows the remaining sentence only when the target exceeds the count', () => {
+    renderGoal({ data: 7, isError: false }, {}, setResearchTarget(STUDY, 10));
+
+    expect(screen.getByText('Together, we need 3 more.')).toBeInTheDocument();
+  });
+
+  it('hides the remaining sentence when the target is reached', () => {
+    renderGoal({ data: 10, isError: false }, {}, setResearchTarget(STUDY, 10));
+
+    expect(screen.queryByText(/Together, we need/)).toBeNull();
+  });
+
+  it('renders neither bar nor remaining sentence without a target', () => {
+    renderGoal({ data: 7, isError: false });
+
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.queryByTestId('goal-tick')).toBeNull();
+    expect(screen.queryByText(/Together, we need/)).toBeNull();
+  });
+
+  it('keeps the bar hidden below the floor even when a target exists', () => {
+    renderGoal({ data: 3, isError: false }, {}, setResearchTarget(STUDY, 100));
+
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.queryByText(/Together, we need/)).toBeNull();
   });
 });
