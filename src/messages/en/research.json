@@ -79,5 +79,8 @@
   "start_date_required": "Start date required",
   "end_date_required": "End date required",
   "questionnaire_required": "Select at least one questionnaire",
-  "batch_required": "At least one batch required"
+  "batch_required": "At least one batch required",
+  "batch_progress.participants": "Total participants: {count}",
+  "batch_progress.about_count": "About this count",
+  "batch_progress.cached_disclaimer": "This is a cached count, updated every 30 minutes to reduce server load."
 }

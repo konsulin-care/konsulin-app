@@ -79,5 +79,8 @@
   "start_date_required": "Tanggal mulai wajib diisi",
   "end_date_required": "Tanggal selesai wajib diisi",
   "questionnaire_required": "Pilih setidaknya satu kuesioner",
-  "batch_required": "Setidaknya satu batch wajib diisi"
+  "batch_required": "Setidaknya satu batch wajib diisi",
+  "batch_progress.participants": "Total peserta: {count}",
+  "batch_progress.about_count": "Tentang jumlah ini",
+  "batch_progress.cached_disclaimer": "Angka ini berasal dari cache dan diperbarui setiap 30 menit untuk mengurangi beban server."
 }

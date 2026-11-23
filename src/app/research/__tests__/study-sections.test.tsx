@@ -9,6 +9,12 @@ import {
 } from '../study-sections';
 import { BATCH_1, makeStudyB, makeStudyProgress } from './research-fixtures';
 
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 /** Upcoming batch fixture sharing the same questionnaire set. */
 function makeUpcomingBatch(id: string, start: string, end: string) {
   return { id, start, end, questionnaireIds: ['phq2'] };

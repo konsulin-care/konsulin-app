@@ -4,6 +4,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
+import { useTranslations } from '@/i18n';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { withKAnonymityFloor } from '@/services/api/research-counts';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
@@ -52,22 +53,21 @@ function resolveParticipantCount(
 
 /** Info trigger with the cached-count disclaimer tooltip. */
 function ParticipantCountInfo() {
+  const t = useTranslations('research');
+
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             type='button'
-            aria-label='About this count'
+            aria-label={t('batch_progress.about_count')}
             className='cursor-pointer text-gray-400 hover:text-gray-600'
           >
             <Info className='h-3 w-3' />
           </button>
         </TooltipTrigger>
-        <TooltipContent>
-          This is a cached count, updated every 30 minutes to reduce server
-          load.
-        </TooltipContent>
+        <TooltipContent>{t('batch_progress.cached_disclaimer')}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
@@ -84,6 +84,7 @@ export function BatchProgress({
   /** Study participant count; floored before display when provided. */
   participantCount?: number;
 }>) {
+  const t = useTranslations('research');
   const { currentBatch } = progress;
   if (!currentBatch) return null;
 
@@ -123,7 +124,11 @@ export function BatchProgress({
       </div>
       {resolvedParticipantCount !== null && resolvedParticipantCount > 0 && (
         <div className='flex items-center gap-1'>
-          <span>Total participants: {resolvedParticipantCount}</span>
+          <span>
+            {t('batch_progress.participants', {
+              count: resolvedParticipantCount
+            })}
+          </span>
           <ParticipantCountInfo />
         </div>
       )}
