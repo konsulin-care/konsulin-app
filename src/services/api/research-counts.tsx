@@ -28,12 +28,16 @@ export function withKAnonymityFloor(
  * Fetches the participant count for a single study.
  *
  * @param studyId - ResearchStudy id, or undefined to skip the query.
+ * @param options - Optional query flags; `enabled: false` suppresses the request.
  * @returns React Query result whose data is the participant count.
  */
-export function useStudyParticipantCount(studyId: string | undefined) {
+export function useStudyParticipantCount(
+  studyId: string | undefined,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ['study-participant-count', studyId],
-    enabled: Boolean(studyId),
+    enabled: Boolean(studyId) && (options?.enabled ?? true),
     staleTime: COUNT_STALE_TIME,
     queryFn: async (): Promise<number> => {
       const API = await getAPI();

@@ -196,4 +196,14 @@ describe('useStudyParticipantCount', () => {
     expect(result.current.isPending).toBe(true);
     expect(mockAxios.get).not.toHaveBeenCalled();
   });
+
+  it('does not query when enabled is false', () => {
+    const { result } = renderHook(
+      () => useStudyParticipantCount('study-1', { enabled: false }),
+      { wrapper: makeWrapper(makeQueryClient()) }
+    );
+
+    expect(result.current.isPending).toBe(true);
+    expect(mockAxios.get).not.toHaveBeenCalled();
+  });
 });
