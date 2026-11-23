@@ -3,7 +3,8 @@ import type { ResearchBatch } from '../research';
 import {
   batchTimeline,
   getNextBatch,
-  nextBatchWithQuestionnaire
+  nextBatchWithQuestionnaire,
+  waitingBatchIds
 } from '../research-schedule';
 
 /** Builds a batch with a fixed window and questionnaire set. */
@@ -65,6 +66,44 @@ describe('nextBatchWithQuestionnaire', () => {
         '2026-03-31'
       )
     ).toBeNull();
+  });
+});
+
+describe('waitingBatchIds', () => {
+  const batches = [BATCH_JAN, BATCH_FEB, BATCH_MAR];
+
+  it('returns the batch whose window contains the authored day and deploys the questionnaire', () => {
+    expect(
+      waitingBatchIds(batches, [
+        {
+          questionnaire: 'https://konsulin.care/fhir/Questionnaire/gad7',
+          authored: '2026-02-10T09:00:00Z'
+        }
+      ])
+    ).toEqual(new Set(['batch-feb']));
+  });
+
+  it('collects distinct batch ids across responses', () => {
+    expect(
+      waitingBatchIds(batches, [
+        { questionnaire: 'phq2', authored: '2026-03-05T09:00:00Z' },
+        {
+          questionnaire: 'Questionnaire/phq2',
+          authored: '2026-01-10T09:00:00Z'
+        }
+      ])
+    ).toEqual(new Set(['batch-mar', 'batch-jan']));
+  });
+
+  it('ignores responses with no questionnaire, no authored date or no matching batch', () => {
+    expect(
+      waitingBatchIds(batches, [
+        { authored: '2026-02-10T09:00:00Z' },
+        { questionnaire: 'gad7' },
+        { questionnaire: 'gad7', authored: '2026-01-10T09:00:00Z' },
+        { questionnaire: 'unknown', authored: '2026-02-10T09:00:00Z' }
+      ])
+    ).toEqual(new Set());
   });
 });
 

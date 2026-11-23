@@ -1,7 +1,17 @@
+import { format, parseISO } from 'date-fns';
+import { questionnaireIdOf } from './questionnaire-url';
 import type { ResearchBatch } from './research';
 
 /** Timeline status of one batch relative to today. */
 export type BatchTimelineStatus = 'done' | 'missed' | 'current' | 'upcoming';
+
+/** Minimal response projection used to find the batch awaiting sync. */
+export interface WaitingResponse {
+  /** Questionnaire reference, canonical URL, or bare id. */
+  questionnaire?: string;
+  /** ISO authored timestamp. */
+  authored?: string;
+}
 
 /** One entry of the batch timeline: the batch, its 1-based position, and status. */
 export interface BatchTimelineEntry {
@@ -77,6 +87,36 @@ function statusOf(
   }
   if (today >= batch.start) return 'current';
   return 'upcoming';
+}
+
+/**
+ * Collects the ids of batches that are waiting to sync: for each queued
+ * response, the batch whose window contains the authored day and that deploys
+ * the response's questionnaire. Entries missing a questionnaire or an authored
+ * date, or matching no batch, are skipped.
+ *
+ * @param batches - Batches of a study, in any order.
+ * @param waiting - Queued responses awaiting sync.
+ * @returns Ids of batches with at least one waiting response.
+ */
+export function waitingBatchIds(
+  batches: readonly ResearchBatch[],
+  waiting: readonly WaitingResponse[]
+): Set<string> {
+  const ids = new Set<string>();
+  for (const response of waiting) {
+    const questionnaireId = questionnaireIdOf(response.questionnaire);
+    if (!questionnaireId || !response.authored) continue;
+    const day = format(parseISO(response.authored), 'yyyy-MM-dd');
+    const match = batches.find(
+      batch =>
+        batch.start <= day &&
+        day <= batch.end &&
+        batch.questionnaireIds.includes(questionnaireId)
+    );
+    if (match) ids.add(match.id);
+  }
+  return ids;
 }
 
 /**
