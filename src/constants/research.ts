@@ -44,49 +44,68 @@ export interface ResearchLevel {
   threshold: number;
   /** Human-friendly level title. */
   label: string;
+  /** i18n message key for the level title in the research namespace. */
+  labelKey: string;
   /** Icon representing the title badge. */
   icon: LucideIcon;
   /** Intrinsic reward unlocked at this level. */
   reward: string;
+  /** i18n message key for the reward copy in the research namespace. */
+  rewardKey: string;
 }
 
 export const RESEARCH_LEVELS: readonly ResearchLevel[] = [
   {
     threshold: 0,
     label: 'Trailblazer',
+    labelKey: 'level.trailblazer',
     icon: Footprints,
-    reward: 'Personal result brief for every questionnaire'
+    reward: 'Personal result brief for every questionnaire',
+    rewardKey: 'level_reward.trailblazer'
   },
   {
     threshold: 100,
     label: 'Pathfinder',
+    labelKey: 'level.pathfinder',
     icon: Compass,
-    reward: 'Personalized summary report + in-app title badge'
+    reward: 'Personalized summary report + in-app title badge',
+    rewardKey: 'level_reward.pathfinder'
   },
   {
     threshold: 200,
     label: 'Torchbearer',
+    labelKey: 'level.torchbearer',
     icon: Flame,
-    reward: 'Early access to batch results + anonymized cohort insights'
+    reward: 'Early access to batch results + anonymized cohort insights',
+    rewardKey: 'level_reward.torchbearer'
   },
   {
     threshold: 400,
     label: 'Vanguard',
+    labelKey: 'level.vanguard',
     icon: ShieldCheck,
-    reward: 'Vote on future research topics'
+    reward: 'Vote on future research topics',
+    rewardKey: 'level_reward.vanguard'
   },
   {
     threshold: 600,
     label: 'Pioneer',
+    labelKey: 'level.pioneer',
     icon: Crown,
     reward:
-      'Co-design research questions (anonymously) + first access to new studies'
+      'Co-design research questions (anonymously) + first access to new studies',
+    rewardKey: 'level_reward.pioneer'
   }
 ];
 
 /** Fixed title for guests: no persistent identity, so no progression. */
-export const GUEST_TITLE: { label: string; icon: LucideIcon } = {
+export const GUEST_TITLE: {
+  label: string;
+  labelKey: string;
+  icon: LucideIcon;
+} = {
   label: 'Participant',
+  labelKey: 'level.participant',
   icon: ClipboardList
 };
 
@@ -114,13 +133,8 @@ export interface ResearchLevelProgress {
  */
 export function getResearchLevel(xp: number): ResearchLevel {
   const safe = Math.max(0, xp);
-  let reached = RESEARCH_LEVELS[0];
-  for (const level of RESEARCH_LEVELS) {
-    if (safe >= level.threshold) {
-      reached = level;
-    }
-  }
-  return reached;
+  const reached = RESEARCH_LEVELS.findLast(level => safe >= level.threshold);
+  return reached ?? RESEARCH_LEVELS[0];
 }
 
 /**
@@ -230,9 +244,7 @@ function smallestClosing(
   available: readonly MissionQuestionnaireWithXp[],
   xpNeeded: number
 ): MissionQuestionnaireWithXp | undefined {
-  return available
-    .filter(q => q.xp >= xpNeeded)
-    .toSorted((a, b) => a.xp - b.xp)[0];
+  return available.toSorted((a, b) => a.xp - b.xp).find(q => q.xp >= xpNeeded);
 }
 
 /**
@@ -339,6 +351,8 @@ export interface ResearcherLevel {
   threshold: number;
   /** Human-friendly level title. */
   label: string;
+  /** i18n message key for the level title in the research namespace. */
+  labelKey: string;
   /** Icon representing the title badge. */
   icon: LucideIcon;
   /** Intrinsic reward unlocked at this level. */
@@ -351,6 +365,7 @@ export const RESEARCHER_LEVELS: readonly ResearcherLevel[] = [
   {
     threshold: 0,
     label: 'Trailblazer',
+    labelKey: 'level.trailblazer',
     icon: Footprints,
     reward: 'Share studies to grow your research impact',
     rewardKey: 'researcher_reward.trailblazer'
@@ -358,6 +373,7 @@ export const RESEARCHER_LEVELS: readonly ResearcherLevel[] = [
   {
     threshold: 50,
     label: 'Pathfinder',
+    labelKey: 'level.pathfinder',
     icon: Compass,
     reward: 'Enhanced analytics for your studies',
     rewardKey: 'researcher_reward.pathfinder'
@@ -365,6 +381,7 @@ export const RESEARCHER_LEVELS: readonly ResearcherLevel[] = [
   {
     threshold: 150,
     label: 'Torchbearer',
+    labelKey: 'level.torchbearer',
     icon: Flame,
     reward: 'Early access to batch results + cohort insights',
     rewardKey: 'researcher_reward.torchbearer'
@@ -372,6 +389,7 @@ export const RESEARCHER_LEVELS: readonly ResearcherLevel[] = [
   {
     threshold: 300,
     label: 'Vanguard',
+    labelKey: 'level.vanguard',
     icon: ShieldCheck,
     reward: 'Featured study badge + priority listing',
     rewardKey: 'researcher_reward.vanguard'
@@ -379,6 +397,7 @@ export const RESEARCHER_LEVELS: readonly ResearcherLevel[] = [
   {
     threshold: 500,
     label: 'Pioneer',
+    labelKey: 'level.pioneer',
     icon: Crown,
     reward: 'Co-design research questions + first access to new studies',
     rewardKey: 'researcher_reward.pioneer'
@@ -393,13 +412,8 @@ export const RESEARCHER_LEVELS: readonly ResearcherLevel[] = [
  */
 export function getResearcherLevel(impactPoints: number): ResearcherLevel {
   const safe = Math.max(0, impactPoints);
-  let reached = RESEARCHER_LEVELS[0];
-  for (const level of RESEARCHER_LEVELS) {
-    if (safe >= level.threshold) {
-      reached = level;
-    }
-  }
-  return reached;
+  const reached = RESEARCHER_LEVELS.findLast(level => safe >= level.threshold);
+  return reached ?? RESEARCHER_LEVELS[0];
 }
 
 /**

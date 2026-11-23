@@ -1,3 +1,5 @@
+import enResearch from '@/messages/en/research.json';
+import idResearch from '@/messages/id/research.json';
 import {
   ClipboardList,
   Compass,
@@ -8,19 +10,39 @@ import {
 } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_QUESTIONNAIRE_XP,
-  GUEST_TITLE,
-  LEVEL_XP,
-  RESEARCH_LEVELS,
-  XP_PER_MINUTE,
   buildMission,
+  DEFAULT_QUESTIONNAIRE_XP,
   getNextResearchLevel,
   getResearchLevel,
   getResearchLevelFraction,
   getResearchLevelNumber,
   getResearchLevelProgress,
+  GUEST_TITLE,
+  LEVEL_XP,
+  RESEARCH_LEVELS,
+  RESEARCHER_LEVELS,
+  XP_PER_MINUTE,
   xpForDuration
 } from '../research';
+
+/**
+ * Resolves a dotted message key path inside a nested messages object.
+ *
+ * @param messages - Nested messages object.
+ * @param key - Dotted key path, e.g. 'level.trailblazer'.
+ * @returns The resolved string, or undefined when the path is missing.
+ */
+function resolveKey(
+  messages: Record<string, unknown>,
+  key: string
+): string | undefined {
+  let current: unknown = messages;
+  for (const part of key.split('.')) {
+    if (typeof current !== 'object' || current === null) return undefined;
+    current = (current as Record<string, unknown>)[part];
+  }
+  return typeof current === 'string' ? current : undefined;
+}
 
 describe('level constants', () => {
   it('defines 100 XP per level, 5 XP per minute, and a 5 XP fallback', () => {
@@ -54,7 +76,41 @@ describe('level constants', () => {
   });
 
   it('fixes the guest title to Participant with the ClipboardList icon', () => {
-    expect(GUEST_TITLE).toEqual({ label: 'Participant', icon: ClipboardList });
+    expect(GUEST_TITLE).toEqual({
+      label: 'Participant',
+      labelKey: 'level.participant',
+      icon: ClipboardList
+    });
+  });
+
+  it('gives every level label and reward keys that resolve in en and id', () => {
+    const messages = [enResearch, idResearch] as Record<string, unknown>[];
+    for (const level of RESEARCH_LEVELS) {
+      const name = level.label.toLowerCase();
+      expect(level.labelKey).toBe(`level.${name}`);
+      expect(level.rewardKey).toBe(`level_reward.${name}`);
+      for (const locale of messages) {
+        expect(resolveKey(locale, level.labelKey)).toBeTruthy();
+        expect(resolveKey(locale, level.rewardKey)).toBeTruthy();
+      }
+    }
+  });
+
+  it('gives every researcher level a label key that resolves in en and id', () => {
+    const messages = [enResearch, idResearch] as Record<string, unknown>[];
+    for (const level of RESEARCHER_LEVELS) {
+      expect(level.labelKey).toBe(`level.${level.label.toLowerCase()}`);
+      for (const locale of messages) {
+        expect(resolveKey(locale, level.labelKey)).toBeTruthy();
+      }
+    }
+  });
+
+  it('resolves the guest participant title key in en and id', () => {
+    const messages = [enResearch, idResearch] as Record<string, unknown>[];
+    for (const locale of messages) {
+      expect(resolveKey(locale, GUEST_TITLE.labelKey)).toBeTruthy();
+    }
   });
 });
 
