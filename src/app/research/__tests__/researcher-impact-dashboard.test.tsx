@@ -18,12 +18,13 @@ vi.mock('@/hooks/useResearcherImpact', () => ({
     totalImpact: 150,
     level: {
       label: 'Torchbearer',
+      labelKey: 'level.torchbearer',
       icon: vi.fn(),
       reward: 'Early access to batch results + cohort insights',
       rewardKey: 'researcher_reward.torchbearer'
     },
     levelNumber: 3,
-    levelFraction: 0,
+    levelFraction: 0.4,
     impactInLevel: 50,
     perStudy: [
       {
@@ -58,7 +59,7 @@ vi.mock('@/hooks/useShareStudy', () => ({
 vi.mock('@/utils/helper', () => ({
   generateAvatarPlaceholder: () => ({
     initials: 'DS',
-    backgroundColor: '#13c2c2',
+    backgroundColor: 'token',
     seed: 'user-1'
   })
 }));
@@ -78,7 +79,7 @@ describe('ResearcherImpactDashboard', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders the level halo', () => {
+  it('renders the level chip and progress bar instead of a halo', () => {
     render(
       <ResearcherImpactDashboard
         studies={[makeStudyWithBatches('study-1')]}
@@ -87,11 +88,16 @@ describe('ResearcherImpactDashboard', () => {
       />,
       { wrapper }
     );
-    expect(screen.getByTestId('researcher-halo-ring')).toBeInTheDocument();
-    expect(screen.getByTestId('researcher-level')).toHaveTextContent('Lv 3');
+    expect(
+      screen.queryByTestId('researcher-halo-ring')
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId('level-chip')).toHaveTextContent('Lv 3');
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-label', 'Level progress');
+    expect(bar).toHaveAttribute('aria-valuenow', '40');
   });
 
-  it('renders the level title', () => {
+  it('renders the level title from research messages', () => {
     render(
       <ResearcherImpactDashboard
         studies={[makeStudyWithBatches('study-1')]}
@@ -119,7 +125,7 @@ describe('ResearcherImpactDashboard', () => {
     );
   });
 
-  it('renders total participants stat', () => {
+  it('renders total participants stat from research messages', () => {
     render(
       <ResearcherImpactDashboard
         studies={[makeStudyWithBatches('study-1')]}
@@ -133,7 +139,7 @@ describe('ResearcherImpactDashboard', () => {
     );
   });
 
-  it('renders total impact points stat', () => {
+  it('renders total impact points stat from research messages', () => {
     render(
       <ResearcherImpactDashboard
         studies={[makeStudyWithBatches('study-1')]}
@@ -173,7 +179,7 @@ describe('ResearcherImpactDashboard', () => {
     expect(screen.getByTestId('share-research-footer')).toBeInTheDocument();
   });
 
-  it('renders milestones with Next Milestones heading', () => {
+  it('renders milestones from research messages', () => {
     render(
       <ResearcherImpactDashboard
         studies={[makeStudyWithBatches('study-1')]}
@@ -198,8 +204,8 @@ describe('ResearcherImpactDashboard', () => {
       { wrapper }
     );
     const shareButton = screen.getByTestId('share-research-footer');
-    expect(shareButton).toHaveClass('border-t', 'border-gray-100', 'pt-2');
-    expect(shareButton).toHaveClass('text-[10px]');
+    expect(shareButton).toHaveClass('border-t', 'border-border', 'pt-2');
+    expect(shareButton).toHaveClass('text-xs');
     expect(shareButton).toHaveClass('mt-auto');
   });
 });
