@@ -57,6 +57,11 @@ Each domain has a focused document under `@docs/agents/`.
   allowlisted key, return structured-cloneable plain data (never an axios
   response), and never hold a QuestionnaireResponse or clinical data.
   Bump the `CACHE_BUSTER` constant whenever the persisted shape changes.
+- **Localised copy**: every user-visible string ships in both locales
+  (`src/messages/en` and `src/messages/id`) with matching key sets, rendered
+  through `useTranslations`. Never hardcode a JSX attribute literal
+  (`aria-label`, `title`, `placeholder`, `alt`, `label`); the literal guard
+  fails the build.
 - **Bundle resource referencing**: When constructing a FHIR transaction
   bundle, reference resources created within the same bundle via
   `urn:uuid:<uuid>` (`fullUrl` on the creating entry). New resources

@@ -22,41 +22,29 @@ Current PWA uses Serwist (Next.js-specific, RSC/router prefetch); IndexedDB is p
 
 # Query Cache Persistence
 
-TanStack Query v5 persists a small allowlist to IndexedDB via
-`@tanstack/react-query-persist-client` so research counts, titles and
-study structure survive reloads and render offline for 24 hours.
+TanStack Query v5 persists an allowlist to IndexedDB via
+`@tanstack/react-query-persist-client`, so research counts, titles and study
+structure survive reloads and render offline for 24 hours. `maxAge` and
+`gcTime` are 24h; `CACHE_BUSTER` busts stale shapes.
 
-- **Allowlist**: `['study-participant-count', ...]`,
-  `['per-questionnaire-counts', ...]`, `['questionnaire-titles', ...]`,
-  and `['research', kind, id, mode]` (key[0] === 'research' AND
-  key.length === 4). The bare `['research']` key is NOT persisted. Only
-  `status === 'success'` queries; `shouldDehydrateMutation: () => false`.
-- **Never persisted**: `['assessments', id]` (an axios response) or any
-  QuestionnaireResponse / clinical data.
-- **Policy**: `gcTime` 24h (>= `maxAge`), `maxAge` 24h, `CACHE_BUSTER`
-  as buster; keep `refetchOnWindowFocus: false` and `retry: 0`.
-- **Store**: a custom `Persister` over `src/lib/indexeddb`
-  (`dbGet`/`dbSet`/`dbDelete`) writes `query_cache` with structured
-  clone (not JSON), so the `Map` in `PerQuestionnaireCounts` survives.
-  Writes are trailing-throttled 1000 ms; an empty client deletes the
-  record; `removeClient` cancels any pending write.
-- **Display**: no optimistic bump; count queries use `staleTime` 30
-  minutes. BatchProgress tooltips the count: "This is a cached count,
-  updated every 30 minutes to reduce server load." Apply
-  `withKAnonymityFloor` (`COMPLETION_COUNT_FLOOR = 5`) and hide the
-  "Total participants" line when there is no count (absent, below floor,
-  or empty map). Never render "Total participants: 0".
-- **Clearing**: logout and account removal call `clearQueryCache()`
-  (`queryClient.clear()` + `persister.removeClient()`); `clearUserData`
-  also empties `query_cache`. On identity change remove only
-  `['research', kind, id, mode]` queries that do not match the current
-  identity; shared count/title queries stay. Do NOT hook auth `login`
-  (it fires on cached-session reload).
-- **Prefetch**: after full progress loads while `navigator.onLine`,
-  prefetch `['assessments', id]` for each uncompleted questionnaire of
-  each study's `currentBatch`, reusing the exact `useQuestionnaire`
-  queryFn/URL so the SW caches the Questionnaire GET (network-first
-  `/proxy/fhir/Questionnaire*`).
+- **Allowlist** (key-based, `status === 'success'` only, no mutations):
+  `['study-participant-count', ...]`, `['per-questionnaire-counts', ...]`,
+  `['questionnaire-titles', ...]`, `['research', kind, id, mode]` (length 4).
+  The bare `['research']` key, `['assessments', id]` (an axios response) and
+  any QuestionnaireResponse or clinical data are never persisted.
+- **Store**: a custom `Persister` over `src/lib/indexeddb` writes
+  `query_cache` as structured clone (not JSON) so the `PerQuestionnaireCounts`
+  `Map` survives; writes throttle 1000 ms, an empty client deletes the record.
+- **Display**: counts show what the backend returns (no optimistic bump) with
+  `staleTime` 30 minutes and the tooltip "This is a cached count, updated every
+  30 minutes to reduce server load"; `withKAnonymityFloor` (5) applies and the
+  line is hidden when there is no count, never 0.
+- **Clearing and prefetch**: logout and account removal call
+  `clearQueryCache()` (`queryClient.clear()` + `persister.removeClient()`);
+  `clearUserData` empties `query_cache`; identity change prunes other
+  identities' research queries but keeps shared count/title queries; full
+  progress prefetches `['assessments', id]` per uncompleted `currentBatch`
+  questionnaire so the SW caches the Questionnaire GET.
 
 # Owner Scope
 
