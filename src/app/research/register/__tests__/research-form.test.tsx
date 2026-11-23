@@ -2,7 +2,7 @@ import { renderWithQuery } from '@/__tests__/react-test-utils';
 import { screen } from '@testing-library/react';
 import { toast } from 'react-toastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { submitStudy, type FormData } from '../research-form';
+import { schema, submitStudy, type FormData } from '../research-form';
 import { Step1, Step2, Step3 } from '../research-form-steps';
 
 afterEach(() => {
@@ -51,6 +51,33 @@ const mockField = {
   ...mockBatch
 };
 
+describe('schema - targetParticipants', () => {
+  const validForm = {
+    title: 'My Study',
+    description: 'Study description',
+    batches: [
+      {
+        startDate: '2024-01-01',
+        endDate: '2024-02-01',
+        questionnaireIds: ['q1']
+      }
+    ]
+  };
+
+  it('rejects a missing, zero, negative or fractional target', () => {
+    for (const targetParticipants of [undefined, 0, -5, 1.5]) {
+      const result = schema.safeParse({ ...validForm, targetParticipants });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.some(issue => issue.message === 'target_required')
+        ).toBe(true);
+      }
+    }
+  });
+});
+
 describe('Step1 - Title & Description', () => {
   it('renders title input and description textarea', () => {
     renderWithQuery(<Step1 register={mockRegister()} errors={{}} />);
@@ -77,6 +104,15 @@ describe('Step1 - Title & Description', () => {
     renderWithQuery(<Step1 register={mockRegister()} errors={{}} />);
 
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
+  });
+
+  it('renders a number input labelled Target participants', () => {
+    renderWithQuery(<Step1 register={mockRegister()} errors={{}} />);
+
+    const input = screen.getByLabelText(/target participants/i);
+    expect(input).toHaveAttribute('type', 'number');
+    expect(input).toHaveAttribute('min', '1');
+    expect(input).toHaveAttribute('inputMode', 'numeric');
   });
 });
 
@@ -271,5 +307,59 @@ describe('submitStudy', () => {
     expect(localStorage.getItem(storageKey)).toBeNull();
     expect(toast.success).toHaveBeenCalledWith('research_create_success');
     expect(router.push).toHaveBeenCalledWith('/');
+  });
+
+  it('posts a ResearchStudy with the target participants extension', async () => {
+    const post = vi.fn<
+      (
+        url: string,
+        body: Record<string, unknown>
+      ) => Promise<{ data: { id: string } }>
+    >(async (url: string) =>
+      url === '/fhir/PlanDefinition'
+        ? { data: { id: 'plan-1' } }
+        : { data: { id: 'study-1' } }
+    );
+    const API = { post } as unknown as Parameters<typeof submitStudy>[0];
+    const router = {
+      push: vi.fn()
+    } as unknown as Parameters<typeof submitStudy>[1]['router'];
+    const data: FormData = {
+      title: 'My Study',
+      description: 'Study description',
+      targetParticipants: 120,
+      batches: [
+        {
+          startDate: '2024-01-01',
+          endDate: '2024-02-01',
+          questionnaireIds: ['q1']
+        }
+      ]
+    };
+
+    await submitStudy(API, {
+      data,
+      userId: 'test-user',
+      storageKey: 'research-form-target-test-user',
+      router,
+      tToast: key => key
+    });
+
+    const studyPosts = post.mock.calls.filter(
+      ([url]) => url === '/fhir/ResearchStudy'
+    );
+    expect(studyPosts).toHaveLength(1);
+    const studyBody = studyPosts[0][1];
+    const extension = (
+      studyBody.extension as Array<{
+        url: string;
+        valuePositiveInt?: number;
+      }>
+    ).find(
+      item =>
+        item.url ===
+        'http://konsulin.care/fhir/StructureDefinition/researchTargetParticipants'
+    );
+    expect(extension?.valuePositiveInt).toBe(120);
   });
 });

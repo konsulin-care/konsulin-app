@@ -36,12 +36,10 @@ export function Step1({
           id='title'
           {...register('title')}
           placeholder={t('study_title_placeholder')}
-          className='bg-white'
+          className='bg-card'
         />
         {errors.title && (
-          <p className='text-sm text-red-500'>
-            {t(errors.title.message ?? '')}
-          </p>
+          <p className='text-danger text-sm'>{t(errors.title.message ?? '')}</p>
         )}
       </div>
       <div className='space-y-2'>
@@ -50,9 +48,29 @@ export function Step1({
           id='description'
           {...register('description')}
           placeholder={t('study_description_placeholder')}
-          className='focus:ring-primary block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:outline-none'
+          className='focus:ring-primary border-border bg-card block w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none'
           rows={3}
         />
+      </div>
+      <div className='space-y-2'>
+        <Label htmlFor='targetParticipants'>
+          {t('target_participants_label')}
+        </Label>
+        <Input
+          id='targetParticipants'
+          type='number'
+          min={1}
+          inputMode='numeric'
+          {...register('targetParticipants', {
+            setValueAs: v => (v === '' ? undefined : Number(v))
+          })}
+          placeholder={t('target_participants_placeholder')}
+        />
+        {errors.targetParticipants && (
+          <p className='text-danger text-sm'>
+            {t(errors.targetParticipants.message ?? '')}
+          </p>
+        )}
       </div>
     </div>
   );

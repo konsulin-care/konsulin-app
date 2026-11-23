@@ -4,9 +4,10 @@ import QuestionnaireUploadDrawer from '@/components/shared/questionnaire-upload-
 import { useAuth } from '@/context/auth/authContext';
 import { useTranslations } from '@/i18n';
 import { getAPI } from '@/services/api';
+import { setResearchTarget } from '@/utils/fhir/research-target';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import type { Questionnaire } from 'fhir/r4';
+import type { Questionnaire, ResearchStudy } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -25,6 +26,12 @@ import { RenderStep } from '../shared-components';
 export const schema = z.object({
   title: z.string().min(1, 'title_required'),
   description: z.string().optional(),
+  targetParticipants: z
+    .number({ message: 'target_required' })
+    .int('target_required')
+    .positive('target_required')
+    .optional()
+    .refine(v => v !== undefined, 'target_required'),
   batches: z
     .array(
       z.object({
@@ -103,7 +110,7 @@ export const submitStudy = async (
     .map(b => b.endDate)
     .toSorted((a, b) => a.localeCompare(b));
 
-  await API.post('/fhir/ResearchStudy', {
+  const study: ResearchStudy = {
     resourceType: 'ResearchStudy',
     title: data.title,
     description: data.description,
@@ -113,7 +120,13 @@ export const submitStudy = async (
       .filter(id => id !== undefined)
       .map(id => ({ reference: `PlanDefinition/${id}` })),
     period: { start: starts[0], end: ends.at(-1) }
-  });
+  };
+  const studyWithTarget =
+    data.targetParticipants === undefined
+      ? study
+      : setResearchTarget(study, data.targetParticipants);
+
+  await API.post('/fhir/ResearchStudy', studyWithTarget);
 
   localStorage.removeItem(storageKey);
   toast.success(tToast('research_create_success'));
@@ -156,6 +169,7 @@ export default function ResearchForm() {
     defaultValues: {
       title: storedData.current?.title ?? '',
       description: storedData.current?.description ?? '',
+      targetParticipants: storedData.current?.targetParticipants,
       batches: storedData.current?.batches ?? [createBatch()]
     }
   });
@@ -242,10 +256,6 @@ export default function ResearchForm() {
     [handleSelectLibrary, selectedIds]
   );
 
-  const handleOpenUploadDrawer = useCallback(() => {
-    setIsUploadDrawerOpen(true);
-  }, []);
-
   // Don't render wrong page while redirecting
   const effectivePage = shouldRedirect ? 'title' : page;
 
@@ -314,7 +324,7 @@ export default function ResearchForm() {
         ),
         selectedIds,
         handleSelectLibrary,
-        handleOpenUploadDrawer,
+        handleOpenUploadDrawer: () => setIsUploadDrawerOpen(true),
         fields,
         batches: formValues.batches,
         setValue,
@@ -323,17 +333,12 @@ export default function ResearchForm() {
       })}
       <QuestionnaireUploadDrawer
         open={isUploadDrawerOpen}
-        onClose={() => {
-          setIsUploadDrawerOpen(false);
-        }}
+        onClose={() => setIsUploadDrawerOpen(false)}
         onUploaded={handleUploaded}
         showFee={false}
         showImage={false}
         context='research'
-        resolvePublisher={() => {
-          const user = authState?.userInfo;
-          return user?.fullname ?? 'Researcher';
-        }}
+        resolvePublisher={() => authState?.userInfo?.fullname ?? 'Researcher'}
       />
     </ResearchFormActionsProvider>
   );
