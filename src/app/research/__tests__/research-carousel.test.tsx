@@ -257,9 +257,29 @@ describe('ResearchCarousel', () => {
   });
 
   it('applies the research-carousel class for equal-height slides', () => {
-    renderCarousel([makeStudyProgress()], 'research');
+    renderCarousel([makeStudyProgress(), makeStudyB()], 'research');
 
     expect(document.querySelector('.research-carousel')).toBeTruthy();
+  });
+
+  it('renders a single study without a swiper wrapper or slide dots', () => {
+    renderCarousel([makeStudyProgress()], 'research');
+
+    expect(screen.getByTestId('research-slide-research')).toHaveAttribute(
+      'data-active',
+      'true'
+    );
+    expect(document.querySelector('.swiper-slide')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Go to slide 1' })).toBeNull();
+  });
+
+  it('labels dots from messages and highlights the active dot', () => {
+    renderCarousel([makeStudyProgress(), makeStudyB()], 'research');
+
+    const firstDot = screen.getByRole('button', { name: 'Go to slide 1' });
+    const secondDot = screen.getByRole('button', { name: 'Go to slide 2' });
+    expect(firstDot).toHaveClass('bg-turquoise-deep');
+    expect(secondDot).toHaveClass('bg-charcoal-200');
   });
 
   it('marks done and upcoming batches through data-status attributes', () => {

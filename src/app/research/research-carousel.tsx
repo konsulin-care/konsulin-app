@@ -1,6 +1,7 @@
 'use client';
 
 import ShareResearchButton from '@/components/research/share-research-button';
+import { useTranslations } from '@/i18n';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import {
@@ -82,19 +83,20 @@ function StudySlide({
   onStudyClick: (studyId: string) => void;
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
 }>) {
+  const t = useTranslations('research');
   const waitingIds = waitingBatchIds(progress.batches, waiting);
 
   return (
     <div
       data-testid={`research-slide-${progress.study.id}`}
       data-active={isActive}
-      className={`card border-border focus-within:ring-secondary bg-card relative flex h-full flex-col gap-2 p-4 transition-all duration-300 focus-within:ring-2 ${
+      className={`card border-border focus-within:ring-turquoise-deep bg-card relative flex h-full flex-col gap-2 p-4 transition-all duration-300 focus-within:ring-2 ${
         isActive ? 'opacity-100' : 'opacity-70'
       }`}
     >
       <button
         type='button'
-        aria-label={`Open study ${progress.study.title}`}
+        aria-label={t('carousel.open_study', { title: progress.study.title })}
         onClick={() => {
           onStudyClick(progress.study.id);
         }}
@@ -144,6 +146,7 @@ export default function ResearchCarousel({
   waiting = [],
   consentedStudyIds = EMPTY_CONSENTED_IDS
 }: Readonly<ResearchCarouselProps>) {
+  const t = useTranslations('research');
   const [activeIndex, setActiveIndex] = useState(0);
   const [swiper, setSwiper] = useState<SwiperClass | null>(null);
   const overlapMap = useMemo(() => buildOverlapMap(studies), [studies]);
@@ -158,6 +161,27 @@ export default function ResearchCarousel({
       swiper.slideTo(index);
     }
   }, [activeId, studies, swiper]);
+
+  if (studies.length === 1) {
+    const onlyStudy = studies[0];
+    return (
+      <div className='mt-4 w-full'>
+        <StudySlide
+          progress={onlyStudy}
+          isActive
+          isPatient={isPatient}
+          fhirId={fhirId}
+          overlapMap={overlapMap}
+          titleMap={titleMap}
+          isTitlesLoading={isTitlesLoading}
+          waiting={waiting}
+          consentedStudyIds={consentedStudyIds}
+          onStudyClick={onStudyClick}
+          onQuestionnaireClick={onQuestionnaireClick}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className='mt-4 w-full'>
@@ -199,11 +223,11 @@ export default function ResearchCarousel({
             key={progress.study.id}
             type='button'
             onClick={() => swiper?.slideTo(index)}
-            aria-label={`Go to slide ${index + 1}`}
+            aria-label={t('carousel.go_to_slide', { index: index + 1 })}
             className={`cursor-pointer rounded-full transition-all duration-300 ${
               index === activeIndex
                 ? 'bg-turquoise-deep h-[6px] w-6'
-                : 'bg-muted h-2 w-2'
+                : 'bg-charcoal-200 h-2 w-2'
             }`}
           />
         ))}
