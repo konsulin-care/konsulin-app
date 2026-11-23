@@ -6,6 +6,7 @@ import { useTranslations } from '@/i18n';
 import type { QuestionnaireInfo } from '@/services/api/questionnaire-info';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import type { StudyProgress } from '@/utils/fhir/research';
+import type { WaitingResponse } from '@/utils/fhir/research-schedule';
 import ContributionDashboard from './contribution-dashboard';
 import ResearchCarousel from './research-carousel';
 import ResearchSkeleton from './research-skeleton';
@@ -25,6 +26,8 @@ export interface ResearchContentProps {
   titlesPending: boolean;
   fhirId?: string;
   practitionerId?: string;
+  waiting?: readonly WaitingResponse[];
+  consentedStudyIds?: ReadonlySet<string>;
   onSlideChange: (studyId: string) => void;
   onResearcherStudyClick: (studyId: string) => void;
   onStudyClick: (studyId: string) => void;
@@ -45,6 +48,8 @@ export default function ResearchContent({
   titlesPending,
   fhirId,
   practitionerId,
+  waiting,
+  consentedStudyIds,
   onSlideChange,
   onResearcherStudyClick,
   onStudyClick,
@@ -91,6 +96,8 @@ export default function ResearchContent({
         fhirId={fhirId}
         titleMap={titleMap}
         isTitlesLoading={titlesPending}
+        waiting={waiting}
+        consentedStudyIds={consentedStudyIds}
       />
       <SectionHeader number={2} label={t('section.contribution')} />
       <ContributionDashboard

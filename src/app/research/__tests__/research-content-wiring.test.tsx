@@ -29,7 +29,19 @@ vi.mock('../researcher-content', () => ({
 
 // Mock other dependencies
 vi.mock('../research-carousel', () => ({
-  default: () => <div data-testid='research-carousel' />
+  default: ({
+    waiting,
+    consentedStudyIds
+  }: {
+    waiting?: readonly { questionnaire?: string }[];
+    consentedStudyIds?: ReadonlySet<string>;
+  }) => (
+    <div
+      data-testid='research-carousel'
+      data-waiting={waiting?.map(w => w.questionnaire).join(',')}
+      data-consented={[...(consentedStudyIds ?? [])].join(',')}
+    />
+  )
 }));
 
 vi.mock('../contribution-dashboard', () => ({
@@ -143,5 +155,42 @@ describe('ResearchContent wiring', () => {
       contributionHeader.compareDocumentPosition(dashboard) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
+  });
+
+  it('forwards waiting and consentedStudyIds to ResearchCarousel unchanged', () => {
+    const progress = makeProgress();
+    const waiting = [
+      { questionnaire: 'questionnaire-1' },
+      { questionnaire: 'questionnaire-2' }
+    ];
+    const consentedStudyIds = new Set(['study-a', 'study-b']);
+    render(
+      <ResearchContent
+        isResearcher={false}
+        researcherLoading={false}
+        researcherStudies={[]}
+        isLoading={false}
+        progress={progress}
+        studies={progress.studies}
+        activeStudyId='research'
+        activeStudy={progress.studies[0]}
+        titleMap={new Map()}
+        titlesPending={false}
+        fhirId='patient-1'
+        waiting={waiting}
+        consentedStudyIds={consentedStudyIds}
+        onSlideChange={vi.fn()}
+        onResearcherStudyClick={vi.fn()}
+        onStudyClick={vi.fn()}
+        onQuestionnaireClick={vi.fn()}
+      />,
+      { wrapper }
+    );
+    const carousel = screen.getByTestId('research-carousel');
+    expect(carousel).toHaveAttribute(
+      'data-waiting',
+      'questionnaire-1,questionnaire-2'
+    );
+    expect(carousel).toHaveAttribute('data-consented', 'study-a,study-b');
   });
 });
