@@ -24,7 +24,37 @@ const BASELINE: string[] = JSON.parse(
   fs.readFileSync(BASELINE_FILE, 'utf8')
 ) as string[];
 
+/**
+ * Splits baseline comparison into new violations and stale allowances.
+ *
+ * @param found - Violation keys discovered by scanning the source tree.
+ * @param baseline - Allowlisted violation keys recorded in the baseline.
+ * @returns Sorted new violations plus baseline entries that no longer occur.
+ */
+function compareBaseline(
+  found: ReadonlyMap<string, unknown> | ReadonlySet<string>,
+  baseline: readonly string[]
+): { newViolations: string[]; staleEntries: string[] } {
+  return {
+    newViolations: [...found.keys()]
+      .sort()
+      .filter(key => !baseline.includes(key)),
+    staleEntries: baseline.filter(key => !found.has(key))
+  };
+}
+
 describe('literal guard for hardcoded JSX attributes and toasts', () => {
+  it('fails on a baseline entry that no longer occurs', () => {
+    const kept = "src/a.tsx|attribute|alt='logo'";
+    const dead = "src/b.tsx|attribute|title='Old'";
+    const { newViolations, staleEntries } = compareBaseline(new Set([kept]), [
+      kept,
+      dead
+    ]);
+    expect(staleEntries).toEqual([dead]);
+    expect(newViolations).toEqual([]);
+  });
+
   it('flags a fixture with untranslated literal attributes and toasts', () => {
     const fixture = [
       'function Fixture() {',
@@ -110,19 +140,12 @@ describe('literal guard for hardcoded JSX attributes and toasts', () => {
 
   it('has no new literal attribute or toast violations in src/', () => {
     const found = scanTree(SRC_DIR);
-    const currentKeys = [...found.keys()].sort();
-    const baseline = new Set(BASELINE);
+    const { newViolations, staleEntries } = compareBaseline(found, BASELINE);
 
-    const newViolations = currentKeys.filter(key => !baseline.has(key));
-    const staleEntries = BASELINE.filter(key => !found.has(key));
-
-    // Baseline entries disappear as areas get translated; log, do not fail.
-    if (staleEntries.length > 0) {
-      console.info(
-        `[literal-guard] ${staleEntries.length} baseline entries no longer occur; ` +
-          'remove them from fixtures/literal-guard-baseline.json'
-      );
-    }
+    expect(
+      staleEntries,
+      `Baseline entries no longer occur; remove them from fixtures/literal-guard-baseline.json:\n${staleEntries.join('\n')}`
+    ).toEqual([]);
 
     expect(
       newViolations,
