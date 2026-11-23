@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
+import { makeProgress, TITLE_MAP } from './research-fixtures';
 
-// Mock next/navigation
 vi.mock('@/i18n', async () => {
   const { createUseTranslationsMock } =
     await import('@/i18n/__tests__/test-messages');
@@ -16,58 +16,60 @@ vi.mock('next/navigation', () => ({
     push: vi.fn(),
     replace: vi.fn()
   }),
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => new URLSearchParams('view=research'),
   usePathname: () => '/research'
 }));
 
-// Mock useFab
-vi.mock('@/context/fab', () => ({
+vi.mock('@/context/fabContext', () => ({
   useFab: () => ({
     dispatch: vi.fn()
   })
 }));
 
-// Mock useAuth
 vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => ({
     state: {
       userInfo: {
-        fhirId: 'practitioner-1',
-        role_name: 'Researcher'
+        fhirId: 'PAT-1',
+        role_name: 'Patient'
       }
     },
     isLoading: false
   })
 }));
 
-// Mock useResearchProgress and useConsentToStudy
 vi.mock('@/services/api/research', () => ({
   useResearchProgress: () => ({
-    data: undefined,
+    data: makeProgress({ consentedStudyIds: ['research'] }),
     isLoading: false
   }),
   useConsentToStudy: () => ({
     mutate: vi.fn(),
     isPending: false
-  }),
-  EMPTY_QUESTIONNAIRE_INFO_MAP: new Map()
+  })
 }));
 
-// Mock useReferralWrite
 vi.mock('@/hooks/useReferralWrite', () => ({
   useReferralWrite: vi.fn()
 }));
 
-// Mock useQuestionnaireTitles
+vi.mock('@/hooks/useWaitingSubmissions', () => ({
+  useWaitingSubmissions: () => [
+    {
+      questionnaire: 'Questionnaire/phq2',
+      authored: '2026-08-10T10:00:00Z'
+    }
+  ]
+}));
+
 vi.mock('@/services/api/questionnaire-info', () => ({
   useQuestionnaireTitles: () => ({
-    data: new Map(),
+    data: TITLE_MAP,
     isPending: false
   }),
   EMPTY_QUESTIONNAIRE_INFO_MAP: new Map()
 }));
 
-// Mock useResearcherDashboard
 vi.mock('@/services/api/researcher', () => ({
   useResearcherDashboard: () => ({
     data: undefined,
@@ -75,33 +77,35 @@ vi.mock('@/services/api/researcher', () => ({
   })
 }));
 
-// Mock usePerQuestionnaireCounts
 vi.mock('@/services/api/research-counts', () => ({
-  usePerQuestionnaireCounts: () => ({
-    data: undefined
-  })
+  useStudyParticipantCount: () => ({ data: undefined })
 }));
 
-// Mock ResearchContent
 vi.mock('../research-content', () => ({
-  default: ({
-    practitionerId,
-    activeStudyId
-  }: {
-    practitionerId?: string;
-    activeStudyId: string;
-  }) => (
+  default: (props: Record<string, unknown>) => (
     <div
       data-testid='research-content'
-      data-practitioner={practitionerId}
-      data-active={activeStudyId}
+      data-practitioner={String(props.practitionerId ?? '')}
+      data-active={String(props.activeStudyId ?? '')}
+      data-waiting={(props.waiting as unknown[] | undefined)?.length ?? 0}
+      data-consented={[
+        ...((props.consentedStudyIds as Set<string> | undefined) ?? [])
+      ].join(',')}
     />
   )
 }));
 
-// Mock other drawer components
 vi.mock('../study-detail-view', () => ({
-  default: () => <div data-testid='study-detail-view' />
+  default: (props: Record<string, unknown>) => (
+    <div
+      data-testid='study-detail-view'
+      data-consented={String(props.isConsented)}
+      data-waiting={[
+        ...((props.waitingBatchIds as Set<string> | undefined) ?? [])
+      ].join(',')}
+      data-has-completion-counts={String('completionCounts' in props)}
+    />
+  )
 }));
 
 vi.mock('../consent-drawer', () => ({
@@ -130,14 +134,18 @@ function createWrapper() {
 }
 
 describe('ResearchPage wiring', () => {
-  it('passes practitionerId and activeStudyId to ResearchContent', () => {
+  it('passes waiting responses and consented study ids to ResearchContent', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
     const researchContent = screen.getByTestId('research-content');
-    expect(researchContent).toHaveAttribute(
-      'data-practitioner',
-      'practitioner-1'
-    );
-    // activeStudyId defaults to empty string
-    expect(researchContent).toHaveAttribute('data-active', '');
+    expect(researchContent).toHaveAttribute('data-waiting', '1');
+    expect(researchContent).toHaveAttribute('data-consented', 'research');
+  });
+
+  it('passes consent and waiting batch ids to StudyDetailView without completionCounts', () => {
+    render(<ResearchPage />, { wrapper: createWrapper() });
+    const detailView = screen.getByTestId('study-detail-view');
+    expect(detailView).toHaveAttribute('data-consented', 'true');
+    expect(detailView).toHaveAttribute('data-waiting', 'batch-1');
+    expect(detailView).toHaveAttribute('data-has-completion-counts', 'false');
   });
 });

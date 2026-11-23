@@ -74,6 +74,10 @@ vi.mock('@/services/api/researcher', () => ({
   useResearcherDashboard: mockUseResearcherDashboard
 }));
 
+vi.mock('@/hooks/useWaitingSubmissions', () => ({
+  useWaitingSubmissions: () => []
+}));
+
 vi.mock('@/services/api/questionnaire-info', () => ({
   useQuestionnaireTitles: mockUseQuestionnaireTitles
 }));
@@ -695,66 +699,6 @@ describe('ResearchPage', () => {
 
     expect(screen.getByText('10 people have joined.')).toBeInTheDocument();
     expect(screen.queryByText(/Total participants:/)).toBeNull();
-  });
-
-  it('passes completion counts to StudyDetailView for researcher', async () => {
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { role_name: 'Researcher' } },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-    mockUseResearcherDashboard.mockReturnValue({
-      data: makeResearcherDashboardData({
-        questionnaireIds: ['phq2', 'big-five-inventory']
-      }),
-      isLoading: false
-    });
-    mockUsePerQuestionnaireCounts.mockReturnValue({
-      data: new Map([
-        ['phq2', 12],
-        ['big-five-inventory', 3]
-      ])
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    // Open the detail drawer
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Open study Mental Health Survey'
-      })
-    );
-
-    expect(mockUsePerQuestionnaireCounts).toHaveBeenCalledWith([
-      'phq2',
-      'big-five-inventory'
-    ]);
-  });
-
-  it('does not fetch completion counts for patient role', () => {
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { fhirId: 'patient-123', role_name: 'Patient' } },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    // Open the detail drawer
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Open study Konsulin Mental Health Survey'
-      })
-    );
-
-    // Counts should not be fetched
-    expect(mockUsePerQuestionnaireCounts).toHaveBeenCalledWith([]);
   });
 
   it('renders researcher carousel for researcher role', () => {

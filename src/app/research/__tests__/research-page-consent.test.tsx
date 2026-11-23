@@ -82,6 +82,10 @@ vi.mock('@/context/auth/authContext', () => ({
   useAuth: () => mockUseAuth()
 }));
 
+vi.mock('@/hooks/useWaitingSubmissions', () => ({
+  useWaitingSubmissions: () => []
+}));
+
 vi.mock('next/navigation', () => ({
   useRouter: () => mockRouter,
   useSearchParams: () => mockSearchParams,

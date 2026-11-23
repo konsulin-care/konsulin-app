@@ -32,8 +32,6 @@ interface StudyDetailViewProps {
   titleMap?: ReadonlyMap<string, QuestionnaireInfo>;
   /** True while questionnaire titles are being fetched. */
   isTitlesLoading?: boolean;
-  /** Per-questionnaire completion counts for researcher view. */
-  completionCounts?: Map<string, number>;
 }
 
 /**

@@ -5,14 +5,16 @@ import PageHeader from '@/components/page-header';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
+import type { WaitingResponse } from '@/hooks/useWaitingSubmissions';
+import { useWaitingSubmissions } from '@/hooks/useWaitingSubmissions';
 import {
   EMPTY_QUESTIONNAIRE_INFO_MAP,
   useQuestionnaireTitles
 } from '@/services/api/questionnaire-info';
 import { useResearchProgress } from '@/services/api/research';
-import { usePerQuestionnaireCounts } from '@/services/api/research-counts';
 import { useResearcherDashboard } from '@/services/api/researcher';
 import type { StudyProgress } from '@/utils/fhir/research';
+import { waitingBatchIds } from '@/utils/fhir/research-schedule';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import ConsentDrawer from './consent-drawer';
@@ -30,6 +32,26 @@ import { useUrlSync } from './use-url-sync';
 interface PendingConsent {
   studyId: string;
   questionnaireId?: string;
+}
+
+/**
+ * Derives the detail drawer's consent and waiting-batch props.
+ *
+ * @param detailStudy Study currently shown in the detail drawer, if any.
+ * @param waiting Queued questionnaire responses awaiting synchronization.
+ * @param isConsented Consent predicate for a study id.
+ * @returns Consent flag and waiting batch ids for the open study.
+ */
+function buildDetailLinks(
+  detailStudy: StudyProgress | null,
+  waiting: readonly WaitingResponse[],
+  isConsented: (studyId: string) => boolean
+): { isConsented: boolean; waitingBatchIds?: ReadonlySet<string> } {
+  if (!detailStudy) return { isConsented: false };
+  return {
+    isConsented: isConsented(detailStudy.study.id),
+    waitingBatchIds: waitingBatchIds(detailStudy.batches, waiting)
+  };
 }
 
 /**
@@ -108,17 +130,11 @@ export default function ResearchPage() {
     router
   });
 
-  const detailStudyQuestionnaireIds = useMemo(
-    () => detailStudy?.currentBatch?.questionnaireIds ?? [],
-    [detailStudy]
-  );
-  const { data: completionCounts } = usePerQuestionnaireCounts(
-    isResearcher ? detailStudyQuestionnaireIds : []
-  );
+  const waiting = useWaitingSubmissions();
 
   const activeStudy = studies.find(s => s.study.id === activeStudyId) ?? null;
 
-  const { isConsented, handleAgree } = useConsent({
+  const { consentedStudyIds, isConsented, handleAgree } = useConsent({
     isPatient,
     studies,
     consentedStudyIds: progress?.consentedStudyIds ?? [],
@@ -175,6 +191,8 @@ export default function ResearchPage() {
     [participate, studies]
   );
 
+  const detailLinks = buildDetailLinks(detailStudy, waiting, isConsented);
+
   return (
     <>
       <PageHeader />
@@ -193,6 +211,8 @@ export default function ResearchPage() {
             titlesPending={titlesPending}
             fhirId={fhirId}
             practitionerId={practitionerId}
+            waiting={waiting}
+            consentedStudyIds={consentedStudyIds}
             onSlideChange={handleSlideChange}
             onResearcherStudyClick={handleResearcherStudyClick}
             onStudyClick={handleStudyClick}
@@ -210,10 +230,11 @@ export default function ResearchPage() {
         onQuestionnaireClick={handleQuestionnaireClick}
         onManageStudy={handleManageStudy}
         isPatient={isPatient}
+        isConsented={detailLinks.isConsented}
+        waitingBatchIds={detailLinks.waitingBatchIds}
         fhirId={fhirId}
         titleMap={titleMap}
         isTitlesLoading={titlesPending}
-        completionCounts={completionCounts}
         roleName={roleName}
       />
       <ConsentDrawer
