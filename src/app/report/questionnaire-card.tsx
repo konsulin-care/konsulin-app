@@ -2,6 +2,7 @@
 
 import { Progress } from '@/components/ui/progress';
 import { useTranslations } from '@/i18n';
+import { TOKENS } from '@/styles/tokens';
 import {
   trendDirection,
   trendForQuestionnaire,
@@ -14,7 +15,7 @@ import { useMemo } from 'react';
 import { formatDay } from './batch-meta';
 
 /** One neutral color for every score bar on report cards. */
-const NEUTRAL_SCORE_COLOR = '#94A3B8';
+const NEUTRAL_SCORE_COLOR = TOKENS.charcoal400;
 
 /** Neutral glyph per trend direction; arrows only, no valence. */
 const DIRECTION_GLYPH = {
@@ -65,15 +66,15 @@ export function QuestionnaireCard({
   return (
     <article
       data-testid={`report-questionnaire-card-${questionnaireId}`}
-      className='rounded-xl border border-gray-100 bg-white p-4'
+      className='border-border bg-card rounded-xl border p-4'
     >
       <div className='mb-2 flex items-baseline justify-between gap-2'>
         <div className='flex items-center gap-2'>
-          <h3 className='text-sm font-bold text-black'>{title}</h3>
+          <h3 className='text-foreground text-sm font-bold'>{title}</h3>
           {isLatestCard && trend.kind === 'baseline' && (
             <span
               data-testid='report-baseline-badge'
-              className='rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600'
+              className='bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-semibold'
             >
               {baselineCompareLabel
                 ? t('report.baseline_compare', { batch: baselineCompareLabel })
@@ -82,7 +83,7 @@ export function QuestionnaireCard({
           )}
         </div>
         {authored && !hideAuthored && (
-          <span className='text-[11px] text-gray-500'>
+          <span className='text-muted-foreground text-xs'>
             {t('report.completed', { date: authored })}
           </span>
         )}
@@ -96,14 +97,14 @@ export function QuestionnaireCard({
           >
             <span
               data-testid='report-dimension-name'
-              className='text-xs text-wrap break-words text-gray-700'
+              className='text-charcoal-700 text-xs text-wrap break-words'
             >
               {dimension.name}
             </span>
             <Progress value={dimension.score} color={NEUTRAL_SCORE_COLOR} />
             <span
               data-testid='report-dimension-value'
-              className='text-xs text-gray-600'
+              className='text-muted-foreground text-xs'
             >
               {dimension.raw}/{dimension.reference}
             </span>
@@ -114,14 +115,14 @@ export function QuestionnaireCard({
       {isLatestCard && trend.kind === 'trend' && trend.rows[0] && (
         <div
           data-testid='report-trend'
-          className='mt-4 border-t border-gray-100 pt-3'
+          className='border-border mt-4 border-t pt-3'
         >
-          <p className='mb-2 text-[11px] font-bold text-gray-500 uppercase'>
+          <p className='text-muted-foreground mb-2 text-xs font-bold uppercase'>
             {t('report.score_history')}
           </p>
           {trend.rows[0].dimensions.map(dimension => (
             <div key={dimension.name} className='mb-2'>
-              <span className='text-xs font-bold text-gray-700'>
+              <span className='text-charcoal-700 text-xs font-bold'>
                 {dimension.name}
               </span>
               <div className='mt-1 space-y-1'>
@@ -150,7 +151,7 @@ export function QuestionnaireCard({
                         latest ? 'font-bold' : 'opacity-70'
                       }`}
                     >
-                      <span className='text-[11px] text-gray-500'>
+                      <span className='text-muted-foreground text-xs'>
                         {row.label}
                       </span>
                       {rowDimension && (
@@ -159,7 +160,7 @@ export function QuestionnaireCard({
                           color={NEUTRAL_SCORE_COLOR}
                         />
                       )}
-                      <span className='text-[11px] text-gray-600'>
+                      <span className='text-muted-foreground text-xs'>
                         {rowDimension
                           ? `${rowDimension.raw}/${rowDimension.reference}`
                           : '—'}
@@ -170,7 +171,7 @@ export function QuestionnaireCard({
                           data-direction={direction}
                           role='img'
                           aria-label={t(DIRECTION_LABEL_KEY[direction])}
-                          className='text-[11px] text-gray-500'
+                          className='text-muted-foreground text-xs'
                         >
                           {DIRECTION_GLYPH[direction]}
                         </span>

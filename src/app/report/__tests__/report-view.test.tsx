@@ -11,6 +11,8 @@ vi.mock('@/i18n', async () => {
 
 import type { FabAction } from '@/context/fabContext';
 import type { QuestionnaireInfo } from '@/services/api/research';
+import { scanSource } from '@/styles/__tests__/raw-color-scan';
+import { TOKENS } from '@/styles/tokens';
 import { trendDirection } from '@/utils/fhir/report';
 import type {
   ResearchBatch,
@@ -387,8 +389,24 @@ describe('ReportView', () => {
     const bars = screen.getAllByTestId('report-progress');
     expect(bars.length).toBeGreaterThan(0);
     bars.forEach(bar => {
-      expect(bar).toHaveAttribute('data-color', '#94A3B8');
+      expect(bar).toHaveAttribute('data-color', TOKENS.charcoal400);
     });
+  });
+
+  it('renders report cards and sections with design tokens only', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const nodes = [
+      ...screen.getAllByTestId('report-participation-card'),
+      ...screen.getAllByTestId('report-batch-section'),
+      ...screen.getAllByTestId(/^report-questionnaire-card-/)
+    ];
+    expect(nodes.length).toBeGreaterThan(0);
+    const classNames = nodes
+      .flatMap(node => [node, ...node.querySelectorAll('*')])
+      .map(node => node.getAttribute('class') ?? '')
+      .join(' ');
+    expect(scanSource(classNames)).toEqual([]);
   });
 
   it('shows the dimension value as raw/reference without a percentage', async () => {

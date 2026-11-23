@@ -24,50 +24,60 @@ export function ParticipationCard({
   return (
     <section
       data-testid='report-participation-card'
-      className='card mb-4 border-0 bg-[#F9F9F9] p-4'
+      className='card bg-muted mb-4 border-0 p-4'
     >
-      <div className='grid grid-cols-2 gap-3 text-xs text-gray-600'>
+      <div className='text-muted-foreground grid grid-cols-2 gap-3 text-xs'>
         <div>
-          <p className='text-[11px] text-gray-400'>
+          <p className='text-muted-foreground text-xs'>
             {t('report.assessments_completed')}
           </p>
           <p
             data-testid='report-stat-assessments'
-            className='font-bold text-black'
+            className='text-foreground font-bold'
           >
             {stats.assessmentsCompleted}
           </p>
         </div>
         <div>
-          <p className='text-[11px] text-gray-400'>
+          <p className='text-muted-foreground text-xs'>
             {t('report.batches_completed')}
           </p>
-          <p data-testid='report-stat-batches' className='font-bold text-black'>
+          <p
+            data-testid='report-stat-batches'
+            className='text-foreground font-bold'
+          >
             {stats.batchesCompleted}/{stats.totalBatches}
           </p>
         </div>
         {stats.consecutiveBatches > 1 && (
           <div>
-            <p className='text-[11px] text-gray-400'>{t('report.streak')}</p>
+            <p className='text-muted-foreground text-xs'>
+              {t('report.streak')}
+            </p>
             <p
               data-testid='report-stat-streak'
-              className='font-bold text-black'
+              className='text-foreground font-bold'
             >
               {t('report.batches_count', { count: stats.consecutiveBatches })}
             </p>
           </div>
         )}
         <div>
-          <p className='text-[11px] text-gray-400'>{t('report.xp_earned')}</p>
-          <p data-testid='report-stat-xp' className='font-bold text-black'>
+          <p className='text-muted-foreground text-xs'>
+            {t('report.xp_earned')}
+          </p>
+          <p data-testid='report-stat-xp' className='text-foreground font-bold'>
             {stats.xp}
           </p>
         </div>
         <div>
-          <p className='text-[11px] text-gray-400'>
+          <p className='text-muted-foreground text-xs'>
             {t('report.time_invested')}
           </p>
-          <p data-testid='report-stat-time' className='font-bold text-black'>
+          <p
+            data-testid='report-stat-time'
+            className='text-foreground font-bold'
+          >
             {t('report.minutes_invested', {
               minutes: stats.timeInvestedMinutes
             })}
@@ -105,11 +115,11 @@ export function BatchSection({
       className='mb-5'
     >
       <div data-testid='report-batch-header' className='mb-2'>
-        <p className='text-sm font-bold text-black'>
+        <p className='text-foreground text-sm font-bold'>
           {batchTitle(batch, sortedBatches, prefix)}
         </p>
         {sharedDate && (
-          <p className='text-[11px] text-gray-500'>
+          <p className='text-muted-foreground text-xs'>
             {t('report.completed_at', { date: sharedDate })}
           </p>
         )}
