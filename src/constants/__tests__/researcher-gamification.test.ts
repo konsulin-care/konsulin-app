@@ -8,6 +8,7 @@ import {
   buildResearcherMissionCopy,
   getImpactInLevel,
   getResearcherLevel,
+  getResearcherLevelFraction,
   getResearcherLevelNumber
 } from '../research';
 
@@ -110,36 +111,45 @@ describe('getResearcherLevel', () => {
 });
 
 describe('getResearcherLevelNumber', () => {
-  it('returns 1 for Trailblazer range (0-99 XP)', () => {
+  it('returns 1 for Trailblazer range (0-49 points)', () => {
     expect(getResearcherLevelNumber(0)).toBe(1);
     expect(getResearcherLevelNumber(49)).toBe(1);
-    expect(getResearcherLevelNumber(99)).toBe(1);
   });
 
-  it('returns 2 for 100-199 XP', () => {
-    expect(getResearcherLevelNumber(100)).toBe(2);
+  it('returns 2 from Pathfinder threshold at 50 points', () => {
+    expect(getResearcherLevelNumber(50)).toBe(2);
     expect(getResearcherLevelNumber(149)).toBe(2);
-    expect(getResearcherLevelNumber(199)).toBe(2);
   });
 
-  it('returns 3 for 200-299 XP', () => {
-    expect(getResearcherLevelNumber(200)).toBe(3);
+  it('returns 3 from Torchbearer threshold at 150 points', () => {
+    expect(getResearcherLevelNumber(150)).toBe(3);
     expect(getResearcherLevelNumber(299)).toBe(3);
   });
 
-  it('returns 4 for 300-399 XP', () => {
+  it('returns 4 from Vanguard threshold at 300 points', () => {
     expect(getResearcherLevelNumber(300)).toBe(4);
-    expect(getResearcherLevelNumber(399)).toBe(4);
+    expect(getResearcherLevelNumber(499)).toBe(4);
   });
 
-  it('returns 5 for 400-499 XP', () => {
-    expect(getResearcherLevelNumber(400)).toBe(5);
-    expect(getResearcherLevelNumber(499)).toBe(5);
+  it('returns 5 from Pioneer threshold at 500 points and above', () => {
+    expect(getResearcherLevelNumber(500)).toBe(5);
+    expect(getResearcherLevelNumber(1000)).toBe(5);
+  });
+});
+
+describe('getResearcherLevelFraction', () => {
+  it('returns the fraction of the current level span earned', () => {
+    expect(getResearcherLevelFraction(100)).toBe(0.5);
   });
 
-  it('returns 6 for 500-599 XP', () => {
-    expect(getResearcherLevelNumber(500)).toBe(6);
-    expect(getResearcherLevelNumber(599)).toBe(6);
+  it('returns 0 at a level threshold', () => {
+    expect(getResearcherLevelFraction(50)).toBe(0);
+    expect(getResearcherLevelFraction(150)).toBe(0);
+  });
+
+  it('returns 1 at the top level and above', () => {
+    expect(getResearcherLevelFraction(500)).toBe(1);
+    expect(getResearcherLevelFraction(1000)).toBe(1);
   });
 });
 

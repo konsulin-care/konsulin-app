@@ -7,6 +7,7 @@ import {
   buildResearcherMission,
   getImpactInLevel,
   getResearcherLevel,
+  getResearcherLevelFraction,
   getResearcherLevelNumber,
   type ResearcherLevel
 } from '@/constants/research';
@@ -28,6 +29,7 @@ export interface ResearcherImpactResult {
   totalImpact: number;
   level: ResearcherLevel;
   levelNumber: number;
+  levelFraction: number;
   impactInLevel: number;
   perStudy: StudyImpact[];
   mission: string;
@@ -124,6 +126,7 @@ export function useResearcherImpact(
 
   const level = getResearcherLevel(totalImpact);
   const levelNumber = getResearcherLevelNumber(totalImpact);
+  const levelFraction = getResearcherLevelFraction(totalImpact);
   const impactInLevel = getImpactInLevel(totalImpact);
 
   const mission = buildResearcherMission({
@@ -135,6 +138,7 @@ export function useResearcherImpact(
     totalImpact,
     level,
     levelNumber,
+    levelFraction,
     impactInLevel,
     perStudy,
     mission,

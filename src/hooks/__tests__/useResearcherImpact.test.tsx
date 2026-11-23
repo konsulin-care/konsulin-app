@@ -137,6 +137,31 @@ describe('useResearcherImpact', () => {
     // totalImpact = 250 (participants) + 25 (milestone) + 30 (referrals) = 305
     // 305 is in Vanguard range (300-499)
     expect(result.current.level.label).toBe('Vanguard');
+    expect(result.current.levelNumber).toBe(4);
+    expect(result.current.levelFraction).toBeCloseTo(0.025);
+  });
+
+  it('derives the ladder level number and fraction', () => {
+    const studies = [makeStudy('study-2')];
+    const { result } = renderHook(
+      () => useResearcherImpact(studies, 'study-2', 'practitioner-1', 5),
+      { wrapper: createWrapper() }
+    );
+    // totalImpact = 50 (participants) + 30 (referrals) = 80
+    // 80 is Pathfinder (50-149): fraction = (80 - 50) / (150 - 50)
+    expect(result.current.levelNumber).toBe(2);
+    expect(result.current.levelFraction).toBeCloseTo(0.3);
+  });
+
+  it('returns fraction 1 at the top researcher level', () => {
+    const studies = [makeStudy('study-3')];
+    const { result } = renderHook(
+      () => useResearcherImpact(studies, 'study-3', 'practitioner-1', 100),
+      { wrapper: createWrapper() }
+    );
+    // totalImpact = 1105, above Pioneer threshold 500
+    expect(result.current.levelNumber).toBe(5);
+    expect(result.current.levelFraction).toBe(1);
   });
 
   it('returns isLoading true when participant count is loading', () => {

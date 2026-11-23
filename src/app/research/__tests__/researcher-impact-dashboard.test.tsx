@@ -22,7 +22,8 @@ vi.mock('@/hooks/useResearcherImpact', () => ({
       reward: 'Early access to batch results + cohort insights',
       rewardKey: 'researcher_reward.torchbearer'
     },
-    levelNumber: 2,
+    levelNumber: 3,
+    levelFraction: 0,
     impactInLevel: 50,
     perStudy: [
       {
@@ -87,7 +88,7 @@ describe('ResearcherImpactDashboard', () => {
       { wrapper }
     );
     expect(screen.getByTestId('researcher-halo-ring')).toBeInTheDocument();
-    expect(screen.getByTestId('researcher-level')).toHaveTextContent('Lv 2');
+    expect(screen.getByTestId('researcher-level')).toHaveTextContent('Lv 3');
   });
 
   it('renders the level title', () => {

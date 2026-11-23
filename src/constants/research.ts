@@ -336,14 +336,11 @@ export const RESEARCHER_IMPACT_PER_PARTICIPANT = 10;
 export const RESEARCHER_IMPACT_PER_BATCH = 15;
 
 /** Per-study participant milestones: threshold points + participant count. */
-export const RESEARCHER_MILESTONES: readonly {
-  threshold: number;
-  participantCount: number;
-}[] = [
+export const RESEARCHER_MILESTONES = [
   { threshold: 25, participantCount: 10 },
   { threshold: 25, participantCount: 50 },
   { threshold: 25, participantCount: 100 }
-];
+] as const;
 
 /** Researcher gamification level ladder. */
 export interface ResearcherLevel {
@@ -417,13 +414,27 @@ export function getResearcherLevel(impactPoints: number): ResearcherLevel {
 }
 
 /**
- * Returns the numeric level for a total impact-point count (level 1 at 0-49).
+ * Returns the 1-based position of the reached researcher level.
  *
  * @param impactPoints - Total cumulative impact points.
- * @returns The level number, starting at 1.
+ * @returns The ladder level number, from 1 (Trailblazer) to 5 (Pioneer).
  */
 export function getResearcherLevelNumber(impactPoints: number): number {
-  return Math.floor(Math.max(0, impactPoints) / LEVEL_XP) + 1;
+  return RESEARCHER_LEVELS.indexOf(getResearcherLevel(impactPoints)) + 1;
+}
+
+/**
+ * Returns the fraction of the current researcher level's span earned.
+ *
+ * @param impactPoints - Total cumulative impact points.
+ * @returns Progress within the level in [0, 1]; 1 at the top level.
+ */
+export function getResearcherLevelFraction(impactPoints: number): number {
+  const current = getResearcherLevel(impactPoints);
+  const next = RESEARCHER_LEVELS.find(l => l.threshold > current.threshold);
+  if (next === undefined) return 1;
+  const safe = Math.max(0, impactPoints);
+  return (safe - current.threshold) / (next.threshold - current.threshold);
 }
 
 /**
@@ -454,22 +465,18 @@ export function buildResearcherMissionCopy(opts: {
   impactPoints: number;
   totalParticipants: number;
 }): ResearcherMissionCopy {
-  const { totalParticipants } = opts;
+  const { totalParticipants: total } = opts;
 
   // Find nearest unhit milestone using total participants
-  const nearestMilestone = RESEARCHER_MILESTONES.find(
-    m => totalParticipants < m.participantCount
-  );
+  const nearest = RESEARCHER_MILESTONES.find(m => total < m.participantCount);
 
-  if (nearestMilestone) {
-    const gap = nearestMilestone.participantCount - totalParticipants;
-    return {
-      key:
-        gap === 1
-          ? 'researcher_mission.enroll_gap_singular'
-          : 'researcher_mission.enroll_gap',
-      gap
-    };
+  if (nearest) {
+    const gap = nearest.participantCount - total;
+    const key =
+      gap === 1
+        ? 'researcher_mission.enroll_gap_singular'
+        : 'researcher_mission.enroll_gap';
+    return { key, gap };
   }
 
   // All milestones hit — show zero gap
