@@ -19,7 +19,7 @@ export default function ResearchSkeleton() {
       {/* Referral notice placeholder. */}
       <Skeleton className='h-12 w-full rounded-xl' />
       {/* Carousel card placeholder. */}
-      <div className='card flex flex-col gap-3 bg-white p-4'>
+      <div className='card bg-card flex flex-col gap-3 p-4'>
         <div className='flex items-start gap-2'>
           <Skeleton className='mt-0.5 h-5 w-5 rounded-full' />
           <div className='flex flex-1 flex-col gap-1.5'>
@@ -47,7 +47,7 @@ export default function ResearchSkeleton() {
         <Skeleton className='h-4 w-36' />
       </div>
       {/* Contribution dashboard placeholder. */}
-      <div className='card flex items-center gap-4 bg-[#F9F9F9] p-4'>
+      <div className='card bg-muted flex items-center gap-4 p-4'>
         <Skeleton className='h-[72px] w-[72px] shrink-0 rounded-full' />
         <div className='flex flex-1 flex-col gap-2'>
           <Skeleton className='h-4 w-32' />

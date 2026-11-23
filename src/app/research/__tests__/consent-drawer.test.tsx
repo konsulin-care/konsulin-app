@@ -44,4 +44,21 @@ describe('ConsentDrawer', () => {
       screen.queryByRole('button', { name: 'Agree to Participate' })
     ).toBeNull();
   });
+
+  it('uses muted and foreground tokens instead of gray utilities', () => {
+    const { container } = render(
+      <ConsentDrawer open onClose={vi.fn()} onAgree={vi.fn()} />
+    );
+
+    expect(
+      screen.getByText(/participation is voluntary/i).closest('.space-y-3')
+        ?.className
+    ).toContain('text-muted-foreground');
+    expect(screen.getByText(/By agreeing to participate/i).className).toContain(
+      'text-foreground'
+    );
+    expect(container.innerHTML).not.toMatch(
+      /text-gray-|bg-gray-|border-gray-|text-black/
+    );
+  });
 });
