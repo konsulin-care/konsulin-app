@@ -50,10 +50,13 @@ Wrappers must:
 ## Adding a new extension
 
 1. Register the URL in `FhirExtensionUrls` (or `FhirSystems` for a system).
-2. Create a thin module with `set<Concern>` / `get<Concern>` delegating to the
+2. Add the key to the expected set in the registry drift guard in
+   `__tests__/extensions.test.ts` in the same commit — the guard pins the exact
+   key list and fails otherwise.
+3. Create a thin module with `set<Concern>` / `get<Concern>` delegating to the
    primitives.
-3. Write tests covering set / replace / preserve-others branches.
-4. Import the URL in tests too — no literals anywhere.
+4. Write tests covering set / replace / preserve-others branches.
+5. Import the URL in tests too — no literals anywhere.
 
 ## ESLint
 
