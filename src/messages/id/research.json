@@ -97,7 +97,6 @@
   "questionnaire_required": "Pilih setidaknya satu kuesioner",
   "batch_required": "Setidaknya satu batch wajib diisi",
   "batch_progress": {
-    "participants": "Total peserta: {count}",
     "about_count": "Tentang jumlah ini",
     "cached_disclaimer": "Angka ini berasal dari cache dan diperbarui setiap 30 menit untuk mengurangi beban server."
   },

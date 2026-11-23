@@ -33,6 +33,11 @@ function collectKeys(value: Record<string, unknown>): string[] {
   return keys;
 }
 
+const RETIRED_RESEARCH_KEYS = [
+  'researcher_mission.enroll_zero',
+  'batch_progress.participants'
+];
+
 describe('message parity between en and id', () => {
   const enNamespaces = listNamespaces(EN_DIR);
   const idNamespaces = listNamespaces(ID_DIR);
@@ -65,6 +70,19 @@ describe('message parity between en and id', () => {
     expect(
       dottedKeys,
       `Dotted keys are rejected by next-intl: ${dottedKeys.join(', ')}`
+    ).toEqual([]);
+  });
+
+  it.each([
+    ['en', EN_DIR],
+    ['id', ID_DIR]
+  ])('does not define retired research keys in %s', (_locale, dir) => {
+    const keys = flattenKeys(readMessages(dir, 'research'));
+    const present = RETIRED_RESEARCH_KEYS.filter(key => keys.has(key));
+
+    expect(
+      present,
+      `Retired research keys must stay removed: ${present.join(', ')}`
     ).toEqual([]);
   });
 
