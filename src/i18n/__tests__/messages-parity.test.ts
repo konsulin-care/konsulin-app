@@ -71,6 +71,19 @@ describe('message parity between en and id', () => {
   it.each([
     ['en', EN_DIR],
     ['id', ID_DIR]
+  ])('has no dotted keys in the %s research namespace', (_locale, dir) => {
+    const keys = collectKeys(readMessages(dir, 'research'));
+    const dottedKeys = keys.filter(key => key.includes('.'));
+
+    expect(
+      dottedKeys,
+      `Dotted keys are rejected by next-intl: ${dottedKeys.join(', ')}`
+    ).toEqual([]);
+  });
+
+  it.each([
+    ['en', EN_DIR],
+    ['id', ID_DIR]
   ])('resolves every assessment category code in %s', (_locale, dir) => {
     const messages = readMessages(dir, 'assessment');
     const category = messages.category as Record<string, unknown> | undefined;

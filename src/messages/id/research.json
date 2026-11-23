@@ -1,18 +1,30 @@
 {
-  "mid_batch_1.title": "Langkah yang baik!",
-  "mid_batch_1.body": "Anda telah menyelesaikan {completed} dari {total} asesmen dalam batch ini. Setiap respons berkontribusi untuk penelitian, jadi teruslah maju.",
-  "mid_batch_2.title": "Ritme yang bagus!",
-  "mid_batch_2.body": "{completed} dari {total} selesai. Setiap asesmen membawa kita lebih dekat ke dukungan kesehatan publik yang lebih baik.",
-  "mid_batch_3.title": "Momentum yang baik!",
-  "mid_batch_3.body": "{completed} dari {total} asesmen selesai. Partisipasi Anda memberikan dampak nyata.",
-  "mid_batch_4.title": "Teruslah maju!",
-  "mid_batch_4.body": "{completed} dari {total} selesai dalam batch ini. Setiap jawaban membantu membentuk perawatan yang lebih baik untuk semua.",
-  "mid_batch_5.title": "Satu langkah lagi!",
-  "mid_batch_5.body": "{completed} dari {total} selesai. Terima kasih sudah mengikuti penelitian ini, kita hampir sampai.",
+  "mid_batch_1": {
+    "title": "Langkah yang baik!",
+    "body": "Anda telah menyelesaikan {completed} dari {total} asesmen dalam batch ini. Setiap respons berkontribusi untuk penelitian, jadi teruslah maju."
+  },
+  "mid_batch_2": {
+    "title": "Ritme yang bagus!",
+    "body": "{completed} dari {total} selesai. Setiap asesmen membawa kita lebih dekat ke dukungan kesehatan publik yang lebih baik."
+  },
+  "mid_batch_3": {
+    "title": "Momentum yang baik!",
+    "body": "{completed} dari {total} asesmen selesai. Partisipasi Anda memberikan dampak nyata."
+  },
+  "mid_batch_4": {
+    "title": "Teruslah maju!",
+    "body": "{completed} dari {total} selesai dalam batch ini. Setiap jawaban membantu membentuk perawatan yang lebih baik untuk semua."
+  },
+  "mid_batch_5": {
+    "title": "Satu langkah lagi!",
+    "body": "{completed} dari {total} selesai. Terima kasih sudah mengikuti penelitian ini, kita hampir sampai."
+  },
   "almost_there": "Hampir selesai!",
   "almost_there_body": "Tinggal satu asesmen lagi dalam batch ini. Anda bisa!",
-  "mid_batch_fallback.title": "Anda melakukannya dengan baik!",
-  "mid_batch_fallback.body": "Setiap respons berkontribusi untuk penelitian, jadi teruslah maju.",
+  "mid_batch_fallback": {
+    "title": "Anda melakukannya dengan baik!",
+    "body": "Setiap respons berkontribusi untuk penelitian, jadi teruslah maju."
+  },
   "batch_complete": "Anda telah menyelesaikan batch ini!",
   "batch_complete_body": "Semua asesmen dalam batch ini telah selesai. Terima kasih telah berpartisipasi, respons Anda membantu meningkatkan kesehatan publik untuk semua.",
   "standalone": "Anda telah menyelesaikan tes!",
@@ -24,14 +36,18 @@
   "loading_label": "Memuat penelitian",
   "skeleton_label": "Memuat penelitian berlangsung",
   "share_impact_label": "Bagikan studi ini untuk memperluas dampak Anda",
-  "researcher_reward.trailblazer": "Bagikan studi untuk menumbuhkan dampak riset Anda",
-  "researcher_reward.pathfinder": "Analitik lanjutan untuk studi Anda",
-  "researcher_reward.torchbearer": "Akses awal ke hasil batch + wawasan kohort",
-  "researcher_reward.vanguard": "Lencana studi unggulan + penempatan prioritas",
-  "researcher_reward.pioneer": "Kolaborasi merancang pertanyaan riset + akses pertama ke studi baru",
-  "researcher_mission.enroll_gap": "Rekrut {gap} peserta untuk mencapai tonggak berikutnya.",
-  "researcher_mission.enroll_gap_singular": "Rekrut {gap} peserta untuk mencapai tonggak berikutnya.",
-  "researcher_mission.enroll_zero": "Rekrut 0 peserta untuk mencapai tonggak berikutnya.",
+  "researcher_reward": {
+    "trailblazer": "Bagikan studi untuk menumbuhkan dampak riset Anda",
+    "pathfinder": "Analitik lanjutan untuk studi Anda",
+    "torchbearer": "Akses awal ke hasil batch + wawasan kohort",
+    "vanguard": "Lencana studi unggulan + penempatan prioritas",
+    "pioneer": "Kolaborasi merancang pertanyaan riset + akses pertama ke studi baru"
+  },
+  "researcher_mission": {
+    "enroll_gap": "Rekrut {gap} peserta untuk mencapai tonggak berikutnya.",
+    "enroll_gap_singular": "Rekrut {gap} peserta untuk mencapai tonggak berikutnya.",
+    "all_milestones": "Semua tonggak tercapai. Terima kasih telah memimpin studi ini."
+  },
   "no_research_title": "Tidak ada penelitian berlangsung",
   "no_research_subtitle": "Saat ini belum ada studi penelitian yang tersedia.",
   "no_studies_title": "Belum ada studi penelitian",
@@ -80,7 +96,97 @@
   "end_date_required": "Tanggal selesai wajib diisi",
   "questionnaire_required": "Pilih setidaknya satu kuesioner",
   "batch_required": "Setidaknya satu batch wajib diisi",
-  "batch_progress.participants": "Total peserta: {count}",
-  "batch_progress.about_count": "Tentang jumlah ini",
-  "batch_progress.cached_disclaimer": "Angka ini berasal dari cache dan diperbarui setiap 30 menit untuk mengurangi beban server."
+  "batch_progress": {
+    "participants": "Total peserta: {count}",
+    "about_count": "Tentang jumlah ini",
+    "cached_disclaimer": "Angka ini berasal dari cache dan diperbarui setiap 30 menit untuk mengurangi beban server."
+  },
+  "section": {
+    "study": "Studi",
+    "contribution": "Kontribusi Anda"
+  },
+  "batch_line": {
+    "current": "Batch {index} dari {total} · Tutup {date}",
+    "completed": "Batch {index} dari {total} selesai · Tutup {date}"
+  },
+  "trail": {
+    "aria": "Jejak batch: {summary}",
+    "node": "Batch {index}: {status}",
+    "status": {
+      "done": "Selesai",
+      "current": "Berjalan",
+      "missed": "Terlewat",
+      "upcoming": "Akan datang",
+      "syncing": "Menunggu sinkron"
+    }
+  },
+  "goal": {
+    "joined_with_you": "Anda dan {others} orang lainnya telah bergabung.",
+    "joined": "{count} orang telah bergabung.",
+    "remaining": "Bersama, kita butuh {remaining} orang lagi.",
+    "just_started": "Studi ini baru dimulai. Jadilah salah satu yang pertama.",
+    "progress": "{count} dari {target}",
+    "bar_label": "Target peserta"
+  },
+  "contribution": {
+    "xp_to_next": "{xp} XP lagi menuju {level}",
+    "top_level": "Level tertinggi tercapai",
+    "joined_via_link": "{count} bergabung lewat tautan Anda",
+    "invite_to_start": "Ajak teman untuk memulai",
+    "batch_count": "{completed}/{total} kuesioner",
+    "no_active_batch": "Tidak ada batch aktif",
+    "rewards_title": "Sebagai {level}, Anda akan mendapatkan:",
+    "xp_bar_label": "Progres level"
+  },
+  "level_chip": "Lv {level}",
+  "level": {
+    "participant": "Peserta",
+    "trailblazer": "Perintis",
+    "pathfinder": "Penjelajah",
+    "torchbearer": "Pembawa Obor",
+    "vanguard": "Garda Depan",
+    "pioneer": "Pelopor"
+  },
+  "level_reward": {
+    "trailblazer": "Ringkasan hasil pribadi untuk setiap kuesioner",
+    "pathfinder": "Laporan ringkasan pribadi + lencana gelar di aplikasi",
+    "torchbearer": "Akses awal ke hasil batch + wawasan kohort anonim",
+    "vanguard": "Memberi suara untuk topik penelitian berikutnya",
+    "pioneer": "Ikut merancang pertanyaan penelitian (anonim) + akses pertama ke studi baru"
+  },
+  "mission": {
+    "goal_level": "mencapai {level}",
+    "goal_level_up": "naik level",
+    "top_level": "Anda mencapai {level}, gelar tertinggi. Terus berkontribusi!",
+    "top_level_guest": "Anda mencapai level tertinggi. Terus berkontribusi!",
+    "single": "Selesaikan {title} (+{xp} XP) untuk {goal}",
+    "subset": "Selesaikan {count} kuesioner untuk {goal}",
+    "whole_batch": "Selesaikan batch ini (+{xp} XP), lalu bagikan studi ini untuk {goal}",
+    "complete_remaining": "Selesaikan kuesioner yang tersisa untuk {goal}",
+    "next_batch": "Batch berikutnya dibuka {date}. Kembali lagi nanti.",
+    "invite": "Ajak teman untuk bergabung dalam studi ini."
+  },
+  "researcher_dashboard": {
+    "total_participants": "{count} total peserta",
+    "impact_points": "{count} poin dampak",
+    "next_milestones": "Tonggak Berikutnya",
+    "milestone": "{count} peserta"
+  },
+  "researcher_slide": {
+    "batches_one": "{count} batch",
+    "batches_other": "{count} batch",
+    "closes_in_one": "Batch ditutup dalam {days} hari",
+    "closes_in_other": "Batch ditutup dalam {days} hari",
+    "participants_one": "{count} peserta",
+    "participants_other": "{count} peserta",
+    "questionnaires_one": "{count} kuesioner",
+    "questionnaires_other": "{count} kuesioner"
+  },
+  "carousel": {
+    "open_study": "Buka studi {title}",
+    "go_to_slide": "Ke slide {index}"
+  },
+  "target_participants_label": "Target peserta",
+  "target_participants_placeholder": "mis. 100",
+  "target_required": "Isi target minimal 1 peserta"
 }
