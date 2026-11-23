@@ -3,6 +3,7 @@
 import QuestionnaireUploadDrawer from '@/components/shared/questionnaire-upload-drawer';
 import { useAuth } from '@/context/auth/authContext';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
+import { getResearchTarget } from '@/utils/fhir/research-target';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -49,6 +50,7 @@ const mapToFormData = (
 ): FormData => ({
   title: study.title ?? '',
   description: study.description ?? '',
+  targetParticipants: getResearchTarget(study) ?? undefined,
   batches: planDefinitions
     .toSorted((a, b) =>
       (a.effectivePeriod?.start ?? '').localeCompare(
@@ -151,6 +153,10 @@ export default function EditResearchForm({
 
   const title = useWatch({ control, name: 'title' });
   const description = useWatch({ control, name: 'description' });
+  const targetParticipants = useWatch({
+    control,
+    name: 'targetParticipants'
+  });
   const batches = useWatch({ control, name: 'batches' });
 
   // Deep link guard
@@ -238,7 +244,7 @@ export default function EditResearchForm({
     () => ({
       canAdvance:
         effectivePage === 'title'
-          ? canAdvanceOnTitlePage(title, description)
+          ? canAdvanceOnTitlePage(title, description, targetParticipants)
           : selectedIds.length > 0,
       onAdvance: () => {
         if (effectivePage === 'title') {
@@ -256,6 +262,7 @@ export default function EditResearchForm({
       effectivePage,
       title,
       description,
+      targetParticipants,
       selectedIds.length,
       trigger,
       router,

@@ -49,9 +49,9 @@ type Page = 'title' | 'questionnaire' | 'batch';
 
 const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
 
-/** Build a localStorage key scoped to the current user. */
-const getStorageKey = (userId: string | undefined) =>
-  `research-form-${userId ?? 'anonymous'}`;
+/** Resolve a raw page query value to a known page, defaulting to title. */
+const parsePage = (raw: string | null): Page =>
+  VALID_PAGES.has(raw as Page) ? (raw as Page) : 'title';
 
 /** Hydrate partial form data from localStorage. */
 const loadFromStorage = (
@@ -67,12 +67,6 @@ const loadFromStorage = (
   return null;
 };
 
-/** Create a default batch entry with the given start date. */
-const createBatch = (date = ''): FormData['batches'][number] => ({
-  startDate: date,
-  endDate: date,
-  questionnaireIds: []
-});
 /** POST a new research study to the API. */
 export const submitStudy = async (
   API: Awaited<ReturnType<typeof getAPI>>,
@@ -142,7 +136,7 @@ export default function ResearchForm() {
   const searchParams = useSearchParams();
   const { state: authState } = useAuth();
   const userId = authState?.userInfo?.fhirId;
-  const storageKey = getStorageKey(userId);
+  const storageKey = `research-form-${userId ?? 'anonymous'}`;
   const storedData = useRef(loadFromStorage(storageKey));
   const [customQuestionnaires, setCustomQuestionnaires] = useState<
     QuestionnaireOption[]
@@ -152,12 +146,11 @@ export default function ResearchForm() {
 
   // Derive page from URL params with guard
   const rawPage = searchParams.get('page');
-  const page: Page = VALID_PAGES.has(rawPage as Page)
-    ? (rawPage as Page)
-    : 'title';
+  const page: Page = parsePage(rawPage);
 
   // Canonicalize: redirect to ?page=title when missing or invalid
-  const needsCanonicalize = !rawPage || !VALID_PAGES.has(rawPage as Page);
+  const needsCanonicalize =
+    rawPage === null || !VALID_PAGES.has(rawPage as Page);
   useEffect(() => {
     if (needsCanonicalize) {
       router.replace('/research/register?page=title');
@@ -170,7 +163,9 @@ export default function ResearchForm() {
       title: storedData.current?.title ?? '',
       description: storedData.current?.description ?? '',
       targetParticipants: storedData.current?.targetParticipants,
-      batches: storedData.current?.batches ?? [createBatch()]
+      batches: storedData.current?.batches ?? [
+        { startDate: '', endDate: '', questionnaireIds: [] }
+      ]
     }
   });
 
@@ -282,7 +277,11 @@ export default function ResearchForm() {
     () => ({
       canAdvance:
         effectivePage === 'title'
-          ? canAdvanceOnTitlePage(formValues.title, formValues.description)
+          ? canAdvanceOnTitlePage(
+              formValues.title,
+              formValues.description,
+              formValues.targetParticipants
+            )
           : selectedIds.length > 0,
       onAdvance: async () => {
         if (effectivePage === 'title') {
@@ -302,6 +301,7 @@ export default function ResearchForm() {
       effectivePage,
       formValues.title,
       formValues.description,
+      formValues.targetParticipants,
       selectedIds.length,
       trigger,
       router,
