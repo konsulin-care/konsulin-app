@@ -98,7 +98,7 @@ function makeProgress(): ResearchProgress {
 }
 
 describe('ResearchHeaderWidget', () => {
-  it('renders study title, batch of n, closing days, questionnaire count, and disclaimer, linking to /research', () => {
+  it('renders study title, batch of n, closing date, questionnaire count, and disclaimer, linking to /research', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -110,11 +110,17 @@ describe('ResearchHeaderWidget', () => {
     expect(widget.getAttribute('href')).toBe('/research');
     expect(screen.getByText('Konsulin Mental Health Survey')).toBeTruthy();
     expect(screen.getByText(/Batch 2 of 3/)).toBeTruthy();
-    expect(screen.getByText(/Closes in \d+ days/)).toBeTruthy();
-    expect(screen.getByText('1/3 Questionnaires')).toBeTruthy();
+    expect(screen.getByText(/Closes .* 2026/)).toBeTruthy();
+    expect(screen.getByText('1/3 questionnaires')).toBeTruthy();
     expect(
       screen.getByText(/Every questionnaire you complete counts toward/i)
     ).toBeTruthy();
+
+    const fill = widget.querySelector('.bg-turquoise-deep');
+    const track = widget.querySelector('.bg-muted');
+    expect(fill).toBeTruthy();
+    expect(track).toBeTruthy();
+    expect(widget.innerHTML).not.toMatch(/#[0-9a-fA-F]{6}/);
   });
 
   it('does not render the level badge or continue text', () => {

@@ -1,8 +1,9 @@
 'use client';
 
 import { useTranslations } from '@/i18n';
+import { useLocale } from '@/lib/locale';
 import { useResearchProgress } from '@/services/api/research';
-import { daysUntilBatch } from '@/utils/fhir/research';
+import { formatBatchDate } from '@/utils/format-batch-date';
 import { FlaskConical } from 'lucide-react';
 import Link from 'next/link';
 
@@ -16,6 +17,7 @@ import Link from 'next/link';
  */
 export default function ResearchHeaderWidget() {
   const t = useTranslations('research');
+  const locale = useLocale();
   const { data: progress, isLoading } = useResearchProgress();
 
   if (isLoading || !progress || progress.studies.length === 0) return null;
@@ -35,32 +37,40 @@ export default function ResearchHeaderWidget() {
     <Link
       href='/research'
       data-testid='research-header-widget'
-      className='card flex h-full flex-col gap-1.5 border-0 bg-[#F9F9F9] p-3'
+      className='card bg-muted flex h-full flex-col gap-1.5 border-0 p-3'
     >
       <div className='flex items-center'>
-        <FlaskConical className='mr-[10px] h-5 w-5 shrink-0 text-black' />
-        <span className='text-secondary truncate text-left text-[14px] font-bold'>
+        <FlaskConical className='text-foreground mr-[10px] h-5 w-5 shrink-0' />
+        <span className='text-turquoise-deep truncate text-left text-sm font-bold'>
           {primary.study.title}
         </span>
       </div>
-      <div className='flex items-center justify-between text-[11px] text-gray-600'>
-        <span className='font-bold text-black'>
-          Batch {batchIndex} of {batchTotal} · Closes in{' '}
-          {daysUntilBatch(batch.end)} days
+      <div className='text-muted-foreground flex items-center justify-between text-xs'>
+        <span className='text-foreground font-bold'>
+          {t('batch_line.current', {
+            index: batchIndex,
+            total: batchTotal,
+            date: formatBatchDate(batch.end, locale)
+          })}
         </span>
       </div>
       <div className='flex items-center gap-2'>
-        <div className='h-1 flex-1 overflow-hidden rounded-full bg-gray-200'>
+        <div className='bg-muted h-1 flex-1 overflow-hidden rounded-full'>
           <div
-            className='h-full rounded-full bg-[#13c2c2]'
+            className='bg-turquoise-deep h-full rounded-full'
             style={{ width: `${percent}%` }}
           />
         </div>
-        <span className='text-[11px] font-bold text-gray-700'>
-          {primary.completedCount}/{primary.totalCount} Questionnaires
+        <span className='text-charcoal-700 text-xs font-bold'>
+          {t('contribution.batch_count', {
+            completed: primary.completedCount,
+            total: primary.totalCount
+          })}
         </span>
       </div>
-      <p className='text-[10px] leading-4 text-gray-500'>{t('widget_note')}</p>
+      <p className='text-muted-foreground text-xs leading-4'>
+        {t('widget_note')}
+      </p>
     </Link>
   );
 }
