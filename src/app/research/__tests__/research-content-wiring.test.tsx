@@ -2,6 +2,7 @@ import { wrapper } from '@/__tests__/react-test-utils';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearchContent from '../research-content';
+import { makeProgress } from './research-fixtures';
 
 // Mock ResearcherContent
 vi.mock('@/i18n', async () => {
@@ -102,5 +103,45 @@ describe('ResearchContent wiring', () => {
     );
     const researcherContent = screen.getByTestId('researcher-content');
     expect(researcherContent).toHaveAttribute('data-active', '');
+  });
+
+  it('renders section 01 before the carousel and section 02 before the dashboard', () => {
+    const progress = makeProgress();
+    render(
+      <ResearchContent
+        isResearcher={false}
+        researcherLoading={false}
+        researcherStudies={[]}
+        isLoading={false}
+        progress={progress}
+        studies={progress.studies}
+        activeStudyId='research'
+        activeStudy={progress.studies[0]}
+        titleMap={new Map()}
+        titlesPending={false}
+        fhirId='patient-1'
+        onSlideChange={vi.fn()}
+        onResearcherStudyClick={vi.fn()}
+        onStudyClick={vi.fn()}
+        onQuestionnaireClick={vi.fn()}
+      />,
+      { wrapper }
+    );
+    const studyHeader = screen.getByTestId('section-header-1');
+    const contributionHeader = screen.getByTestId('section-header-2');
+    const carousel = screen.getByTestId('research-carousel');
+    const dashboard = screen.getByTestId('contribution-dashboard');
+    expect(studyHeader).toHaveTextContent('01');
+    expect(studyHeader).toHaveTextContent('Study');
+    expect(contributionHeader).toHaveTextContent('02');
+    expect(contributionHeader).toHaveTextContent('Your contribution');
+    expect(
+      studyHeader.compareDocumentPosition(carousel) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      contributionHeader.compareDocumentPosition(dashboard) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 });

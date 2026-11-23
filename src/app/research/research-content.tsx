@@ -10,6 +10,7 @@ import ContributionDashboard from './contribution-dashboard';
 import ResearchCarousel from './research-carousel';
 import ResearchSkeleton from './research-skeleton';
 import ResearcherContent from './researcher-content';
+import SectionHeader from './section-header';
 
 export interface ResearchContentProps {
   isResearcher: boolean;
@@ -79,6 +80,7 @@ export default function ResearchContent({
   return (
     <>
       <ReferralNotice />
+      <SectionHeader number={1} label={t('section.study')} />
       <ResearchCarousel
         studies={studies}
         activeId={activeStudyId}
@@ -90,6 +92,7 @@ export default function ResearchContent({
         titleMap={titleMap}
         isTitlesLoading={titlesPending}
       />
+      <SectionHeader number={2} label={t('section.contribution')} />
       <ContributionDashboard
         progress={progress}
         activeStudy={activeStudy}
