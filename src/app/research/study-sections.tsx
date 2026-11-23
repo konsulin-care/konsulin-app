@@ -1,12 +1,10 @@
 import { useTranslations } from '@/i18n';
 import { useLocale } from '@/lib/locale';
 import type { QuestionnaireInfo } from '@/services/api/research';
-import { withKAnonymityFloor } from '@/services/api/research-counts';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { formatBatchDate } from '@/utils/format-batch-date';
 import { CheckCircle2, Circle } from 'lucide-react';
-import { ParticipantCountInfo } from './participant-count-info';
 
 /**
  * Limits a description to maxLength characters, appending an ellipsis.
@@ -24,48 +22,15 @@ export function truncateDescription(
   return `${description.slice(0, maxLength).trimEnd()}…`;
 }
 
-/**
- * Resolves the participant count to display.
- *
- * Prefers the study participant count, applying the k-anonymity floor. Falls
- * back to the highest per-questionnaire completion count (unfloored) for the
- * researcher path. Returns null when neither source has data.
- *
- * @param participantCount - Raw study participant count, when available.
- * @param completionCounts - Per-questionnaire completion counts.
- * @returns The count to display, or null when there is nothing to show.
- */
-function resolveParticipantCount(
-  participantCount: number | undefined,
-  completionCounts: Map<string, number> | undefined
-): number | null {
-  if (participantCount !== undefined) {
-    return withKAnonymityFloor(participantCount);
-  }
-  if (!completionCounts || completionCounts.size === 0) return null;
-  return Math.max(...completionCounts.values());
-}
-
-/** Current batch line and participant count for a study. */
+/** Current batch line for a study. */
 export function BatchProgress({
-  progress,
-  completionCounts,
-  participantCount
-}: Readonly<{
-  progress: StudyProgress;
-  completionCounts?: Map<string, number>;
-  /** Study participant count; floored before display when provided. */
-  participantCount?: number;
-}>) {
+  progress
+}: Readonly<{ progress: StudyProgress }>) {
   const t = useTranslations('research');
   const locale = useLocale();
   const { currentBatch } = progress;
   if (!currentBatch) return null;
 
-  const resolvedParticipantCount = resolveParticipantCount(
-    participantCount,
-    completionCounts
-  );
   const batchKey = progress.isComplete
     ? 'batch_line.completed'
     : 'batch_line.current';
@@ -79,50 +44,6 @@ export function BatchProgress({
           date: formatBatchDate(currentBatch.end, locale)
         })}
       </span>
-      {resolvedParticipantCount !== null && resolvedParticipantCount > 0 && (
-        <div className='flex items-center gap-1'>
-          <span>
-            {t('batch_progress.participants', {
-              count: resolvedParticipantCount
-            })}
-          </span>
-          <ParticipantCountInfo />
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Horizontal strip of batch chips for a single study. */
-export function TimelineStrip({
-  progress
-}: Readonly<{ progress: StudyProgress }>) {
-  return (
-    <div>
-      <div className='flex items-center gap-2'>
-        {progress.history.map((entry, index) => {
-          const isCurrent = progress.currentBatch?.id === entry.batchId;
-          const isDone = isCurrent ? progress.isComplete : entry.participated;
-
-          let chipClass = 'bg-muted text-foreground font-bold opacity-50';
-          if (isDone) {
-            chipClass = 'bg-secondary text-white';
-          } else if (isCurrent) {
-            chipClass =
-              'bg-muted text-foreground font-bold ring-2 ring-secondary';
-          }
-
-          return (
-            <div
-              key={entry.batchId}
-              data-testid={`batch-chip-${entry.batchId}`}
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${chipClass}`}
-            >
-              B{index + 1}
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

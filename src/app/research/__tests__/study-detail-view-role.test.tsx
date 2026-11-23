@@ -1,8 +1,35 @@
 import { renderWithQuery } from '@/__tests__/react-test-utils';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { fireEvent, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import StudyDetailView from '../study-detail-view';
+
+const { mockUseStudyParticipantCount } = vi.hoisted(() => ({
+  mockUseStudyParticipantCount:
+    vi.fn<
+      (
+        studyId: string | undefined,
+        options?: { enabled?: boolean }
+      ) => { data?: number; isError: boolean }
+    >()
+}));
+
+vi.mock('@/services/api/research-counts', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/services/api/research-counts')>();
+  return {
+    ...actual,
+    useStudyParticipantCount: mockUseStudyParticipantCount
+  };
+});
+
+beforeEach(() => {
+  mockUseStudyParticipantCount.mockReset();
+  mockUseStudyParticipantCount.mockReturnValue({
+    data: undefined,
+    isError: false
+  });
+});
 
 vi.mock('@/i18n', async () => {
   const { createUseTranslationsMock } =
@@ -157,8 +184,11 @@ describe('StudyDetailView - Role Prop', () => {
     ).toBeInTheDocument();
   });
 
-  it('passes completionCounts to BatchProgress for researcher', () => {
-    const completionCounts = new Map([['phq2', 10]]);
+  it('shows the collective joined count for a researcher', () => {
+    mockUseStudyParticipantCount.mockReturnValue({
+      data: 10,
+      isError: false
+    });
     renderWithQuery(
       <StudyDetailView
         progress={mockProgress}
@@ -170,10 +200,10 @@ describe('StudyDetailView - Role Prop', () => {
         onQuestionnaireClick={vi.fn()}
         isPatient={false}
         roleName='Researcher'
-        completionCounts={completionCounts}
       />
     );
-    expect(screen.getByText('Total participants: 10')).toBeInTheDocument();
+    expect(screen.getByText('10 people have joined.')).toBeInTheDocument();
+    expect(screen.queryByText(/Total participants/)).toBeNull();
   });
 
   it('enables Manage Study button for researcher', () => {

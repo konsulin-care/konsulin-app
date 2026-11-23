@@ -1,12 +1,11 @@
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { formatBatchDate } from '@/utils/format-batch-date';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   BatchProgress,
   buildOverlapMap,
-  QuestionnaireList,
-  TimelineStrip
+  QuestionnaireList
 } from '../study-sections';
 import { BATCH_1, makeStudyB, makeStudyProgress } from './research-fixtures';
 
@@ -15,11 +14,6 @@ vi.mock('@/i18n', async () => {
     await import('@/i18n/__tests__/test-messages');
   return { useTranslations: createUseTranslationsMock() };
 });
-
-/** Upcoming batch fixture sharing the same questionnaire set. */
-function makeUpcomingBatch(id: string, start: string, end: string) {
-  return { id, start, end, questionnaireIds: ['phq2'] };
-}
 
 afterEach(() => {
   vi.useRealTimers();
@@ -37,7 +31,6 @@ function renderList(
     isTitlesLoading?: boolean;
     showOverlapHints?: boolean;
     roleName?: string;
-    completionCounts?: Map<string, number>;
   } = {}
 ) {
   const progress = makeStudyProgress();
@@ -93,130 +86,21 @@ describe('BatchProgress', () => {
     vi.useRealTimers();
   });
 
-  it('shows Total participants with max count from completionCounts', () => {
-    const completionCounts = new Map([
-      ['phq2', 12],
-      ['big-five-inventory', 8]
-    ]);
-    render(
-      <BatchProgress
-        progress={makeStudyProgress()}
-        completionCounts={completionCounts}
-      />
-    );
-
-    expect(screen.getByText('Total participants: 12')).toBeTruthy();
-  });
-
-  it('renders the participant count when provided', () => {
-    render(
-      <BatchProgress progress={makeStudyProgress()} participantCount={12} />
-    );
-
-    expect(screen.getByText('Total participants: 12')).toBeTruthy();
-  });
-
-  it('hides Total participants when completionCounts is empty', () => {
-    render(
-      <BatchProgress
-        progress={makeStudyProgress()}
-        completionCounts={new Map()}
-      />
-    );
-
-    expect(screen.queryByText(/Total participants/)).toBeNull();
-  });
-
-  it('hides Total participants when no count is available', () => {
+  it('renders only the batch line and never a participant count', () => {
     render(<BatchProgress progress={makeStudyProgress()} />);
 
+    expect(screen.getByTestId('batch-line')).toBeTruthy();
     expect(screen.queryByText(/Total participants/)).toBeNull();
-  });
-
-  it('hides Total participants when the participant count is below the floor', () => {
-    render(
-      <BatchProgress progress={makeStudyProgress()} participantCount={4} />
-    );
-
-    expect(screen.queryByText(/Total participants/)).toBeNull();
-  });
-
-  it('shows the cached-count disclaimer when the info trigger is focused', async () => {
-    render(
-      <BatchProgress progress={makeStudyProgress()} participantCount={12} />
-    );
-
-    fireEvent.focus(screen.getByRole('button', { name: 'About this count' }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          'This is a cached count, updated every 30 minutes to reduce server load.'
-        )
-      ).toBeTruthy();
-    });
+    expect(screen.queryByText(/people have joined/)).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'About this count' })
+    ).toBeNull();
   });
 
   it('does not show X/Y questionnaires text', () => {
-    render(
-      <BatchProgress
-        progress={makeStudyProgress()}
-        completionCounts={new Map([['phq2', 10]])}
-      />
-    );
+    render(<BatchProgress progress={makeStudyProgress()} />);
 
     expect(screen.queryByText(/questionnaires/)).toBeNull();
-  });
-});
-
-describe('TimelineStrip', () => {
-  it('styles the current completed batch chip teal with a white label', () => {
-    const batch2 = makeUpcomingBatch('batch-2', '2026-09-01', '2026-09-30');
-    render(
-      <TimelineStrip
-        progress={makeStudyProgress({
-          batches: [BATCH_1, batch2],
-          currentBatch: batch2,
-          completedCount: 1,
-          isComplete: true,
-          firstUncompletedQuestionnaireId: null,
-          completedQuestionnaireIds: ['phq2'],
-          history: [
-            {
-              batchId: 'batch-1',
-              start: '2026-08-01',
-              end: '2026-08-31',
-              participated: true
-            },
-            {
-              batchId: 'batch-2',
-              start: '2026-09-01',
-              end: '2026-09-30',
-              participated: true
-            }
-          ]
-        })}
-      />
-    );
-
-    const currentChip = screen.getByTestId('batch-chip-batch-2');
-    expect(currentChip).toHaveClass('bg-secondary', 'text-white');
-    expect(currentChip).toHaveTextContent('B2');
-  });
-
-  it('marks the current in-progress batch chip with a teal ring', () => {
-    render(<TimelineStrip progress={makeStudyProgress()} />);
-
-    const activeChip = screen.getByTestId('batch-chip-batch-1');
-    expect(activeChip).toHaveClass('ring-2', 'ring-secondary');
-  });
-
-  it('omits the consecutive-batch streak text', () => {
-    render(
-      <TimelineStrip progress={makeStudyProgress({ consecutiveBatches: 3 })} />
-    );
-
-    expect(screen.queryByText(/in a row/)).toBeNull();
   });
 });
 
@@ -280,19 +164,5 @@ describe('QuestionnaireList', () => {
     expect(
       screen.getAllByText(/Also counts toward Sleep Quality Study/).length
     ).toBeGreaterThan(0);
-  });
-
-  it('does not show completion counts', () => {
-    const completionCounts = new Map([
-      ['phq2', 12],
-      ['big-five-inventory', 3]
-    ]);
-    renderList({
-      titleMap: TITLE_MAP,
-      completionCounts
-    });
-
-    expect(screen.queryByText('12 completions')).toBeNull();
-    expect(screen.queryByText('< 5 completions')).toBeNull();
   });
 });

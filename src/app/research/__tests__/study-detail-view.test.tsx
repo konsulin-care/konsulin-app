@@ -1,3 +1,4 @@
+import { Roles } from '@/constants/roles';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { fireEvent, render, screen } from '@testing-library/react';
@@ -5,6 +6,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import StudyDetailView from '../study-detail-view';
 import { buildOverlapMap } from '../study-sections';
 import { makeStudyB, makeStudyProgress, TITLE_MAP } from './research-fixtures';
+
+const { mockUseStudyParticipantCount } = vi.hoisted(() => ({
+  mockUseStudyParticipantCount:
+    vi.fn<
+      (
+        studyId: string | undefined,
+        options?: { enabled?: boolean }
+      ) => { data?: number; isError: boolean }
+    >()
+}));
+
+vi.mock('@/services/api/research-counts', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('@/services/api/research-counts')>();
+  return {
+    ...actual,
+    useStudyParticipantCount: mockUseStudyParticipantCount
+  };
+});
 
 const LONG_DESCRIPTION = Array.from(
   { length: 20 },
@@ -22,7 +42,12 @@ function renderDetail(
     }
   }),
   open = true,
-  titleMap: ReadonlyMap<string, QuestionnaireInfo> = TITLE_MAP
+  titleMap: ReadonlyMap<string, QuestionnaireInfo> = TITLE_MAP,
+  flags: {
+    isPatient?: boolean;
+    isConsented?: boolean;
+    roleName?: string;
+  } = {}
 ) {
   const handlers = {
     onClose: vi.fn<() => void>(),
@@ -42,7 +67,9 @@ function renderDetail(
       onParticipate={handlers.onParticipate}
       onQuestionnaireClick={handlers.onQuestionnaireClick}
       onSeeReport={handlers.onSeeReport}
-      isPatient={false}
+      isPatient={flags.isPatient ?? false}
+      isConsented={flags.isConsented}
+      roleName={flags.roleName}
       titleMap={titleMap}
     />
   );
@@ -50,6 +77,11 @@ function renderDetail(
 }
 
 beforeEach(() => {
+  mockUseStudyParticipantCount.mockReset();
+  mockUseStudyParticipantCount.mockReturnValue({
+    data: undefined,
+    isError: false
+  });
   window.localStorage.clear();
   Object.defineProperty(window, 'location', {
     configurable: true,
@@ -74,11 +106,49 @@ describe('StudyDetailView', () => {
 
     expect(screen.getByText('Konsulin Mental Health Survey')).toBeTruthy();
     expect(screen.getByText(LONG_DESCRIPTION)).toBeTruthy();
-    expect(screen.queryByText(/Total participants/)).toBeNull();
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
+    expect(screen.queryByTestId('collective-goal')).toBeNull();
     expect(screen.getByRole('button', { name: 'PHQ-2' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
     expect(screen.getByText(/Tap to share this survey/i)).toBeTruthy();
+  });
+
+  it('renders the collective goal for a patient and never the old participant count', () => {
+    mockUseStudyParticipantCount.mockReturnValue({
+      data: 10,
+      isError: false
+    });
+    renderDetail(undefined, true, TITLE_MAP, { isPatient: true });
+
+    expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
+    expect(screen.getByTestId('collective-goal')).toHaveTextContent(
+      '10 people have joined.'
+    );
+    expect(screen.queryByText(/Total participants/)).toBeNull();
+  });
+
+  it('renders the collective goal for a researcher', () => {
+    mockUseStudyParticipantCount.mockReturnValue({
+      data: 10,
+      isError: false
+    });
+    renderDetail(undefined, true, TITLE_MAP, {
+      roleName: Roles.Researcher
+    });
+
+    expect(screen.getByTestId('collective-goal')).toHaveTextContent(
+      '10 people have joined.'
+    );
+    expect(screen.queryByText(/Total participants/)).toBeNull();
+  });
+
+  it('hides the collective goal for guests', () => {
+    renderDetail();
+
+    expect(screen.queryByTestId('collective-goal')).toBeNull();
+    expect(mockUseStudyParticipantCount).toHaveBeenCalledWith('research', {
+      enabled: false
+    });
   });
 
   it('shows a See Report CTA and routes to the report when the batch is complete', () => {

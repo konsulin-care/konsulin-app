@@ -7,11 +7,9 @@ import { useTranslations } from '@/i18n';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { FlaskConical } from 'lucide-react';
-import {
-  BatchProgress,
-  QuestionnaireList,
-  TimelineStrip
-} from './study-sections';
+import BatchTrail from './batch-trail';
+import { CollectiveGoal } from './collective-goal';
+import { BatchProgress, QuestionnaireList } from './study-sections';
 
 interface StudyDetailViewProps {
   progress: StudyProgress | null;
@@ -23,6 +21,10 @@ interface StudyDetailViewProps {
   onQuestionnaireClick: (studyId: string, questionnaireId: string) => void;
   onManageStudy?: (studyId: string) => void;
   isPatient: boolean;
+  /** True when the user has consented to the rendered study. */
+  isConsented?: boolean;
+  /** Batches with a queued response awaiting synchronization. */
+  waitingBatchIds?: ReadonlySet<string>;
   fhirId?: string;
   /** User's role name for conditional rendering. */
   roleName?: string;
@@ -37,8 +39,9 @@ interface StudyDetailViewProps {
 /**
  * Study detail drawer opened by tapping a carousel card.
  *
- * Shows the untruncated description, batch progress, batch timeline, and the
- * full questionnaire list with a sticky Participate CTA at the footer.
+ * Shows the untruncated description, batch progress, batch trail, collective
+ * goal, and the full questionnaire list with a sticky Participate CTA at the
+ * footer.
  */
 export default function StudyDetailView({
   progress,
@@ -50,14 +53,16 @@ export default function StudyDetailView({
   onQuestionnaireClick,
   onManageStudy,
   isPatient,
+  isConsented = false,
+  waitingBatchIds,
   fhirId,
   roleName,
   titleMap,
-  isTitlesLoading,
-  completionCounts
+  isTitlesLoading
 }: Readonly<StudyDetailViewProps>) {
   const t = useTranslations('research');
   const isResearcher = roleName === Roles.Researcher;
+  const isGuest = !isPatient && !isResearcher;
   const isComplete = progress?.isComplete ?? false;
   let ctaLabel = t('participate');
   if (isResearcher) ctaLabel = t('manage_study');
@@ -70,14 +75,14 @@ export default function StudyDetailView({
       title={
         progress && (
           <span className='flex items-center gap-2'>
-            <FlaskConical className='h-5 w-5 shrink-0 text-black' />
+            <FlaskConical className='text-foreground h-5 w-5 shrink-0' />
             {progress.study.title}
           </span>
         )
       }
       description={
         progress ? (
-          <span className='block text-left text-gray-600'>
+          <span className='text-muted-foreground block text-left'>
             {progress.study.description}
           </span>
         ) : undefined
@@ -99,11 +104,13 @@ export default function StudyDetailView({
     >
       {progress && (
         <div className='flex flex-col gap-4'>
-          <BatchProgress
-            progress={progress}
-            completionCounts={completionCounts}
+          <BatchProgress progress={progress} />
+          <BatchTrail progress={progress} waitingBatchIds={waitingBatchIds} />
+          <CollectiveGoal
+            study={progress.study}
+            isGuest={isGuest}
+            isConsented={isConsented}
           />
-          <TimelineStrip progress={progress} />
           <QuestionnaireList
             progress={progress}
             overlapMap={overlapMap}
@@ -112,9 +119,9 @@ export default function StudyDetailView({
             isTitlesLoading={isTitlesLoading}
             showOverlapHints
           />
-          {roleName === Roles.Researcher && (
-            <div className='rounded-lg bg-gray-50 p-3 text-xs text-gray-600'>
-              <p className='font-medium text-gray-700'>
+          {isResearcher && (
+            <div className='bg-muted text-muted-foreground rounded-lg p-3 text-xs'>
+              <p className='text-charcoal-700 font-medium'>
                 {t('researcher_view')}
               </p>
               <p className='mt-1'>{t('participant_data_note')}</p>
@@ -126,7 +133,7 @@ export default function StudyDetailView({
             fhirId={fhirId}
             studyId={progress.study.id}
             dataTestId={`research-share-${progress.study.id}`}
-            className='flex cursor-pointer items-center justify-center gap-1.5 border-t border-gray-100 pt-3 text-[10px] text-black'
+            className='border-border text-foreground flex cursor-pointer items-center justify-center gap-1.5 border-t pt-3 text-xs'
           />
         </div>
       )}
