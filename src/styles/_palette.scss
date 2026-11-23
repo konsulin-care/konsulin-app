@@ -2,12 +2,6 @@
 // Tailwind theme (e.g. SVG strokes). Exposed as CSS custom properties so
 // components can reference var(--color-*).
 //
-// Secondary and the rest of the palette now live in the globals.css @theme
-// block; declaring --color-secondary here would override it, because this
-// partial is loaded after globals.css.
-
-$color-gold: #ebcb8b;
-
-:root {
-  --color-gold: #{$color-gold};
-}
+// The palette now lives entirely in the globals.css @theme block; this file
+// currently declares no tokens. Declaring tokens here would override the
+// @theme block, because this partial is loaded after globals.css.

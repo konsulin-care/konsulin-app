@@ -9,9 +9,9 @@ const __dirname = dirname(__filename);
 describe('SCSS palette tokens', () => {
   const scss = readFileSync(resolve(__dirname, '../_palette.scss'), 'utf8');
 
-  it('defines the gold token used by the halo ring', () => {
-    expect(scss).toMatch(/\$color-gold:\s*#ebcb8b/);
-    expect(scss).toMatch(/--color-gold:\s*#\{\$color-gold\}/);
+  it('does not declare --color-gold', () => {
+    expect(scss).not.toMatch(/--color-gold:/);
+    expect(scss).not.toMatch(/\$color-gold/);
   });
 
   it('does not redeclare secondary, which now lives in the globals.css @theme', () => {

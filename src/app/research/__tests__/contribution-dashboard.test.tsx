@@ -67,11 +67,12 @@ beforeEach(() => {
 });
 
 describe('ContributionDashboard', () => {
-  it('renders the halo ring at the XP fraction within the current level', () => {
+  it('renders the level chip, progress bar and XP gap for a patient', () => {
     mockUseAuth.mockReturnValue({
       state: { userInfo: { fhirId: 'PAT-1', fullname: 'Ada Lovelace' } },
       isLoading: false
     });
+    mockUseCircleStats.mockReturnValue({ data: { converted: 3, joined: 3 } });
 
     renderDashboard(
       { questionnaireResponses: ['phq2'] },
@@ -79,36 +80,19 @@ describe('ContributionDashboard', () => {
       new Map([['phq2', { title: 'PHQ-2', durationMinutes: 10 }]])
     );
 
-    // 10-minute questionnaire → 50 XP → 50% of the first level.
-    expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
-      'data-fraction',
-      '0.5'
+    // 50 questionnaire XP + 3 referral XP = 53 XP → 53% of the first level.
+    expect(screen.getByTestId('level-chip').textContent).toBe('Lv 1');
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'aria-valuenow',
+      '53'
     );
-    // Arc color comes from the SCSS palette, not a hardcoded hex.
-    expect(screen.getByTestId('dashboard-halo-ring')).toHaveStyle({
-      stroke: 'var(--color-gold)'
-    });
-    expect(screen.getByTestId('dashboard-level').textContent).toContain('Lv 1');
-  });
-
-  it('ticks the level number when XP crosses a level boundary', () => {
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { fhirId: 'PAT-1', fullname: 'Ada Lovelace' } },
-      isLoading: false
-    });
-
-    renderDashboard(
-      { questionnaireResponses: ['phq2'] },
-      null,
-      new Map([['phq2', { title: 'PHQ-2', durationMinutes: 30 }]])
+    expect(screen.getByTestId('dashboard-xp').textContent).toBe(
+      '47 XP to Pathfinder'
     );
-
-    // 30-minute questionnaire → 150 XP → level 2 with 50 XP into it.
-    expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
-      'data-fraction',
-      '0.5'
+    expect(screen.getByTestId('dashboard-converted').textContent).toContain(
+      '3 joined via your link'
     );
-    expect(screen.getByTestId('dashboard-level').textContent).toContain('Lv 2');
+    expect(screen.queryByTestId('dashboard-halo-ring')).toBeNull();
   });
 
   it('renders the ladder level number and fraction for a patient with 450 XP', () => {
@@ -123,11 +107,32 @@ describe('ContributionDashboard', () => {
     renderDashboard({ questionnaireResponses: [] });
 
     // 450 XP: Vanguard (threshold 400) with 50 of the 200 XP span earned.
-    expect(screen.getByTestId('dashboard-halo-ring')).toHaveAttribute(
-      'data-fraction',
-      '0.25'
+    expect(screen.getByTestId('level-chip').textContent).toBe('Lv 4');
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'aria-valuenow',
+      '25'
     );
-    expect(screen.getByTestId('dashboard-level').textContent).toContain('Lv 4');
+    expect(screen.getByTestId('dashboard-xp').textContent).toBe(
+      '150 XP to Pioneer'
+    );
+    expect(screen.queryByTestId('dashboard-halo-ring')).toBeNull();
+  });
+
+  it('renders the guest chip, invite nudge and no progress bar for guests', () => {
+    mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
+
+    renderDashboard({ questionnaireResponses: [] }, null, INFO_MAP);
+
+    expect(screen.getByTestId('level-chip').textContent).toBe('Participant');
+    expect(screen.getByTestId('level-chip')).toHaveAttribute(
+      'data-variant',
+      'guest'
+    );
+    expect(screen.getByTestId('dashboard-converted').textContent).toContain(
+      'Invite friends to start'
+    );
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.queryByTestId('dashboard-halo-ring')).toBeNull();
   });
 
   it('shows the patient title from total XP and the converted count', () => {
