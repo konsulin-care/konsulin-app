@@ -35,16 +35,9 @@ const ALLOWLIST: AllowlistEntry[] = [
 
 const SOURCE_ROOT = 'src';
 
-/** Directories whose files are out of scope for the token sweep. */
-const EXCLUDED_DIRS: string[] = [
-  'src/app/research/',
-  'src/app/report/',
-  'src/components/research/'
-];
-
 /**
- * Lists every TypeScript source file under src, excluding tests, the research
- * and report directories, and any path already allowlisted.
+ * Lists every TypeScript source file under src, excluding tests and any path
+ * already allowlisted.
  *
  * @returns Sorted repo-relative paths of the files the guard must scan.
  */
@@ -57,7 +50,6 @@ function collectSourceFiles(): string[] {
     .map(name => `${SOURCE_ROOT}/${name}`)
     .filter(name => !name.includes('/__tests__/'))
     .filter(name => !/\.test\.[^.]+$/.test(name))
-    .filter(name => !EXCLUDED_DIRS.some(dir => name.startsWith(dir)))
     .filter(name => !allowlisted.has(name))
     .sort();
 }
@@ -150,7 +142,22 @@ describe('raw colour guard', () => {
     expect(scanSource(source)).toEqual([]);
   });
 
-  it('sweeps every src source file outside tests, exclusions and the allowlist', () => {
+  it('scans the former research and report exclusions', () => {
+    const files = collectSourceFiles();
+
+    for (const dir of [
+      'src/app/research/',
+      'src/app/report/',
+      'src/components/research/'
+    ]) {
+      expect(
+        files.some(file => file.startsWith(dir)),
+        `${dir} must be scanned`
+      ).toBe(true);
+    }
+  });
+
+  it('sweeps every src source file outside tests and the allowlist', () => {
     const report: string[] = [];
     const files = collectSourceFiles();
 
