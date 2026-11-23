@@ -183,7 +183,7 @@ export default function ReportView() {
     return (
       <>
         <PageHeader pageIndicator={t('report.title')} backRoute='/research' />
-        <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+        <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
           <div className='flex min-h-[300px] items-center justify-center'>
             <p className='text-muted-foreground text-sm'>
               {t('report.not_found')}
@@ -201,7 +201,7 @@ export default function ReportView() {
           pageIndicator={t('report.title')}
           backRoute={`/research?id=${studyId}`}
         />
-        <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+        <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
           <div className='flex min-h-[300px] items-center justify-center'>
             <p className='text-muted-foreground text-sm'>
               {t('report.no_assessments')}
@@ -222,7 +222,7 @@ export default function ReportView() {
         pageIndicator={t('report.title')}
         backRoute={`/research?id=${studyId}`}
       />
-      <div className='mt-[-24px] flex grow flex-col rounded-t-[16px] bg-white p-4'>
+      <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
         <ReportHero
           studyTitle={study.study.title}
           completed={completedVisit}
@@ -256,7 +256,7 @@ export default function ReportView() {
 
         <footer
           data-testid='report-disclaimer'
-          className='mt-auto rounded-xl bg-gray-50 p-4 text-[11px] leading-relaxed text-gray-500'
+          className='bg-muted text-muted-foreground mt-auto rounded-xl p-4 text-xs leading-relaxed'
         >
           {t('report.disclaimer')}
         </footer>

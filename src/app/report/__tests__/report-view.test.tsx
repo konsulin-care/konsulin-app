@@ -409,6 +409,20 @@ describe('ReportView', () => {
     expect(scanSource(classNames)).toEqual([]);
   });
 
+  it('renders the hero and disclaimer with design tokens only', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const nodes = [
+      screen.getByTestId('report-hero'),
+      screen.getByTestId('report-disclaimer')
+    ];
+    const classNames = nodes
+      .flatMap(node => [node, ...node.querySelectorAll('*')])
+      .map(node => node.getAttribute('class') ?? '')
+      .join(' ');
+    expect(scanSource(classNames)).toEqual([]);
+  });
+
   it('shows the dimension value as raw/reference without a percentage', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');

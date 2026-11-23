@@ -9,6 +9,7 @@ vi.mock('@/i18n', async () => {
 });
 
 import { GUEST_TITLE } from '@/constants/research';
+import { scanSource } from '@/styles/__tests__/raw-color-scan';
 import type { ResearchBatch } from '@/utils/fhir/research';
 
 import { ReportHero, type ReportHeroProps } from '../report-hero';
@@ -195,5 +196,21 @@ describe('ReportHero', () => {
       />
     );
     expect(screen.getAllByTestId('report-hero-baseline-note')).toHaveLength(1);
+  });
+
+  it('renders the hero with design tokens only for patients and guests', () => {
+    const { rerender } = render(
+      <ReportHero {...makeProps({ isPatient: true, totalXp: 45 })} />
+    );
+    const collect = (): string => {
+      const hero = screen.getByTestId('report-hero');
+      return [hero, ...hero.querySelectorAll('*')]
+        .map(node => node.getAttribute('class') ?? '')
+        .join(' ');
+    };
+    expect(scanSource(collect())).toEqual([]);
+
+    rerender(<ReportHero {...makeProps({ isPatient: false })} />);
+    expect(scanSource(collect())).toEqual([]);
   });
 });

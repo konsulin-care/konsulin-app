@@ -164,7 +164,7 @@ export function ReportHero({
         data-testid={
           showHeadline ? 'report-hero-headline' : 'report-study-title'
         }
-        className='text-xl font-bold text-black'
+        className='text-foreground text-xl font-bold'
       >
         {headline}
       </h1>
@@ -174,11 +174,14 @@ export function ReportHero({
           <div className='flex items-center justify-between text-xs'>
             <span
               data-testid='report-hero-level-label'
-              className='font-bold text-black'
+              className='text-foreground font-bold'
             >
               {level.current.label}
             </span>
-            <span data-testid='report-hero-level-xp' className='text-gray-500'>
+            <span
+              data-testid='report-hero-level-xp'
+              className='text-muted-foreground'
+            >
               {t('report.level_progress', {
                 xp: level.toNext,
                 level: level.next?.label ?? level.current.label
@@ -188,25 +191,25 @@ export function ReportHero({
           <div
             data-testid='report-hero-level-bar'
             data-fraction={fraction}
-            className='mt-1 h-2 w-full rounded-full bg-gray-200'
+            className='bg-muted mt-1 h-2 w-full rounded-full'
           >
             <div
-              className='bg-secondary h-2 rounded-full'
+              className='bg-turquoise-deep h-2 rounded-full'
               style={{ width: `${Math.round(fraction * 100)}%` }}
             />
           </div>
         </div>
       ) : (
-        <div className='bg-secondary/5 mt-3 rounded-xl p-3 text-center'>
+        <div className='bg-accent/40 mt-3 rounded-xl p-3 text-center'>
           <span
             data-testid='report-hero-title'
-            className='text-sm font-bold text-black'
+            className='text-foreground text-sm font-bold'
           >
             {GUEST_TITLE.label}
           </span>
           <p
             data-testid='report-claim-nudge'
-            className='mt-1 text-xs text-gray-600'
+            className='text-muted-foreground mt-1 text-xs'
           >
             {t('report.claim_nudge')}
           </p>
@@ -223,14 +226,14 @@ export function ReportHero({
             data-testid='report-hero-timeline-dot'
             data-batch-id={entry.batch.id}
             data-status={entry.status}
-            className='h-2 w-2 shrink-0 rounded-full bg-gray-300'
+            className='bg-muted h-2 w-2 shrink-0 rounded-full'
           />
         ))}
       </div>
 
       <p
         data-testid='report-hero-next-batch'
-        className='mt-2 text-[11px] text-gray-500'
+        className='text-muted-foreground mt-2 text-xs'
       >
         {nextBatch
           ? t('report.next_batch_opens', {
@@ -242,7 +245,7 @@ export function ReportHero({
       {baselineTotal > 0 && (
         <p
           data-testid='report-hero-baseline-note'
-          className='mt-2 text-[11px] text-gray-500'
+          className='text-muted-foreground mt-2 text-xs'
         >
           {t(baselineKey, { count: baselineTotal })}
         </p>
