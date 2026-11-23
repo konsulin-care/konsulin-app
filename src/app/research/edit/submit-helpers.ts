@@ -1,6 +1,7 @@
 import enToast from '@/messages/en/toast.json';
 import { getAPI } from '@/services/api';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
+import { setResearchTarget } from '@/utils/fhir/research-target';
 import type { QueryClient } from '@tanstack/react-query';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
 import { useRouter } from 'next/navigation';
@@ -38,17 +39,23 @@ export function buildStudyEntry(
     })
     .filter((ref): ref is { reference: string } => ref !== null);
 
+  const resource: ResearchStudy = {
+    resourceType: 'ResearchStudy',
+    id: study.id,
+    title: data.title,
+    description: data.description,
+    status: study.status,
+    principalInvestigator: study.principalInvestigator,
+    protocol,
+    period: { start: starts[0], end: ends.at(-1) },
+    ...(study.extension ? { extension: study.extension } : {})
+  };
+
   return {
-    resource: {
-      resourceType: 'ResearchStudy' as const,
-      id: study.id,
-      title: data.title,
-      description: data.description,
-      status: study.status,
-      principalInvestigator: study.principalInvestigator,
-      protocol,
-      period: { start: starts[0], end: ends.at(-1) }
-    },
+    resource:
+      data.targetParticipants === undefined
+        ? resource
+        : setResearchTarget(resource, data.targetParticipants),
     request: { method: 'PUT' as const, url: `ResearchStudy/${study.id}` }
   };
 }

@@ -242,6 +242,58 @@ describe('buildStudyEntry', () => {
     ]);
   });
 
+  it('keeps every existing ResearchStudy extension', () => {
+    const existingExtension = [
+      {
+        url: 'https://example.org/fhir/StructureDefinition/cohort',
+        valueString: 'cohort-a'
+      }
+    ];
+    const study = makeStudy({ extension: existingExtension });
+    const data: FormData = {
+      title: 'Study',
+      description: 'Desc',
+      batches: [makeBatch()]
+    };
+
+    const entry = buildStudyEntry(study, ['plan-1'], new Map(), data);
+
+    expect(entry.resource.extension).toContainEqual({
+      url: 'https://example.org/fhir/StructureDefinition/cohort',
+      valueString: 'cohort-a'
+    });
+  });
+
+  it('sets the researchTargetParticipants extension from the form data', () => {
+    const study = makeStudy({
+      extension: [
+        {
+          url: 'https://example.org/fhir/StructureDefinition/cohort',
+          valueString: 'cohort-a'
+        }
+      ]
+    });
+    const data: FormData = {
+      title: 'Study',
+      description: 'Desc',
+      targetParticipants: 42,
+      batches: [makeBatch()]
+    };
+
+    const entry = buildStudyEntry(study, ['plan-1'], new Map(), data);
+    const target = (entry.resource.extension ?? []).find(
+      ext =>
+        ext.url ===
+        'http://konsulin.care/fhir/StructureDefinition/researchTargetParticipants'
+    );
+
+    expect(target).toMatchObject({ valuePositiveInt: 42 });
+    expect(entry.resource.extension).toContainEqual({
+      url: 'https://example.org/fhir/StructureDefinition/cohort',
+      valueString: 'cohort-a'
+    });
+  });
+
   it('derives period from all batch dates', () => {
     const study = makeStudy();
     const data: FormData = {
