@@ -10,7 +10,7 @@ import {
 type WithExtension = { resourceType?: string; extension?: Extension[] };
 
 describe('FhirExtensionUrls', () => {
-  it('defines the six canonical extension URLs without duplication', () => {
+  it('defines the seven canonical extension URLs without duplication', () => {
     expect(new Set(Object.keys(FhirExtensionUrls))).toEqual(
       new Set([
         'fee',
@@ -18,6 +18,7 @@ describe('FhirExtensionUrls', () => {
         'questionnaireEstimatedDuration',
         'questionnaireImage',
         'referralBatch',
+        'researchTargetParticipants',
         'serviceDuration'
       ])
     );
@@ -31,7 +32,7 @@ describe('FhirExtensionUrls', () => {
 });
 
 describe('FhirSystems', () => {
-  it('defines the eight canonical system URLs without duplication', () => {
+  it('defines the nine canonical system URLs without duplication', () => {
     expect(new Set(Object.keys(FhirSystems))).toEqual(
       new Set([
         'assessmentContext',
