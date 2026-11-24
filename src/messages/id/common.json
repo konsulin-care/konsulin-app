@@ -293,6 +293,7 @@
     "level_progress": "{xp} XP menuju {level}",
     "next_batch_opens": "Batch berikutnya dibuka {date}",
     "last_batch": "Ini batch terakhir",
+    "stats_caption": "{batches} dari {total} batch · {responses} kuesioner · {minutes} menit berkontribusi",
     "fab_claim": "Simpan Laporan",
     "fab_continue": "Lanjutkan",
     "disclaimer": "Skor ini adalah hasil skrining untuk keperluan penelitian saja dan bukan diagnosis medis. Jika Anda merasa terbebani, silakan hubungi tenaga profesional yang berkualifikasi.",
