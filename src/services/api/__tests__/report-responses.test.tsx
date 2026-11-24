@@ -115,6 +115,7 @@ describe('useReportResponses', () => {
       `questionnaire=${questionnaireParam(['ocean', 'phq2'])}`
     );
     expect(url).toContain('status=completed&_count=500');
+    expect(url).toContain('_elements=id,questionnaire,status,authored,item');
     expect(url).not.toContain('identifier=');
     expect(url).not.toContain('authored=');
     expect(result.current.data?.map(r => r.id)).toEqual(['r1', 'r2']);
@@ -140,6 +141,7 @@ describe('useReportResponses', () => {
     await waitFor(() => expect(result.current.data).toBeDefined());
     const url = mockGet.mock.calls[0][0] as string;
     expect(url).toContain('&authored=ge2026-08-01');
+    expect(url).toContain('_elements=id,questionnaire,status,authored,item');
     expect(url).toContain(`questionnaire=${questionnaireParam(['phq2'])}`);
   });
 
@@ -192,6 +194,7 @@ describe('useReportResponses', () => {
       `questionnaire=${questionnaireParam(['ocean', 'phq2'])}`
     );
     expect(url).toContain('status=completed&_count=500');
+    expect(url).toContain('_elements=id,questionnaire,status,authored,item');
     expect(url).not.toContain('author=');
     expect(result.current.data?.map(r => r.id)).toEqual(['s1', 's2', 'd2']);
   });
@@ -252,6 +255,33 @@ describe('useReportResponses', () => {
     await waitFor(() => expect(result.current.data).toBeDefined());
     expect(result.current.data).toHaveLength(1);
     expect(result.current.data?.[0]?.id).toBe('g1');
+  });
+
+  it('does not refetch when remounted within 30 minutes of a successful fetch', async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      state: { isAuthenticated: true, userInfo: { fhirId: 'pat-1' } },
+      isLoading: false,
+      dispatch: vi.fn()
+    });
+
+    const mockGet = vi.fn().mockResolvedValue({
+      data: searchset([
+        { resource: qr('r1', 'Questionnaire/phq2', '2026-08-15T10:00:00Z') }
+      ])
+    });
+    vi.mocked(getAPI).mockResolvedValue({
+      get: mockGet
+    } as unknown as AxiosInstance);
+
+    const wrapper = createWrapper();
+    const first = renderHook(() => useReportResponses(['phq2']), { wrapper });
+    await waitFor(() => expect(first.result.current.data).toBeDefined());
+    expect(mockGet).toHaveBeenCalledTimes(1);
+    first.unmount();
+
+    const second = renderHook(() => useReportResponses(['phq2']), { wrapper });
+    await waitFor(() => expect(second.result.current.data).toBeDefined());
+    expect(mockGet).toHaveBeenCalledTimes(1);
   });
 
   it('stays disabled without questionnaire ids', () => {

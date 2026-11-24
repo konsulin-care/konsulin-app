@@ -16,15 +16,17 @@ export const CACHE_BUSTER = 'v1';
 const PERSISTED_KEY_ROOTS: ReadonlySet<string> = new Set([
   'study-participant-count',
   'per-questionnaire-counts',
-  'questionnaire-titles'
+  'questionnaire-titles',
+  'report-responses'
 ]);
 
 /**
  * Checks whether a query key belongs to the persistence allowlist.
  *
  * Allowed shapes are `['study-participant-count', ...]`,
- * `['per-questionnaire-counts', ...]`, `['questionnaire-titles', ...]`, and
- * `['research', kind, id, mode]` (exactly four entries).
+ * `['per-questionnaire-counts', ...]`, `['questionnaire-titles', ...]`,
+ * `['report-responses', ...]`, and `['research', kind, id, mode]` (exactly
+ * four entries).
  *
  * @param key - The query key to inspect.
  * @returns True when the key is allowlisted.

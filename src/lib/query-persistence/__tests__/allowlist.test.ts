@@ -58,12 +58,15 @@ describe('query persistence allowlist', () => {
     expect(CACHE_BUSTER.length).toBeGreaterThan(0);
   });
 
-  it('accepts the four allowlisted key shapes', () => {
+  it('accepts the five allowlisted key shapes', () => {
     expect(isPersistedQueryKey(['study-participant-count', 's1'])).toBe(true);
     expect(isPersistedQueryKey(['per-questionnaire-counts', 'r1', 'q1'])).toBe(
       true
     );
     expect(isPersistedQueryKey(['questionnaire-titles'])).toBe(true);
+    expect(isPersistedQueryKey(['report-responses', 'patient', 'pat-1'])).toBe(
+      true
+    );
     expect(isPersistedQueryKey(['research', 'patient', 'id', 'batch'])).toBe(
       true
     );
@@ -84,6 +87,7 @@ describe('query persistence allowlist', () => {
     seedSuccess(client, ['study-participant-count', 's1'], { s1: 12 });
     seedSuccess(client, ['per-questionnaire-counts', 'r1', 'q1'], new Map());
     seedSuccess(client, ['questionnaire-titles'], ['Title A']);
+    seedSuccess(client, ['report-responses', 'patient', 'pat-1'], []);
     seedSuccess(client, ['research', 'patient', 'id', 'batch'], { ok: true });
 
     expect(dehydratedKeys(client).sort()).toEqual(
@@ -91,6 +95,7 @@ describe('query persistence allowlist', () => {
         '["study-participant-count","s1"]',
         '["per-questionnaire-counts","r1","q1"]',
         '["questionnaire-titles"]',
+        '["report-responses","patient","pat-1"]',
         '["research","patient","id","batch"]'
       ].sort()
     );

@@ -114,12 +114,13 @@ export function useReportResponses(
       until ?? null
     ],
     enabled: uniqueIds.length > 0 && !authLoading,
+    staleTime: 30 * 60 * 1000,
     queryFn: async (): Promise<QuestionnaireResponse[]> => {
       const idSet = new Set(uniqueIds);
       const questionnaires = questionnaireFilter(uniqueIds);
       const lowerBound = since ? `&authored=ge${since}` : '';
       const upperBound = until ? `&authored=le${until}` : '';
-      const commonSuffix = `&questionnaire=${questionnaires}&status=completed&_count=500${lowerBound}${upperBound}`;
+      const commonSuffix = `&questionnaire=${questionnaires}&status=completed&_count=500&_elements=id,questionnaire,status,authored,item${lowerBound}${upperBound}`;
 
       if (isAuthenticated && fhirId) {
         const API = await getAPI();
