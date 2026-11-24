@@ -88,6 +88,31 @@ describe('pruneForeignResearchQueries', () => {
     ]);
   });
 
+  it('removes report response queries of other identities', () => {
+    const client = new QueryClient();
+    seed(client, ['report-responses', 'guest', 'local', ['q1'], null, null]);
+    seed(client, ['report-responses', 'patient', 'other', ['q1'], null, null]);
+    seed(client, ['report-responses', 'patient', 'p1', ['q1'], null, null]);
+
+    pruneForeignResearchQueries(client, { kind: 'patient', id: 'p1' });
+
+    expect(keys(client)).toEqual([
+      JSON.stringify(['report-responses', 'patient', 'p1', ['q1'], null, null])
+    ]);
+  });
+
+  it('keeps only guest local report responses for a guest identity', () => {
+    const client = new QueryClient();
+    seed(client, ['report-responses', 'guest', 'local', ['q1'], null, null]);
+    seed(client, ['report-responses', 'patient', 'p1', ['q1'], null, null]);
+
+    pruneForeignResearchQueries(client, { kind: 'guest', id: 'local' });
+
+    expect(keys(client)).toEqual([
+      JSON.stringify(['report-responses', 'guest', 'local', ['q1'], null, null])
+    ]);
+  });
+
   it('keeps the exact research key and count and title queries', () => {
     const client = new QueryClient();
     seed(client, ['research']);

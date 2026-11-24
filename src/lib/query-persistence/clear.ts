@@ -34,7 +34,38 @@ function matchesIdentity(
 }
 
 /**
- * Removes research progress queries that belong to a different identity.
+ * Checks whether a query key is a report-responses key.
+ *
+ * The key shape is `['report-responses', kind, id, ...rest]`.
+ *
+ * @param key - The query key to inspect.
+ * @returns True when the key starts the report-responses key.
+ */
+function isReportResponsesKey(key: readonly unknown[]): boolean {
+  return key.length >= 3 && key[0] === 'report-responses';
+}
+
+/**
+ * Checks whether a report-responses key matches the given identity.
+ *
+ * Guests store report responses under the fixed local id `'local'`, while
+ * patients use their FHIR id.
+ *
+ * @param key - The query key to inspect.
+ * @param identity - The current identity.
+ * @returns True when the key belongs to the current identity.
+ */
+function matchesReportIdentity(
+  key: readonly unknown[],
+  identity: ResearchIdentity
+): boolean {
+  const expectedId = identity.kind === 'guest' ? 'local' : identity.id;
+  return key[1] === identity.kind && key[2] === expectedId;
+}
+
+/**
+ * Removes research progress and report response queries that belong to a
+ * different identity.
  *
  * Shared count and title queries, and the bare `['research']` ongoing-studies
  * key, are kept.
@@ -50,8 +81,12 @@ export function pruneForeignResearchQueries(
 
   for (const query of queries) {
     const key = query.queryKey;
+    const isForeignResearch =
+      isResearchProgressKey(key) && !matchesIdentity(key, identity);
+    const isForeignReport =
+      isReportResponsesKey(key) && !matchesReportIdentity(key, identity);
 
-    if (isResearchProgressKey(key) && !matchesIdentity(key, identity)) {
+    if (isForeignResearch || isForeignReport) {
       client.removeQueries({ queryKey: key, exact: true });
     }
   }
