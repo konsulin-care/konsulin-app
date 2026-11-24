@@ -3,10 +3,12 @@
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
 import { useTranslations } from '@/i18n';
+import { ClipboardList, FileQuestion } from 'lucide-react';
 
 import { ReportFab } from './report-fab';
 import { ReportHero } from './report-hero';
 import { BatchSection, ParticipationCard } from './report-sections';
+import { ReportSkeleton } from './report-skeleton';
 import { useReportData } from './use-report-data';
 
 /**
@@ -41,14 +43,31 @@ export default function ReportView() {
     loading
   } = useReportData();
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <>
+        <PageHeader
+          pageIndicator={t('report.title')}
+          backRoute={studyId ? `/research?id=${studyId}` : '/research'}
+        />
+        <ReportSkeleton />
+      </>
+    );
+  }
 
   if (!studyId || !study) {
     return (
       <>
         <PageHeader pageIndicator={t('report.title')} backRoute='/research' />
         <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
-          <div className='flex min-h-[300px] items-center justify-center'>
+          <div
+            data-testid='report-empty-not-found'
+            className='flex min-h-[300px] flex-col items-center justify-center text-center'
+          >
+            <FileQuestion
+              aria-hidden='true'
+              className='text-muted-foreground mb-2 h-8 w-8'
+            />
             <p className='text-muted-foreground text-sm'>
               {t('report.not_found')}
             </p>
@@ -66,7 +85,14 @@ export default function ReportView() {
           backRoute={`/research?id=${studyId}`}
         />
         <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
-          <div className='flex min-h-[300px] items-center justify-center'>
+          <div
+            data-testid='report-empty-no-assessments'
+            className='flex min-h-[300px] flex-col items-center justify-center text-center'
+          >
+            <ClipboardList
+              aria-hidden='true'
+              className='text-muted-foreground mb-2 h-8 w-8'
+            />
             <p className='text-muted-foreground text-sm'>
               {t('report.no_assessments')}
             </p>
