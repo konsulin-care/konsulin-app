@@ -94,6 +94,35 @@ export function deduplicateBuckets<T extends ReportResponse>(
   return deduped;
 }
 
+/**
+ * Keeps the newest completed response per questionnaire across all batches.
+ *
+ * The caller supplies responses already scoped to the study date range. A
+ * response without an extractable questionnaire id is skipped. Comparing by
+ * `authored`, a dated response always beats an undated one, and ties (including
+ * two undated responses) resolve to the later array position.
+ *
+ * @param responses - Completed responses to reduce, in array order.
+ * @returns Map of questionnaire id to its latest response.
+ */
+export function latestResponsesByQuestionnaire(
+  responses: readonly QuestionnaireResponse[]
+): Map<string, QuestionnaireResponse> {
+  const latest = new Map<string, QuestionnaireResponse>();
+
+  for (const response of responses) {
+    const questionnaireId = extractQuestionnaireId(response.questionnaire);
+    if (!questionnaireId) continue;
+
+    const existing = latest.get(questionnaireId);
+    if (!existing || (response.authored ?? '') >= (existing.authored ?? '')) {
+      latest.set(questionnaireId, response);
+    }
+  }
+
+  return latest;
+}
+
 /** One time row of a questionnaire trend: a single response on a batch. */
 export interface TrendRow {
   batchId: string;
