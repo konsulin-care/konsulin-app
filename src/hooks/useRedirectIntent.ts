@@ -8,10 +8,13 @@ import { getAPI } from '@/services/api';
 import { fetchCSRFToken, getAuthCookieSession } from '@/services/auth';
 import type { Intent } from '@/utils/redirect-intent';
 import {
+  clearGuestSubmission,
   clearIntent,
   clearRedirectIntent,
   getIntent,
-  getRedirectIntent
+  getRedirectIntent,
+  hasPendingAssessmentClaimIntent,
+  hasRecentGuestSubmission
 } from '@/utils/redirect-intent';
 import type { QueryClient } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
@@ -35,8 +38,7 @@ function useReloadAnonymousSession(
   useEffect(() => {
     if (globalThis.window === undefined) return;
     const nav = performance.getEntriesByType('navigation')[0] as
-      | PerformanceNavigationTiming
-      | undefined;
+      PerformanceNavigationTiming | undefined;
     if (nav?.type !== 'reload' || globalThis.window.location.pathname !== '/')
       return;
     try {
@@ -51,6 +53,9 @@ function useReloadAnonymousSession(
       /* ignore */
     }
     if (hasRunRef.current || isLoading || isAuthenticated) return;
+    // A pending claim or a recent guest submission means rotating the
+    // anonymous session would orphan the result the guest is claiming.
+    if (hasPendingAssessmentClaimIntent() || hasRecentGuestSubmission()) return;
 
     (async () => {
       try {
@@ -148,6 +153,8 @@ async function claimAssessmentResult(
 ): Promise<void> {
   const api = await getAPI();
   await api.patch('/api/v1/auth/anonymous/claim', null, { signal });
+  // The claim succeeded, so anonymous session rotation can resume.
+  clearGuestSubmission();
   toast.success('Your assessment result is now linked to your account.');
 
   // Previously-anonymous responses now count toward research progress.

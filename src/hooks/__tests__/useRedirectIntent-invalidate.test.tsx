@@ -23,7 +23,10 @@ vi.mock('@/utils/redirect-intent', () => ({
   getIntent: vi.fn(),
   getRedirectIntent: vi.fn(),
   clearIntent: vi.fn(),
-  clearRedirectIntent: vi.fn()
+  clearRedirectIntent: vi.fn(),
+  hasPendingAssessmentClaimIntent: vi.fn(() => false),
+  hasRecentGuestSubmission: vi.fn(() => false),
+  clearGuestSubmission: vi.fn()
 }));
 
 vi.mock('@/lib/indexeddb', () => ({
