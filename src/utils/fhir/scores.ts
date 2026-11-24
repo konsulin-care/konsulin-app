@@ -2,6 +2,8 @@ import type { QuestionnaireResponse, QuestionnaireResponseItem } from 'fhir/r4';
 
 /** One parsed dimension score with raw value, fraction, and percentage. */
 export interface ScoreDimension {
+  /** linkId of the source score-dimension item. */
+  linkId: string;
   name: string;
   /** Raw score divided by the instrument's reference max (0–1 fraction). */
   score: number;
@@ -47,6 +49,37 @@ function scoreDimensionItemOf(
   );
 }
 
+/** Resolves the reference max from a score-dimension item, defaulting to 1. */
+function referenceValueOf(
+  scoreDimensionItem: QuestionnaireResponseItem
+): number {
+  const reference = scoreDimensionItem.item?.find(
+    (subItem: QuestionnaireResponseItem) => subItem.linkId === 'reference'
+  );
+  const refAnswer = reference?.answer?.[0];
+  return refAnswer?.valueInteger ?? refAnswer?.valueDecimal ?? 1;
+}
+
+/** Builds one dimension from a sub-item, or undefined without a numeric answer. */
+function dimensionFromItem(
+  subItem: QuestionnaireResponseItem,
+  refValue: number
+): ScoreDimension | undefined {
+  const answer = subItem.answer?.[0];
+  const score = answer?.valueInteger ?? answer?.valueDecimal;
+  if (score === undefined) return undefined;
+
+  const newScore = score / refValue;
+  return {
+    linkId: subItem.linkId,
+    name: subItem.text ?? 'Score',
+    score: newScore,
+    percentage: Math.round(newScore * 100),
+    raw: score,
+    reference: refValue
+  };
+}
+
 /**
  * Parses the `score-dimension` interpretation items of a QuestionnaireResponse
  * into named score dimensions.
@@ -54,7 +87,9 @@ function scoreDimensionItemOf(
  * The `reference` sub-item holds the instrument's max value and is excluded
  * from the result. Each remaining sub-item becomes a dimension with its raw
  * score normalized to a 0–1 fraction and a rounded percentage of the max.
- * Items without a numeric answer are skipped.
+ * Scores may be integers or decimals; a score of 0 is kept.
+ * Items without a numeric answer are skipped. When the reference is zero or
+ * negative, no dimensions are returned to avoid dividing by zero.
  *
  * @param questionnaireResponse - The response to parse, or null.
  * @returns Parsed dimensions in source order; empty when nothing to parse.
@@ -65,26 +100,15 @@ export function parseDimensionScores(
   const scoreDimensionItem = scoreDimensionItemOf(questionnaireResponse);
   if (!scoreDimensionItem) return [];
 
-  const reference = scoreDimensionItem.item?.find(
-    (subItem: QuestionnaireResponseItem) => subItem.linkId === 'reference'
-  );
-  const refValue = reference?.answer?.[0]?.valueInteger ?? 1;
+  const refValue = referenceValueOf(scoreDimensionItem);
+  if (refValue <= 0) return [];
 
   const result: ScoreDimension[] = [];
   for (const subItem of scoreDimensionItem.item ?? []) {
     if (subItem.linkId === 'reference') continue;
 
-    const score = subItem.answer?.[0]?.valueInteger;
-    if (!score || !refValue) continue;
-
-    const newScore = score / refValue;
-    result.push({
-      name: subItem.text ?? 'Score',
-      score: newScore,
-      percentage: Math.round(newScore * 100),
-      raw: score,
-      reference: refValue
-    });
+    const dimension = dimensionFromItem(subItem, refValue);
+    if (dimension) result.push(dimension);
   }
   return result;
 }
