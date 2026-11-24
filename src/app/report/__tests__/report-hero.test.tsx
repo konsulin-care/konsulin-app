@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -8,10 +8,10 @@ vi.mock('@/i18n', async () => {
   return { useTranslations: createUseTranslationsMock() };
 });
 
-import { GUEST_TITLE } from '@/constants/research';
 import { scanSource } from '@/styles/__tests__/raw-color-scan';
 import type { ResearchBatch } from '@/utils/fhir/research';
 
+import { completedBatchSummary } from '../batch-meta';
 import { ReportHero, type ReportHeroProps } from '../report-hero';
 
 const DURATIONS = new Map<string, number | null>([
@@ -30,18 +30,6 @@ const SEPTEMBER_BATCH: ResearchBatch = {
   start: '2026-09-01',
   end: '2026-09-30',
   questionnaireIds: ['phq2', 'ocean']
-};
-const OCTOBER_BATCH: ResearchBatch = {
-  id: 'b3',
-  start: '2026-10-01',
-  end: '2026-10-31',
-  questionnaireIds: ['phq2']
-};
-const NOVEMBER_BATCH: ResearchBatch = {
-  id: 'b4',
-  start: '2026-11-01',
-  end: '2026-11-30',
-  questionnaireIds: ['phq2']
 };
 
 /** Minimal completed response pointing at a bare questionnaire id. */
@@ -75,6 +63,13 @@ function makeProps(overrides: Partial<ReportHeroProps> = {}): ReportHeroProps {
     ...overrides
   };
 }
+
+const NO_TIMELINE_OR_NUDGE = [
+  'report-hero-timeline',
+  'report-hero-timeline-dot',
+  'report-claim-nudge',
+  'report-hero-next-batch'
+];
 
 describe('ReportHero', () => {
   it('announces the completed batch with its XP when completed=1', () => {
@@ -122,66 +117,20 @@ describe('ReportHero', () => {
       'data-fraction',
       '0.45'
     );
+    for (const testId of NO_TIMELINE_OR_NUDGE) {
+      expect(screen.queryByTestId(testId)).toBeNull();
+    }
   });
 
-  it('shows a guest the fixed title and the 24-hour claim nudge', () => {
+  it('shows a guest only the headline, with no level bar or nudge', () => {
     render(<ReportHero {...makeProps({ isPatient: false })} />);
-    const hero = screen.getByTestId('report-hero');
-    expect(within(hero).getByTestId('report-hero-title')).toHaveTextContent(
-      GUEST_TITLE.label
+    expect(screen.getByTestId('report-study-title')).toHaveTextContent(
+      'Mental Health Survey'
     );
-    expect(within(hero).getByTestId('report-claim-nudge')).toHaveTextContent(
-      /24 hours/
-    );
-    expect(within(hero).queryByTestId('report-hero-level')).toBeNull();
-  });
-
-  it('renders one timeline dot per batch with its status', () => {
-    render(
-      <ReportHero
-        {...makeProps({
-          today: '2026-10-15',
-          batches: [
-            AUGUST_BATCH,
-            SEPTEMBER_BATCH,
-            OCTOBER_BATCH,
-            NOVEMBER_BATCH
-          ],
-          buckets: new Map<string, QuestionnaireResponse[]>([
-            ['b1', [makeResponse('r1', 'phq2', '2026-08-15T10:00:00Z')]]
-          ])
-        })}
-      />
-    );
-    const dots = screen.getAllByTestId('report-hero-timeline-dot');
-    expect(dots).toHaveLength(4);
-    expect(dots.map(dot => dot.getAttribute('data-status'))).toEqual([
-      'done',
-      'missed',
-      'current',
-      'upcoming'
-    ]);
-  });
-
-  it('announces the next batch start date when a future batch exists', () => {
-    render(
-      <ReportHero
-        {...makeProps({
-          today: '2026-09-15',
-          batches: [AUGUST_BATCH, SEPTEMBER_BATCH, OCTOBER_BATCH]
-        })}
-      />
-    );
-    expect(screen.getByTestId('report-hero-next-batch')).toHaveTextContent(
-      'Next batch opens 01 Oct 2026'
-    );
-  });
-
-  it('announces the last batch when no future batch exists', () => {
-    render(<ReportHero {...makeProps({ today: '2026-10-15' })} />);
-    expect(screen.getByTestId('report-hero-next-batch')).toHaveTextContent(
-      'This is the last batch'
-    );
+    expect(screen.queryByTestId('report-hero-level')).toBeNull();
+    for (const testId of NO_TIMELINE_OR_NUDGE) {
+      expect(screen.queryByTestId(testId)).toBeNull();
+    }
   });
 
   it('renders the baseline note exactly once when a card is a baseline', () => {
@@ -212,5 +161,69 @@ describe('ReportHero', () => {
 
     rerender(<ReportHero {...makeProps({ isPatient: false })} />);
     expect(scanSource(collect())).toEqual([]);
+  });
+});
+
+describe('completedBatchSummary', () => {
+  const buckets = new Map<string, QuestionnaireResponse[]>([
+    ['b1', [makeResponse('r1', 'phq2', '2026-08-15T10:00:00Z')]],
+    [
+      'b2',
+      [
+        makeResponse('r2', 'phq2', '2026-09-10T10:00:00Z'),
+        makeResponse('r3', 'phq2', '2026-09-11T10:00:00Z'),
+        makeResponse('r4', 'ocean', '2026-09-12T10:00:00Z')
+      ]
+    ]
+  ]);
+
+  it('picks the participated batch containing today with its index and XP', () => {
+    const summary = completedBatchSummary(
+      [AUGUST_BATCH, SEPTEMBER_BATCH],
+      ['b1', 'b2'],
+      buckets,
+      DURATIONS,
+      '2026-09-15'
+    );
+    expect(summary?.batch.id).toBe('b2');
+    expect(summary?.index).toBe(2);
+    // Distinct questionnaires only: (phq2 8 + ocean 15) x 5 XP/minute.
+    expect(summary?.xp).toBe(115);
+  });
+
+  it('falls back to the latest participated batch when today is outside', () => {
+    const summary = completedBatchSummary(
+      [AUGUST_BATCH, SEPTEMBER_BATCH],
+      ['b1', 'b2'],
+      buckets,
+      DURATIONS,
+      '2026-10-15'
+    );
+    expect(summary?.batch.id).toBe('b2');
+    expect(summary?.index).toBe(2);
+  });
+
+  it('ignores a batch containing today when it was not participated', () => {
+    const summary = completedBatchSummary(
+      [AUGUST_BATCH, SEPTEMBER_BATCH],
+      ['b1'],
+      buckets,
+      DURATIONS,
+      '2026-09-15'
+    );
+    expect(summary?.batch.id).toBe('b1');
+    expect(summary?.index).toBe(1);
+  });
+
+  it('returns null when no batch was participated', () => {
+    expect(
+      completedBatchSummary(
+        [AUGUST_BATCH, SEPTEMBER_BATCH],
+        [],
+        buckets,
+        DURATIONS,
+        '2026-09-15'
+      )
+    ).toBeNull();
   });
 });

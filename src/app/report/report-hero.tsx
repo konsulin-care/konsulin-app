@@ -1,22 +1,15 @@
 'use client';
 
 import {
-  GUEST_TITLE,
   getResearchLevelFraction,
   getResearchLevelProgress
 } from '@/constants/research';
 import { useTranslations } from '@/i18n';
-import {
-  computeQuestionnaireXp,
-  extractQuestionnaireId,
-  sortBatches,
-  type ResearchBatch
-} from '@/utils/fhir/research';
-import { batchTimeline, getNextBatch } from '@/utils/fhir/research-schedule';
+import { sortBatches, type ResearchBatch } from '@/utils/fhir/research';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import { useMemo } from 'react';
 
-import { baselineCardCount, formatDay } from './batch-meta';
+import { baselineCardCount, completedBatchSummary } from './batch-meta';
 
 /** Props for the report hero. */
 export interface ReportHeroProps {
@@ -33,56 +26,10 @@ export interface ReportHeroProps {
   latestBatchByQuestionnaire: ReadonlyMap<string, string>;
 }
 
-/** The batch announced by the completion headline, its position, and XP. */
-interface CompletedBatchSummary {
-  batch: ResearchBatch;
-  index: number;
-  xp: number;
-}
-
-/**
- * Picks the batch announced by the completion headline: the participated
- * batch containing today, else the latest participated batch. XP is the
- * distinct questionnaires of that batch at their estimated durations.
- *
- * @param sorted - Batches sorted by start ascending.
- * - participatedIds - Batch ids with at least one response.
- * - buckets - Responses already bucketed per batch.
- * - durationByQuestionnaire - Questionnaire id to estimated minutes.
- * - today - Reference date, yyyy-mm-dd.
- * @returns The summary, or null when nothing was completed.
- */
-function completedBatchSummary(
-  sorted: readonly ResearchBatch[],
-  participatedIds: readonly string[],
-  buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>,
-  durationByQuestionnaire: ReadonlyMap<string, number | null>,
-  today: string
-): CompletedBatchSummary | null {
-  const participated = sorted.filter(batch =>
-    participatedIds.includes(batch.id)
-  );
-  const batch =
-    participated.find(item => today >= item.start && today <= item.end) ??
-    participated.at(-1);
-  if (!batch) return null;
-
-  const ids = new Set<string>();
-  for (const response of buckets.get(batch.id) ?? []) {
-    const questionnaireId = extractQuestionnaireId(response.questionnaire);
-    if (questionnaireId) ids.add(questionnaireId);
-  }
-  return {
-    batch,
-    index: sorted.findIndex(item => item.id === batch.id) + 1,
-    xp: computeQuestionnaireXp([...ids], durationByQuestionnaire)
-  };
-}
-
 /**
  * Report hero above the participation card: completion headline (with
- * ?completed=1) or study title, level bar for patients, guest claim nudge,
- * batch timeline strip, next-batch line, and a single baseline note.
+ * ?completed=1) or study title, level bar for patients, and a single
+ * baseline note. The trail and the guest save card live below.
  *
  * @param props - Study title, completion flag, reference date, batches,
  *   response buckets, duration map, global XP, patient flag, and the
@@ -121,11 +68,6 @@ export function ReportHero({
       ),
     [sorted, participatedIds, buckets, durationByQuestionnaire, today]
   );
-  const timeline = useMemo(
-    () => batchTimeline(sorted, participatedIds, today),
-    [sorted, participatedIds, today]
-  );
-  const nextBatch = useMemo(() => getNextBatch(sorted, today), [sorted, today]);
 
   const baselineTotal = useMemo(() => {
     const prefix = (index: number): string =>
@@ -169,7 +111,7 @@ export function ReportHero({
         {headline}
       </h1>
 
-      {isPatient ? (
+      {isPatient && (
         <div className='mt-3' data-testid='report-hero-level'>
           <div className='flex items-center justify-between text-xs'>
             <span
@@ -199,48 +141,7 @@ export function ReportHero({
             />
           </div>
         </div>
-      ) : (
-        <div className='bg-accent/40 mt-3 rounded-xl p-3 text-center'>
-          <span
-            data-testid='report-hero-title'
-            className='text-foreground text-sm font-bold'
-          >
-            {GUEST_TITLE.label}
-          </span>
-          <p
-            data-testid='report-claim-nudge'
-            className='text-muted-foreground mt-1 text-xs'
-          >
-            {t('report.claim_nudge')}
-          </p>
-        </div>
       )}
-
-      <div
-        data-testid='report-hero-timeline'
-        className='mt-3 flex items-center gap-1'
-      >
-        {timeline.map(entry => (
-          <span
-            key={entry.batch.id}
-            data-testid='report-hero-timeline-dot'
-            data-batch-id={entry.batch.id}
-            data-status={entry.status}
-            className='bg-muted h-2 w-2 shrink-0 rounded-full'
-          />
-        ))}
-      </div>
-
-      <p
-        data-testid='report-hero-next-batch'
-        className='text-muted-foreground mt-2 text-xs'
-      >
-        {nextBatch
-          ? t('report.next_batch_opens', {
-              date: formatDay(nextBatch.start) ?? nextBatch.start
-            })
-          : t('report.last_batch')}
-      </p>
 
       {baselineTotal > 0 && (
         <p
