@@ -86,15 +86,19 @@ describe('useQuestionnaireTitles', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockGet).toHaveBeenCalledWith(
-      '/fhir/Questionnaire?_id=big-five-inventory,phq2&_elements=id,title,extension'
+      '/fhir/Questionnaire?_id=big-five-inventory,phq2&_elements=id,title,extension,code'
     );
     expect(result.current.data).toEqual(
       new Map([
         [
           'big-five-inventory',
-          { title: 'Big Five Inventory', durationMinutes: 15 }
+          {
+            title: 'Big Five Inventory',
+            durationMinutes: 15,
+            instrument: null
+          }
         ],
-        ['phq2', { title: 'PHQ-2', durationMinutes: 8 }]
+        ['phq2', { title: 'PHQ-2', durationMinutes: 8, instrument: null }]
       ])
     );
   });
@@ -126,7 +130,9 @@ describe('useQuestionnaireTitles', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(
-      new Map([['gad-7', { title: 'GAD-7', durationMinutes: null }]])
+      new Map([
+        ['gad-7', { title: 'GAD-7', durationMinutes: null, instrument: null }]
+      ])
     );
   });
 
@@ -191,8 +197,11 @@ describe('useQuestionnaireTitles', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(
       new Map([
-        ['gad-7', { title: 'GAD-7', durationMinutes: null }],
-        ['phq2', { title: 'PHQ-2 cached', durationMinutes: null }]
+        ['gad-7', { title: 'GAD-7', durationMinutes: null, instrument: null }],
+        [
+          'phq2',
+          { title: 'PHQ-2 cached', durationMinutes: null, instrument: null }
+        ]
       ])
     );
   });

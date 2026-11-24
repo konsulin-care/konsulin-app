@@ -1,5 +1,7 @@
 'use client';
 
+import type { InstrumentCoding } from '@/lib/interpretation';
+import { INSTRUMENT_SYSTEM } from '@/lib/interpretation';
 import { getQuestionnaireDuration } from '@/utils/fhir/service-duration';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Bundle, Questionnaire } from 'fhir/r4';
@@ -11,6 +13,23 @@ export interface QuestionnaireInfo {
   title: string;
   /** Estimated minutes, or null when the duration extension is missing. */
   durationMinutes: number | null;
+  /** Konsulin instrument coding, or null when the questionnaire is unknown. */
+  instrument?: InstrumentCoding | null;
+}
+
+/**
+ * Picks the first Konsulin instrument coding from a questionnaire.
+ *
+ * @param questionnaire - FHIR Questionnaire to inspect.
+ * @returns The matching coding, or null when none is present.
+ */
+function getInstrumentCoding(
+  questionnaire: Questionnaire
+): InstrumentCoding | null {
+  const coding = (questionnaire.code ?? []).find(
+    entry => entry.system === INSTRUMENT_SYSTEM && entry.code
+  );
+  return coding?.code ? { system: INSTRUMENT_SYSTEM, code: coding.code } : null;
 }
 
 /** Shared empty title map for surfaces before titles have loaded. */
@@ -53,8 +72,7 @@ export function useQuestionnaireTitle(
         `/fhir/Questionnaire?_id=${questionnaireId}&_elements=title`
       );
       const questionnaire = data.entry?.[0]?.resource as
-        | Questionnaire
-        | undefined;
+        Questionnaire | undefined;
       const title = questionnaire?.title ?? questionnaireId;
       queryClient.setQueryData(
         ['questionnaire', questionnaireId, 'title'],
@@ -90,7 +108,7 @@ export function useQuestionnaireTitles(questionnaireIds: string[]) {
     queryFn: async (): Promise<ReadonlyMap<string, QuestionnaireInfo>> => {
       const API = await getAPI();
       const { data } = await API.get<Bundle>(
-        `/fhir/Questionnaire?_id=${uniqueIds.join(',')}&_elements=id,title,extension`
+        `/fhir/Questionnaire?_id=${uniqueIds.join(',')}&_elements=id,title,extension,code`
       );
       const info = new Map<string, QuestionnaireInfo>();
       for (const entry of data.entry ?? []) {
@@ -98,7 +116,8 @@ export function useQuestionnaireTitles(questionnaireIds: string[]) {
         if (!questionnaire?.id) continue;
         const title = questionnaire.title ?? questionnaire.id;
         const durationMinutes = getQuestionnaireDuration(questionnaire);
-        info.set(questionnaire.id, { title, durationMinutes });
+        const instrument = getInstrumentCoding(questionnaire);
+        info.set(questionnaire.id, { title, durationMinutes, instrument });
         queryClient.setQueryData(
           ['questionnaire', questionnaire.id, 'title'],
           title
@@ -127,7 +146,8 @@ export function useQuestionnaireTitles(questionnaireIds: string[]) {
           ]);
           merged.set(id, {
             title: cachedTitle,
-            durationMinutes: cachedDuration ?? null
+            durationMinutes: cachedDuration ?? null,
+            instrument: null
           });
         }
       }
