@@ -269,6 +269,7 @@
   "report": {
     "title": "Laporan Penelitian",
     "not_found": "Laporan tidak ditemukan",
+    "thanks": "Terima kasih.",
     "no_assessments": "Belum ada asesmen yang selesai",
     "baseline": "Baseline",
     "baseline_compare": "Baseline · dibandingkan di {batch}",

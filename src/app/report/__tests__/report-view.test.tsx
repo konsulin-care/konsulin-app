@@ -92,6 +92,11 @@ vi.mock('@/services/api/questionnaire-info', () => ({
   useQuestionnaireTitles: () => mockUseQuestionnaireTitles()
 }));
 
+vi.mock('@/services/api/research-counts', () => ({
+  COMPLETION_COUNT_FLOOR: 5,
+  useStudyParticipantCount: () => ({ data: undefined, isError: false })
+}));
+
 vi.mock('@/services/api/report', () => ({
   useReportResponses: (
     ids: string[],
@@ -344,17 +349,64 @@ describe('ReportView', () => {
     expect(screen.queryByTestId('report-status-badge')).toBeNull();
   });
 
-  it('renders participation stats on the summary card', async () => {
+  it('renders the one-line stats caption in the trail', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    expect(screen.getByTestId('report-stat-assessments')).toHaveTextContent(
-      '3'
+    expect(screen.getByTestId('report-stats-caption')).toHaveTextContent(
+      '2 of 2 batches · 3 questionnaires · 31 min contributed'
     );
-    expect(screen.getByTestId('report-stat-batches')).toHaveTextContent('2/2');
-    expect(screen.getByTestId('report-stat-streak')).toHaveTextContent('2');
-    expect(screen.getByTestId('report-stat-xp')).toHaveTextContent('155');
-    expect(screen.getByTestId('report-stat-time')).toHaveTextContent('31');
-    expect(screen.queryByTestId('report-stat-first')).toBeNull();
+    expect(screen.queryByTestId('report-participation-card')).toBeNull();
+  });
+
+  it('orders guest sections from the result to the batch history', async () => {
+    mockUseAuth.mockReturnValue({
+      state: { isAuthenticated: false, userInfo: {} },
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    const sequence = [
+      screen.getByTestId('report-hero'),
+      screen.getByTestId('report-result-block'),
+      screen.getByTestId('report-disclaimer'),
+      screen.getByTestId('report-save-card'),
+      screen.getByTestId('report-collective'),
+      screen.getByTestId('report-trail'),
+      screen.getAllByTestId('report-batch-section')[0]
+    ];
+    for (let index = 1; index < sequence.length; index += 1) {
+      expect(
+        sequence[index - 1]?.compareDocumentPosition(sequence[index] as Node) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    }
+  });
+
+  it('keeps the remaining order and hides the save card for patients', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.queryByTestId('report-save-card')).toBeNull();
+    const sequence = [
+      screen.getByTestId('report-hero'),
+      screen.getByTestId('report-result-block'),
+      screen.getByTestId('report-disclaimer'),
+      screen.getByTestId('report-collective'),
+      screen.getByTestId('report-trail'),
+      screen.getAllByTestId('report-batch-section')[0]
+    ];
+    for (let index = 1; index < sequence.length; index += 1) {
+      expect(
+        sequence[index - 1]?.compareDocumentPosition(sequence[index] as Node) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    }
+  });
+
+  it('reserves bottom padding and drops the participation card', async () => {
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-content')).toHaveClass('pb-28');
+    expect(screen.queryByTestId('report-participation-card')).toBeNull();
   });
 
   it('renders batch sections in reverse chronological order', async () => {
@@ -397,7 +449,9 @@ describe('ReportView', () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
     const nodes = [
-      ...screen.getAllByTestId('report-participation-card'),
+      screen.getByTestId('report-hero'),
+      screen.getByTestId('report-result-block'),
+      screen.getByTestId('report-trail'),
       ...screen.getAllByTestId('report-batch-section'),
       ...screen.getAllByTestId(/^report-questionnaire-card-/)
     ];
@@ -637,11 +691,6 @@ describe('ReportView', () => {
     });
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    expect(
-      screen.getByText(
-        'Claim this report within 24 hours to unlock score history record'
-      )
-    ).toBeInTheDocument();
     // ReportFab owns the guest passthrough and renders ClaimReportFab with
     // visible set from the loaded responses.
     const claimAction = findClaimAction(mockFabDispatch.mock.calls);
@@ -691,11 +740,6 @@ describe('ReportView', () => {
   it('does not offer the claim FAB to authenticated users', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    expect(
-      screen.queryByText(
-        'Claim this report within 24 hours to unlock score history record'
-      )
-    ).toBeNull();
     expect(findClaimAction(mockFabDispatch.mock.calls)).toBeUndefined();
   });
 
@@ -722,8 +766,8 @@ describe('ReportView', () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
     // Stats count the de-duplicated responses: phq2 in b1 counted once
-    expect(screen.getByTestId('report-stat-assessments')).toHaveTextContent(
-      '2'
+    expect(screen.getByTestId('report-stats-caption')).toHaveTextContent(
+      '2 questionnaires'
     );
     // Trend should show exactly 2 rows (not 3)
     const trendRows = screen.getAllByTestId('report-trend-row');
@@ -816,6 +860,8 @@ describe('ReportView', () => {
     });
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
-    expect(screen.getByTestId('report-stat-batches')).toHaveTextContent('2/4');
+    expect(screen.getByTestId('report-stats-caption')).toHaveTextContent(
+      '2 of 4 batches'
+    );
   });
 });

@@ -1,24 +1,32 @@
 'use client';
 
+import { CollectiveGoal } from '@/app/research/collective-goal';
 import PageHeader from '@/components/page-header';
 import { useAuth } from '@/context/auth/authContext';
 import { useTranslations } from '@/i18n';
+import { useResearchProgress } from '@/services/api/research';
+import { latestResponsesByQuestionnaire } from '@/utils/fhir/report';
+import { getNextBatch } from '@/utils/fhir/research-schedule';
 import { ClipboardList, FileQuestion } from 'lucide-react';
 
+import { completedBatchSummary } from './batch-meta';
 import { ReportFab } from './report-fab';
 import { ReportHero } from './report-hero';
-import { BatchSection, ParticipationCard } from './report-sections';
+import { ReportResult, type ReportResultItem } from './report-result';
+import { ReportSaveCard } from './report-save-card';
+import { BatchSection } from './report-sections';
 import { ReportSkeleton } from './report-skeleton';
+import { ReportTrail } from './report-trail';
 import { useReportData } from './use-report-data';
 
 /**
  * Research participation report for one study.
  *
- * Renders the hero (completion headline or study title, level bar, timeline,
- * next-batch line), the participation summary, reverse-chronological batch
- * sections with per-questionnaire score cards, and a disclaimer. The
- * contextual Report FAB owns the guest claim passthrough and the patient
- * action priority (continue, remind, share).
+ * Renders the completion headline (hero), the latest result per
+ * questionnaire, the disclaimer, the guest save card, the collective goal
+ * line, the batch trail with a one-line stats caption, and the
+ * reverse-chronological batch history. The contextual Report FAB owns the
+ * guest claim passthrough and the patient action priority.
  *
  * All data loading and aggregation lives in useReportData.
  */
@@ -26,6 +34,7 @@ export default function ReportView() {
   const t = useTranslations('common');
   const { state: authState } = useAuth();
   const isGuest = !authState.isAuthenticated;
+  const { data: progress } = useResearchProgress();
   const {
     studyId,
     study,
@@ -105,6 +114,31 @@ export default function ReportView() {
   const hasCompletedBatches = [...buckets.values()].some(
     batchResponses => batchResponses.length > 0
   );
+  const participatedIds = sortedBatches
+    .filter(batch => (buckets.get(batch.id)?.length ?? 0) > 0)
+    .map(batch => batch.id);
+  const summary = completedBatchSummary(
+    sortedBatches,
+    participatedIds,
+    buckets,
+    durationMap,
+    today
+  );
+  const nextBatch = getNextBatch(sortedBatches, today);
+  const resultItems: ReportResultItem[] = [
+    ...latestResponsesByQuestionnaire(responses)
+  ].map(([questionnaireId, response]) => {
+    const info = titleMap.get(questionnaireId);
+    return {
+      questionnaireId,
+      title: info?.title ?? questionnaireId,
+      response,
+      instrument: info?.instrument ?? null
+    };
+  });
+  const isConsented = studyId
+    ? (progress?.consentedStudyIds ?? []).includes(studyId)
+    : false;
 
   return (
     <>
@@ -112,7 +146,10 @@ export default function ReportView() {
         pageIndicator={t('report.title')}
         backRoute={`/research?id=${studyId}`}
       />
-      <div className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4'>
+      <div
+        data-testid='report-content'
+        className='bg-card mt-[-24px] flex grow flex-col rounded-t-[16px] p-4 pb-28'
+      >
         <ReportHero
           studyTitle={study.study.title}
           completed={completedVisit}
@@ -125,7 +162,35 @@ export default function ReportView() {
           latestBatchByQuestionnaire={latestBatchByQuestionnaire}
         />
 
-        {stats && <ParticipationCard stats={stats} />}
+        <ReportResult items={resultItems} />
+
+        <footer
+          data-testid='report-disclaimer'
+          className='bg-muted text-muted-foreground mt-4 rounded-xl p-4 text-xs leading-relaxed'
+        >
+          {t('report.disclaimer')}
+        </footer>
+
+        {isGuest && (
+          <div className='mt-4'>
+            <ReportSaveCard xp={summary?.xp ?? 0} nextBatch={nextBatch} />
+          </div>
+        )}
+
+        <section data-testid='report-collective' className='mt-4'>
+          <p className='text-foreground mb-2 text-sm font-semibold'>
+            {t('report.thanks')}
+          </p>
+          <CollectiveGoal
+            study={study.study}
+            isGuest={isGuest}
+            isConsented={isConsented}
+          />
+        </section>
+
+        <div className='mt-4'>
+          <ReportTrail study={study} stats={stats} today={today} />
+        </div>
 
         {hasCompletedBatches &&
           [...sortedBatches].toReversed().map(batch => {
@@ -143,13 +208,6 @@ export default function ReportView() {
               />
             );
           })}
-
-        <footer
-          data-testid='report-disclaimer'
-          className='bg-muted text-muted-foreground mt-auto rounded-xl p-4 text-xs leading-relaxed'
-        >
-          {t('report.disclaimer')}
-        </footer>
       </div>
       <ReportFab
         study={study}

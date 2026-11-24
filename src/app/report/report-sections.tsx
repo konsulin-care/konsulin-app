@@ -3,11 +3,7 @@
 import { useTranslations } from '@/i18n';
 import type { QuestionnaireInfo } from '@/services/api/research';
 import { questionnaireIdLabel } from '@/utils/fhir/questionnaire-url';
-import {
-  batchLabel,
-  trendForQuestionnaire,
-  type ParticipationStats
-} from '@/utils/fhir/report';
+import { batchLabel, trendForQuestionnaire } from '@/utils/fhir/report';
 import type { ResearchBatch } from '@/utils/fhir/research';
 import { extractQuestionnaireId } from '@/utils/fhir/research';
 import { nextBatchWithQuestionnaire } from '@/utils/fhir/research-schedule';
@@ -15,78 +11,6 @@ import type { QuestionnaireResponse } from 'fhir/r4';
 
 import { batchTitle, sharedAuthoredDate } from './batch-meta';
 import { QuestionnaireCard } from './questionnaire-card';
-
-/** Participation summary card with the aggregate stats. */
-export function ParticipationCard({
-  stats
-}: Readonly<{ stats: ParticipationStats }>) {
-  const t = useTranslations('common');
-  return (
-    <section
-      data-testid='report-participation-card'
-      className='card bg-muted mb-4 border-0 p-4'
-    >
-      <div className='text-muted-foreground grid grid-cols-2 gap-3 text-xs'>
-        <div>
-          <p className='text-muted-foreground text-xs'>
-            {t('report.assessments_completed')}
-          </p>
-          <p
-            data-testid='report-stat-assessments'
-            className='text-foreground font-bold'
-          >
-            {stats.assessmentsCompleted}
-          </p>
-        </div>
-        <div>
-          <p className='text-muted-foreground text-xs'>
-            {t('report.batches_completed')}
-          </p>
-          <p
-            data-testid='report-stat-batches'
-            className='text-foreground font-bold'
-          >
-            {stats.batchesCompleted}/{stats.totalBatches}
-          </p>
-        </div>
-        {stats.consecutiveBatches > 1 && (
-          <div>
-            <p className='text-muted-foreground text-xs'>
-              {t('report.streak')}
-            </p>
-            <p
-              data-testid='report-stat-streak'
-              className='text-foreground font-bold'
-            >
-              {t('report.batches_count', { count: stats.consecutiveBatches })}
-            </p>
-          </div>
-        )}
-        <div>
-          <p className='text-muted-foreground text-xs'>
-            {t('report.xp_earned')}
-          </p>
-          <p data-testid='report-stat-xp' className='text-foreground font-bold'>
-            {stats.xp}
-          </p>
-        </div>
-        <div>
-          <p className='text-muted-foreground text-xs'>
-            {t('report.time_invested')}
-          </p>
-          <p
-            data-testid='report-stat-time'
-            className='text-foreground font-bold'
-          >
-            {t('report.minutes_invested', {
-              minutes: stats.timeInvestedMinutes
-            })}
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 /** One reverse-chronological batch section: header plus questionnaire cards. */
 export function BatchSection({

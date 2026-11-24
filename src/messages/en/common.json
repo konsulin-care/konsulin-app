@@ -269,6 +269,7 @@
   "report": {
     "title": "Research Report",
     "not_found": "Report not found",
+    "thanks": "Thank you.",
     "no_assessments": "No completed assessments yet",
     "baseline": "Baseline",
     "baseline_compare": "Baseline · compared in {batch}",
