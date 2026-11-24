@@ -297,6 +297,8 @@
     "stats_caption": "{batches} of {total} batches · {responses} questionnaires · {minutes} min contributed",
     "fab_claim": "Simpan Laporan",
     "fab_continue": "Lanjutkan",
+    "fab_remind": "Remind Me",
+    "fab_share": "Invite a Friend",
     "disclaimer": "These scores are screening results for research purposes only and are not a medical diagnosis. If you are feeling distressed, please reach out to a qualified professional.",
     "save_xp": "+{xp} XP",
     "save_headline_next": "Save your report to compare it in the next batch.",

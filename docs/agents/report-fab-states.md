@@ -2,7 +2,7 @@
 title: Report FAB States
 description: The four contextual FAB states on /report, priority order, and the SET_ACTION cleanup rule
 status: updated
-date: 2026-07-20
+date: 2026-11-24
 ---
 
 # Overview
@@ -21,17 +21,18 @@ applies.
 | --- | -------------- | ------------------------------------------------------------- | --------------------- | ----------------------------- |
 | 1   | Simpan Laporan | Guest with loaded responses (`isGuest && hasResponses`)       | `report.fab_claim`    | Claim flow → `/auth`          |
 | 2   | Lanjutkan      | Patient: current batch open with an uncompleted questionnaire | `report.fab_continue` | Navigate to the questionnaire |
-| 3   | Ingatkan Saya  | Patient: a next batch exists (`getNextBatch` > today)         | `Ingatkan Saya`       | Add batch start to calendar   |
-| 4   | Ajak Teman     | Any other patient                                             | `Ajak Teman`          | Share the study               |
+| 3   | Ingatkan Saya  | Patient: a next batch exists (`getNextBatch` > today)         | `report.fab_remind`   | Add batch start to calendar   |
+| 4   | Ajak Teman     | Any other patient                                             | `report.fab_share`    | Share the study               |
 
 Details:
 
 - **Simpan Laporan** — `ReportFab` renders `ClaimReportFab`, which saves an
   `assessmentResult` redirect intent and dispatches its own primary
-  `SET_ACTION` (BookCheck icon).
+  `SET_ACTION` (BookCheck icon). This state still routes to `/auth` until the
+  in-place save sheet described in `PROPOSAL.md` ships.
 - **Lanjutkan** — ClipboardList icon; pushes
   `/assessments?id=<firstUncompletedQuestionnaireId>&study=<studyId>`.
-  Only this label is localized; the two patient labels below are fixed.
+  Every label in this table is localized through the `common` namespace.
 - **Ingatkan Saya** — CalendarPlus icon; `addToCalendar()` with the next
   batch start date as `startDate`.
 - **Ajak Teman** — Share2 icon; `handleShare` from `useShareStudy`.

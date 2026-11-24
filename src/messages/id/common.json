@@ -297,6 +297,8 @@
     "stats_caption": "{batches} dari {total} batch · {responses} kuesioner · {minutes} menit berkontribusi",
     "fab_claim": "Simpan Laporan",
     "fab_continue": "Lanjutkan",
+    "fab_remind": "Ingatkan Saya",
+    "fab_share": "Ajak Teman",
     "disclaimer": "Skor ini adalah hasil skrining untuk keperluan penelitian saja dan bukan diagnosis medis. Jika Anda merasa terbebani, silakan hubungi tenaga profesional yang berkualifikasi.",
     "save_xp": "+{xp} XP",
     "save_headline_next": "Simpan laporan Anda untuk membandingkannya di batch berikutnya.",

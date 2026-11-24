@@ -11,6 +11,7 @@ vi.mock('@/i18n', async () => {
 
 import type { ActionConfig } from '@/components/fab/types';
 import type { FabAction } from '@/context/fabContext';
+import enCommon from '@/messages/en/common.json';
 import type { ResearchBatch, StudyProgress } from '@/utils/fhir/research';
 
 const { mockFabDispatch, mockPush, mockAddToCalendar, mockHandleShare } =
@@ -146,7 +147,7 @@ describe('ReportFab patient actions', () => {
     );
   });
 
-  it("offers 'Ingatkan Saya' with CalendarPlus when a next batch exists", async () => {
+  it('offers the localized remind label with CalendarPlus when a next batch exists', async () => {
     renderFab(
       makeStudy({
         batches: [AUGUST_BATCH, SEPTEMBER_BATCH],
@@ -154,7 +155,7 @@ describe('ReportFab patient actions', () => {
       })
     );
     const action = dispatchedAction();
-    expect(action.label).toBe('Ingatkan Saya');
+    expect(action.label).toBe(enCommon.report.fab_remind);
     expect(action.icon).toBe(CalendarPlus);
     await action.onAction();
     expect(mockAddToCalendar).toHaveBeenCalledWith(
@@ -176,19 +177,19 @@ describe('ReportFab patient actions', () => {
       })
     );
     const action = dispatchedAction();
-    expect(action.label).toBe('Ingatkan Saya');
+    expect(action.label).toBe(enCommon.report.fab_remind);
     await action.onAction();
     expect(mockAddToCalendar).toHaveBeenCalledWith(
       expect.objectContaining({ startDate: '2026-09-01' })
     );
   });
 
-  it("offers 'Ajak Teman' with Share2 when no next batch exists", async () => {
+  it('offers the localized share label with Share2 when no next batch exists', async () => {
     renderFab(
       makeStudy({ batches: [AUGUST_BATCH], currentBatch: AUGUST_BATCH })
     );
     const action = dispatchedAction();
-    expect(action.label).toBe('Ajak Teman');
+    expect(action.label).toBe(enCommon.report.fab_share);
     expect(action.icon).toBe(Share2);
     await action.onAction();
     expect(mockHandleShare).toHaveBeenCalledTimes(1);

@@ -111,8 +111,8 @@ export function ReportFab({
   }, [study, nextBatch, nextBatchIndex, studyId, t]);
 
   // Patient action: first-match priority. Guests are skipped here because
-  // the rendered ClaimReportFab owns its own dispatch and cleanup. Only the
-  // continue label is localized; the remind and share labels are fixed.
+  // the rendered ClaimReportFab owns its own dispatch and cleanup. Every
+  // patient label is localized through the common namespace.
   useEffect(() => {
     if (isGuest) return;
     if (canContinue) {
@@ -128,7 +128,7 @@ export function ReportFab({
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Ingatkan Saya',
+          label: t('report.fab_remind'),
           icon: CalendarPlus,
           onAction: handleRemind
         }
@@ -137,7 +137,7 @@ export function ReportFab({
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Ajak Teman',
+          label: t('report.fab_share'),
           icon: Share2,
           onAction: handleShare
         }
