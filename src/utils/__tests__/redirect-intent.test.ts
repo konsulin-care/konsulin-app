@@ -2,9 +2,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Intent } from '../redirect-intent';
 import {
+  clearGuestSubmission,
   clearIntent,
   getIntent,
   hasPendingAssessmentClaimIntent,
+  hasRecentGuestSubmission,
+  markGuestSubmission,
   saveIntent
 } from '../redirect-intent';
 import { assertDefined } from './test-utils';
@@ -21,7 +24,7 @@ describe('saveIntent', () => {
   beforeEach(() => {
     localStorage.clear();
     // eslint-disable-next-line unicorn/no-document-cookie
-    document.cookie = '';
+    document.cookie = 'redirect_intent=; Path=/; Max-Age=0';
     vi.restoreAllMocks();
   });
 
@@ -108,5 +111,61 @@ describe('saveIntent', () => {
 
   it('hasPendingAssessmentClaimIntent returns false when no intent exists', () => {
     expect(hasPendingAssessmentClaimIntent()).toBe(false);
+  });
+
+  it('getIntent keeps an intent saved 23 hours ago and drops it after 24 hours', () => {
+    const now = Date.now();
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY,
+      JSON.stringify({
+        kind: 'assessmentResult',
+        payload: { path: '/record/ttl' },
+        createdAt: now - 23 * 60 * 60 * 1000
+      })
+    );
+
+    vi.spyOn(Date, 'now').mockReturnValue(now);
+    const intent = getIntent();
+    assertDefined(intent);
+    expect(intent.payload.path).toBe('/record/ttl');
+
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY,
+      JSON.stringify({
+        kind: 'assessmentResult',
+        payload: { path: '/record/expired' },
+        createdAt: now - 24 * 60 * 60 * 1000 - 1
+      })
+    );
+
+    expect(getIntent()).toBeNull();
+    expect(localStorage.getItem(LOCAL_STORAGE_KEY)).toBeNull();
+  });
+});
+
+describe('guest submission', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('hasRecentGuestSubmission is true within 24 hours and false after', () => {
+    const now = Date.now();
+    markGuestSubmission(now - 23 * 60 * 60 * 1000);
+
+    expect(hasRecentGuestSubmission(now)).toBe(true);
+    expect(hasRecentGuestSubmission(now + 24 * 60 * 60 * 1000 + 1)).toBe(false);
+  });
+
+  it('clearGuestSubmission makes hasRecentGuestSubmission return false', () => {
+    markGuestSubmission();
+    expect(hasRecentGuestSubmission()).toBe(true);
+
+    clearGuestSubmission();
+    expect(hasRecentGuestSubmission()).toBe(false);
   });
 });

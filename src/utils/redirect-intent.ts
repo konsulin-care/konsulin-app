@@ -13,7 +13,8 @@ const COOKIE_TTL_MS = 5 * 60 * 1000;
 
 // localStorage-based intent (matching develop's intent-storage.ts)
 const LOCAL_STORAGE_KEY = 'konsulin.intent';
-const LS_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+const LS_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const GUEST_SUBMISSION_KEY = 'konsulin.guest_submitted_at';
 
 // REDIRECT_INTENT_COOKIE is a compile-time constant; static regex avoids false-positive scanner warnings.
 const REDIRECT_INTENT_REGEX = /(?:^|;\s*)redirect_intent=([^;]*)/;
@@ -119,4 +120,47 @@ export function clearIntent(): void {
 /** Returns true when a pending assessmentResult claim intent exists. */
 export function hasPendingAssessmentClaimIntent(): boolean {
   return getIntent()?.kind === 'assessmentResult';
+}
+
+/** Records the current time as the guest's latest submission timestamp. */
+export function markGuestSubmission(now = Date.now()): void {
+  try {
+    localStorage.setItem(GUEST_SUBMISSION_KEY, String(now));
+  } catch {
+    console.warn(
+      '[redirect-intent] localStorage.setItem failed in markGuestSubmission'
+    );
+  }
+}
+
+/** Returns true when a guest submission happened within the last 24 hours. */
+export function hasRecentGuestSubmission(now = Date.now()): boolean {
+  try {
+    const raw = localStorage.getItem(GUEST_SUBMISSION_KEY);
+    if (!raw) return false;
+    const submittedAt = Number(raw);
+    if (!Number.isFinite(submittedAt)) {
+      localStorage.removeItem(GUEST_SUBMISSION_KEY);
+      return false;
+    }
+    if (now - submittedAt <= LS_TTL_MS) return true;
+    localStorage.removeItem(GUEST_SUBMISSION_KEY);
+    return false;
+  } catch {
+    console.warn(
+      '[redirect-intent] localStorage.getItem failed in hasRecentGuestSubmission'
+    );
+    return false;
+  }
+}
+
+/** Clears the stored guest submission timestamp. */
+export function clearGuestSubmission(): void {
+  try {
+    localStorage.removeItem(GUEST_SUBMISSION_KEY);
+  } catch {
+    console.warn(
+      '[redirect-intent] localStorage.removeItem failed in clearGuestSubmission'
+    );
+  }
 }
