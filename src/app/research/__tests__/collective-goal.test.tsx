@@ -58,13 +58,30 @@ beforeEach(() => {
 });
 
 describe('CollectiveGoal', () => {
-  it('renders nothing for guests and never requests the count', () => {
-    renderGoal({ isError: false }, { isGuest: true });
+  it('requests the count for guests and shows the total-joined line at or above the floor', () => {
+    renderGoal({ data: 7, isError: false }, { isGuest: true });
+
+    expect(mockUseStudyParticipantCount).toHaveBeenCalledWith(STUDY.id, {
+      enabled: true
+    });
+    expect(screen.getByTestId('collective-goal')).toHaveTextContent(
+      '7 people have joined.'
+    );
+  });
+
+  it('renders nothing for a failed guest count', () => {
+    renderGoal({ data: undefined, isError: true }, { isGuest: true });
 
     expect(screen.queryByTestId('collective-goal')).toBeNull();
-    expect(mockUseStudyParticipantCount).toHaveBeenCalledWith(STUDY.id, {
-      enabled: false
-    });
+  });
+
+  it('shows only the just-started invitation for a guest below the floor', () => {
+    renderGoal({ data: 3, isError: false }, { isGuest: true });
+
+    expect(screen.getByTestId('collective-goal')).toHaveTextContent(
+      'This study has just started. Be one of the first.'
+    );
+    expect(screen.queryByText(/^\d+ people have joined\.$/)).toBeNull();
   });
 
   it('renders nothing while the count is loading', () => {
