@@ -254,6 +254,25 @@ module.exports = [
     }
   },
 
+  // --- Interpretation engine: framework-free, extractable module ---
+  {
+    files: ['src/lib/interpretation/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/*', 'react', 'next/*', 'next-intl'],
+              message:
+                'The interpretation module must stay framework-free so it can be extracted into an npm package. Use relative imports or fhir/r4 types only.'
+            }
+          ]
+        }
+      ]
+    }
+  },
+
   // --- PWA status live-regions ---
   {
     files: ['src/components/pwa/**/*.tsx'],
