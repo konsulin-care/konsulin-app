@@ -1,0 +1,142 @@
+{
+  "phq-9": {
+    "total": {
+      "label": "Skor total",
+      "minimal": {
+        "title": "Gejala minimal",
+        "body": "Senang mengetahui bahwa dalam dua minggu terakhir Anda hampir tidak mengalami tanda suasana hati yang menurun. Teruskan hal-hal yang membuat Anda merasa baik, seperti istirahat yang cukup, bergerak aktif, dan meluangkan waktu bersama orang-orang terdekat. Memeriksa kondisi diri secara rutin membantu Anda tetap berada di jalur yang baik."
+      },
+      "mild": {
+        "title": "Gejala ringan",
+        "body": "Kondisi Anda cukup baik. Suasana hati yang menurun atau rasa lelah sesekali merupakan hal yang dapat dialami banyak orang. Gejala yang Anda alami saat ini masih tergolong ringan dan umumnya belum memerlukan penanganan khusus. Terus jaga kesehatan diri Anda, dan pertimbangkan untuk melakukan pemeriksaan kembali dalam beberapa minggu untuk melihat perkembangan kondisi Anda. Setiap langkah kecil menuju kesejahteraan diri tetap berarti."
+      },
+      "moderate": {
+        "title": "Gejala sedang",
+        "body": "Belakangan ini Anda tampaknya menanggung beban yang lebih berat dari biasanya, dan hal ini layak mendapat perhatian. Jawaban Anda berada pada tingkat yang memungkinkan adanya depresi. Ini bukan diagnosis, dan kondisi ini dapat membaik dengan dukungan yang tepat. Berbicara dengan tenaga kesehatan adalah langkah selanjutnya yang baik, dan Anda tidak perlu menunggu semuanya jelas untuk memulainya."
+      },
+      "moderately-severe": {
+        "title": "Gejala cukup berat",
+        "body": "Tampaknya Anda sedang melalui masa yang sulit, dan Anda berhak mendapatkan dukungan. Jawaban Anda berada pada tingkat yang kemungkinan besar menunjukkan depresi. Banyak orang dalam kondisi serupa merasa lebih baik setelah mendapat pendampingan profesional. Kami menyarankan Anda segera membuat janji dengan tenaga kesehatan. Meminta bantuan adalah tanda kekuatan."
+      },
+      "severe": {
+        "title": "Gejala berat",
+        "body": "Anda sedang menghadapi banyak hal, dan Anda tidak harus menghadapinya sendirian. Jawaban Anda menunjukkan banyak gejala hampir setiap hari. Mohon segera hubungi tenaga kesehatan. Depresi dapat ditangani, dan dukungan yang tepat dapat membawa perubahan nyata. Jika suatu saat Anda merasa tidak aman, segera hubungi 119 ekstensi 8."
+      }
+    },
+    "note": {
+      "below-threshold": "Skor di bawah 10 tetap dapat ditemukan pada sebagian kasus depresi. Jika Anda merasa tidak baik-baik saja, percayai perasaan itu dan bicarakan dengan tenaga kesehatan."
+    },
+    "flag": {
+      "self-harm": "Anda berhak mendapatkan dukungan, dan bantuan tersedia. Anda menyampaikan pernah memiliki pikiran bahwa lebih baik mati atau keinginan untuk menyakiti diri sendiri. Terima kasih telah terbuka mengenai hal yang begitu pribadi. Anda tidak harus menghadapi ini sendirian. Silakan segera hubungi seseorang yang Anda percaya, tenaga profesional kesehatan mental, atau layanan krisis. Anda dapat menghubungi layanan Kementerian Kesehatan di 119 ekstensi 8. Mengambil langkah ini merupakan bentuk kepedulian terhadap diri Anda sendiri. Anda berhak merasa aman, mendapatkan dukungan, dan memiliki harapan untuk hari-hari ke depan."
+    }
+  },
+  "gad-7": {
+    "total": {
+      "label": "Skor total",
+      "minimal": {
+        "title": "Gejala minimal",
+        "body": "Dalam dua minggu terakhir Anda hampir tidak mengalami rasa khawatir atau tegang. Apa pun yang membantu Anda tetap tenang, teruskanlah. Memeriksa kondisi diri dari waktu ke waktu membantu Anda menyadari perubahan lebih awal."
+      },
+      "mild": {
+        "title": "Gejala ringan",
+        "body": "Kondisi Anda cukup baik. Rasa khawatir atau tegang sesekali merupakan hal yang dapat dialami banyak orang. Gejala yang Anda alami saat ini masih tergolong ringan dan umumnya belum memerlukan penanganan khusus. Terus jaga kesehatan diri Anda, dan pertimbangkan untuk melakukan pemeriksaan kembali dalam beberapa minggu untuk melihat perkembangan kondisi Anda. Setiap langkah kecil menuju kesejahteraan diri tetap berarti."
+      },
+      "moderate": {
+        "title": "Gejala sedang",
+        "body": "Belakangan ini rasa khawatir tampaknya banyak menyita pikiran Anda, dan hal itu bisa melelahkan. Jawaban Anda berada pada tingkat yang memungkinkan adanya gangguan kecemasan. Ini bukan diagnosis, dan kecemasan umumnya membaik dengan dukungan yang tepat. Berbicara dengan tenaga kesehatan adalah langkah yang bermanfaat agar Anda dapat merasa lebih tenang."
+      },
+      "severe": {
+        "title": "Gejala berat",
+        "body": "Hidup dengan rasa khawatir yang sulit dikendalikan hampir setiap hari sangatlah melelahkan, dan Anda berhak merasa lebih lega. Kecemasan dapat ditangani, dan banyak orang merasa jauh lebih baik dengan dukungan profesional. Kami menyarankan Anda segera menemui tenaga kesehatan. Mengambil langkah itu adalah cara yang kuat untuk merawat diri Anda."
+      }
+    },
+    "note": {
+      "below-threshold": "Skor di bawah 10 tetap dapat ditemukan pada sebagian kasus kecemasan. Jika rasa khawatir mengganggu keseharian Anda, hal itu layak diperhatikan, dan dukungan tersedia."
+    }
+  },
+  "olbi": {
+    "exhaustion": {
+      "label": "Kelelahan"
+    },
+    "disengagement": {
+      "label": "Keterlepasan dari pekerjaan"
+    },
+    "combined": {
+      "none": {
+        "title": "Tidak ada tanda burnout",
+        "body": "Jawaban Anda menunjukkan bahwa Anda masih memiliki energi untuk bekerja dan tetap merasa terhubung dengan pekerjaan Anda. Hal ini layak dijaga. Pertahankan kebiasaan dan batasan yang membantu Anda tetap seimbang."
+      },
+      "exhausted": {
+        "title": "Merasa terkuras",
+        "body": "Anda masih peduli pada pekerjaan Anda, dan itu adalah kekuatan nyata, tetapi pekerjaan tampaknya banyak menguras energi Anda. Istirahat, waktu pemulihan, dan meninjau kembali beban kerja dapat membantu Anda mengisi ulang tenaga. Pertimbangkan untuk membicarakannya dengan atasan atau orang yang Anda percaya tentang hal yang dapat meringankan beban Anda."
+      },
+      "disengaged": {
+        "title": "Merasa berjarak",
+        "body": "Anda masih memiliki energi, tetapi mungkin merasa kurang terhubung dengan pekerjaan dibanding sebelumnya. Merenungkan kembali hal yang dulu membuat pekerjaan Anda bermakna, atau membicarakannya dengan orang yang Anda percaya, dapat membantu Anda menemukan pijakan kembali."
+      },
+      "burnout": {
+        "title": "Tanda burnout",
+        "body": "Merasa terkuras sekaligus berjarak dari pekerjaan bukanlah hal yang mudah, dan ini bukan kegagalan pribadi. Burnout dapat membaik dengan istirahat, perubahan dalam pekerjaan, dan dukungan. Pertimbangkan untuk berbicara dengan orang yang Anda percaya atau tenaga profesional tentang langkah berikutnya yang terasa mungkin bagi Anda."
+      }
+    },
+    "note": {
+      "assumes-working": "Kami membaca jawaban ini dengan asumsi Anda saat ini bekerja. Jika tidak, hasil ini mungkin tidak berlaku bagi Anda."
+    }
+  },
+  "res-8": {
+    "total": {
+      "label": "Skor total",
+      "low": {
+        "title": "Lebih rendah dari kebanyakan orang",
+        "body": "Anda menilai kemampuan Anda untuk bangkit dari kesulitan lebih rendah daripada kebanyakan orang dalam kelompok pembanding. Ketangguhan bukanlah sesuatu yang tetap. Ketangguhan dapat tumbuh melalui dukungan, istirahat, dan keberhasilan-keberhasilan kecil. Bersandar pada orang-orang yang Anda percaya adalah awal yang baik."
+      },
+      "average": {
+        "title": "Serupa dengan kebanyakan orang",
+        "body": "Anda menilai kemampuan Anda untuk bangkit dari kesulitan serupa dengan kebanyakan orang dalam kelompok pembanding. Anda memiliki dasar yang kokoh untuk terus dikembangkan, dan setiap tantangan yang berhasil Anda lalui akan memperkuatnya."
+      },
+      "high": {
+        "title": "Lebih tinggi dari kebanyakan orang",
+        "body": "Anda menilai kemampuan Anda untuk bangkit dari kesulitan lebih tinggi daripada kebanyakan orang dalam kelompok pembanding. Keyakinan itu adalah sumber daya yang berharga. Terus rawat, dan ingatlah bahwa meminta bantuan saat dibutuhkan tetap merupakan hal yang wajar."
+      }
+    },
+    "self-confidence": {
+      "label": "Kepercayaan diri",
+      "low": {
+        "title": "Lebih rendah dari kebanyakan orang",
+        "body": "Anda menilai kepercayaan diri Anda lebih rendah daripada kebanyakan orang dalam kelompok pembanding. Bersikap baik pada diri sendiri dan menyadari hal-hal yang Anda lakukan dengan baik, sekecil apa pun, dapat membantu menumbuhkannya."
+      },
+      "average": {
+        "title": "Serupa dengan kebanyakan orang",
+        "body": "Anda menilai kepercayaan diri Anda serupa dengan kebanyakan orang dalam kelompok pembanding. Mengenali kekuatan diri sendiri membantu menjaga kepercayaan diri tersebut tetap stabil."
+      },
+      "high": {
+        "title": "Lebih tinggi dari kebanyakan orang",
+        "body": "Anda menilai kepercayaan diri Anda lebih tinggi daripada kebanyakan orang dalam kelompok pembanding. Keyakinan pada diri sendiri itu dapat menguatkan Anda melewati masa-masa sulit."
+      }
+    },
+    "note": {
+      "comparison-group": "Untuk saat ini, kelompok pembanding adalah sampel terbitan dari penutur bahasa Belanda dan Inggris. Kami akan menggantinya dengan data peserta Indonesia seperti Anda setelah datanya cukup."
+    }
+  },
+  "whodas-12": {
+    "total": {
+      "label": "Skor total",
+      "none": {
+        "title": "Tidak ada kesulitan",
+        "body": "Dalam 30 hari terakhir Anda menjalani aktivitas sehari-hari tanpa kesulitan. Pertahankan kebiasaan yang mendukung kesehatan Anda."
+      },
+      "mild": {
+        "title": "Kesulitan ringan",
+        "body": "Anda mengalami sedikit kesulitan dalam aktivitas sehari-hari, dan hal ini cukup umum. Memperhatikan hal-hal yang membuat aktivitas terasa lebih berat, seperti tidur, rasa nyeri, atau stres, dapat membantu Anda tetap mengendalikannya."
+      },
+      "moderate": {
+        "title": "Kesulitan sedang",
+        "body": "Aktivitas sehari-hari terasa lebih berat bagi Anda dibanding kebanyakan orang. Anda tidak harus memaksakan diri sendirian. Berbicara dengan tenaga kesehatan dapat membantu menemukan penyebabnya dan cara untuk meringankannya."
+      },
+      "substantial": {
+        "title": "Kesulitan cukup besar",
+        "body": "Aktivitas sehari-hari terasa lebih berat bagi Anda dibanding sembilan dari sepuluh orang. Itu bukan hal yang mudah, dan dukungan dapat membantu. Pemeriksaan kesehatan adalah langkah selanjutnya yang baik untuk menemukan penyebabnya dan bantuan yang sesuai bagi Anda."
+      }
+    }
+  }
+}

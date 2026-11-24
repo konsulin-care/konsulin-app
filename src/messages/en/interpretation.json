@@ -1,0 +1,142 @@
+{
+  "phq-9": {
+    "total": {
+      "label": "Total score",
+      "minimal": {
+        "title": "Minimal symptoms",
+        "body": "It's good to see you've had few or no signs of low mood in the past two weeks. Keep doing the things that help you feel well, such as rest, movement and time with people you care about. Checking in with yourself regularly helps you stay on track."
+      },
+      "mild": {
+        "title": "Mild symptoms",
+        "body": "You're managing, and some days of low mood or tiredness are something many people experience. Your symptoms are currently below the level that typically requires treatment. Keep taking care of yourself, and consider checking in again in a few weeks to see how you're feeling. Small steps toward well-being matter."
+      },
+      "moderate": {
+        "title": "Moderate symptoms",
+        "body": "You've been carrying more than usual lately, and it deserves attention. Your answers are at a level where depression is possible. This is not a diagnosis, and things can get better with the right support. Talking with a health professional is a good next step, and you don't need to have everything figured out before you do."
+      },
+      "moderately-severe": {
+        "title": "Moderately severe symptoms",
+        "body": "Things seem to have been hard for you, and you deserve support. Your answers are at a level where depression is likely. Many people in this situation feel better with professional care. We recommend making an appointment with a health professional soon. Reaching out is a sign of strength."
+      },
+      "severe": {
+        "title": "Severe symptoms",
+        "body": "You've been going through a lot, and you don't have to handle it alone. Your answers show many symptoms on most days. Please contact a health professional as soon as you can. Depression is treatable, and the right support can make a real difference. If you ever feel unsafe, call 119 extension 8 right away."
+      }
+    },
+    "note": {
+      "below-threshold": "Scores below 10 can still occur in some cases of depression. If you feel unwell, trust that feeling and talk to a health professional."
+    },
+    "flag": {
+      "self-harm": "You deserve support, and help is available. You shared that you have had thoughts about being better off dead or hurting yourself. Thank you for sharing something so personal. You don't have to go through this alone. Please reach out to someone you trust or contact a mental health professional or crisis service now. You can call the Ministry of Health's line at 119 extension 8. Taking this step is an important way to care for yourself. You deserve to feel safe, supported, and hopeful about what comes next."
+    }
+  },
+  "gad-7": {
+    "total": {
+      "label": "Total score",
+      "minimal": {
+        "title": "Minimal symptoms",
+        "body": "You've had little or no worry or tension in the past two weeks. Whatever helps you stay calm, keep it up. Checking in with yourself from time to time helps you notice changes early."
+      },
+      "mild": {
+        "title": "Mild symptoms",
+        "body": "You're doing okay, and a little worry or tension is something many people experience. Your symptoms are currently below the level that typically requires treatment. Keep taking care of yourself, and consider checking in again in a few weeks to see how you're feeling. Small steps toward well-being matter."
+      },
+      "moderate": {
+        "title": "Moderate symptoms",
+        "body": "Worry seems to be taking up a lot of space for you lately, and that can be tiring. Your answers are at a level where an anxiety disorder is possible. This is not a diagnosis, and anxiety responds well to support. Talking with a health professional is a helpful step toward feeling more at ease."
+      },
+      "severe": {
+        "title": "Severe symptoms",
+        "body": "Living with worry that is hard to control on most days is exhausting, and you deserve relief. Anxiety is treatable, and many people feel much better with professional support. We recommend seeing a health professional soon. Taking that step is a strong way to care for yourself."
+      }
+    },
+    "note": {
+      "below-threshold": "Scores below 10 can still occur in some cases of anxiety. If worry affects your daily life, it deserves attention, and support is available."
+    }
+  },
+  "olbi": {
+    "exhaustion": {
+      "label": "Exhaustion"
+    },
+    "disengagement": {
+      "label": "Disengagement"
+    },
+    "combined": {
+      "none": {
+        "title": "No signs of burnout",
+        "body": "Your answers suggest you have energy for your work and still feel connected to it. That's worth protecting. Keep the habits and boundaries that help you stay balanced."
+      },
+      "exhausted": {
+        "title": "Feeling drained",
+        "body": "You still care about your work, which is a real strength, but it seems to be taking a lot of energy from you. Rest, recovery time and a look at your workload can help you recharge. Consider talking with your manager or someone you trust about what would lighten the load."
+      },
+      "disengaged": {
+        "title": "Feeling distant",
+        "body": "You still have energy, but you may feel less connected to your work than before. Reflecting on what once gave your work meaning, or talking it through with someone you trust, can help you find your footing again."
+      },
+      "burnout": {
+        "title": "Signs of burnout",
+        "body": "Feeling both drained by and distant from your work is hard, and it is not a personal failing. Burnout can improve with rest, changes at work and support. Consider talking with someone you trust or a professional about a next step that feels possible for you."
+      }
+    },
+    "note": {
+      "assumes-working": "We read these answers assuming you are currently working. If you are not, this result may not apply to you."
+    }
+  },
+  "res-8": {
+    "total": {
+      "label": "Total score",
+      "low": {
+        "title": "Lower than most",
+        "body": "You rate your ability to bounce back from setbacks lower than most people in the comparison group. Resilience is not fixed. It grows with support, rest and small wins. Leaning on people you trust is a good place to start."
+      },
+      "average": {
+        "title": "Similar to most",
+        "body": "You rate your ability to bounce back from setbacks similarly to most people in the comparison group. You have a steady base to build on, and every challenge you get through adds to it."
+      },
+      "high": {
+        "title": "Higher than most",
+        "body": "You rate your ability to bounce back from setbacks higher than most people in the comparison group. That confidence is a real resource. Keep nurturing it, and remember it's still okay to ask for help when you need it."
+      }
+    },
+    "self-confidence": {
+      "label": "Self-confidence",
+      "low": {
+        "title": "Lower than most",
+        "body": "You rate your confidence in yourself lower than most people in the comparison group. Being kind to yourself and noticing what you do well, however small, can help it grow."
+      },
+      "average": {
+        "title": "Similar to most",
+        "body": "You rate your confidence in yourself similarly to most people in the comparison group. Recognising your own strengths helps keep that confidence steady."
+      },
+      "high": {
+        "title": "Higher than most",
+        "body": "You rate your confidence in yourself higher than most people in the comparison group. That belief in yourself can carry you through hard times."
+      }
+    },
+    "note": {
+      "comparison-group": "For now, the comparison group is a published sample of Dutch and English speakers. We will switch to Indonesian participants like you once we have enough data."
+    }
+  },
+  "whodas-12": {
+    "total": {
+      "label": "Total score",
+      "none": {
+        "title": "No difficulty",
+        "body": "You've managed your daily activities without difficulty in the past 30 days. Keep up the routines that support your health."
+      },
+      "mild": {
+        "title": "Mild difficulty",
+        "body": "You've had a little difficulty with daily activities, which is common. Noticing what makes things harder, such as sleep, pain or stress, can help you stay on top of it."
+      },
+      "moderate": {
+        "title": "Moderate difficulty",
+        "body": "Daily activities have been harder for you than for most people. You don't have to push through on your own. Talking with a health professional can help find what's behind it and what might make things easier."
+      },
+      "substantial": {
+        "title": "Substantial difficulty",
+        "body": "Daily activities have been harder for you than for nine in ten people. That's a lot to manage, and support can help. A health check is a good next step to find the cause and the help that fits you."
+      }
+    }
+  }
+}
