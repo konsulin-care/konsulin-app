@@ -8,6 +8,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/konsulin-care/konsulin-app/internal/proxycache"
 )
 
 // HeaderCookieMapping maps a response header to a Set-Cookie.
@@ -23,6 +25,10 @@ type BackendProxyOptions struct {
 	SuperadminKeyCookieName string
 	CookieMappings          []HeaderCookieMapping
 	CookieSecure            bool
+
+	// Cache is an optional shared response cache for cacheable public catalog
+	// GETs. When nil, every request is forwarded to the backend unchanged.
+	Cache *proxycache.Cache
 }
 
 var backendProxyClient = &http.Client{Timeout: 30 * time.Second}
@@ -32,31 +38,65 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		targetURL := buildTargetURL(baseURL, r)
+		backendPath := strings.TrimPrefix(r.URL.Path, "/proxy")
 
-		// nolint:gosec // G704: intentional proxy — forwards to trusted backend
-		proxyReq, err := http.NewRequest(r.Method, targetURL, r.Body)
-		if err != nil {
-			slog.Error("backend proxy: failed to create request", "err", err)
-			http.Error(w, "proxy error", http.StatusInternalServerError)
-			return
+		if opts.Cache != nil {
+			if resourceType, ok := proxycache.Cacheable(r.Method, backendPath, r.URL.RawQuery); ok {
+				serveCacheableGet(w, r, targetURL, backendPath, resourceType, opts)
+				return
+			}
 		}
 
-		setProxyRequestHeaders(proxyReq, r)
-		setAuthorizationFromRequest(proxyReq, r, targetURL, opts.AccessCookieName)
-		injectSuperadminKeyFromCookie(proxyReq, r, opts.SuperadminKeyCookieName)
-		proxyReq = proxyReq.WithContext(r.Context())
-
-		// nolint:gosec // G704: intentional proxy — forwards to trusted backend
-		resp, err := backendProxyClient.Do(proxyReq)
-		if err != nil {
-			slog.Warn("backend proxy: upstream unreachable", "target", targetURL, "err", err)
-			http.Error(w, "backend unreachable", http.StatusBadGateway)
-			return
+		status := forwardAndWrite(w, r, targetURL, opts)
+		if opts.Cache != nil && status >= http.StatusOK && status < http.StatusMultipleChoices {
+			if resourceType, ok := proxycache.InvalidationType(r.Method, backendPath); ok {
+				opts.Cache.InvalidateType(resourceType)
+			}
 		}
-		defer func() { _ = resp.Body.Close() }()
-
-		writeProxyResponse(w, resp, opts.CookieMappings, opts.CookieSecure)
 	}
+}
+
+// forwardAndWrite proxies r to targetURL and writes the upstream response,
+// returning the upstream status code (0 when no response was received).
+func forwardAndWrite(w http.ResponseWriter, r *http.Request, targetURL string, opts BackendProxyOptions) int {
+	proxyReq, err := newUpstreamRequest(r, targetURL, opts)
+	if err != nil {
+		slog.Error("backend proxy: failed to create request", "err", err)
+		http.Error(w, "proxy error", http.StatusInternalServerError)
+		return 0
+	}
+
+	resp, err := doUpstreamRequest(proxyReq)
+	if err != nil {
+		slog.Warn("backend proxy: upstream unreachable", "target", targetURL, "err", err)
+		http.Error(w, "backend unreachable", http.StatusBadGateway)
+		return 0
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	writeProxyResponse(w, resp, opts.CookieMappings, opts.CookieSecure)
+	return resp.StatusCode
+}
+
+// newUpstreamRequest builds the upstream request, forwarding the same auth and
+// identity headers as the non-cached proxy path.
+func newUpstreamRequest(r *http.Request, targetURL string, opts BackendProxyOptions) (*http.Request, error) {
+	// nolint:gosec // G704: intentional proxy — forwards to trusted backend
+	proxyReq, err := http.NewRequest(r.Method, targetURL, r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	setProxyRequestHeaders(proxyReq, r)
+	setAuthorizationFromRequest(proxyReq, r, targetURL, opts.AccessCookieName)
+	injectSuperadminKeyFromCookie(proxyReq, r, opts.SuperadminKeyCookieName)
+	return proxyReq.WithContext(r.Context()), nil
+}
+
+// doUpstreamRequest executes a prepared upstream request.
+func doUpstreamRequest(proxyReq *http.Request) (*http.Response, error) {
+	// nolint:gosec // G704: intentional proxy — forwards to trusted backend
+	return backendProxyClient.Do(proxyReq)
 }
 
 // buildTargetURL constructs the upstream URL from the original request.

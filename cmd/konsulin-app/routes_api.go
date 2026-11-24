@@ -2,12 +2,14 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/konsulin-care/konsulin-app/internal/config"
 	"github.com/konsulin-care/konsulin-app/internal/data/wilayah"
 	"github.com/konsulin-care/konsulin-app/internal/handler"
 	appmw "github.com/konsulin-care/konsulin-app/internal/middleware"
+	"github.com/konsulin-care/konsulin-app/internal/proxycache"
 )
 
 // registerAPIRoutes sets up API endpoints (config, admin, relay, etc.).
@@ -58,20 +60,31 @@ func registerAPIRoutes(r chi.Router, cfg *config.Config) {
 
 // registerProxyRoutes sets up backend proxy and SuperTokens auth routes.
 func registerProxyRoutes(r chi.Router, cfg *config.Config) {
+	// Shared cache for public catalog GETs. Only the /proxy/* route uses it;
+	// the auth route keeps a nil cache.
+	cache := proxycache.New(proxycache.Options{
+		TTL:           24 * time.Hour,
+		MaxEntries:    2000,
+		MaxEntryBytes: 1 << 20,
+		MaxTotalBytes: 64 << 20,
+	})
+
 	// Backend API proxy — adds Bearer token from SuperTokens cookie.
 	r.Handle("/proxy/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
 		BackendBaseURL:          cfg.APIURL,
 		AccessCookieName:        cfg.SessionCookieNameAccess,
 		SuperadminKeyCookieName: cfg.SuperadminKeyCookieName,
+		Cache:                   cache,
 	}))
 
 	// Questionnaire create — new assessments must enter the catalog as drafts.
 	// Exact-path match wins over the /proxy/* catch-all above.
-	r.Post("/proxy/fhir/Questionnaire", handler.NewQuestionnaireCreateHandler(handler.QuestionnaireCreateOptions{
+	questionnaireCreate := handler.NewQuestionnaireCreateHandler(handler.QuestionnaireCreateOptions{
 		BackendBaseURL:          cfg.APIURL,
 		AccessCookieName:        cfg.SessionCookieNameAccess,
 		SuperadminKeyCookieName: cfg.SuperadminKeyCookieName,
-	}))
+	})
+	r.Post("/proxy/fhir/Questionnaire", invalidateOnSuccess(cache, "Questionnaire", questionnaireCreate))
 
 	// SuperTokens API proxy — converts backend response headers to Set-Cookie.
 	r.Handle("/api/v1/auth/*", handler.NewBackendProxyHandler(handler.BackendProxyOptions{
@@ -99,4 +112,29 @@ func registerMediaUpload(r chi.Router, cfg *config.Config, authGuard func(http.H
 		CloudinaryCloudName:    cfg.CloudinaryCloudName,
 		CloudinaryUploadPreset: cfg.CloudinaryUploadPreset,
 	}))
+}
+
+// statusRecorder captures the response status code written by a handler.
+type statusRecorder struct {
+	http.ResponseWriter
+
+	status int
+}
+
+// WriteHeader records the status code before delegating to the wrapped writer.
+func (s *statusRecorder) WriteHeader(code int) {
+	s.status = code
+	s.ResponseWriter.WriteHeader(code)
+}
+
+// invalidateOnSuccess wraps next and invalidates resourceType in cache when the
+// upstream responds with a 2xx status.
+func invalidateOnSuccess(cache *proxycache.Cache, resourceType string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		recorder := &statusRecorder{ResponseWriter: w}
+		next(recorder, r)
+		if recorder.status >= http.StatusOK && recorder.status < http.StatusMultipleChoices {
+			cache.InvalidateType(resourceType)
+		}
+	}
 }
