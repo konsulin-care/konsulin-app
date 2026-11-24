@@ -40,7 +40,11 @@ async function finishLogout(
   dispatchProfile: ReturnType<typeof useProfile>['dispatch'],
   router: ReturnType<typeof useRouter>
 ): Promise<void> {
-  await Session.signOut();
+  try {
+    await Session.signOut();
+  } catch (err) {
+    console.error('[auth:logout] Session.signOut failed', err);
+  }
   await (queueOwnerKey
     ? clearUserData(ownerId, { queueOwnerKey })
     : clearUserData(ownerId));

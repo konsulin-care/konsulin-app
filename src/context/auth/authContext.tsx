@@ -3,6 +3,7 @@
 
 import { Roles } from '@/constants/roles';
 import { dbGet, dbSet, migrateLocalStorage, STORES } from '@/lib/indexeddb';
+import { clearQueryCache } from '@/lib/query-persistence/clear';
 import { ensureAnonymousSession } from '@/services/anonymous-session';
 import { setCurrentUserId, UserProfile } from '@/services/api';
 import {
@@ -46,14 +47,22 @@ interface ContextProps {
 }
 
 type UserRole =
-  | typeof Roles.Practitioner
-  | typeof Roles.ClinicAdmin
-  | typeof Roles.Patient;
+  typeof Roles.Practitioner | typeof Roles.ClinicAdmin | typeof Roles.Patient;
 
 // skipcq: JS-W1042 - createContext requires a default value per React API
 const AuthContext = createContext<ContextProps | undefined>(undefined);
 
 const INITIAL_PATHNAME_STORAGE_KEY = 'konsulin_initial_pathname';
+
+/**
+ * Clears the query cache (memory and persisted client) without blocking the
+ * auth-state transition. IndexedDB failures are logged, never rethrown.
+ */
+function clearQueryCacheInBackground(): void {
+  clearQueryCache().catch((err: unknown) =>
+    console.error('Auth: failed to clear query cache on logout', err)
+  );
+}
 
 /** Resolve the active user role from cookie or SuperTokens claims. */
 export function resolveActiveRole(
@@ -113,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!res.ok) {
           console.warn('Auth: stale auth cookie deletion returned', res.status);
           dispatch({ type: 'logout' });
+          clearQueryCacheInBackground();
           setCurrentUserId(null);
           setIsLoading(false);
           return;
@@ -120,6 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (err) {
         console.error('Auth: failed to delete stale auth cookie:', err);
         dispatch({ type: 'logout' });
+        clearQueryCacheInBackground();
         setCurrentUserId(null);
         setIsLoading(false);
         return;
@@ -129,6 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     dispatch({ type: 'logout' });
+    clearQueryCacheInBackground();
     setCurrentUserId(null);
 
     const navEntries =

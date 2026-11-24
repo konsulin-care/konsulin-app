@@ -66,6 +66,10 @@ vi.mock('@/lib/indexeddb', () => ({
   }
 }));
 
+vi.mock('@/lib/query-persistence/clear', () => ({
+  clearQueryCache: vi.fn().mockResolvedValue(undefined)
+}));
+
 vi.mock('@/utils/role-fhir', () => ({
   roleToFhirResource: vi.fn((role: string) => {
     switch (role) {

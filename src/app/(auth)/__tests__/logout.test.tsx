@@ -79,6 +79,7 @@ vi.mock('@/i18n', () => ({
 
 import { clearUserData } from '@/lib/indexeddb';
 import { clearQueryCache } from '@/lib/query-persistence/clear';
+import { clearLastInterviewResult } from '@/utils/recommendation-interview';
 import Session from 'supertokens-auth-react/recipe/session';
 
 /** Builds a queued submission owned by the authenticated patient. */
@@ -112,6 +113,7 @@ beforeEach(() => {
   vi.mocked(Session.signOut).mockResolvedValue(undefined);
   vi.mocked(clearUserData).mockResolvedValue(undefined);
   vi.mocked(clearQueryCache).mockResolvedValue(undefined);
+  vi.mocked(clearLastInterviewResult).mockResolvedValue(undefined);
   globalThis.fetch = vi.fn(
     async () =>
       ({
@@ -159,6 +161,29 @@ describe('Logout page', () => {
       vi.mocked(clearQueryCache).mock.invocationCallOrder[0];
     expect(clearUserDataOrder).toBeLessThan(clearQueryCacheOrder);
     expect(screen.getByTestId('loading-spinner')).toBeDefined();
+  });
+
+  it('clears local data when Session.signOut rejects', async () => {
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    vi.mocked(Session.signOut).mockRejectedValue(new Error('signout failed'));
+
+    render(<Logout />);
+
+    await waitFor(() => {
+      expect(clearUserData).toHaveBeenCalledWith('user-1');
+    });
+    await waitFor(() => {
+      expect(clearQueryCache).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(clearLastInterviewResult).toHaveBeenCalledTimes(1);
+    });
+    expect(consoleError).toHaveBeenCalled();
+    expect(routerPush).toHaveBeenCalledWith('/');
+
+    consoleError.mockRestore();
   });
 
   it('keeps owned items when Keep is chosen', async () => {
