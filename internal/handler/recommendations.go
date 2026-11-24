@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/konsulin-care/konsulin-app/internal/service"
@@ -29,13 +31,20 @@ type RecommendationsHandler struct {
 	svc     *service.RecommendationService
 	client  *http.Client
 	baseURL string
-	cache   specialtiesCache
+	// specialtiesFn lists the distinct specialties; it defaults to the
+	// service method and is overridable in tests.
+	specialtiesFn func(context.Context) ([]string, error)
+	cacheMu       sync.Mutex
+	cache         specialtiesCache
 }
 
 // specialtiesCache is a short-TTL cache for the distinct specialty list.
+// loading, when non-nil, is closed once the in-flight fetch completes so
+// concurrent callers wait for the same result instead of fetching again.
 type specialtiesCache struct {
-	at   time.Time
-	list []string
+	at      time.Time
+	list    []string
+	loading chan struct{}
 }
 
 // NewRecommendationsHandler creates the BFF handler bound to the FHIR backend.
@@ -44,13 +53,15 @@ func NewRecommendationsHandler(opts RecommendationsOptions) *RecommendationsHand
 	if client == nil {
 		client = &http.Client{Timeout: 30 * time.Second}
 	}
+	svc := service.NewRecommendationService(service.RecommendationOptions{
+		BackendBaseURL: opts.BackendBaseURL,
+		Client:         client,
+	})
 	return &RecommendationsHandler{
-		svc: service.NewRecommendationService(service.RecommendationOptions{
-			BackendBaseURL: opts.BackendBaseURL,
-			Client:         client,
-		}),
-		client:  client,
-		baseURL: strings.TrimRight(opts.BackendBaseURL, "/"),
+		svc:           svc,
+		client:        client,
+		baseURL:       strings.TrimRight(opts.BackendBaseURL, "/"),
+		specialtiesFn: svc.DistinctSpecialties,
 	}
 }
 
@@ -115,19 +126,52 @@ func (h *RecommendationsHandler) Specialties(w http.ResponseWriter, r *http.Requ
 		sendError(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
-	if h.cache.valid() {
-		writeJSON(w, http.StatusOK, map[string]any{"specialties": h.cache.list})
-		return
-	}
-
-	list, err := h.svc.DistinctSpecialties(r.Context())
+	list, err := h.specialties(r.Context())
 	if err != nil {
 		slog.Error("recommendations: specialty list failed", "err", err)
 		sendError(w, http.StatusBadGateway, "failed to fetch specialties")
 		return
 	}
-	h.cache = specialtiesCache{at: time.Now(), list: list}
 	writeJSON(w, http.StatusOK, map[string]any{"specialties": list})
+}
+
+// specialties returns the cached distinct specialty list, refreshing it when
+// stale. Concurrent callers on a cold or expired cache share one service call
+// and all receive its result.
+func (h *RecommendationsHandler) specialties(ctx context.Context) ([]string, error) {
+	for {
+		h.cacheMu.Lock()
+		if h.cache.valid() {
+			list := h.cache.list
+			h.cacheMu.Unlock()
+			return list, nil
+		}
+		if wait := h.cache.loading; wait != nil {
+			h.cacheMu.Unlock()
+			select {
+			case <-wait:
+				continue
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+
+		wait := make(chan struct{})
+		h.cache.loading = wait
+		h.cacheMu.Unlock()
+
+		list, err := h.specialtiesFn(ctx)
+
+		h.cacheMu.Lock()
+		h.cache.loading = nil
+		if err == nil {
+			h.cache.at = time.Now()
+			h.cache.list = list
+		}
+		h.cacheMu.Unlock()
+		close(wait)
+		return list, err
+	}
 }
 
 // enrichWithBatch computes the next free slot for each recommendation card
