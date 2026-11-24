@@ -20,25 +20,26 @@ interface CollectiveGoalProps {
 /**
  * Renders the collective participation goal line for a study.
  *
- * Pending and failed queries render nothing. Studies below the k-anonymity
- * floor show only the "just started" invitation. At or above the floor the
- * line reports how many others joined (consented participants) or the total
- * joined count (everyone else, including guests), followed by the cached-count
- * info tooltip.
+ * Pending and failed queries render nothing. Guests are excluded entirely:
+ * their count query stays disabled and the goal line is hidden. Studies below
+ * the k-anonymity floor show only the "just started" invitation. At or above
+ * the floor the line reports how many others joined (consented participants)
+ * or the total joined count, followed by the cached-count info tooltip.
  *
  * @param props - Study, guest status and consent status.
  * @returns The goal line, or null when it must stay hidden.
  */
 export function CollectiveGoal({
   study,
+  isGuest,
   isConsented
 }: Readonly<CollectiveGoalProps>) {
   const t = useTranslations('research');
   const { data, isError } = useStudyParticipantCount(study.id, {
-    enabled: true
+    enabled: !isGuest
   });
 
-  if (data === undefined || isError) return null;
+  if (isGuest || data === undefined || isError) return null;
 
   const others = isConsented ? data - 1 : data;
   const belowFloor =
