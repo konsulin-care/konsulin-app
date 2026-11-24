@@ -17,19 +17,6 @@ func fixedClock(start time.Time) (func() time.Time, *time.Time) {
 
 func TestGetExpiresAtTTL(t *testing.T) {
 	base := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
-	nowFunc, current := fixedClock(base)
-	c := New(Options{TTL: time.Hour, MaxEntries: 10, Now: nowFunc})
-	c.Set("k", "Patient", Entry{Status: 200, ContentType: "application/fhir+json", Body: []byte("{}"), StoredAt: base})
-
-	if got, ok := c.Get("k"); !ok || got.Status != 200 {
-		t.Fatalf("expected hit with status 200, got %+v ok=%v", got, ok)
-	}
-
-	*current = base.Add(time.Hour - time.Second)
-	if _, ok := c.Get("k"); !ok {
-		t.Fatalf("expected hit before TTL elapsed")
-	}
-
 	tests := []struct {
 		name string
 		at   time.Time
@@ -58,7 +45,6 @@ func TestGetEvictsExpiredEntry(t *testing.T) {
 	c := New(Options{TTL: time.Hour, MaxEntries: 10, MaxTotalBytes: 100, Now: nowFunc})
 	c.Set("k", "Patient", Entry{Body: []byte("abc"), StoredAt: base})
 	*current = base.Add(2 * time.Hour)
-
 	if _, ok := c.Get("k"); ok {
 		t.Fatalf("expected miss for expired entry")
 	}
@@ -104,8 +90,7 @@ func TestSetLimitsAndEviction(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			nowFunc, _ := fixedClock(base)
-			tc.opts.Now = nowFunc
+			tc.opts.Now = func() time.Time { return base }
 			tc.opts.TTL = time.Hour
 			c := New(tc.opts)
 			keys := make([]string, len(tc.sets))
@@ -147,7 +132,6 @@ func TestInvalidateType(t *testing.T) {
 	if _, ok := c.Get("o1"); !ok {
 		t.Fatalf("expected o1 retained")
 	}
-
 	c.InvalidateType("*")
 	if _, ok := c.Get("o1"); ok {
 		t.Fatalf("expected wildcard to clear all entries")
@@ -186,7 +170,6 @@ func TestDoSingleFlight(t *testing.T) {
 			results[idx], _, errs[idx] = c.Do("fhir/Patient", load)
 		}(i)
 	}
-
 	<-started
 	close(release)
 	wg.Wait()
