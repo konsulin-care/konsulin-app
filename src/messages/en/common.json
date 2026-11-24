@@ -296,7 +296,12 @@
     "claim_nudge": "Claim this report within 24 hours to unlock score history record",
     "fab_claim": "Simpan Laporan",
     "fab_continue": "Lanjutkan",
-    "disclaimer": "These scores are screening results for research purposes only and are not a medical diagnosis. If you are feeling distressed, please reach out to a qualified professional."
+    "disclaimer": "These scores are screening results for research purposes only and are not a medical diagnosis. If you are feeling distressed, please reach out to a qualified professional.",
+    "save_xp": "+{xp} XP",
+    "save_headline_next": "Save your report to compare it in the next batch.",
+    "save_headline_last": "Save your report to keep this record and receive the study's findings.",
+    "save_free": "Taking part in the survey and saving your report are free of charge. This is our part in supporting your contribution.",
+    "save_window": "Guest reports can be saved within 24 hours. After that, your answers still count toward the study but can no longer be linked to you."
   },
   "schedule": {
     "search": "Search",

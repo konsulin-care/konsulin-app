@@ -296,7 +296,12 @@
     "claim_nudge": "Klaim laporan ini dalam 24 jam untuk membuka riwayat skor",
     "fab_claim": "Simpan Laporan",
     "fab_continue": "Lanjutkan",
-    "disclaimer": "Skor ini adalah hasil skrining untuk keperluan penelitian saja dan bukan diagnosis medis. Jika Anda merasa terbebani, silakan hubungi tenaga profesional yang berkualifikasi."
+    "disclaimer": "Skor ini adalah hasil skrining untuk keperluan penelitian saja dan bukan diagnosis medis. Jika Anda merasa terbebani, silakan hubungi tenaga profesional yang berkualifikasi.",
+    "save_xp": "+{xp} XP",
+    "save_headline_next": "Simpan laporan Anda untuk membandingkannya di batch berikutnya.",
+    "save_headline_last": "Simpan laporan Anda untuk menyimpan catatan ini dan menerima temuan studi.",
+    "save_free": "Ikut survei dan menyimpan laporan tidak dipungut biaya. Ini bagian kami untuk mendukung kontribusi Anda.",
+    "save_window": "Laporan tamu dapat disimpan dalam 24 jam. Setelah itu, jawaban Anda tetap dihitung untuk studi, tetapi tidak lagi dapat ditautkan ke Anda."
   },
   "schedule": {
     "search": "Cari",
