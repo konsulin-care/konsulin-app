@@ -13,7 +13,8 @@ const NAMESPACES = [
   'research',
   'toast',
   'page-header',
-  'admin'
+  'admin',
+  'interpretation'
 ] as const;
 type Namespace = (typeof NAMESPACES)[number];
 
@@ -42,7 +43,8 @@ const LOADER_REGISTRY: Map<Locale, Map<Namespace, NamespaceLoader>> = new Map<
       ['research', () => import('../messages/en/research.json')],
       ['toast', () => import('../messages/en/toast.json')],
       ['page-header', () => import('../messages/en/page-header.json')],
-      ['admin', () => import('../messages/en/admin.json')]
+      ['admin', () => import('../messages/en/admin.json')],
+      ['interpretation', () => import('../messages/en/interpretation.json')]
     ])
   ],
   [
@@ -57,7 +59,8 @@ const LOADER_REGISTRY: Map<Locale, Map<Namespace, NamespaceLoader>> = new Map<
       ['research', () => import('../messages/id/research.json')],
       ['toast', () => import('../messages/id/toast.json')],
       ['page-header', () => import('../messages/id/page-header.json')],
-      ['admin', () => import('../messages/id/admin.json')]
+      ['admin', () => import('../messages/id/admin.json')],
+      ['interpretation', () => import('../messages/id/interpretation.json')]
     ])
   ]
 ]);

@@ -27,7 +27,8 @@ const EXPECTED_NAMESPACES = [
   'research',
   'toast',
   'page-header',
-  'admin'
+  'admin',
+  'interpretation'
 ] as const;
 
 describe('i18n request config', () => {
@@ -61,6 +62,25 @@ describe('i18n request config', () => {
       for (const namespace of EXPECTED_NAMESPACES) {
         expect(config.messages[namespace]).toBeTypeOf('object');
       }
+    }
+  );
+
+  it.each([
+    { locale: 'en', label: 'Total score' },
+    { locale: 'id', label: 'Skor total' }
+  ])(
+    'loads the $locale interpretation namespace',
+    async ({ locale, label }) => {
+      const { default: getConfig } = await import('../request');
+      const config = await getConfig({
+        locale,
+        requestLocale: Promise.resolve(locale)
+      });
+      const interpretation = config.messages.interpretation as Record<
+        string,
+        { total: { label: string } }
+      >;
+      expect(interpretation['phq-9'].total.label).toBe(label);
     }
   );
 

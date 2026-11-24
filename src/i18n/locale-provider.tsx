@@ -10,6 +10,7 @@ import enAssessment from '@/messages/en/assessment.json';
 import enAuth from '@/messages/en/auth.json';
 import enCommon from '@/messages/en/common.json';
 import enHome from '@/messages/en/home.json';
+import enInterpretation from '@/messages/en/interpretation.json';
 import enInterview from '@/messages/en/interview.json';
 import enPageHeader from '@/messages/en/page-header.json';
 import enProfile from '@/messages/en/profile.json';
@@ -20,6 +21,7 @@ import idAssessment from '@/messages/id/assessment.json';
 import idAuth from '@/messages/id/auth.json';
 import idCommon from '@/messages/id/common.json';
 import idHome from '@/messages/id/home.json';
+import idInterpretation from '@/messages/id/interpretation.json';
 import idInterview from '@/messages/id/interview.json';
 import idPageHeader from '@/messages/id/page-header.json';
 import idProfile from '@/messages/id/profile.json';
@@ -39,6 +41,7 @@ const MESSAGES = new Map<Locale, MessageBundle>([
       auth: enAuth,
       common: enCommon,
       home: enHome,
+      interpretation: enInterpretation,
       interview: enInterview,
       'page-header': enPageHeader,
       profile: enProfile,
@@ -54,6 +57,7 @@ const MESSAGES = new Map<Locale, MessageBundle>([
       auth: idAuth,
       common: idCommon,
       home: idHome,
+      interpretation: idInterpretation,
       interview: idInterview,
       'page-header': idPageHeader,
       profile: idProfile,
