@@ -8,6 +8,7 @@ import {
 } from '@/lib/submission-replay';
 import { IQuestionnaireResponse } from '@/types/assessment';
 import { toCanonicalQuestionnaireUrl } from '@/utils/fhir/questionnaire-url';
+import { markGuestSubmission } from '@/utils/redirect-intent';
 import {
   queryOptions,
   useMutation,
@@ -312,6 +313,8 @@ export const useSubmitQuestionnaire = (
           dbDelete(STORES.assessmentDrafts, ['', questionnaireId]).catch(
             (err: unknown) => console.warn('[IndexedDB]', err)
           );
+        } else {
+          markGuestSubmission();
         }
 
         return response.data;
@@ -376,6 +379,9 @@ export const useUpdateSubmitQuestionnaire = (
           subject
         }
       );
+
+      if (!isAuthenticated) markGuestSubmission();
+
       return response.data;
     },
     onSuccess: () => {
