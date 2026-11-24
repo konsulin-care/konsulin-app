@@ -279,6 +279,7 @@
     "trend_up": "Skor naik",
     "trend_down": "Skor turun",
     "trend_same": "Skor tidak berubah",
+    "score_of": "dari {reference}",
     "batch_prefix": "Batch {index}",
     "completed_at": "Selesai pada {date}",
     "assessments_completed": "Asesmen selesai",

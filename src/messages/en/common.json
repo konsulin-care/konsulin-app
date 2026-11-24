@@ -279,6 +279,7 @@
     "trend_up": "Score up",
     "trend_down": "Score down",
     "trend_same": "Score unchanged",
+    "score_of": "of {reference}",
     "batch_prefix": "Batch {index}",
     "completed_at": "Completed at {date}",
     "assessments_completed": "Assessments completed",
