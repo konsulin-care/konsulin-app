@@ -7,10 +7,10 @@ import { Trash2 } from 'lucide-react';
 import type { ActionConfig, MenuAction, SelectionConfig } from './fab/types';
 
 const ACTION_BUTTON_CLASS =
-  'bg-secondary text-secondary-foreground border-turquoise-deep flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors md:flex-col md:text-[11px] lg:flex-row lg:text-sm';
+  'bg-secondary text-secondary-foreground border-turquoise-deep flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors md:flex-col md:text-xs lg:flex-row lg:text-sm';
 
 const MENU_BUTTON_CLASS =
-  'border-border bg-card text-foreground hover:bg-muted flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border px-2 py-2 text-sm font-medium transition-colors md:flex-col md:text-[11px] lg:flex-row lg:text-sm';
+  'border-border bg-card text-foreground hover:bg-muted flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border px-2 py-2 text-sm font-medium transition-colors md:flex-col md:text-xs lg:flex-row lg:text-sm';
 
 /**
  * Runs an action unless it is disabled or already saving and swallows
@@ -62,7 +62,7 @@ function SidebarSelection({ config }: Readonly<{ config: SelectionConfig }>) {
       <button
         type='button'
         onClick={config.onDelete}
-        className='bg-destructive text-destructive-foreground flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-transparent px-2 py-2 text-sm font-semibold transition-colors hover:brightness-90 md:flex-col md:text-[11px] lg:flex-row lg:text-sm'
+        className='bg-destructive text-destructive-foreground flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-transparent px-2 py-2 text-sm font-semibold transition-colors hover:brightness-90 md:flex-col md:text-xs lg:flex-row lg:text-sm'
       >
         <Trash2 className='h-5 w-5 shrink-0' />
         <span className='md:line-clamp-2 md:text-center'>

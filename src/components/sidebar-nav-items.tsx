@@ -10,7 +10,7 @@ import type { Pill } from './fab/types';
 
 /** Shared layout classes for every navigation item (rail and sidebar). */
 const NAV_ITEM_CLASS =
-  'flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted md:flex-col md:justify-center md:gap-1 md:px-1 md:text-center md:text-[11px] md:line-clamp-2 lg:flex-row lg:justify-start lg:gap-2 lg:px-3 lg:text-sm';
+  'flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted md:flex-col md:justify-center md:gap-1 md:px-1 md:text-center md:text-xs md:line-clamp-2 lg:flex-row lg:justify-start lg:gap-2 lg:px-3 lg:text-sm';
 
 /** Extra classes applied to the item matching the current pathname. */
 const ACTIVE_ITEM_CLASS =
