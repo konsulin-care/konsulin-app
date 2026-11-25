@@ -99,6 +99,26 @@
   height: auto;
 }
 
+/* Responsive app shell offset.
+   Phones keep 0px (the FAB owns navigation). From md the rail reserves
+   96px, from lg the sidebar reserves 240px. The `:has` guard means bare
+   routes without a nav keep the full viewport width. */
+:root {
+  --shell-offset: 0px;
+}
+
+@media (min-width: 768px) {
+  :root:has([data-shell='nav']) {
+    --shell-offset: 96px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root:has([data-shell='nav']) {
+    --shell-offset: 240px;
+  }
+}
+
 /* Reserve the vertical scrollbar gutter so the centered page column does
    not jump sideways between routes. No-op for overlay scrollbars. */
 html {
