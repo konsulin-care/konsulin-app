@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePillActions } from './fab/use-pill-actions';
 import { SidebarNavItems } from './sidebar-nav-items';
+import SidebarPrimaryAction from './sidebar-primary-action';
 
 interface AppSidebarProps {
   /** Extra classes appended to the navigation element. */
@@ -48,7 +49,9 @@ export default function AppSidebar({
           </span>
         </Link>
         <SidebarNavItems pills={pills} onPillClick={onPillClick} />
-        <div data-slot='primary-action' />
+        <div data-slot='primary-action' className='md:sticky md:top-4'>
+          <SidebarPrimaryAction />
+        </div>
         <div data-slot='account' className='mt-auto' />
       </nav>
       {drawers}
