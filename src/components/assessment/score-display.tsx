@@ -19,6 +19,46 @@ interface ScoreDisplayProps {
   loadingSkeleton?: boolean;
   /** Resolved Questionnaire.title, or undefined to show the all-caps id. */
   questionnaireTitle?: string;
+  /**
+   * Whether to render the Result Brief block at all. Defaults to true.
+   * Surfaces that never show a brief (for example the record page without a
+   * reading or a stored brief) pass false to hide the block and its claim
+   * prompt entirely.
+   */
+  showBrief?: boolean;
+}
+
+/**
+ * Result Brief block. Rendered only when `showBrief` is true; the claim
+ * prompt covers the empty state.
+ *
+ * @param props - Visibility flag, loading state and resolved brief text.
+ * @returns The block, or null when the brief should be hidden.
+ */
+function ResultBriefBlock({
+  showBrief,
+  showLoading,
+  brief
+}: Readonly<{
+  showBrief: boolean;
+  showLoading: boolean;
+  brief: string;
+}>) {
+  if (!showBrief) return null;
+
+  return (
+    <div className='mb-4'>
+      <div className='text-12 text-muted-foreground mb-2'>Result Brief</div>
+
+      {showLoading ? (
+        <Skeleton className='bg-muted h-[80px] w-full rounded-lg' />
+      ) : (
+        <div className='card'>
+          <ReactMarkdown>{brief}</ReactMarkdown>
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -26,14 +66,16 @@ interface ScoreDisplayProps {
  *
  * Pure presentational component — no data fetching, no auth gating.
  * When `resultBrief` is null, shows "Claim the results to request analysis."
- * When `resultBrief` is a string, displays it as-is.
+ * When `resultBrief` is a string, displays it as-is. When `showBrief` is
+ * false the Result Brief block is not rendered at all.
  */
 export default function ScoreDisplay({
   questionnaireResponse,
   isLoading = false,
   resultBrief,
   loadingSkeleton = false,
-  questionnaireTitle
+  questionnaireTitle,
+  showBrief = true
 }: Readonly<ScoreDisplayProps>) {
   const scoreList = useMemo(
     () => parseDimensionScores(questionnaireResponse),
@@ -67,17 +109,11 @@ export default function ScoreDisplay({
         </div>
       )}
 
-      <div className='mb-4'>
-        <div className='text-12 text-muted-foreground mb-2'>Result Brief</div>
-
-        {showLoading ? (
-          <Skeleton className='bg-muted h-[80px] w-full rounded-lg' />
-        ) : (
-          <div className='card'>
-            <ReactMarkdown>{displayResultBrief}</ReactMarkdown>
-          </div>
-        )}
-      </div>
+      <ResultBriefBlock
+        showBrief={showBrief}
+        showLoading={showLoading}
+        brief={displayResultBrief}
+      />
 
       <div className='mb-4'>
         <div className='text-12 text-muted-foreground mb-2'>Result Tables</div>

@@ -160,6 +160,24 @@ describe('ScoreDisplay', () => {
     ).toBeInTheDocument();
   });
 
+  it('omits the Result Brief block when showBrief is false', () => {
+    const qr = buildMockQR([{ name: 'Anxiety', score: 3, ref: 5 }]);
+    render(
+      <ScoreDisplay
+        questionnaireResponse={qr}
+        isLoading={false}
+        showBrief={false}
+      />
+    );
+
+    expect(screen.queryByText('Result Brief')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Claim the results to request analysis.')
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Result Tables')).toBeInTheDocument();
+    expect(screen.getAllByTestId('progress-bar')).toHaveLength(1);
+  });
+
   it('renders percentage values for each score dimension', () => {
     const qr = buildMockQR([
       { name: 'Anxiety', score: 3, ref: 5 },
