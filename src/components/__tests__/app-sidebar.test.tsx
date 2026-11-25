@@ -101,12 +101,11 @@ describe('AppSidebar', () => {
       'Home',
       'Self Checkup',
       'Write Journal',
-      'View Schedule',
-      'Join Research'
+      'View Schedule'
     ]);
     expect(
-      within(nav).getByRole('button', { name: 'Get Recommendation' })
-    ).toBeInTheDocument();
+      within(nav).queryByRole('button', { name: 'Get Recommendation' })
+    ).not.toBeInTheDocument();
   });
 
   it('renders the practitioner pills', () => {
@@ -154,14 +153,8 @@ describe('AppSidebar', () => {
       within(nav).getByRole('link', { name: 'Write Journal' })
     ).toHaveAttribute('aria-current', 'page');
     expect(
-      within(nav).getByRole('link', { name: 'Join Research' })
+      within(nav).getByRole('link', { name: 'View Schedule' })
     ).not.toHaveAttribute('aria-current');
-  });
-
-  it('opens the screening drawer for a pill without href', () => {
-    renderSidebar('Patient');
-    fireEvent.click(screen.getByRole('button', { name: 'Get Recommendation' }));
-    expect(screen.getByTestId('screening-drawer')).toBeInTheDocument();
   });
 
   it('routes a guest pill outside /assessments through the pill action', () => {

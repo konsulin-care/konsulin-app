@@ -235,51 +235,6 @@ describe('QuickActionFab', () => {
     expect(screen.queryAllByText(MENU_ITEMS)).toHaveLength(0);
   });
 
-  it('opens the ScreeningDrawer from the Get Recommendation pill', () => {
-    renderFab();
-    const fabButton = document.querySelectorAll<HTMLButtonElement>(
-      'button[class*="rounded-full"]'
-    );
-    fireEvent.click(fabButton.item(fabButton.length - 1));
-    fireEvent.click(screen.getByText('Get Recommendation'));
-    expect(screen.getByTestId('mock-screening-drawer')).toBeInTheDocument();
-    expect(mockPush).not.toHaveBeenCalledWith('/screening');
-  });
-
-  it('invalidates recommendation queries when screening completes via FAB', () => {
-    renderFab();
-    const fabButton = document.querySelectorAll<HTMLButtonElement>(
-      'button[class*="rounded-full"]'
-    );
-    fireEvent.click(fabButton.item(fabButton.length - 1));
-    fireEvent.click(screen.getByText('Get Recommendation'));
-    expect(screen.getByTestId('mock-screening-drawer')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId('mock-screening-drawer'));
-
-    expect(mockInvalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['recommendations']
-    });
-  });
-
-  it('publishes the completed screening result to the recommendation context', () => {
-    renderFab();
-    const fabButton = document.querySelectorAll<HTMLButtonElement>(
-      'button[class*="rounded-full"]'
-    );
-    fireEvent.click(fabButton.item(fabButton.length - 1));
-    fireEvent.click(screen.getByText('Get Recommendation'));
-
-    expect(screen.getByTestId('observed-result').textContent).toBe('none');
-
-    fireEvent.click(screen.getByTestId('mock-screening-drawer'));
-
-    expect(screen.getByTestId('observed-result').textContent).toBe(
-      'psychiatry'
-    );
-    expect(mockInvalidateQueries).toHaveBeenCalled();
-  });
-
   describe('selection mode', () => {
     it('shows a red delete button with count when items are selected', () => {
       renderFab();

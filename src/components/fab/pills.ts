@@ -6,7 +6,6 @@ import {
   Form,
   HeartPulse,
   MapPin,
-  Sparkles,
   UserPlus
 } from 'lucide-react';
 import type { Pill } from './types';
@@ -55,19 +54,6 @@ export const patientPills: Pill[] = [
     icon: Calendar,
     delay: 100,
     action: 'navigate'
-  },
-  {
-    label: 'pill_join_research',
-    href: '/research',
-    icon: FlaskConical,
-    delay: 150,
-    action: 'navigate'
-  },
-  {
-    label: 'pill_get_recommendation',
-    icon: Sparkles,
-    delay: 200,
-    action: 'get-recommendation'
   }
 ];
 

@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, render, renderHook } from '@testing-library/react';
+import { Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { patientPills, practitionerPills } from '../pills';
+import type { Pill } from '../types';
 import { usePillActions } from '../use-pill-actions';
 
 const authState: { roleName: string | undefined } = { roleName: 'Patient' };
@@ -126,13 +128,15 @@ describe('usePillActions', () => {
 
   it('opens the screening drawer from the get-recommendation pill', () => {
     const { result } = setup();
-    const recommendationPill = patientPills.find(
-      pill => pill.action === 'get-recommendation'
-    );
-    expect(recommendationPill).toBeDefined();
+    const recommendationPill: Pill = {
+      label: 'pill_get_recommendation',
+      icon: Sparkles,
+      delay: 0,
+      action: 'get-recommendation'
+    };
 
     act(() => {
-      if (recommendationPill) result.current.onPillClick(recommendationPill);
+      result.current.onPillClick(recommendationPill);
     });
 
     const { getByTestId } = render(<>{result.current.drawers}</>);
