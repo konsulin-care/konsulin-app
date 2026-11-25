@@ -22,7 +22,7 @@ export default function ContentWraper({
   return (
     <div
       className={cn(
-        'border-border bg-background mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] border-t pb-20',
+        'border-border bg-background mt-[-24px] min-h-screen overflow-x-hidden rounded-b-[16px] border-t pb-20 md:pb-8',
         className
       )}
     >

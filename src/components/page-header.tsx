@@ -107,6 +107,42 @@ function getDefaultBackRoute(
   return undefined;
 }
 
+/** Renders the header back navigation link or history button. */
+function HeaderBackButton({
+  show,
+  backAction,
+  label,
+  onBack
+}: Readonly<{
+  show: boolean;
+  backAction: string | undefined;
+  label: string;
+  onBack: () => void;
+}>) {
+  if (!show) return null;
+  if (backAction) {
+    return (
+      <a
+        href={backAction}
+        aria-label={label}
+        className='text-foreground absolute left-0 flex h-10 w-10 items-center justify-center'
+      >
+        <ChevronLeftIcon size={24} aria-hidden='true' />
+      </a>
+    );
+  }
+  return (
+    <button
+      type='button'
+      aria-label={label}
+      onClick={onBack}
+      className='text-foreground absolute left-0 flex h-10 w-10 items-center justify-center'
+    >
+      <ChevronLeftIcon size={24} aria-hidden='true' />
+    </button>
+  );
+}
+
 /** Resolves the display name, falling back to email for placeholder values. */
 function getDisplayName(
   userInfo: { fullname?: string; email?: string } | undefined
@@ -239,32 +275,26 @@ export default function PageHeader({
   return (
     <div className='bg-background px-4 pt-4 pb-8'>
       <div className='relative flex items-center justify-end'>
-        {showBack &&
-          (backAction ? (
-            <a
-              href={backAction}
-              aria-label={t('go_back')}
-              className='text-foreground absolute left-0 flex h-10 w-10 items-center justify-center'
-            >
-              <ChevronLeftIcon size={24} aria-hidden='true' />
-            </a>
-          ) : (
-            <button
-              type='button'
-              aria-label={t('go_back')}
-              onClick={() => router.back()}
-              className='text-foreground absolute left-0 flex h-10 w-10 items-center justify-center'
-            >
-              <ChevronLeftIcon size={24} aria-hidden='true' />
-            </button>
-          ))}
-        <AuthArea
-          isLoading={isLoadingAuth}
-          isAuthenticated={authState.isAuthenticated}
-          indicator={indicator}
-          displayName={displayName}
-          guestAvatar={guestAvatar}
+        <HeaderBackButton
+          show={showBack}
+          backAction={backAction}
+          label={t('go_back')}
+          onBack={() => router.back()}
         />
+        {indicator && (
+          <div className='text-foreground hidden text-sm font-bold md:block'>
+            {indicator}
+          </div>
+        )}
+        <div className='md:hidden'>
+          <AuthArea
+            isLoading={isLoadingAuth}
+            isAuthenticated={authState.isAuthenticated}
+            indicator={indicator}
+            displayName={displayName}
+            guestAvatar={guestAvatar}
+          />
+        </div>
       </div>
 
       <HeaderReminder
