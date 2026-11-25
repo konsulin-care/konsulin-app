@@ -1,6 +1,7 @@
 import AppChrome from '@/components/app-chrome';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/i18n', () => ({
@@ -34,12 +35,35 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn()
 }));
 
+vi.mock('@/components/app-sidebar', () => ({
+  default: ({ className }: { className?: string }) =>
+    createElement('nav', {
+      'aria-label': 'Main navigation',
+      'data-testid': 'app-sidebar',
+      className
+    })
+}));
+
 import { useAuth } from '@/context/auth/authContext';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 function renderWithProviders(ui: React.ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+}
+
+/**
+ * Collects tabbable elements in document order.
+ *
+ * @param root - Element or document to search
+ * @returns Tabbable elements (tabIndex is not negative)
+ */
+function getTabbableElements(root: HTMLElement | Document): HTMLElement[] {
+  const selector =
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]';
+  return Array.from(root.querySelectorAll<HTMLElement>(selector)).filter(
+    element => element.tabIndex >= 0
+  );
 }
 
 describe('AppChrome', () => {
@@ -103,5 +127,71 @@ describe('AppChrome', () => {
     const main = screen.getByRole('main');
     expect(main).toHaveClass('relative');
     expect(main).toHaveClass('left-[calc(50vw_-_50%)]');
+  });
+
+  it('orders the skip link before the navigation landmark and the main element', () => {
+    renderWithProviders(
+      <AppChrome>
+        <span>test</span>
+      </AppChrome>
+    );
+
+    const skipLink = screen.getByRole('link', { name: 'skip_to_content' });
+    expect(skipLink).toHaveAttribute('href', '#main');
+
+    const tabbables = getTabbableElements(document);
+    expect(tabbables[0]).toBe(skipLink);
+
+    const navigation = screen.getByRole('navigation');
+    const main = screen.getByRole('main');
+    expect(main).toHaveAttribute('id', 'main');
+    expect(main).toHaveAttribute('tabindex', '-1');
+
+    expect(
+      skipLink.compareDocumentPosition(navigation) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      navigation.compareDocumentPosition(main) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it('renders the md/lg grid shell wrapper and keeps the narrow page column', () => {
+    renderWithProviders(
+      <AppChrome>
+        <span>test</span>
+      </AppChrome>
+    );
+
+    const sidebar = screen.getByTestId('app-sidebar');
+    const shell = sidebar.parentElement;
+    expect(shell).not.toBeNull();
+    expect(shell).toHaveAttribute('data-shell', 'nav');
+    expect(shell).toHaveClass('md:grid');
+    expect(shell).toHaveClass('md:grid-cols-[96px_minmax(0,1fr)]');
+    expect(shell).toHaveClass('lg:grid-cols-[240px_minmax(0,1fr)]');
+
+    const main = screen.getByRole('main');
+    expect(main).toHaveClass('max-w-screen-sm');
+    expect(main).toHaveClass('left-[calc(50vw_-_50%)]');
+    expect(main).toHaveClass('md:left-0');
+    expect(main).toHaveClass('md:shadow-none');
+    expect(main).toHaveClass('md:border-x');
+    expect(main).toHaveClass('md:border-border');
+  });
+
+  it('renders no navigation and no shell attribute on bare routes', () => {
+    vi.mocked(usePathname).mockReturnValue('/auth');
+
+    const { container } = renderWithProviders(
+      <AppChrome>
+        <span>test</span>
+      </AppChrome>
+    );
+
+    expect(screen.queryByRole('navigation')).toBeNull();
+    expect(container.querySelector('[data-shell]')).toBeNull();
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main');
   });
 });
