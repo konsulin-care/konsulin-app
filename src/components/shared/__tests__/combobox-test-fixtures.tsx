@@ -58,11 +58,27 @@ export function renderMultiCombobox(onSelect: (codes: string[]) => void): void {
 }
 
 /**
- * Make (max-width: 640px) match so the sheet variant renders.
+ * Make (max-width: 767px) match so the sheet variant renders.
  */
 export function stubMobileViewport(): void {
   vi.stubGlobal('matchMedia', (query: string) => ({
-    matches: query.includes('(max-width: 640px)'),
+    matches: query.includes('(max-width: 767px)'),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn()
+  }));
+}
+
+/**
+ * Make (max-width: 767px) NOT match so the popover variant renders.
+ */
+export function stubDesktopViewport(): void {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query.includes('(min-width: 768px)'),
     media: query,
     onchange: null,
     addListener: vi.fn(),

@@ -7,6 +7,7 @@ import {
   PROVINCES,
   renderCombobox,
   renderMultiCombobox,
+  stubDesktopViewport,
   stubMobileViewport,
   TWO_OPTIONS
 } from './combobox-test-fixtures';
@@ -61,6 +62,23 @@ describe('Combobox (localized labels)', () => {
 });
 
 describe('Combobox (desktop popover)', () => {
+  it('renders the popover variant when (max-width: 767px) does not match', async () => {
+    stubDesktopViewport();
+    renderCombobox();
+
+    fireEvent.click(screen.getByRole('combobox'));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('combobox-sheet-input-header')
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('Select province')
+      ).toBeInTheDocument();
+      expect(screen.getByText('DKI Jakarta')).toBeInTheDocument();
+    });
+  });
+
   it('renders the placeholder in the trigger when nothing is selected', () => {
     renderCombobox();
 

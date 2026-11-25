@@ -87,7 +87,7 @@ export type ComboboxProps = SingleSelectProps | MultiSelectProps;
 // ---------------------------------------------------------------------------
 
 /** Below this width the picker renders as a bottom sheet instead of a popover. */
-const MOBILE_QUERY = '(max-width: 640px)';
+const MOBILE_QUERY = '(max-width: 767px)';
 /** Per-row height used to cap the popover list. */
 const ROW_HEIGHT_PX = 40;
 /** Default rows visible before the popover list scrolls. */
@@ -232,7 +232,7 @@ function OptionList({
 /**
  * Responsive combobox with single and multi-select modes.
  *
- * Desktop (`min-width: 640px`): shadcn Popover + cmdk, unchanged styling.
+ * Desktop (`min-width: 768px`): shadcn Popover + cmdk, unchanged styling.
  * Mobile: a bare vaul `Drawer` sheet with the search input pinned at the top —
  * deliberately NOT `AppDrawer`, so the one-open-at-a-time drawer registry is
  * never triggered. While the sheet is open the host AppDrawer is suspended
