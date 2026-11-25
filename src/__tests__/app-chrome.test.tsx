@@ -1,7 +1,7 @@
 import AppChrome from '@/components/app-chrome';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import { createElement } from 'react';
+import { createElement, useEffect } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/i18n', () => ({
@@ -45,7 +45,22 @@ vi.mock('@/components/app-sidebar', () => ({
 }));
 
 import { useAuth } from '@/context/auth/authContext';
+import { useFab } from '@/context/fabContext';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
+/** Seeds the FAB with an action so the content action bar becomes visible. */
+function ActionSeeder() {
+  const { dispatch } = useFab();
+
+  useEffect(() => {
+    dispatch({
+      type: 'SET_ACTION',
+      config: { label: 'Save', onAction: vi.fn() }
+    });
+  }, [dispatch]);
+
+  return <p data-testid='child'>Hello</p>;
+}
 
 function renderWithProviders(ui: React.ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -193,5 +208,34 @@ describe('AppChrome', () => {
     expect(screen.queryByRole('navigation')).toBeNull();
     expect(container.querySelector('[data-shell]')).toBeNull();
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main');
+  });
+
+  it('renders the content action bar inside main after the page content', () => {
+    renderWithProviders(
+      <AppChrome>
+        <ActionSeeder />
+      </AppChrome>
+    );
+
+    const main = screen.getByRole('main');
+    const child = screen.getByTestId('child');
+    const bar = main.querySelector('[data-slot="content-action-bar"]');
+
+    expect(bar).not.toBeNull();
+    expect(bar).toHaveAttribute('role', 'region');
+    expect(
+      child.compareDocumentPosition(bar as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it('does not render a sidebar primary-action slot', () => {
+    const { container } = renderWithProviders(
+      <AppChrome>
+        <span>test</span>
+      </AppChrome>
+    );
+
+    expect(container.querySelector('[data-slot="primary-action"]')).toBeNull();
   });
 });

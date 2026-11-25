@@ -1,6 +1,7 @@
 'use client';
 
 import AppSidebar from '@/components/app-sidebar';
+import ContentActionBar from '@/components/content-action-bar';
 import ProfileCompletenessModal from '@/components/general/profile-completeness-modal';
 import RouteResponseCleaner from '@/components/general/route-response-cleaner';
 import ConnectivityIndicator from '@/components/pwa/connectivity-indicator';
@@ -89,6 +90,7 @@ function PageContent({
       className={`${MAIN_CLASSNAME} ${isBare ? '' : MAIN_SHELL_CLASSNAME}`}
     >
       {children}
+      {isBare ? null : <ContentActionBar />}
     </main>
   );
 }
