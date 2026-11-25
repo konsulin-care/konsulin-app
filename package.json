@@ -79,7 +79,7 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/fhir": "^0.0.41",
+    "@types/fhir": "^0.0.44",
     "@types/node": "^26",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
