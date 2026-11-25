@@ -1,4 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Creator: CorelDRAW 2018 (64-Bit) -->
+
 <svg
    xml:space="preserve"
    width="500"
@@ -6,10 +8,37 @@
    version="1.1"
    style="clip-rule:evenodd;fill-rule:evenodd;image-rendering:optimizeQuality;shape-rendering:geometricPrecision;text-rendering:geometricPrecision"
    viewBox="0 0 5208.3333 5208.3333"
+   id="svg6"
+   sodipodi:docname="favicon.svg"
+   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns="http://www.w3.org/2000/svg">
- <defs>
-  <style type="text/css">
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+   id="namedview6"
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1.0"
+   inkscape:showpageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   inkscape:document-units="in"
+   inkscape:zoom="0.74397842"
+   inkscape:cx="341.40775"
+   inkscape:cy="59.1415"
+   inkscape:window-width="1916"
+   inkscape:window-height="1060"
+   inkscape:window-x="1920"
+   inkscape:window-y="16"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="Layer_x0020_1" />
+ <defs
+   id="defs2">
+  <style
+   type="text/css"
+   id="style1">
    <![CDATA[
     .fil0 {fill:#2E3440;fill-rule:nonzero}
     .fil4 {fill:#5E81AC;fill-rule:nonzero}
@@ -25,10 +54,17 @@
    y1="274.84"
    x2="2204.8"
    y2="54.639999">
-   <stop offset="0" style="stop-opacity:1; stop-color:#8FBCBB" />
-   <stop offset="1" style="stop-opacity:1; stop-color:#5E81AC" />
+   <stop
+   offset="0"
+   style="stop-opacity:1; stop-color:#8FBCBB"
+   id="stop1" />
+   <stop
+   offset="1"
+   style="stop-opacity:1; stop-color:#5E81AC"
+   id="stop2" />
   </linearGradient>
   <linearGradient
+   id="id1"
    gradientUnits="userSpaceOnUse"
    xlink:href="#id0"
    x1="975.5"
@@ -37,6 +73,7 @@
    y2="547.82001">
   </linearGradient>
   <linearGradient
+   id="id2"
    gradientUnits="userSpaceOnUse"
    xlink:href="#id0"
    x1="1523.13"
@@ -44,7 +81,8 @@
    x2="1364.66"
    y2="1224.67">
   </linearGradient>
-  <linearGradient
+ <linearGradient
+   inkscape:collect="always"
    xlink:href="#id0"
    id="linearGradient6"
    gradientUnits="userSpaceOnUse"
@@ -52,19 +90,34 @@
    y1="274.84"
    x2="2204.8"
    y2="54.639999" />
- </defs>
- <g transform="matrix(3.7614291,0,0,3.7614291,-2804.1854,370.69117)">
-  <path
+   
+   
+   
+  </defs>
+ <g
+   id="Layer_x0020_1"
+   inkscape:label="Layer 1"
+   inkscape:groupmode="layer">
+  <metadata
+   id="CorelCorpID_0Corel-Layer" />
+  <g
+   id="g5"
+   transform="matrix(3.7614291,0,0,3.7614291,-2804.1854,370.69117)">
+    <path
    class="fil1"
    d="m 1924.78,391.57 -162.31,162.31 -141.19,141.18 c 77.76,-77.76 77.76,-204.61 0,-282.37 l -21.13,-21.12 c -89.27,-89.27 -89.27,-235.35 0,-324.61 v 0 c 89.27,-89.27 235.34,-89.27 324.61,0 v 0 c 89.27,89.27 89.27,235.34 0,324.61 z"
+   id="path3"
    style="fill:url(#linearGradient6)" />
-  <path
+    <path
    class="fil2"
    d="M 1621.28,695.07 1437.85,878.5 1113.24,553.89 950.93,391.58 c -89.27,-89.27 -89.27,-235.35 0,-324.61 v 0 c 89.27,-89.27 235.35,-89.27 324.62,0 l 162.3,162.3 183.43,183.43 c 77.76,77.76 77.76,204.61 0,282.37 z"
+   id="path4"
    style="fill:url(#id1)" />
-  <path
+    <path
    class="fil3"
    d="m 1752.78,825.62 c 45.69,-45.69 119.76,-45.69 165.45,0 45.69,45.69 45.69,119.76 0,165.45 -62.44,62.44 -136.71,111.49 -218.06,145.19 -80.99,33.55 -167.99,51.3 -256.27,51.3 -88.28,0 -175.28,-17.75 -256.27,-51.3 -81.36,-33.7 -155.63,-82.75 -218.07,-145.19 -45.69,-45.69 -45.69,-119.76 0,-165.45 45.69,-45.69 119.76,-45.69 165.45,0 41.42,41.42 89.52,73.48 141.28,94.91 36.03,14.93 74.33,24.99 113.9,29.78 l -1.17,0.31 c -19.61,5.27 -35.31,18.11 -44.81,34.54 l -0.03,-0.02 c -9.5,16.44 -12.76,36.5 -7.49,56.17 l 0.02,0.07 c 5.27,19.61 18.11,35.31 34.54,44.81 l -0.02,0.03 c 16.45,9.5 36.5,12.76 56.18,7.5 l 169.52,-45.43 c 8.31,-2.22 13.25,-10.76 11.03,-19.07 -2.22,-8.31 -10.76,-13.25 -19.07,-11.03 l -169.53,45.42 c -11.41,3.06 -23.02,1.17 -32.53,-4.32 l -0.02,0.03 -0.04,-0.03 c -9.5,-5.48 -16.92,-14.59 -19.98,-26.02 -3.06,-11.4 -1.17,-23.02 4.32,-32.53 l -0.03,-0.02 0.03,-0.04 c 5.48,-9.5 14.59,-16.92 26.02,-19.98 l 132.2,-35.42 0.04,-0.01 c 28.33,-5.56 55.83,-13.86 82.13,-24.75 51.76,-21.44 99.86,-53.5 141.28,-94.91 z"
+   id="path5"
    style="fill:url(#id2)" />
+   </g>
  </g>
 </svg>
