@@ -1,3 +1,9 @@
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 import { FabProvider, useFab } from '@/context/fabContext';
 import { render, screen, waitFor } from '@testing-library/react';
 import { useMemo, type ReactNode } from 'react';
@@ -76,7 +82,7 @@ describe('useResearchFabAction', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
     });
 
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('true');

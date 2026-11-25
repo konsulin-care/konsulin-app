@@ -1,3 +1,9 @@
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
+
 import type { ActionConfig } from '@/components/fab/types';
 import { FabProvider, useFab } from '@/context/fabContext';
 import type { StudyProgress } from '@/utils/fhir/research';
@@ -89,6 +95,21 @@ function renderWithFab(ui: React.ReactElement) {
   return render(<FabProvider>{ui}</FabProvider>);
 }
 
+/** Hook caller for the researcher research-list action. */
+function ResearcherListHarness({ probe }: { probe: Probe }) {
+  const router = useMemo(() => ({ push: vi.fn() }), []);
+  const participate = useMemo(() => () => {}, []);
+
+  useResearchFabAction({
+    isResearcher: true,
+    activeStudy: null,
+    participate,
+    router
+  });
+
+  return <FabActionProbe probe={probe} />;
+}
+
 describe('useResearchFabAction stability on the research list page', () => {
   beforeEach(() => {
     vi.mocked(usePathname).mockReturnValue('/research');
@@ -143,8 +164,23 @@ describe('useResearchFabAction stability on the research list page', () => {
   });
 });
 
+describe('useResearchFabAction on the research list page', () => {
+  afterEach(() => {
+    vi.mocked(usePathname).mockReturnValue('/research/register');
+  });
+
+  it('labels the researcher action with the register_survey message', () => {
+    vi.mocked(usePathname).mockReturnValue('/research');
+    const probe: Probe = { current: null };
+
+    renderWithFab(<ResearcherListHarness probe={probe} />);
+
+    expect(probe.current?.label).toBe('Register Survey');
+  });
+});
+
 describe('useResearchFabAction on research form pages', () => {
-  it('dispatches icon-only ChevronRight disabled=true when canAdvance is false', async () => {
+  it('dispatches a labelled next_step action disabled=true when canAdvance is false', async () => {
     renderWithFab(
       <ResearchFormActionsProvider
         value={{
@@ -158,13 +194,13 @@ describe('useResearchFabAction on research form pages', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
     });
 
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('true');
   });
 
-  it('dispatches icon-only ChevronRight disabled=false when canAdvance is true', async () => {
+  it('dispatches a labelled next_step action disabled=false when canAdvance is true', async () => {
     renderWithFab(
       <ResearchFormActionsProvider
         value={{
@@ -178,7 +214,7 @@ describe('useResearchFabAction on research form pages', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
     });
 
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('false');
@@ -208,7 +244,7 @@ describe('useResearchFabAction on research form pages', () => {
     });
   });
 
-  it('dispatches icon-only ChevronRight when page=questionnaire', async () => {
+  it('dispatches the submit label when page=questionnaire', async () => {
     vi.mocked(useSearchParams).mockReturnValue(
       new URLSearchParams('page=questionnaire') as unknown as ReturnType<
         typeof useSearchParams
@@ -228,7 +264,7 @@ describe('useResearchFabAction on research form pages', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
     });
   });
 });

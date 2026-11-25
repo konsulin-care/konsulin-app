@@ -1,6 +1,7 @@
 'use client';
 
 import { useFab } from '@/context/fabContext';
+import { useTranslations } from '@/i18n';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { Check, ChevronRight, FlaskConical } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -42,6 +43,7 @@ export function useResearchFabAction({
   router: { push: (url: string) => void };
 }) {
   const { dispatch } = useFab();
+  const t = useTranslations('research');
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -68,6 +70,10 @@ export function useResearchFabAction({
   participateRef.current = participate;
   const activeStudyRef = useRef(activeStudy);
   activeStudyRef.current = activeStudy;
+  // Translation lookups are stable enough not to re-run the effect when the
+  // identity of t changes between renders.
+  const tRef = useRef(t);
+  tRef.current = t;
 
   const firstUncompleted = activeStudy?.firstUncompletedQuestionnaireId;
 
@@ -78,6 +84,7 @@ export function useResearchFabAction({
         dispatch({
           type: 'SET_ACTION',
           config: {
+            label: tRef.current('next_step'),
             icon: ChevronRight,
             onAction: onAdvance,
             disabled: !canAdvance
@@ -89,7 +96,7 @@ export function useResearchFabAction({
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Submit',
+          label: tRef.current('submit'),
           icon: Check,
           onAction: onSubmit
         }
@@ -102,7 +109,7 @@ export function useResearchFabAction({
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Register Survey',
+          label: tRef.current('register_survey'),
           icon: FlaskConical,
           onAction: () => {
             routerRef.current.push('/research/register?page=title');
@@ -116,7 +123,7 @@ export function useResearchFabAction({
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Participate',
+          label: tRef.current('participate'),
           icon: FlaskConical,
           onAction: () => {
             const study = activeStudyRef.current;
