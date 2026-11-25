@@ -23,7 +23,8 @@ idle (speed-dial)**. Selection mode suppresses all other modes.
 | Speed-dial | none (idle) / `SET_MENU` | `+` icon → role pills                    |
 
 The speed-dial toggle label comes from `page-header.open_menu` /
-`page-header.close_menu`.
+`page-header.close_menu`. From 768px the action, selection and menu modes render
+in the rail/sidebar instead (see ADR 031).
 
 # Wiring Action State
 

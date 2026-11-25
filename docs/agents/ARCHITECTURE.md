@@ -50,6 +50,7 @@ Backend API (Go + SuperTokens Go SDK)
 
 | Decision                              | ADR                                                      |
 | ------------------------------------- | -------------------------------------------------------- |
+| Responsive app shell                  | `@docs/ADR/031-responsive-app-shell.md`                  |
 | Design token system                   | `@docs/ADR/026-design-token-system.md`                   |
 | MUI renderer theme                    | `@docs/ADR/027-mui-renderer-theme.md`                    |
 | Client cache persistence              | `@docs/ADR/028-client-cache-persistence.md`              |
