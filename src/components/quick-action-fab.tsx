@@ -1,76 +1,26 @@
 'use client';
-/* eslint-disable unicorn/no-document-cookie */
 
-import { Roles } from '@/constants/roles';
-import { useAuth } from '@/context/auth/authContext';
 import { resolveMode, useFab } from '@/context/fabContext';
-import { useRecommendationResult } from '@/context/recommendationContext';
-import type { InterviewResult } from '@/types/recommendation-interview';
-import { useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
-import { toast } from 'react-toastify';
-import AddAssessmentDrawer from './add-assessment-drawer';
-import AddLocationDrawer from './add-location-drawer';
+import { useCallback } from 'react';
 import { ActionFab } from './fab/action-button';
 import { FabCustomMenu } from './fab/custom-menu';
-import {
-  adminPills,
-  patientPills,
-  practitionerPills,
-  researcherPills
-} from './fab/pills';
 import { SelectionFab } from './fab/selection-button';
 import { FabSpeedDial } from './fab/speed-dial';
 import { FabToggleShell } from './fab/toggle-shell';
 import type { MenuAction, Pill } from './fab/types';
+import { usePillActions } from './fab/use-pill-actions';
 import { useScrollHide } from './fab/use-scroll-hide';
-import RegisterPractitionerDrawer from './register-practitioner-drawer';
-import ScreeningDrawer from './screening-drawer';
-
-/** Get the appropriate set of pills for the user's role. */
-function getRolePills(roleName: string | undefined): Pill[] {
-  if (roleName === Roles.ClinicAdmin) return adminPills;
-  if (roleName === Roles.Practitioner) return practitionerPills;
-  if (roleName === Roles.Researcher) return researcherPills;
-  return patientPills;
-}
-
-/** Redirect guest users to auth with intent cookie. */
-function redirectGuestIfNeeded(pill: Pill, isGuest: boolean): boolean {
-  if (!isGuest || !pill.href || pill.href === '/assessments') return false;
-  document.cookie = `redirect_intent=${encodeURIComponent(pill.href)}; Path=/; Max-Age=300; SameSite=Lax`;
-  return true;
-}
 
 /**
  * Global floating action button with four modes:
  * selection (delete), action (save), menu (custom), idle (speed-dial).
  */
 export default function QuickActionFab() {
-  const router = useRouter();
-  const { state: authState } = useAuth();
   const { state, dispatch } = useFab();
-  const queryClient = useQueryClient();
-  const { setResult } = useRecommendationResult();
-  const [showRegisterPrac, setShowRegisterPrac] = useState(false);
-  const [showAddLocation, setShowAddLocation] = useState(false);
-  const [showAddAssessment, setShowAddAssessment] = useState(false);
-  const [showScreening, setShowScreening] = useState(false);
-
-  const handleScreeningComplete = useCallback(
-    (result: InterviewResult) => {
-      setResult(result);
-      void queryClient.invalidateQueries({ queryKey: ['recommendations'] }); // skipcq: JS-0098 — fire-and-forget cache invalidation
-    },
-    [queryClient, setResult]
-  );
+  const { pills, onPillClick, drawers } = usePillActions();
 
   const mode = resolveMode(state);
-  const roleName = authState?.userInfo?.role_name;
-  const isGuest = roleName === Roles.Guest;
-  const pills = getRolePills(roleName);
   const isVisible = useScrollHide(mode.type !== 'idle');
 
   const close = useCallback(
@@ -85,39 +35,9 @@ export default function QuickActionFab() {
   const handlePillClick = useCallback(
     (pill: Pill) => {
       close();
-      if (pill.action === 'register-practitioner') {
-        setShowRegisterPrac(true);
-        return;
-      }
-      if (pill.action === 'add-location') {
-        setShowAddLocation(true);
-        return;
-      }
-      if (pill.action === 'add-assessment') {
-        setShowAddAssessment(true);
-        return;
-      }
-      if (pill.action === 'get-recommendation') {
-        setShowScreening(true);
-        return;
-      }
-      if (pill.action === 'register-research') {
-        if (!authState?.userInfo?.profile_complete) {
-          toast.warn(
-            'Please complete your profile before registering research.'
-          );
-          return;
-        }
-        router.push('/research/register?page=title');
-        return;
-      }
-      if (redirectGuestIfNeeded(pill, isGuest)) {
-        router.push('/auth');
-        return;
-      }
-      if (pill.href) router.push(pill.href);
+      onPillClick(pill);
     },
-    [authState, close, isGuest, router]
+    [close, onPillClick]
   );
 
   const handleCustomAction = useCallback(
@@ -173,23 +93,7 @@ export default function QuickActionFab() {
               />
             )}
           </FabToggleShell>
-          <RegisterPractitionerDrawer
-            open={showRegisterPrac}
-            onClose={() => setShowRegisterPrac(false)}
-          />
-          <AddLocationDrawer
-            open={showAddLocation}
-            onClose={() => setShowAddLocation(false)}
-          />
-          <AddAssessmentDrawer
-            open={showAddAssessment}
-            onClose={() => setShowAddAssessment(false)}
-          />
-          <ScreeningDrawer
-            open={showScreening}
-            onClose={() => setShowScreening(false)}
-            onComplete={handleScreeningComplete}
-          />
+          {drawers}
         </>
       );
     }
@@ -208,23 +112,7 @@ export default function QuickActionFab() {
               <FabSpeedDial pills={pills} onPillClick={handlePillClick} />
             )}
           </FabToggleShell>
-          <RegisterPractitionerDrawer
-            open={showRegisterPrac}
-            onClose={() => setShowRegisterPrac(false)}
-          />
-          <AddLocationDrawer
-            open={showAddLocation}
-            onClose={() => setShowAddLocation(false)}
-          />
-          <AddAssessmentDrawer
-            open={showAddAssessment}
-            onClose={() => setShowAddAssessment(false)}
-          />
-          <ScreeningDrawer
-            open={showScreening}
-            onClose={() => setShowScreening(false)}
-            onComplete={handleScreeningComplete}
-          />
+          {drawers}
         </>
       );
     }
