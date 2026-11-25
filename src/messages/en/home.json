@@ -31,5 +31,8 @@
   "total_participants": "Total Participants",
   "active_batches": "Active Batches",
   "select_day": "Select a day to view appointments",
-  "no_appointments": "No appointments for this day"
+  "no_appointments": "No appointments for this day",
+  "find_another_title": "Find another recommendation",
+  "find_another_hint": "Answer a few questions for fresh results",
+  "find_another_cta": "Start again"
 }

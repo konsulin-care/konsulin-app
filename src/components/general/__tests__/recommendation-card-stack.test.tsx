@@ -4,7 +4,21 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import RecommendationCardStack from '@/components/general/home/recommendation-card-stack';
+import RecommendationRefreshCard from '@/components/general/home/recommendation-refresh-card';
 import type { Recommendation } from '@/types/recommendation';
+
+const translations: Record<string, string> = {
+  'home.find_another_title': 'Find another recommendation',
+  'home.find_another_hint': 'Answer a few questions for fresh results',
+  'home.find_another_cta': 'Start again'
+};
+
+vi.mock('@/i18n', () => ({
+  useTranslations: vi.fn(
+    (namespace: string) => (key: string) =>
+      translations[`${namespace}.${key}`] ?? key
+  )
+}));
 
 /** Captured Swiper props and fake instance shared by the swiper mock. */
 const mocks = vi.hoisted(() => {
@@ -117,5 +131,46 @@ describe('RecommendationCardStack', () => {
     fireEvent.click(screen.getByLabelText('Go to slide 3'));
     expect(mocks.fakeSwiper.slideTo).toHaveBeenCalledWith(2);
     expect(mocks.fakeSwiper.slideToLoop).not.toHaveBeenCalled();
+  });
+
+  it('renders the trailing card as the last slide with its own pagination dot', () => {
+    render(
+      <RecommendationCardStack
+        recommendations={RECOMMENDATIONS}
+        onBook={vi.fn()}
+        trailingCard={<RecommendationRefreshCard onStart={vi.fn()} />}
+      />
+    );
+    const slides = screen.getAllByTestId('slide');
+    expect(slides).toHaveLength(4);
+    expect(slides[3]?.textContent).toContain('Find another recommendation');
+    expect(screen.getByLabelText('Go to slide 4')).toBeInTheDocument();
+  });
+
+  it('does not call onBook when the trailing slide is clicked', () => {
+    const onBook = vi.fn();
+    render(
+      <RecommendationCardStack
+        recommendations={RECOMMENDATIONS}
+        onBook={onBook}
+        trailingCard={<RecommendationRefreshCard onStart={vi.fn()} />}
+      />
+    );
+    const slides = screen.getAllByTestId('slide');
+    const trailingSlide = slides[3];
+    expect(trailingSlide).toBeDefined();
+    if (trailingSlide) fireEvent.click(trailingSlide);
+    expect(onBook).not.toHaveBeenCalled();
+  });
+
+  it('shows the refresh copy and calls onStart from its button', () => {
+    const onStart = vi.fn();
+    render(<RecommendationRefreshCard onStart={onStart} />);
+    expect(screen.getByText('Find another recommendation')).toBeInTheDocument();
+    expect(
+      screen.getByText('Answer a few questions for fresh results')
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Start again' }));
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 });

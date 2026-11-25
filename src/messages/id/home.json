@@ -31,5 +31,8 @@
   "total_participants": "Total Peserta",
   "active_batches": "Batch Aktif",
   "select_day": "Pilih tanggal untuk melihat janji temu",
-  "no_appointments": "Tidak ada janji temu pada tanggal ini"
+  "no_appointments": "Tidak ada janji temu pada tanggal ini",
+  "find_another_title": "Cari rekomendasi lain",
+  "find_another_hint": "Jawab beberapa pertanyaan untuk hasil yang baru",
+  "find_another_cta": "Mulai lagi"
 }
