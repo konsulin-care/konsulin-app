@@ -248,6 +248,22 @@ describe('PageHeader - back navigation', () => {
     expect(link).toHaveAttribute('href', '/assessments');
   });
 
+  it('renders the dashboard title and a back route to / on /dashboard', () => {
+    vi.mocked(usePathname).mockReturnValue('/dashboard');
+    vi.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
+    );
+    setupMockRouter();
+
+    renderWithQuery(<PageHeader />);
+
+    expect(screen.getAllByText('Welcome to Konsulin').length).toBeGreaterThan(
+      0
+    );
+    const link = document.querySelector('a[aria-label="Go back"]');
+    expect(link).toHaveAttribute('href', '/');
+  });
+
   it('does not render back chevron on the home page', () => {
     vi.mocked(usePathname).mockReturnValue('/');
 

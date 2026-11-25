@@ -40,7 +40,8 @@ const MAIN_ROUTES = new Set([
   '/profile',
   '/recommendation',
   '/schedule',
-  '/research'
+  '/research',
+  '/dashboard'
 ]);
 
 /** Returns the page title based on current route. */
@@ -51,6 +52,9 @@ function getPageIndicator(
 ): string | null {
   switch (pathname) {
     case '/': {
+      return t('dashboard');
+    }
+    case '/dashboard': {
       return t('dashboard');
     }
     case '/clinic': {
