@@ -14,7 +14,7 @@ interface FabToggleShellProps {
 }
 
 const POSITION_CLASSES =
-  'fixed z-50 flex flex-col items-end gap-3 transition-all duration-300 right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]';
+  'fixed z-50 flex flex-col items-end gap-3 transition-all duration-300 md:hidden right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))]';
 
 /**
  * Shared shell for toggle-based modes (idle → speed-dial, menu → custom menu).

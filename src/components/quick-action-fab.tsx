@@ -59,7 +59,7 @@ export default function QuickActionFab() {
     case 'selection': {
       return (
         <div
-          className={`fixed right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-50 transition-all duration-300 ${fabVisibility}`}
+          className={`fixed right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-50 transition-all duration-300 md:hidden ${fabVisibility}`}
         >
           <SelectionFab config={mode.config} />
         </div>
@@ -69,7 +69,7 @@ export default function QuickActionFab() {
     case 'action': {
       return (
         <div
-          className={`fixed right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-50 transition-all duration-300 ${fabVisibility}`}
+          className={`fixed right-6 bottom-[calc(1.5rem+env(safe-area-inset-bottom))] z-50 transition-all duration-300 md:hidden ${fabVisibility}`}
         >
           <ActionFab config={mode.config} />
         </div>
