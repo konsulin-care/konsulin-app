@@ -22,7 +22,6 @@ import {
   PlanDefinition,
   Questionnaire,
   QuestionnaireResponse,
-  QuestionnaireResponseItem,
   Reference,
   ResearchStudy
 } from 'fhir/r4';
@@ -75,17 +74,8 @@ function parseCanonicalOrReference(
   return null;
 }
 
-type IResultBriefPayload = {
-  questionnaire: string;
-  description: string;
-  item: QuestionnaireResponseItem[];
-};
-
 export const RESULT_BRIEF_PLACEHOLDER =
   'The data is still being processed, kindly visit this page later.';
-
-export const RESULT_BRIEF_LOGIN_REQUIRED =
-  'Kindly log in to generate the result brief.';
 
 /**
  * Returned by submission mutations when the response was queued for
@@ -93,26 +83,6 @@ export const RESULT_BRIEF_LOGIN_REQUIRED =
  * detect the queued state without changing the mutation's public type.
  */
 export const OFFLINE_QUEUED = { queued: true } as const;
-
-const POLL_INTERVAL_MS = 1000; // 1 request per second
-const MAX_WAIT_MS = 3000; // max 3 seconds total
-
-type HookInterpretResponse = {
-  success: boolean;
-  message: string;
-  data?: {
-    asyncServiceResultId?: string;
-  };
-};
-
-type ServiceRequestResultResponse = {
-  success: boolean;
-  message: string;
-  data?: {
-    note?: string;
-    // other fields exist but we only care about note
-  };
-};
 
 /** Fetch ongoing active research studies with linked questionnaires. */
 export const useOngoingResearch = () => {
@@ -388,73 +358,6 @@ export const useUpdateSubmitQuestionnaire = (
       // Reflect the updated contribution in research progress widgets.
       // skipcq: JS-0098 - fire-and-forget query invalidation
       void queryClient.invalidateQueries({ queryKey: ['research'] });
-    }
-  });
-};
-
-/** Sleep for a given number of milliseconds. */
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-/** Poll for a service request result note until timeout. */
-async function pollServiceRequestNote(
-  API: Awaited<ReturnType<typeof getAPI>>,
-  serviceRequestId: string
-): Promise<string> {
-  const start = Date.now();
-
-  while (Date.now() - start < MAX_WAIT_MS) {
-    const res = await API.get<ServiceRequestResultResponse>(
-      `/api/v1/service-request/${serviceRequestId}/result`
-    );
-
-    const note = res.data?.data?.note?.trim() ?? '';
-    if (note) return note;
-
-    const elapsed = Date.now() - start;
-    if (elapsed + POLL_INTERVAL_MS >= MAX_WAIT_MS) break;
-
-    await sleep(POLL_INTERVAL_MS);
-  }
-
-  return '';
-}
-
-/** Trigger interpretation hook and poll for result brief. */
-export const useResultBrief = (questionnaireId: string) => {
-  type ResultBriefResponse = { note: string; serviceRequestId: string };
-
-  return useMutation<ResultBriefResponse, Error, IResultBriefPayload>({
-    mutationKey: ['result-brief', questionnaireId],
-    mutationFn: async ({ questionnaire, description, item }) => {
-      const payload = { questionnaire, item, description };
-
-      const API = await getAPI();
-
-      // 1) Trigger async webhook through backend
-      const hookRes = await API.post<HookInterpretResponse>(
-        '/api/v1/hook/interpret',
-        payload
-      );
-
-      const serviceRequestId =
-        hookRes.data?.data?.asyncServiceResultId?.trim() ?? '';
-
-      if (!serviceRequestId) {
-        // Backend response not as expected - fail fast so UI can show error
-        throw new Error('Missing asyncServiceResultId from hook response');
-      }
-
-      // 2) Poll result endpoint for up to 3 seconds
-      const note = await pollServiceRequestNote(API, serviceRequestId);
-
-      // 3) Return note if available, else placeholder
-      return {
-        note: note || RESULT_BRIEF_PLACEHOLDER,
-        serviceRequestId
-      };
-    },
-    onError: error => {
-      console.error('[useResultBrief] error:', error);
     }
   });
 };
