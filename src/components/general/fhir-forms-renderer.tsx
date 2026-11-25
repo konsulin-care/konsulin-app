@@ -9,7 +9,6 @@ import { useFab } from '@/context/fabContext';
 import { useDraftAutoSave } from '@/hooks/useDraftAutoSave';
 import { useRequiredValidation } from '@/hooks/useRequiredValidation';
 import { useTranslations } from '@/i18n';
-import { getAPI } from '@/services/api';
 import { useSubmitQuestionnaire } from '@/services/api/assessment';
 import { useResearchProgress } from '@/services/api/research';
 import { nextAssessmentInStudy } from '@/utils/fhir/research';
@@ -24,11 +23,7 @@ import CircularProgress from '@/components/ui/circular-progress';
 import { dbGet, dbSet, STORES } from '@/lib/indexeddb';
 import type { RendererConfig } from '@aehrc/smart-forms-renderer';
 import { getResponse, useBuildForm } from '@aehrc/smart-forms-renderer';
-import {
-  Questionnaire,
-  QuestionnaireResponse,
-  QuestionnaireResponseItem
-} from 'fhir/r4';
+import { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   useCallback,
@@ -65,39 +60,6 @@ interface FhirFormsRendererProps {
   role?: string;
   practitionerId?: string;
   ownerId?: string; // for scoping IndexedDB drafts per user/guest
-}
-
-/**
- * Posts the interpretation item to the async interpret webhook and records
- * the returned service request id in IndexedDB for later result polling.
- * Fire-and-forget: failures are logged and never block form submission.
- *
- * @param opts - Response id, draft owner, and the interpret payload.
- */
-async function triggerInterpretWebhook(opts: {
-  responseId: string;
-  ownerId: string;
-  payload: {
-    questionnaire?: string;
-    description?: string;
-    item: QuestionnaireResponseItem[];
-  };
-}): Promise<void> {
-  try {
-    const API = await getAPI();
-    const hookRes = await API.post('/api/v1/hook/interpret', opts.payload);
-    const serviceRequestId =
-      hookRes?.data?.data?.asyncServiceResultId?.trim?.() ?? '';
-    if (!serviceRequestId) return;
-    await dbSet(STORES.serviceRequests, {
-      id: opts.responseId,
-      ownerId: opts.ownerId,
-      serviceRequestId,
-      updatedAt: Date.now()
-    });
-  } catch (err) {
-    console.error('[interpret] webhook failed', err);
-  }
 }
 
 /**
@@ -352,10 +314,6 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       subject = undefined;
     }
 
-    const interpretationItem = questionnaireResponse.item.find(
-      item => item.linkId === 'interpretation'
-    );
-
     try {
       const submitResult = await submitQuestionnaire({
         ...questionnaireResponse,
@@ -371,26 +329,6 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         setIsSubmitting(false);
         setIsOpen(false);
         return;
-      }
-
-      // Authenticated users only: fire-and-forget the interpret webhook so
-      // navigation is never blocked on the async interpretation. The record
-      // page polls the result via the stored service request id.
-      if (
-        isAuthenticated &&
-        interpretationItem?.item?.length &&
-        submitResult?.id
-      ) {
-        // skipcq: JS-0098 - fire-and-forget interpret webhook; record page polls the result
-        void triggerInterpretWebhook({
-          responseId: submitResult.id,
-          ownerId: draftOwnerId,
-          payload: {
-            questionnaire: questionnaireResponse.questionnaire,
-            description: questionnaire.description,
-            item: interpretationItem.item
-          }
-        });
       }
 
       /* save questionnaire response to IndexedDB for guest */

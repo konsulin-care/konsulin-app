@@ -396,12 +396,8 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     expect(mockReplace.mock.calls[0][0]).toBe('/report?id=study-a&completed=1');
   });
 
-  it('navigates immediately after QR save without waiting for the interpret webhook', async () => {
-    let resolveHook: ((value: unknown) => void) | undefined;
-    const hookPromise = new Promise(resolve => {
-      resolveHook = resolve;
-    });
-    const post = vi.fn().mockReturnValue(hookPromise);
+  it('navigates after QR save and never posts to the interpret webhook', async () => {
+    const post = vi.fn();
     vi.mocked(getAPI).mockResolvedValue({ post } as any);
 
     vi.mocked(getResponse).mockReturnValue({
@@ -428,19 +424,15 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     await waitFor(() => expect(mockSubmitQuestionnaire).toHaveBeenCalled());
     await waitFor(() => expect(mockReplace).toHaveBeenCalled());
 
-    // The interpret webhook is still pending — navigation was not blocked.
-    expect(post).toHaveBeenCalled();
-
-    resolveHook?.({ data: { data: { asyncServiceResultId: 'sr-1' } } });
-
-    await waitFor(() => {
-      expect(dbSet).toHaveBeenCalledWith('service_requests', {
-        id: 'resp-789',
-        ownerId: 'pat-1',
-        serviceRequestId: 'sr-1',
-        updatedAt: expect.any(Number)
-      });
+    expect(post).not.toHaveBeenCalledWith('/api/v1/hook/interpret', {
+      questionnaire: 'Questionnaire/q-123',
+      description: undefined,
+      item: [{ linkId: 'score-dimension', item: [] }]
     });
+    expect(dbSet).not.toHaveBeenCalledWith(
+      'service_requests',
+      expect.anything()
+    );
   });
 
   it('mid-batch without study: CTA "See Results", no footer, replaces to the record view', async () => {
@@ -526,6 +518,10 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     expect(post).not.toHaveBeenCalled();
     expect(dbSet).not.toHaveBeenCalledWith(
       'assessment_drafts',
+      expect.anything()
+    );
+    expect(dbSet).not.toHaveBeenCalledWith(
+      'service_requests',
       expect.anything()
     );
   });
