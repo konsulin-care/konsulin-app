@@ -115,7 +115,20 @@ vi.mock('@/components/screening-drawer', () => ({
 }));
 
 vi.mock('@/components/general/home/recommendation-card-stack', () => ({
-  default: () => <div data-testid='mock-recommendations'>Recommendations</div>
+  default: ({
+    recommendations,
+    trailingCard
+  }: {
+    recommendations?: Recommendation[];
+    trailingCard?: ReactNode;
+  }) => (
+    <div data-testid='mock-recommendations'>
+      <div data-testid='mock-recommendation-cards'>
+        {recommendations?.length ?? 0} cards
+      </div>
+      {trailingCard}
+    </div>
+  )
 }));
 
 vi.mock('@/components/general/action-card', () => ({
@@ -132,6 +145,7 @@ vi.mock('@/components/ui/skeleton', () => ({
 
 import { useAuth } from '@/context/auth/authContext';
 import { usePatientRecords } from '@/hooks/usePatientRecords';
+import type { ReactNode } from 'react';
 
 const baseRecQuery: RecQueryStub = {
   data: { specialty: '2084P0800X', recommendations: [REC] },
@@ -261,5 +275,58 @@ describe('HomeContentPatient', () => {
       icfDomain: 'mental-emotional-health'
     });
     expect(screen.getByTestId('mock-recommendations')).toBeInTheDocument();
+  });
+
+  it('renders the find-another card after recommendations and opens the drawer', async () => {
+    mockReadLastInterviewResult.mockResolvedValue(MOOD_RESULT);
+
+    renderPatient();
+
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-recommendations')).toBeInTheDocument()
+    );
+
+    const cards = screen.getByTestId('mock-recommendation-cards');
+    const refreshButton = screen.getByRole('button', { name: 'Start again' });
+    expect(
+      cards.compareDocumentPosition(refreshButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    fireEvent.click(refreshButton);
+    expect(screen.getByTestId('screening-drawer')).toBeInTheDocument();
+  });
+
+  it('shows a find-another button when recommendations fail to load', async () => {
+    mockReadLastInterviewResult.mockResolvedValue(MOOD_RESULT);
+    mockUseRecommendations.mockReturnValue({
+      ...baseRecQuery,
+      data: undefined,
+      isError: true
+    });
+
+    renderPatient();
+
+    const refreshButton = await screen.findByRole('button', {
+      name: 'Start again'
+    });
+    fireEvent.click(refreshButton);
+    expect(screen.getByTestId('screening-drawer')).toBeInTheDocument();
+  });
+
+  it('shows a find-another button when no recommendations are returned', async () => {
+    mockReadLastInterviewResult.mockResolvedValue(MOOD_RESULT);
+    mockUseRecommendations.mockReturnValue({
+      ...baseRecQuery,
+      data: { specialty: '2084P0800X', recommendations: [] }
+    });
+
+    renderPatient();
+
+    const refreshButton = await screen.findByRole('button', {
+      name: 'Start again'
+    });
+    fireEvent.click(refreshButton);
+    expect(screen.getByTestId('screening-drawer')).toBeInTheDocument();
   });
 });

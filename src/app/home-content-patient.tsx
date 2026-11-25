@@ -2,6 +2,7 @@
 
 import ActionCard from '@/components/general/action-card';
 import RecommendationCardStack from '@/components/general/home/recommendation-card-stack';
+import RecommendationRefreshCard from '@/components/general/home/recommendation-refresh-card';
 import ScreeningDrawer from '@/components/screening-drawer';
 import RecordCard from '@/components/shared/record-card';
 import { Button } from '@/components/ui/button';
@@ -110,9 +111,12 @@ export default function HomeContentPatient() {
       return (
         <div className='px-4 pt-4'>
           <div className='border-border bg-muted rounded-2xl border border-dashed p-6 text-center'>
-            <p className='text-muted-foreground text-[12px]'>
+            <p className='text-muted-foreground mb-4 text-[12px]'>
               {isRecError ? t('no_recommendations') : t('no_practitioners')}
             </p>
+            <Button variant='outline' onClick={openDrawer}>
+              {t('find_another_cta')}
+            </Button>
           </div>
         </div>
       );
@@ -120,8 +124,10 @@ export default function HomeContentPatient() {
     return (
       <div className='overflow-x-hidden px-0 pt-4'>
         <RecommendationCardStack
+          key={JSON.stringify(savedResult)}
           recommendations={recommendationsData?.recommendations ?? []}
           onBook={handleBook}
+          trailingCard={<RecommendationRefreshCard onStart={openDrawer} />}
         />
       </div>
     );
