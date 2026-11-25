@@ -96,6 +96,21 @@ describe('SidebarAccountMenu', () => {
     );
   });
 
+  it('left-aligns the name and role wrapper', () => {
+    mockUseAuth.mockReturnValue(authenticatedBase);
+
+    render(<SidebarAccountMenu />);
+
+    const nameWrapper = screen.getByText('John Doe').parentElement;
+    expect(nameWrapper).toHaveClass(
+      'hidden',
+      'min-w-0',
+      'flex-1',
+      'text-left',
+      'lg:block'
+    );
+  });
+
   it('lists each other role as a switch item', async () => {
     mockUseAuth.mockReturnValue({
       ...authenticatedBase,

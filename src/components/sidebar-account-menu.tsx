@@ -70,7 +70,7 @@ export default function SidebarAccountMenu() {
             className='text-xs'
             imageClassName='self-center'
           />
-          <span className='hidden lg:block'>
+          <span className='hidden min-w-0 flex-1 text-left lg:block'>
             <span className='text-foreground block truncate text-sm font-semibold'>
               {displayName}
             </span>
