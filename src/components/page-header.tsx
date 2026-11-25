@@ -124,8 +124,8 @@ function getDefaultBackRoute(
       params.set('page', page === 'batch' ? 'questionnaire' : 'title');
       return `${pathname}?${params.toString()}`;
     }
-    // ?page=title or no param → /research
-    return '/research';
+    // ?page=title or no param → '/'
+    return '/';
   }
 
   if (MAIN_ROUTES.has(pathname)) {

@@ -54,7 +54,7 @@ describe('PageHeader - research form page navigation', () => {
       'page=questionnaire',
       '/research/register?page=title'
     ],
-    ['/research/register', 'page=title', '/research'],
+    ['/research/register', 'page=title', '/'],
     [
       '/research/edit',
       'id=study-123&page=batch',
