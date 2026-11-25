@@ -173,6 +173,40 @@ describe('AppSidebar', () => {
     ).not.toHaveAttribute('aria-current');
   });
 
+  it('keeps every nav item flex-aligned without line clamping', () => {
+    renderSidebar('Patient');
+    const nav = getNav();
+
+    const links = within(nav).getAllByRole('link');
+    expect(links.length).toBeGreaterThan(0);
+    links.forEach(link => {
+      expect(link).toHaveClass('flex', 'items-center');
+      expect(link.className).not.toContain('line-clamp');
+    });
+  });
+
+  it('visually hides the label below lg but keeps the accessible name', () => {
+    renderSidebar('Patient');
+    const nav = getNav();
+
+    const home = within(nav).getByRole('link', { name: 'Home' });
+    const label = home.querySelector('span');
+    expect(label).not.toBeNull();
+    expect(label).toHaveClass('md:sr-only', 'lg:not-sr-only');
+    expect(home).toHaveAccessibleName('Home');
+  });
+
+  it('opens a tooltip with the label on focus', async () => {
+    renderSidebar('Patient');
+    const nav = getNav();
+
+    const journal = within(nav).getByRole('link', { name: 'Write Journal' });
+    fireEvent.focus(journal);
+
+    const tooltip = await screen.findByRole('tooltip');
+    expect(tooltip).toHaveTextContent('Write Journal');
+  });
+
   it('routes a guest pill outside /assessments through the pill action', () => {
     renderSidebar('Guest');
     const journalButton = screen.getByRole('button', {
