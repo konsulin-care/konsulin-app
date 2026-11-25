@@ -24,7 +24,8 @@ idle (speed-dial)**. Selection mode suppresses all other modes.
 
 The speed-dial toggle label comes from `page-header.open_menu` /
 `page-header.close_menu`. From 768px the action, selection and menu modes render
-in the rail/sidebar instead (see ADR 031).
+in the rail/sidebar instead (see ADR 031), except the page primary action, which
+renders in `ContentActionBar` inside `<main>` from md (see ADR 032).
 
 # Wiring Action State
 

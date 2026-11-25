@@ -77,6 +77,15 @@ date: 2026-05-26
   `obj[key] = val` where `key` could be `__proto__` or `constructor`
   risks prototype pollution. Use `Map<K, V>`, or guard writes with
   `Object.hasOwn(obj, key)`.
+- **Never use an inline `?? []` / `?? {}` fallback as a hook dependency** —
+  `progress?.consentedStudyIds ?? []` allocates a new array every render, so
+  every hook built on it (`useConsent`'s Set and `isConsented`, then the
+  action callback) changes identity each render. The dependent effect re-runs,
+  dispatches `SET_ACTION` and `fabReducer` always returns a new state object,
+  which re-renders and repeats. This caused an infinite FAB dispatch loop that
+  starved every router navigation on `/research`. **Fix**: derive the fallback
+  once (`useMemo`, a module constant, or a stable empty array) before it
+  reaches a dependency array.
 - **Stale-closure safety nets vs. redundant checks** — in `useEffect`
   cleanup/observer callbacks, re-checking a condition already guarded at
   effect scope is redundant. Remove it or accept the lint warning.
