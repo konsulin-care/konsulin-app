@@ -171,8 +171,8 @@ export function shouldShowSeeAll(
 
 /**
  * Returns true when the research progress widget may show in the header:
- * patients and guests only, never admins, practitioners, the /research page,
- * or while auth is still loading.
+ * patients and guests only, never admins, practitioners, the research home
+ * ('/'), the /research page, or while auth is still loading.
  */
 export function canShowResearchHeader({
   isLoadingAuth,
@@ -190,6 +190,7 @@ export function canShowResearchHeader({
   return !(
     isLoadingAuth ||
     isAdmin ||
+    pathname === '/' ||
     pathname === '/research' ||
     (!isPatient && isAuthenticated)
   );

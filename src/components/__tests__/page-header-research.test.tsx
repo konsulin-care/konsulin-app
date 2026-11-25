@@ -132,7 +132,7 @@ function renderHeader() {
 
 describe('PageHeader research widget gating', () => {
   it('shows the widget for patients', () => {
-    mockPathname.current = '/';
+    mockPathname.current = '/journal';
     mockUseAuth.mockReturnValue({
       isLoading: false,
       state: {
@@ -146,7 +146,7 @@ describe('PageHeader research widget gating', () => {
   });
 
   it('shows the widget for guests', () => {
-    mockPathname.current = '/';
+    mockPathname.current = '/journal';
     mockUseAuth.mockReturnValue({
       isLoading: false,
       state: { isAuthenticated: false, userInfo: {} }
@@ -173,6 +173,20 @@ describe('PageHeader research widget gating', () => {
     mockUseAuth.mockReturnValue({
       isLoading: false,
       state: { isAuthenticated: true, userInfo: { role_name: 'Clinic Admin' } }
+    });
+
+    renderHeader();
+    expect(screen.queryByTestId('research-header-widget')).toBeNull();
+  });
+
+  it('hides the widget on the research home page', () => {
+    mockPathname.current = '/';
+    mockUseAuth.mockReturnValue({
+      isLoading: false,
+      state: {
+        isAuthenticated: true,
+        userInfo: { role_name: 'Patient', fhirId: 'P1', fullname: 'Test' }
+      }
     });
 
     renderHeader();

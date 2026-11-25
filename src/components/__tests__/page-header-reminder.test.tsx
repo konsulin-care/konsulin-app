@@ -266,6 +266,7 @@ describe('PageHeader single-card reminder', () => {
 
   it('shows the research card without See All when the session is not urgent', () => {
     mockAuth('Patient', 'pat-1', 'Pat Smith');
+    mockPathname.current = '/journal';
     mockUseUpcomingEvents.mockReturnValue({
       appointmentData: makeBundle(startOn(5)),
       sessionData: null
@@ -295,6 +296,7 @@ describe('PageHeader single-card reminder', () => {
 
   it('shows the research card without See All when there is no session', () => {
     mockAuth('Patient', 'pat-1', 'Pat Smith');
+    mockPathname.current = '/journal';
 
     render(<PageHeader />, { wrapper: createWrapper() });
 

@@ -162,7 +162,7 @@ describe('canShowResearchHeader', () => {
   const base = {
     isLoadingAuth: false,
     isAdmin: false,
-    pathname: '/',
+    pathname: '/journal',
     isPatient: false,
     isAuthenticated: true
   };
@@ -194,6 +194,12 @@ describe('canShowResearchHeader', () => {
         isPatient: true,
         pathname: '/research'
       })
+    ).toBe(false);
+  });
+
+  it('is false on the research home page', () => {
+    expect(
+      canShowResearchHeader({ ...base, isPatient: true, pathname: '/' })
     ).toBe(false);
   });
 
