@@ -61,9 +61,15 @@ export function useResearchFabAction({
   const onAdvance = formActions?.onAdvance;
   const onSubmit = formActions?.onSubmit;
 
-  // Stable ref for router to avoid infinite effect loops
+  // Stable refs so changing callback identities do not re-run the effect
   const routerRef = useRef(router);
   routerRef.current = router;
+  const participateRef = useRef(participate);
+  participateRef.current = participate;
+  const activeStudyRef = useRef(activeStudy);
+  activeStudyRef.current = activeStudy;
+
+  const firstUncompleted = activeStudy?.firstUncompletedQuestionnaireId;
 
   useEffect(() => {
     // Research form pages: use page-level FAB
@@ -106,8 +112,6 @@ export function useResearchFabAction({
       return () => dispatch({ type: 'SET_ACTION', config: null });
     }
 
-    const firstUncompleted = activeStudy?.firstUncompletedQuestionnaireId;
-
     if (firstUncompleted) {
       dispatch({
         type: 'SET_ACTION',
@@ -115,7 +119,8 @@ export function useResearchFabAction({
           label: 'Participate',
           icon: FlaskConical,
           onAction: () => {
-            participate(activeStudy);
+            const study = activeStudyRef.current;
+            if (study) participateRef.current(study);
           }
         }
       });
@@ -125,7 +130,6 @@ export function useResearchFabAction({
 
     return () => dispatch({ type: 'SET_ACTION', config: null });
   }, [
-    activeStudy,
     dispatch,
     isResearcher,
     isResearchFormPage,
@@ -133,6 +137,6 @@ export function useResearchFabAction({
     canAdvance,
     onAdvance,
     onSubmit,
-    participate
+    firstUncompleted
   ]);
 }

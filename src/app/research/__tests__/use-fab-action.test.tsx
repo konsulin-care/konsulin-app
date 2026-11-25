@@ -1,10 +1,13 @@
+import type { ActionConfig } from '@/components/fab/types';
 import { FabProvider, useFab } from '@/context/fabContext';
+import type { StudyProgress } from '@/utils/fhir/research';
 import { render, screen, waitFor } from '@testing-library/react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResearchFormActionsProvider } from '../research-form-actions-context';
 import { useResearchFabAction } from '../use-fab-action';
+import { makeStudyProgress } from './research-fixtures';
 
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn().mockReturnValue('/research/register'),
@@ -48,9 +51,97 @@ function TestHarness() {
   return <FabStateReader />;
 }
 
+/** Mutable holder for the latest FAB action config. */
+interface Probe {
+  current: ActionConfig | null;
+}
+
+/** Captures the latest FAB action config without rendering UI. */
+function FabActionProbe({ probe }: { probe: Probe }) {
+  const { state } = useFab();
+  probe.current = state.action;
+  return null;
+}
+
+/** Hook caller whose props can change between renders. */
+function ListHarness({
+  probe,
+  participate,
+  activeStudy
+}: {
+  probe: Probe;
+  participate: (study: StudyProgress) => void;
+  activeStudy: StudyProgress | null;
+}) {
+  const router = useMemo(() => ({ push: vi.fn() }), []);
+
+  useResearchFabAction({
+    isResearcher: false,
+    activeStudy,
+    participate,
+    router
+  });
+
+  return <FabActionProbe probe={probe} />;
+}
+
 function renderWithFab(ui: React.ReactElement) {
   return render(<FabProvider>{ui}</FabProvider>);
 }
+
+describe('useResearchFabAction stability on the research list page', () => {
+  beforeEach(() => {
+    vi.mocked(usePathname).mockReturnValue('/research');
+  });
+
+  afterEach(() => {
+    vi.mocked(usePathname).mockReturnValue('/research/register');
+  });
+
+  it('does not dispatch again when only the participate identity changes', () => {
+    const probe: Probe = { current: null };
+    const study = makeStudyProgress();
+    const first = vi.fn();
+    const second = vi.fn();
+
+    const { rerender } = renderWithFab(
+      <ListHarness probe={probe} participate={first} activeStudy={study} />
+    );
+
+    const dispatched = probe.current;
+    expect(dispatched?.label).toBe('Participate');
+
+    rerender(
+      <FabProvider>
+        <ListHarness probe={probe} participate={second} activeStudy={study} />
+      </FabProvider>
+    );
+
+    expect(probe.current).toBe(dispatched);
+  });
+
+  it('invokes the latest participate callback after a re-render', () => {
+    const probe: Probe = { current: null };
+    const study = makeStudyProgress();
+    const first = vi.fn();
+    const second = vi.fn();
+
+    const { rerender } = renderWithFab(
+      <ListHarness probe={probe} participate={first} activeStudy={study} />
+    );
+
+    rerender(
+      <FabProvider>
+        <ListHarness probe={probe} participate={second} activeStudy={study} />
+      </FabProvider>
+    );
+
+    probe.current?.onAction();
+
+    expect(second).toHaveBeenCalledWith(study);
+    expect(first).not.toHaveBeenCalled();
+  });
+});
 
 describe('useResearchFabAction on research form pages', () => {
   it('dispatches icon-only ChevronRight disabled=true when canAdvance is false', async () => {

@@ -28,6 +28,9 @@ import { useResearchFabAction } from './use-fab-action';
 import { useResearchHandlers } from './use-research-handlers';
 import { useUrlSync } from './use-url-sync';
 
+/** Stable empty fallback so consent inputs keep a constant identity. */
+const EMPTY_IDS: string[] = [];
+
 /** Target of the consent drawer: the study and the questionnaire to open next. */
 interface PendingConsent {
   studyId: string;
@@ -137,7 +140,7 @@ export default function ResearchPage() {
   const { consentedStudyIds, isConsented, handleAgree } = useConsent({
     isPatient,
     studies,
-    consentedStudyIds: progress?.consentedStudyIds ?? [],
+    consentedStudyIds: progress?.consentedStudyIds ?? EMPTY_IDS,
     pendingConsent,
     setPendingConsent,
     router
