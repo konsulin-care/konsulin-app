@@ -17,7 +17,7 @@ export default function FloatingSaveButton({
 }: FloatingSaveButtonProps) {
   const t = useTranslations('common');
   return (
-    <div className='fixed right-6 bottom-6 z-50 flex gap-2'>
+    <div className='fixed right-6 bottom-6 z-50 flex gap-2 md:right-[max(1.5rem,calc((100vw-var(--shell-offset,0px)-40rem)/2+1.5rem))]'>
       <Button
         onClick={onSave}
         disabled={!hasChanges || isSaving}

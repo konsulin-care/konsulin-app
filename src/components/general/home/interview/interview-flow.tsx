@@ -70,7 +70,7 @@ export function InterviewFlow({
   };
 
   return (
-    <div className='fixed inset-x-0 bottom-0 z-40 flex justify-center'>
+    <div className='fixed inset-x-0 bottom-0 z-40 flex justify-center md:left-[var(--shell-offset,0px)]'>
       <div className='bg-card w-full max-w-md rounded-t-3xl p-5 pb-8 shadow-lg'>
         <div className='mb-2 flex items-center justify-between'>
           <span className='text-muted-foreground text-[12px] font-medium'>

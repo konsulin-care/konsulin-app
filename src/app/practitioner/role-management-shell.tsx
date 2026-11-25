@@ -172,7 +172,7 @@ function RoleAccordion({
       </AccordionItem>
 
       {/* Spacer reserves room for the fixed-position FAB */}
-      <div className='h-24' aria-hidden />
+      <div className='h-24 md:hidden' aria-hidden />
     </Accordion>
   );
 }
