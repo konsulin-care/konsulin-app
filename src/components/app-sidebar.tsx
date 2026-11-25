@@ -4,6 +4,7 @@ import { useTranslations } from '@/i18n';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePillActions } from './fab/use-pill-actions';
+import SidebarAccountMenu from './sidebar-account-menu';
 import { SidebarNavItems } from './sidebar-nav-items';
 import SidebarPrimaryAction from './sidebar-primary-action';
 
@@ -52,7 +53,9 @@ export default function AppSidebar({
         <div data-slot='primary-action' className='md:sticky md:top-4'>
           <SidebarPrimaryAction />
         </div>
-        <div data-slot='account' className='mt-auto' />
+        <div data-slot='account' className='mt-auto'>
+          <SidebarAccountMenu />
+        </div>
       </nav>
       {drawers}
     </>

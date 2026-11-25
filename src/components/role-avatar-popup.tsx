@@ -11,8 +11,15 @@ import { IStateAuth } from '@/context/auth/authTypes';
 import { generateAvatarPlaceholder } from '@/utils/helper';
 import Link from 'next/link';
 
-/** Builds AvatarInfo for the current user and role. */
-function getCurrentAvatar(
+/**
+ * Builds the avatar placeholder data for the current user and role.
+ *
+ * @param role - Active role name, used as display-name fallback and seed
+ * @param userId - Fallback seed when the profile has no FHIR id
+ * @param authState - Current auth state holding the user profile
+ * @returns Avatar seed, initials, background colour and photo URL
+ */
+export function getCurrentAvatar(
   role: string | undefined,
   userId: string,
   authState: IStateAuth

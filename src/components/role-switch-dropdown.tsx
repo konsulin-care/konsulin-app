@@ -49,8 +49,13 @@ async function switchRole(role: string, errorMessage: string): Promise<void> {
   }
 }
 
-/** Renders dropdown menu items for switching to other roles. */
-function RoleSwitchMenuItems({
+/**
+ * Renders the separator and dropdown items for every other role.
+ *
+ * @param props.otherRoles - Roles other than the active one as switch targets
+ * @returns The role switch menu items, or null when there is no other role
+ */
+export function RoleSwitchMenuItems({
   otherRoles
 }: Readonly<{
   otherRoles: string[];
