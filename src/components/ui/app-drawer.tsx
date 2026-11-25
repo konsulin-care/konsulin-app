@@ -1,7 +1,8 @@
 'use client';
 
-import { LoadingSpinnerIcon } from '@/components/icons';
-import { Button } from '@/components/ui/button';
+import AppDrawerDialog, {
+  DrawerFooterBlock
+} from '@/components/ui/app-drawer-dialog';
 import {
   Drawer,
   DrawerContent,
@@ -10,6 +11,7 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from '@/components/ui/drawer';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import {
   createContext,
@@ -66,48 +68,6 @@ function DrawerHeaderBlock({
   );
 }
 
-/** Sticky CTA footer with the single action button and optional footnote. */
-function DrawerFooterBlock({
-  ctaLabel,
-  onCtaClick,
-  ctaDisabled,
-  ctaLoading,
-  footerContent
-}: Readonly<{
-  ctaLabel?: ReactNode;
-  onCtaClick?: () => void | Promise<void>;
-  ctaDisabled: boolean;
-  ctaLoading: boolean;
-  footerContent?: ReactNode;
-}>) {
-  return (
-    <div className='bg-card sticky bottom-0 mt-auto border-t p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]'>
-      <Button
-        type='button'
-        size='lg'
-        className='w-full'
-        disabled={ctaDisabled || ctaLoading}
-        onClick={() => {
-          // skipcq: JS-0098 - fire-and-forget CTA action
-          void onCtaClick?.();
-        }}
-      >
-        {ctaLoading ? (
-          <LoadingSpinnerIcon
-            width={20}
-            height={20}
-            stroke='white'
-            className='animate-spin'
-          />
-        ) : (
-          ctaLabel
-        )}
-      </Button>
-      {footerContent}
-    </div>
-  );
-}
-
 type AppDrawerProps = {
   open: boolean;
   onClose: () => void;
@@ -153,6 +113,8 @@ export default function AppDrawer({
   className
 }: Readonly<AppDrawerProps>) {
   const hasCta = Boolean(ctaLabel && onCtaClick);
+  // Tablets and up render a centred dialog instead of the bottom sheet.
+  const isDialogMode = useMediaQuery('(min-width: 768px)');
   // Instance identity for the open-drawer registry (unique per mount).
   const instanceId = useId();
   const wasOpen = useRef(open);
@@ -209,6 +171,28 @@ export default function AppDrawer({
   useEffect(() => {
     if (!open) setSuspended(false);
   }, [open]);
+
+  if (isDialogMode) {
+    return (
+      <AppDrawerDialog
+        open={open}
+        onClose={onClose}
+        trigger={trigger}
+        title={title}
+        description={description}
+        ctaLabel={ctaLabel}
+        onCtaClick={onCtaClick}
+        ctaDisabled={ctaDisabled}
+        ctaLoading={ctaLoading}
+        footerContent={footerContent}
+        className={className}
+      >
+        <AppDrawerHostContext.Provider value={host}>
+          {children}
+        </AppDrawerHostContext.Provider>
+      </AppDrawerDialog>
+    );
+  }
 
   return (
     <Drawer
