@@ -63,18 +63,22 @@ export default function ResearcherContent({
   }
 
   return (
-    <>
-      <ResearcherCarousel
-        studies={studies}
-        activeId={activeId}
-        onSlideChange={onSlideChange}
-        onStudyClick={onStudyClick}
-      />
-      <ResearcherImpactDashboard
-        studies={studies}
-        activeStudyId={activeStudyId}
-        practitionerId={practitionerId}
-      />
-    </>
+    <div className='lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-6'>
+      <div>
+        <ResearcherCarousel
+          studies={studies}
+          activeId={activeId}
+          onSlideChange={onSlideChange}
+          onStudyClick={onStudyClick}
+        />
+      </div>
+      <div className='lg:sticky lg:top-4'>
+        <ResearcherImpactDashboard
+          studies={studies}
+          activeStudyId={activeStudyId}
+          practitionerId={practitionerId}
+        />
+      </div>
+    </div>
   );
 }

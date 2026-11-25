@@ -131,4 +131,29 @@ describe('ResearcherContent wiring', () => {
       screen.queryByTestId('researcher-impact-dashboard')
     ).not.toBeInTheDocument();
   });
+
+  it('renders carousel and dashboard in an lg grid with a sticky dashboard column', () => {
+    render(
+      <ResearcherContent
+        isLoading={false}
+        studies={[makeStudyWithBatches('study-1')]}
+        activeId='study-1'
+        onSlideChange={vi.fn()}
+        onStudyClick={vi.fn()}
+        practitionerId='practitioner-1'
+        activeStudyId='study-1'
+      />,
+      { wrapper }
+    );
+    const carousel = screen.getByTestId('researcher-carousel');
+    const dashboard = screen.getByTestId('researcher-impact-dashboard');
+    const grid = carousel.parentElement?.parentElement;
+    expect(grid).toHaveClass('lg:grid');
+    expect(grid).toHaveClass('lg:grid-cols-[minmax(0,1fr)_360px]');
+    expect(grid?.children).toHaveLength(2);
+    expect(grid?.children[0]).toContainElement(carousel);
+    expect(grid?.children[1]).toContainElement(dashboard);
+    expect(dashboard.parentElement).toHaveClass('lg:sticky');
+    expect(dashboard.parentElement).toHaveClass('lg:top-4');
+  });
 });
