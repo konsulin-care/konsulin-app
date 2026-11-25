@@ -21,5 +21,13 @@
   "pill_soap": "S.O.A.P.",
   "pill_register_practitioner": "Register Practitioner",
   "pill_add_location": "Add Location",
-  "pill_add_assessments": "Add Assessments"
+  "pill_add_assessments": "Add Assessments",
+  "nav_home": "Home",
+  "main_navigation": "Main navigation",
+  "skip_to_content": "Skip to content",
+  "account_menu": "Account menu",
+  "sign_in": "Sign in",
+  "profile": "Profile",
+  "log_out": "Log out",
+  "cancel_selection": "Cancel"
 }

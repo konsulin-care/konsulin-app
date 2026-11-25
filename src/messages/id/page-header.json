@@ -21,5 +21,13 @@
   "pill_soap": "S.O.A.P.",
   "pill_register_practitioner": "Daftarkan Praktisi",
   "pill_add_location": "Tambah Lokasi",
-  "pill_add_assessments": "Tambah Asesmen"
+  "pill_add_assessments": "Tambah Asesmen",
+  "nav_home": "Beranda",
+  "main_navigation": "Navigasi utama",
+  "skip_to_content": "Lewati ke konten",
+  "account_menu": "Menu akun",
+  "sign_in": "Masuk",
+  "profile": "Profil",
+  "log_out": "Keluar",
+  "cancel_selection": "Batal"
 }
