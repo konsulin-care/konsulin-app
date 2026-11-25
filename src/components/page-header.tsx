@@ -44,39 +44,69 @@ const MAIN_ROUTES = new Set([
   '/dashboard'
 ]);
 
+/** Roles whose home path '/' renders the research page. */
+const RESEARCH_HOME_ROLES = new Set<string>([
+  Roles.Patient,
+  Roles.Guest,
+  Roles.Researcher
+]);
+
+/**
+ * Returns true when the current user sees the research page on '/'.
+ * Unauthenticated visitors also land on the research home.
+ */
+function isResearchHome(
+  pathname: string,
+  role: string | undefined,
+  isAuthenticated: boolean
+): boolean {
+  if (pathname !== '/') return false;
+  if (!isAuthenticated) return true;
+  return RESEARCH_HOME_ROLES.has(role ?? '');
+}
+
+const INDICATOR_KEYS: Record<string, string> = {
+  '/dashboard': 'dashboard',
+  '/assessments': 'assessment_center',
+  '/profile': 'user_profile',
+  '/recommendation': 'recommended',
+  '/research': 'research'
+};
+
 /** Returns the page title based on current route. */
 function getPageIndicator(
   pathname: string,
   searchParams: URLSearchParams,
-  t: (key: string) => string
+  t: (key: string) => string,
+  researchHome: boolean
 ): string | null {
-  switch (pathname) {
-    case '/': {
-      return t('dashboard');
-    }
-    case '/dashboard': {
-      return t('dashboard');
-    }
-    case '/clinic': {
-      if (searchParams.has('id')) return null;
-      return t('book_session');
-    }
-    case '/assessments': {
-      return t('assessment_center');
-    }
-    case '/profile': {
-      return t('user_profile');
-    }
-    case '/recommendation': {
-      return t('recommended');
-    }
-    case '/research': {
-      return t('research');
-    }
-    default: {
-      return '';
-    }
+  if (pathname === '/') return researchHome ? t('research') : t('dashboard');
+  if (pathname === '/clinic') {
+    return searchParams.has('id') ? null : t('book_session');
   }
+  const key = INDICATOR_KEYS[pathname];
+  return key ? t(key) : '';
+}
+
+/** Resolves the display name, falling back to email for placeholder values. */
+function getDisplayName(
+  userInfo: { fullname?: string; email?: string } | undefined
+): string | undefined {
+  if (!userInfo?.fullname || userInfo.fullname.trim() === '-') {
+    return userInfo?.email;
+  }
+  return userInfo?.fullname;
+}
+
+/** Returns true when the header reminder cards are suppressed for the route. */
+function shouldHideSessionCard(
+  pathname: string,
+  researchHome: boolean,
+  hideUpcomingSession: boolean | undefined
+): boolean {
+  return (
+    (hideUpcomingSession ?? false) || pathname === '/research' || researchHome
+  );
 }
 
 /** Determines the default back navigation route. */
@@ -89,15 +119,9 @@ function getDefaultBackRoute(
   // Research form pages: navigate between pages
   if (pathname === '/research/register' || pathname === '/research/edit') {
     const page = searchParams.get('page');
-    if (page === 'batch') {
-      // Preserve id param for edit
+    if (page === 'batch' || page === 'questionnaire') {
       const params = new URLSearchParams(searchParams);
-      params.set('page', 'questionnaire');
-      return `${pathname}?${params.toString()}`;
-    }
-    if (page === 'questionnaire') {
-      const params = new URLSearchParams(searchParams);
-      params.set('page', 'title');
+      params.set('page', page === 'batch' ? 'questionnaire' : 'title');
       return `${pathname}?${params.toString()}`;
     }
     // ?page=title or no param → /research
@@ -105,11 +129,13 @@ function getDefaultBackRoute(
   }
 
   if (MAIN_ROUTES.has(pathname)) {
-    if (searchParams.toString()) return pathname;
-    return '/';
+    return searchParams.toString() ? pathname : '/';
   }
   return undefined;
 }
+
+const BACK_BUTTON_CLASS =
+  'text-foreground absolute left-0 flex h-10 w-10 items-center justify-center';
 
 /** Renders the header back navigation link or history button. */
 function HeaderBackButton({
@@ -126,11 +152,7 @@ function HeaderBackButton({
   if (!show) return null;
   if (backAction) {
     return (
-      <a
-        href={backAction}
-        aria-label={label}
-        className='text-foreground absolute left-0 flex h-10 w-10 items-center justify-center'
-      >
+      <a href={backAction} aria-label={label} className={BACK_BUTTON_CLASS}>
         <ChevronLeftIcon size={24} aria-hidden='true' />
       </a>
     );
@@ -140,21 +162,11 @@ function HeaderBackButton({
       type='button'
       aria-label={label}
       onClick={onBack}
-      className='text-foreground absolute left-0 flex h-10 w-10 items-center justify-center'
+      className={BACK_BUTTON_CLASS}
     >
       <ChevronLeftIcon size={24} aria-hidden='true' />
     </button>
   );
-}
-
-/** Resolves the display name, falling back to email for placeholder values. */
-function getDisplayName(
-  userInfo: { fullname?: string; email?: string } | undefined
-): string | undefined {
-  if (!userInfo?.fullname || userInfo.fullname.trim() === '-') {
-    return userInfo?.email;
-  }
-  return userInfo?.fullname;
 }
 
 /**
@@ -176,16 +188,22 @@ export default function PageHeader({
   const { state: authState, isLoading: isLoadingAuth } = useAuth();
   const { appointmentData, sessionData } = useUpcomingEvents();
 
-  const t = useTranslations('page-header');
-  const indicator =
-    overrideIndicator ?? getPageIndicator(pathname, searchParams, t) ?? '';
-
   const role = authState.userInfo.role_name;
   const isPatient = role === Roles.Patient;
   const isAdmin = role === Roles.ClinicAdmin;
+  const researchHome = isResearchHome(
+    pathname,
+    role,
+    authState.isAuthenticated
+  );
+
+  const t = useTranslations('page-header');
+  const indicator =
+    overrideIndicator ??
+    getPageIndicator(pathname, searchParams, t, researchHome) ??
+    '';
 
   const displayName = getDisplayName(authState.userInfo);
-
   const [selectedClinicId, setSelectedClinicId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -234,15 +252,17 @@ export default function PageHeader({
     authState.isAuthenticated
   );
 
-  /** /research renders no header reminder cards, mirroring canShowResearchHeader. */
-  const hideSessionCard = hideUpcomingSession || pathname === '/research';
-
+  /** /research and the research home page render no header reminder cards. */
+  const hideSessionCard = shouldHideSessionCard(
+    pathname,
+    researchHome,
+    hideUpcomingSession
+  );
   const hasSessionCard = isSessionCardAvailable(
     upcomingData,
     isAdmin,
     hideSessionCard
   );
-
   const isSessionUrgent = hasSessionCard && isSessionWithinWindow(upcomingData);
 
   const researchEligible = canShowResearchHeader({

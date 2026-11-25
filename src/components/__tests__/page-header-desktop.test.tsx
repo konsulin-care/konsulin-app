@@ -119,13 +119,22 @@ describe('PageHeader desktop layout', () => {
   });
 
   it('renders the page indicator in an md-only element', () => {
-    mockAuth('Patient', 'pat-1', 'Pat Smith');
+    mockAuth('Practitioner', 'prac-1', 'Prac Smith');
 
     render(<PageHeader />, { wrapper: createWrapper() });
 
     const indicator = screen.getByText('Welcome to Konsulin');
     expect(indicator).toHaveClass('hidden');
     expect(indicator).toHaveClass('md:block');
+  });
+
+  it('shows the research title for a patient on the home path', () => {
+    mockAuth('Patient', 'pat-1', 'Pat Smith');
+
+    render(<PageHeader />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Research')).toBeTruthy();
+    expect(screen.queryByText('Welcome to Konsulin')).toBeNull();
   });
 
   it('keeps the back button visible', () => {

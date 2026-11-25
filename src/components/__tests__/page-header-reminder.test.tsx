@@ -234,6 +234,7 @@ beforeEach(() => {
 describe('PageHeader single-card reminder', () => {
   it('shows the session card and See All when the session starts today', () => {
     mockAuth('Patient', 'pat-1', 'Pat Smith');
+    mockPathname.current = '/journal';
     mockUseUpcomingEvents.mockReturnValue({
       appointmentData: makeBundle(urgentStart()),
       sessionData: null
@@ -250,6 +251,7 @@ describe('PageHeader single-card reminder', () => {
 
   it('shows the session card and See All when the session starts tomorrow', () => {
     mockAuth('Patient', 'pat-1', 'Pat Smith');
+    mockPathname.current = '/journal';
     mockUseUpcomingEvents.mockReturnValue({
       appointmentData: makeBundle(startOn(1)),
       sessionData: null
@@ -316,6 +318,7 @@ describe('PageHeader single-card reminder', () => {
 
   it('switches from research to the session card when an urgent session arrives', async () => {
     mockAuth('Patient', 'pat-1', 'Pat Smith');
+    mockPathname.current = '/journal';
     mockUseResearchProgress.mockReturnValue({
       data: undefined,
       isLoading: true
@@ -344,6 +347,17 @@ describe('PageHeader single-card reminder', () => {
       expect(screen.getByTestId('upcoming-session-card')).toBeTruthy();
     });
     expect(screen.queryByTestId('research-header-widget')).toBeNull();
+  });
+
+  it('suppresses the session card and See All for a patient on the home path', () => {
+    mockAuth('Patient', 'pat-1', 'Pat Smith');
+    mockUseUpcomingEvents.mockReturnValue({
+      appointmentData: makeBundle(urgentStart()),
+      sessionData: null
+    });
+    render(<PageHeader />, { wrapper: createWrapper() });
+    expect(screen.queryByTestId('upcoming-session-card')).toBeNull();
+    expect(screen.queryByText('See All')).toBeNull();
   });
 
   it('suppresses the session card and See All on the /research page', () => {
