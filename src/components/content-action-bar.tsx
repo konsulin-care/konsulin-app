@@ -35,6 +35,7 @@ function runGuarded(config: ActionConfig): void {
 function ActionButton({ config }: Readonly<{ config: ActionConfig }>) {
   const isDisabled = config.disabled === true;
   const isSaving = config.isSaving === true;
+  const label = config.barLabel ?? config.label;
 
   return (
     <button
@@ -47,7 +48,7 @@ function ActionButton({ config }: Readonly<{ config: ActionConfig }>) {
       )}
     >
       {config.icon && <config.icon className='h-5 w-5 shrink-0' />}
-      {config.label && <span>{config.label}</span>}
+      {label && <span>{label}</span>}
       {config.isSaving && (
         <span
           data-testid='content-action-spinner'

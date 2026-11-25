@@ -1,7 +1,13 @@
 import type { ComponentType } from 'react';
 
 export interface ActionConfig {
+  /** Label rendered on the FAB action button. Omit for an icon-only FAB. */
   label?: string;
+  /**
+   * Label used by the sticky content action bar on wide viewports when the
+   * FAB itself stays icon-only. Falls back to `label` when absent.
+   */
+  barLabel?: string;
   onAction: () => void | Promise<void>;
   icon?: ComponentType<{ className?: string }>;
   disabled?: boolean;

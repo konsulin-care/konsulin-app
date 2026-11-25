@@ -47,6 +47,18 @@ function MyPage() {
 The `config: null` cleanup is required — without it the FAB stays in action
 mode after the page unmounts.
 
+# Icon-only FAB with a Bar Label
+
+Omit `label` to render the phone FAB as an icon-only circle and pass the
+visible text as `barLabel`. `ContentActionBar` renders `barLabel ?? label`, so
+wide viewports still show a named action:
+
+```tsx
+config: { barLabel: t('next_step'), icon: ChevronRight, onAction }
+```
+
+The research form advance action uses this (`use-fab-action.ts`).
+
 # Ref Pattern for onAction Closures
 
 `onAction` is captured when `SET_ACTION` fires. Store the handler in a ref

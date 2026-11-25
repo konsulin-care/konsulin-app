@@ -34,6 +34,7 @@ function FabStateReader() {
   return (
     <div>
       <span data-testid='fab-label'>{action?.label ?? 'none'}</span>
+      <span data-testid='fab-bar-label'>{action?.barLabel ?? 'none'}</span>
       <span data-testid='fab-disabled'>
         {String(action?.disabled ?? false)}
       </span>
@@ -180,7 +181,7 @@ describe('useResearchFabAction on the research list page', () => {
 });
 
 describe('useResearchFabAction on research form pages', () => {
-  it('dispatches a labelled next_step action disabled=true when canAdvance is false', async () => {
+  it('dispatches an icon-only next_step action disabled=true when canAdvance is false', async () => {
     renderWithFab(
       <ResearchFormActionsProvider
         value={{
@@ -194,13 +195,14 @@ describe('useResearchFabAction on research form pages', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-bar-label')).toHaveTextContent('Next');
     });
 
+    expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('true');
   });
 
-  it('dispatches a labelled next_step action disabled=false when canAdvance is true', async () => {
+  it('dispatches an icon-only next_step action disabled=false when canAdvance is true', async () => {
     renderWithFab(
       <ResearchFormActionsProvider
         value={{
@@ -214,9 +216,10 @@ describe('useResearchFabAction on research form pages', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-bar-label')).toHaveTextContent('Next');
     });
 
+    expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('false');
   });
 
@@ -264,7 +267,7 @@ describe('useResearchFabAction on research form pages', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-bar-label')).toHaveTextContent('Next');
     });
   });
 });

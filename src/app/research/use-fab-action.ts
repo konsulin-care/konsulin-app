@@ -28,8 +28,18 @@ const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
  * Sets up the FAB action for research pages.
  *
  * On research form pages (/research/register, /research/edit), the FAB
- * acts as the page CTA (Next/Submit). On the research list page, it
- * shows "Register Survey" for researchers or "Participate" for patients.
+ * acts as the page CTA (Next/Submit). The advance action stays icon-only and
+ * carries its visible label in `barLabel` for the content action bar. On the
+ * research list page, it shows "Register Survey" for researchers or
+ * "Participate" for patients.
+ *
+ * @param options - Hook configuration
+ * @param options.isResearcher - Whether the current user is a researcher
+ * @param options.activeStudy - The study the current user can continue
+ * @param options.participate - Callback that starts participation in a study
+ * @param options.router - Router used to navigate to the form pages
+ *
+ * @returns Nothing; the FAB action is dispatched into FabContext
  */
 export function useResearchFabAction({
   isResearcher,
@@ -84,7 +94,7 @@ export function useResearchFabAction({
         dispatch({
           type: 'SET_ACTION',
           config: {
-            label: tRef.current('next_step'),
+            barLabel: tRef.current('next_step'),
             icon: ChevronRight,
             onAction: onAdvance,
             disabled: !canAdvance

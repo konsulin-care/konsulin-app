@@ -24,6 +24,7 @@ function FabStateReader() {
   return (
     <div>
       <span data-testid='fab-label'>{action?.label ?? 'none'}</span>
+      <span data-testid='fab-bar-label'>{action?.barLabel ?? 'none'}</span>
       <span data-testid='fab-disabled'>
         {String(action?.disabled ?? false)}
       </span>
@@ -82,9 +83,10 @@ describe('useResearchFabAction', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('fab-label')).toHaveTextContent('Next');
+      expect(screen.getByTestId('fab-bar-label')).toHaveTextContent('Next');
     });
 
+    expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('true');
   });
 });
