@@ -1,4 +1,4 @@
-import { isAdminPath } from '@/lib/admin/route-gate';
+import { isAdminPath, isBareShellPath } from '@/lib/admin/route-gate';
 import { describe, expect, it } from 'vitest';
 
 describe('isAdminPath', () => {
@@ -24,5 +24,40 @@ describe('isAdminPath', () => {
   it('handles undefined pathname', () => {
     // skipcq: JS-W1042 — tests the undefined branch of string | undefined
     expect(isAdminPath(undefined)).toBe(false);
+  });
+});
+
+describe('isBareShellPath', () => {
+  it('returns true for each bare root', () => {
+    expect(isBareShellPath('/auth')).toBe(true);
+    expect(isBareShellPath('/logout')).toBe(true);
+    expect(isBareShellPath('/remove-account')).toBe(true);
+    expect(isBareShellPath('/unauthorized')).toBe(true);
+    expect(isBareShellPath('/~offline')).toBe(true);
+  });
+
+  it('returns true for nested bare paths', () => {
+    expect(isBareShellPath('/auth/callback')).toBe(true);
+    expect(isBareShellPath('/logout/confirm')).toBe(true);
+    expect(isBareShellPath('/unauthorized/')).toBe(true);
+  });
+
+  it('returns false for the app root and non-bare paths', () => {
+    expect(isBareShellPath('/')).toBe(false);
+    expect(isBareShellPath('/profile')).toBe(false);
+    expect(isBareShellPath('/admin')).toBe(false);
+    expect(isBareShellPath('/admin/settings')).toBe(false);
+  });
+
+  it('returns false for lookalike prefixes', () => {
+    expect(isBareShellPath('/authority')).toBe(false);
+    expect(isBareShellPath('/auth-x')).toBe(false);
+    expect(isBareShellPath('/logout-review')).toBe(false);
+  });
+
+  it('handles undefined and empty pathname', () => {
+    // skipcq: JS-W1042 — tests the undefined branch of string | undefined
+    expect(isBareShellPath(undefined)).toBe(false);
+    expect(isBareShellPath('')).toBe(false);
   });
 });
