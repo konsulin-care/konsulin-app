@@ -10,15 +10,18 @@ const mockRouter = { push: mockPush, replace: mockReplace };
 let mockSearchParamsInstance: URLSearchParams;
 
 const mockUseSearchParams = vi.fn(() => mockSearchParamsInstance);
+const mockUsePathname = vi.fn(() => '/research');
 
 vi.mock('next/navigation', () => ({
-  useSearchParams: () => mockUseSearchParams()
+  useSearchParams: () => mockUseSearchParams(),
+  usePathname: () => mockUsePathname()
 }));
 
 beforeEach(() => {
   mockReplace.mockReset();
   mockPush.mockReset();
   mockSearchParamsInstance = new URLSearchParams();
+  mockUsePathname.mockReturnValue('/research');
 });
 
 describe('useResearchHandlers', () => {
@@ -92,5 +95,29 @@ describe('useResearchHandlers', () => {
     // If the hook used a stale prop (from the first render where view was
     // absent), it would incorrectly call router.replace to drop the view.
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("closing the detail drawer on '/' rewrites to '/?id=<study>'", () => {
+    mockUsePathname.mockReturnValue('/');
+
+    const { result } = renderHook(
+      () =>
+        useResearchHandlers({
+          studies: [],
+          detailStudyId: 'study-1',
+          isConsented: () => true,
+          setActiveStudyId: vi.fn(),
+          setDetailStudyId: vi.fn(),
+          setPendingConsent: vi.fn(),
+          router: mockRouter
+        }),
+      {
+        wrapper: ({ children }) => createElement('div', null, children)
+      }
+    );
+
+    result.current.handleDrawerClose();
+
+    expect(mockReplace).toHaveBeenCalledWith('/?id=study-1');
   });
 });

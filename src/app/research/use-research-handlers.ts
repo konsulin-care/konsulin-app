@@ -1,7 +1,7 @@
 'use client';
 
 import type { StudyProgress } from '@/utils/fhir/research';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useRef } from 'react';
 import { updateResearchUrl } from './research-url';
 
@@ -28,6 +28,9 @@ export function useResearchHandlers({
   router
 }: UseResearchHandlersParams) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  // URL rewrites stay on the page the user is on ('/' or '/research').
+  const basePath = pathname === '/' ? '/' : '/research';
   const searchParamsRef = useRef(searchParams);
   searchParamsRef.current = searchParams;
   const handleSlideChange = useCallback(
@@ -40,22 +43,24 @@ export function useResearchHandlers({
       }
       if (sp.get('view')) {
         setDetailStudyId(null);
-        router.replace(updateResearchUrl(sp, { id: studyId, view: null }));
+        router.replace(
+          updateResearchUrl(sp, { id: studyId, view: null }, basePath)
+        );
       } else {
-        router.replace(updateResearchUrl(sp, { id: studyId }));
+        router.replace(updateResearchUrl(sp, { id: studyId }, basePath));
       }
     },
-    [router, setActiveStudyId, setDetailStudyId, detailStudyId]
+    [router, setActiveStudyId, setDetailStudyId, detailStudyId, basePath]
   );
 
   const handleResearcherStudyClick = useCallback(
     (studyId: string) => {
       setDetailStudyId(studyId);
       router.replace(
-        updateResearchUrl(searchParamsRef.current, { view: studyId })
+        updateResearchUrl(searchParamsRef.current, { view: studyId }, basePath)
       );
     },
-    [router, setDetailStudyId]
+    [router, setDetailStudyId, basePath]
   );
 
   const handleStudyClick = useCallback(
@@ -68,9 +73,9 @@ export function useResearchHandlers({
       setDetailStudyId(studyId);
       const sp = searchParamsRef.current;
       if (sp.get('view') === studyId) return;
-      router.replace(updateResearchUrl(sp, { view: studyId }));
+      router.replace(updateResearchUrl(sp, { view: studyId }, basePath));
     },
-    [router, setDetailStudyId, studies]
+    [router, setDetailStudyId, studies, basePath]
   );
 
   const handleSeeReport = useCallback(
@@ -83,12 +88,13 @@ export function useResearchHandlers({
   const handleDrawerClose = useCallback(() => {
     setDetailStudyId(null);
     router.replace(
-      updateResearchUrl(searchParamsRef.current, {
-        id: detailStudyId,
-        view: null
-      })
+      updateResearchUrl(
+        searchParamsRef.current,
+        { id: detailStudyId, view: null },
+        basePath
+      )
     );
-  }, [detailStudyId, router, setDetailStudyId]);
+  }, [detailStudyId, router, setDetailStudyId, basePath]);
 
   const participate = useCallback(
     (study: StudyProgress | null, questionnaireId?: string) => {

@@ -1,6 +1,7 @@
 'use client';
 
 import type { StudyProgress } from '@/utils/fhir/research';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import {
   resolveDeepLinks,
@@ -30,6 +31,9 @@ export function useUrlSync({
   router
 }: UseUrlSyncParams) {
   const activeStudyIdRef = useRef(activeStudyId);
+  const pathname = usePathname();
+  // URL rewrites stay on the page the user is on ('/' or '/research').
+  const basePath = pathname === '/' ? '/' : '/research';
   useEffect(() => {
     activeStudyIdRef.current = activeStudyId;
   }, [activeStudyId]);
@@ -45,10 +49,14 @@ export function useUrlSync({
       (Boolean(requestedView) && !knownView);
     if (needsRewrite) {
       router.replace(
-        updateResearchUrl(searchParams, {
-          id: knownView ? null : (knownId?.study.id ?? null),
-          view: knownView?.study.id ?? null
-        })
+        updateResearchUrl(
+          searchParams,
+          {
+            id: knownView ? null : (knownId?.study.id ?? null),
+            view: knownView?.study.id ?? null
+          },
+          basePath
+        )
       );
     }
 
@@ -60,5 +68,12 @@ export function useUrlSync({
     );
     setActiveStudyId(targetId);
     setDetailStudyId(knownView?.study.id ?? null);
-  }, [searchParams, studies, router, setActiveStudyId, setDetailStudyId]);
+  }, [
+    searchParams,
+    studies,
+    router,
+    setActiveStudyId,
+    setDetailStudyId,
+    basePath
+  ]);
 }

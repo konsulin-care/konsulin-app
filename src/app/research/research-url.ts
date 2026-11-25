@@ -9,11 +9,14 @@ import type { StudyProgress } from '@/utils/fhir/research';
  * @param searchParams - Current search params to derive values from.
  * @param updates - Keys to set (string) or remove (null); omitted keys keep
  * their current value.
- * @returns The /research URL with the updated query, or '/research' when empty.
+ * @param basePath - Path the rewritten URL stays on; defaults to '/research'.
+ * @returns The base-path URL with the updated query, or the bare base path
+ * when the query is empty.
  */
 export function updateResearchUrl(
   searchParams: { get(key: string): string | null },
-  updates: { id?: string | null; view?: string | null; ref?: string | null }
+  updates: { id?: string | null; view?: string | null; ref?: string | null },
+  basePath = '/research'
 ): string {
   const next = new URLSearchParams();
   // Explicit null = removal; explicit string overrides; an absent key keeps
@@ -34,7 +37,7 @@ export function updateResearchUrl(
   }
   if (ref) next.set('ref', ref);
   const query = next.toString();
-  return query ? `/research?${query}` : '/research';
+  return query ? `${basePath}?${query}` : basePath;
 }
 
 /**

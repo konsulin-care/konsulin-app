@@ -51,4 +51,23 @@ describe('updateResearchUrl', () => {
       '/research?id=abc'
     );
   });
+
+  it("returns a '/?view=' URL when the base path is '/' and the view is set", () => {
+    expect(updateResearchUrl(params(''), { view: 'abc' }, '/')).toBe(
+      '/?view=abc'
+    );
+  });
+
+  it("returns '/' when the base path is '/' and no params remain", () => {
+    expect(
+      updateResearchUrl(params('?id=abc&view=def'), { view: null }, '/')
+    ).toBe('/?id=abc');
+    expect(updateResearchUrl(params('?id=abc'), { id: null }, '/')).toBe('/');
+  });
+
+  it("defaults to '/research' when no base path is given", () => {
+    expect(updateResearchUrl(params(''), { view: 'abc' })).toBe(
+      '/research?view=abc'
+    );
+  });
 });
