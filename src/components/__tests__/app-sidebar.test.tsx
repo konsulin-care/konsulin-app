@@ -151,6 +151,15 @@ describe('AppSidebar', () => {
     ).not.toHaveAttribute('aria-current');
   });
 
+  it('marks Home current on /research and its nested paths', () => {
+    renderSidebar('Researcher', '/research');
+    const nav = getNav();
+    expect(within(nav).getByRole('link', { name: 'Home' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
+  });
+
   it('ignores the query string and keeps Home inactive off /', () => {
     renderSidebar('Patient', '/journal?tab=recent');
     const nav = getNav();

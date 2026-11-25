@@ -38,9 +38,20 @@ function normalizePath(pathname: string | null | undefined): string {
   return path || '/';
 }
 
-/** True when `href` is the active destination for the current pathname. */
+/**
+ * True when `href` is the active destination for the current pathname.
+ *
+ * The research page is the home destination, so Home stays current on
+ * `/research` and its nested paths as well as on `/`.
+ */
 function isActivePath(href: string, pathname: string): boolean {
-  if (href === '/') return pathname === '/';
+  if (href === '/') {
+    return (
+      pathname === '/' ||
+      pathname === '/research' ||
+      pathname.startsWith('/research/')
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
