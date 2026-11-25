@@ -29,5 +29,6 @@
   "sign_in": "Masuk",
   "profile": "Profil",
   "log_out": "Keluar",
-  "cancel_selection": "Batal"
+  "cancel_selection": "Batal",
+  "page_actions": "Aksi halaman"
 }
