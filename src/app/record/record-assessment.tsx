@@ -1,11 +1,14 @@
 import ScoreDisplay from '@/components/assessment/score-display';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/context/auth/authContext';
+import { useTranslations } from '@/i18n';
+import { interpret } from '@/lib/interpretation';
+import { DEFAULT_REGISTRY } from '@/lib/interpretation/instruments';
 import { getAPI } from '@/services/api';
 import {
   RESULT_BRIEF_PLACEHOLDER,
   useQuestionnaireResponse
 } from '@/services/api/assessment';
+import { getInstrumentCoding } from '@/services/api/questionnaire-info';
 import { getFee } from '@/utils/fhir/fee';
 import {
   questionnaireIdLabel,
@@ -19,7 +22,7 @@ import {
   QuestionnaireResponseItem
 } from 'fhir/r4';
 import { useEffect, useMemo } from 'react';
-import { useAssessmentPolling } from './hooks/useAssessmentPolling';
+import { buildInterpretationBrief } from './interpretation-brief';
 
 type Props = {
   readonly recordId: string;
@@ -45,13 +48,7 @@ export default function RecordAssessment({
   });
   const questionnaireResponse =
     questionnaireResponseRaw as unknown as QuestionnaireResponse | null;
-  const { state: authState } = useAuth();
-
-  const { polledResultBrief } = useAssessmentPolling({
-    recordId,
-    questionnaireResponse,
-    isAuthenticated: authState.isAuthenticated
-  });
+  const tInterpretation = useTranslations('interpretation');
 
   // Fetch questionnaire title + fee extension for header and Get Report FAB
   const questionnaireId = questionnaireIdOf(
@@ -59,11 +56,11 @@ export default function RecordAssessment({
   );
   const queryClient = useQueryClient();
   const { data: questionnaire } = useQuery<Questionnaire | null>({
-    queryKey: ['questionnaire', questionnaireId, 'title,extension'],
+    queryKey: ['questionnaire', questionnaireId, 'title,extension,code'],
     queryFn: async () => {
       const API = await getAPI();
       const response = await API.get<Questionnaire>(
-        `/fhir/Questionnaire/${questionnaireId}?_elements=title,extension`
+        `/fhir/Questionnaire/${questionnaireId}?_elements=title,extension,code`
       );
       return response.data ?? null;
     },
@@ -100,12 +97,9 @@ export default function RecordAssessment({
     return () => onFeeChange?.(null);
   }, [fee, onFeeChange]);
 
-  // Compute the result brief
+  // Result brief: a stored brief wins (older records), then the local engine
+  // reading, then nothing at all.
   const computedResultBrief = useMemo<string | null>(() => {
-    if (!authState.isAuthenticated) return null;
-    if (polledResultBrief) return polledResultBrief;
-
-    // Check for existing result brief in the QR data
     const interpretationItem = questionnaireResponse?.item.find(
       (item: QuestionnaireResponseItem) => item.linkId === 'interpretation'
     );
@@ -119,8 +113,13 @@ export default function RecordAssessment({
       return existingBrief;
     }
 
-    return null;
-  }, [authState.isAuthenticated, polledResultBrief, questionnaireResponse]);
+    const reading = interpret(
+      questionnaireResponse,
+      getInstrumentCoding(questionnaire ?? null),
+      DEFAULT_REGISTRY
+    );
+    return buildInterpretationBrief(reading, tInterpretation);
+  }, [questionnaire, questionnaireResponse, tInterpretation]);
 
   return questionnaireResponseIsLoading && !questionnaireResponse ? (
     <div className='flex min-h-[200px] items-center justify-center'>
@@ -131,6 +130,7 @@ export default function RecordAssessment({
       questionnaireResponse={questionnaireResponse}
       isLoading={questionnaireResponseIsLoading}
       resultBrief={computedResultBrief}
+      showBrief={computedResultBrief !== null}
       questionnaireTitle={questionnaireTitle}
     />
   );

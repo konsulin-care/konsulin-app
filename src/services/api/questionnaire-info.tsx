@@ -20,13 +20,13 @@ export interface QuestionnaireInfo {
 /**
  * Picks the first Konsulin instrument coding from a questionnaire.
  *
- * @param questionnaire - FHIR Questionnaire to inspect.
+ * @param questionnaire - FHIR Questionnaire to inspect, may be missing.
  * @returns The matching coding, or null when none is present.
  */
-function getInstrumentCoding(
-  questionnaire: Questionnaire
+export function getInstrumentCoding(
+  questionnaire: Questionnaire | null | undefined
 ): InstrumentCoding | null {
-  const coding = (questionnaire.code ?? []).find(
+  const coding = (questionnaire?.code ?? []).find(
     entry => entry.system === INSTRUMENT_SYSTEM && entry.code
   );
   return coding?.code ? { system: INSTRUMENT_SYSTEM, code: coding.code } : null;
