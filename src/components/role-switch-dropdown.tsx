@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/i18n';
 import { fetchCSRFToken } from '@/services/auth';
+import { LogOut } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -107,6 +109,7 @@ export function RoleSwitchDropdown({
   onOpenChange
 }: Readonly<RoleSwitchDropdownProps>) {
   const router = useRouter();
+  const tPageHeader = useTranslations('page-header');
   const [open, setOpen] = useState(false);
   const handleProfileClick = useCallback(
     () => router.push('/profile'),
@@ -136,6 +139,15 @@ export function RoleSwitchDropdown({
           <span className='text-foreground text-sm font-medium'>Profile</span>
         </DropdownItem>
         <RoleSwitchMenuItems otherRoles={otherRoles} />
+        <DropdownSeparator />
+        <DropdownItem className='cursor-pointer p-0'>
+          <Link href='/logout' className='flex w-full items-center px-2 py-1.5'>
+            <LogOut className='text-foreground mr-3 h-4 w-4' />
+            <span className='text-foreground text-sm font-medium'>
+              {tPageHeader('log_out')}
+            </span>
+          </Link>
+        </DropdownItem>
       </DropdownContent>
     </Dropdown>
   );

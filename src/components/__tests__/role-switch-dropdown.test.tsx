@@ -82,6 +82,24 @@ describe('RoleSwitchDropdown', () => {
     expect(within(menu).queryByRole('img')).toBeNull();
     expect(within(menu).queryByAltText('practitioner')).toBeNull();
   });
+
+  it('lists a Log out item linking to /logout', async () => {
+    render(
+      <RoleSwitchDropdown
+        otherRoles={['Practitioner']}
+        currentAvatar={baseAvatar}
+        onOpenChange={vi.fn()}
+      />
+    );
+
+    fireEvent.pointerDown(screen.getByText('JD'));
+    fireEvent.click(screen.getByText('JD'));
+
+    const menu = await screen.findByRole('menu');
+    expect(
+      within(menu).getByRole('link', { name: /log out/i })
+    ).toHaveAttribute('href', '/logout');
+  });
 });
 
 /** Opens the dropdown and clicks the given role's switch item. */

@@ -1,15 +1,12 @@
 /* eslint-disable complexity */
 'use client';
 
-import Avatar from '@/components/general/avatar';
-import { HeaderText } from '@/components/role-avatar-popup-header';
 import { AvatarInfo } from '@/components/role-avatar-popup-types';
 import { roleLabel } from '@/components/role-avatar-popup-utils';
 import { RoleSwitchDropdown } from '@/components/role-switch-dropdown';
 import { useAuth } from '@/context/auth/authContext';
 import { IStateAuth } from '@/context/auth/authTypes';
 import { generateAvatarPlaceholder } from '@/utils/helper';
-import Link from 'next/link';
 
 /**
  * Builds the avatar placeholder data for the current user and role.
@@ -43,10 +40,10 @@ export function getCurrentAvatar(
 /**
  * Header avatar for the active user.
  *
- * Single-role users keep a plain link to /profile. Multi-role users get a
- * dropdown listing the other roles as icon + label — the role profile
- * pictures are intentionally not shown since they are the same for every
- * role of the account.
+ * Every user gets the same dropdown so Profile and Log out stay reachable.
+ * Multi-role users additionally see the other roles as icon + label — the
+ * role profile pictures are intentionally not shown since they are the same
+ * for every role of the account.
  */
 export default function RoleAvatarPopup({
   indicator,
@@ -61,24 +58,6 @@ export default function RoleAvatarPopup({
   const userId = authState.userInfo?.userId ?? '';
   const currentAvatar = getCurrentAvatar(currentRole, userId, authState);
   const otherRoles = roles.filter(role => role !== currentRole);
-
-  if (roles.length <= 1) {
-    return (
-      <Link href='/profile' className='flex items-center gap-2'>
-        <HeaderText indicator={indicator} displayName={displayName} />
-        <Avatar
-          seed={currentAvatar.seed}
-          initials={currentAvatar.initials}
-          backgroundColor={currentAvatar.backgroundColor}
-          photoUrl={currentAvatar.photoUrl}
-          height={32}
-          width={32}
-          className='text-xs'
-          imageClassName='self-center'
-        />
-      </Link>
-    );
-  }
 
   return (
     <RoleSwitchDropdown

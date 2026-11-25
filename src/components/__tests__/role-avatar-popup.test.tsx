@@ -70,7 +70,7 @@ describe('RoleAvatarPopup', () => {
     vi.resetAllMocks();
   });
 
-  it('renders a link to /profile for single-role users', () => {
+  it('opens a dropdown with Profile and Log out for single-role users', async () => {
     mockUseAuth.mockReturnValue({
       ...multiRoleBase,
       state: {
@@ -84,8 +84,17 @@ describe('RoleAvatarPopup', () => {
 
     render(<RoleAvatarPopup displayName='John Doe' />);
 
-    const link = screen.getByRole('link', { name: /John Doe/i });
-    expect(link).toHaveAttribute('href', '/profile');
+    const trigger = screen.getByText('John Doe');
+    fireEvent.pointerDown(trigger);
+    fireEvent.click(trigger);
+
+    const menu = await screen.findByRole('menu');
+    expect(within(menu).getByText('Profile')).toBeInTheDocument();
+    expect(
+      within(menu).getByRole('link', { name: /log out/i })
+    ).toHaveAttribute('href', '/logout');
+    // No role switch items are rendered for a single-role account
+    expect(within(menu).queryByText('Practitioner')).toBeNull();
   });
 
   it('lists every other role as icon + label with no profile pictures', async () => {
