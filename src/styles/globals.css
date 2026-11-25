@@ -100,8 +100,8 @@
 }
 
 /* Responsive app shell offset.
-   Phones keep 0px (the FAB owns navigation). From md the rail reserves
-   96px, from lg the sidebar reserves 240px. The `:has` guard means bare
+   Phones keep 0px (the FAB owns navigation). From md the icon rail reserves
+   72px, from lg the sidebar reserves 240px. The `:has` guard means bare
    routes without a nav keep the full viewport width. */
 :root {
   --shell-offset: 0px;
@@ -109,7 +109,7 @@
 
 @media (min-width: 768px) {
   :root:has([data-shell='nav']) {
-    --shell-offset: 96px;
+    --shell-offset: 72px;
   }
 }
 

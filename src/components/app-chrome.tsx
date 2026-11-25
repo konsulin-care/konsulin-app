@@ -67,7 +67,7 @@ const SIDEBAR_CLASSNAME =
   'hidden md:flex sticky top-0 z-30 h-dvh border-r border-border bg-background';
 
 const SHELL_CLASSNAME =
-  'flex min-h-screen flex-col md:grid md:grid-cols-[96px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]';
+  'flex min-h-screen flex-col md:grid md:grid-cols-[72px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]';
 
 const CONTENT_COLUMN_CLASSNAME = 'flex min-w-0 flex-col';
 

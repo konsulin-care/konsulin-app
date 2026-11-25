@@ -14,7 +14,7 @@ interface AppSidebarProps {
 }
 
 /**
- * Responsive primary navigation: a 96px icon rail on tablets and a 240px
+ * Responsive primary navigation: a 72px icon rail on tablets and a 240px
  * labelled sidebar on desktop. Phones keep the floating action button, so the
  * element is hidden below the md breakpoint.
  *
@@ -32,7 +32,7 @@ export default function AppSidebar({
       <nav
         aria-label={t('main_navigation')}
         data-shell='nav'
-        className={`bg-card border-border fixed inset-y-0 left-0 z-30 hidden w-24 flex-col gap-4 border-r px-2 py-4 md:flex lg:w-60 lg:px-4 ${className}`}
+        className={`bg-card border-border fixed inset-y-0 left-0 z-30 hidden w-[72px] flex-col gap-4 border-r px-2 py-4 md:flex lg:w-60 lg:px-4 ${className}`}
       >
         <Link
           href='/'

@@ -169,7 +169,7 @@ describe('AppChrome', () => {
     expect(shell).not.toBeNull();
     expect(shell).toHaveAttribute('data-shell', 'nav');
     expect(shell).toHaveClass('md:grid');
-    expect(shell).toHaveClass('md:grid-cols-[96px_minmax(0,1fr)]');
+    expect(shell).toHaveClass('md:grid-cols-[72px_minmax(0,1fr)]');
     expect(shell).toHaveClass('lg:grid-cols-[240px_minmax(0,1fr)]');
 
     const main = screen.getByRole('main');
