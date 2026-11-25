@@ -123,6 +123,22 @@ describe('AppSidebar', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders the researcher navigation without sidebar-hidden pills', () => {
+    renderSidebar('Researcher');
+    const nav = getNav();
+
+    expect(within(nav).getByRole('link', { name: 'Home' })).toHaveAttribute(
+      'href',
+      '/'
+    );
+    expect(
+      within(nav).queryByRole('button', { name: 'Register Survey' })
+    ).not.toBeInTheDocument();
+    expect(
+      within(nav).queryByRole('link', { name: 'My Survey' })
+    ).not.toBeInTheDocument();
+  });
+
   it('marks Home current only on exactly /', () => {
     renderSidebar('Patient', '/');
     const nav = getNav();

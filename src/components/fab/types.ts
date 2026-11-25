@@ -32,6 +32,11 @@ export interface Pill {
   delay: number;
   action: PillAction;
   href?: string;
+  /**
+   * When false, the pill is hidden from the sidebar navigation but stays
+   * available in the mobile FAB speed dial. Undefined means visible.
+   */
+  sidebar?: boolean;
 }
 
 export type PillAction =

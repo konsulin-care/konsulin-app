@@ -47,6 +47,9 @@ interface SidebarNavItemsProps {
  * Pills with an href render as links. Pills without an href and guest pills
  * pointing outside /assessments render as buttons so the pill action can open
  * a drawer or redirect the guest to authentication.
+ *
+ * Pills with `sidebar: false` are skipped entirely; they remain available in
+ * the mobile FAB speed dial.
  */
 export function SidebarNavItems({
   pills,
@@ -70,40 +73,42 @@ export function SidebarNavItems({
           <span className='md:line-clamp-2'>{t('nav_home')}</span>
         </Link>
       </li>
-      {pills.map(pill => {
-        const href = pill.href;
-        const active = href ? isActivePath(href, pathname) : false;
-        const label = (
-          <>
-            <pill.icon className='h-5 w-5 shrink-0' aria-hidden='true' />
-            <span className='md:line-clamp-2'>{t(pill.label)}</span>
-          </>
-        );
-        const useButton =
-          href === undefined || (isGuest && href !== '/assessments');
+      {pills
+        .filter(pill => pill.sidebar !== false)
+        .map(pill => {
+          const href = pill.href;
+          const active = href ? isActivePath(href, pathname) : false;
+          const label = (
+            <>
+              <pill.icon className='h-5 w-5 shrink-0' aria-hidden='true' />
+              <span className='md:line-clamp-2'>{t(pill.label)}</span>
+            </>
+          );
+          const useButton =
+            href === undefined || (isGuest && href !== '/assessments');
 
-        return (
-          <li key={pill.label}>
-            {useButton ? (
-              <button
-                type='button'
-                onClick={() => onPillClick(pill)}
-                className={navItemClass(active)}
-              >
-                {label}
-              </button>
-            ) : (
-              <Link
-                href={href}
-                aria-current={active ? 'page' : undefined}
-                className={navItemClass(active)}
-              >
-                {label}
-              </Link>
-            )}
-          </li>
-        );
-      })}
+          return (
+            <li key={pill.label}>
+              {useButton ? (
+                <button
+                  type='button'
+                  onClick={() => onPillClick(pill)}
+                  className={navItemClass(active)}
+                >
+                  {label}
+                </button>
+              ) : (
+                <Link
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={navItemClass(active)}
+                >
+                  {label}
+                </Link>
+              )}
+            </li>
+          );
+        })}
     </ul>
   );
 }

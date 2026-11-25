@@ -21,14 +21,8 @@ export const researcherPills: Pill[] = [
     label: 'pill_register_survey',
     icon: FlaskConical,
     delay: 0,
-    action: 'register-research'
-  },
-  {
-    label: 'pill_my_survey',
-    href: '/research',
-    icon: BookText,
-    delay: 50,
-    action: 'navigate'
+    action: 'register-research',
+    sidebar: false
   }
 ];
 

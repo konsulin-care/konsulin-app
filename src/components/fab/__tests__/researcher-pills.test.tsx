@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { researcherPills } from '../pills';
 
 describe('researcherPills', () => {
-  it('has two pills', () => {
-    expect(researcherPills).toHaveLength(2);
+  it('has one pill', () => {
+    expect(researcherPills).toHaveLength(1);
   });
 
   it('has Register Survey pill with correct properties', () => {
@@ -14,12 +14,7 @@ describe('researcherPills', () => {
     expect(registerPill.icon).toBeDefined();
   });
 
-  it('has My Survey pill with correct properties', () => {
-    const researchPill = researcherPills[1];
-    expect(researchPill.label).toBe('pill_my_survey');
-    expect(researchPill.action).toBe('navigate');
-    expect(researchPill.href).toBe('/research');
-    expect(researchPill.delay).toBe(50);
-    expect(researchPill.icon).toBeDefined();
+  it('hides the Register Survey pill from the sidebar', () => {
+    expect(researcherPills[0].sidebar).toBe(false);
   });
 });
