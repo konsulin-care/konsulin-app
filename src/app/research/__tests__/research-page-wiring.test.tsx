@@ -134,6 +134,14 @@ function createWrapper() {
 }
 
 describe('ResearchPage wiring', () => {
+  it('wraps the page content in the wide layout', () => {
+    render(<ResearchPage />, { wrapper: createWrapper() });
+    const researchContent = screen.getByTestId('research-content');
+    const layout = researchContent.closest('[data-layout]');
+    expect(layout).not.toBeNull();
+    expect(layout).toHaveAttribute('data-layout', 'wide');
+  });
+
   it('passes waiting responses and consented study ids to ResearchContent', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
     const researchContent = screen.getByTestId('research-content');

@@ -2,6 +2,7 @@
 
 import ContentWraper from '@/components/general/content-wraper';
 import PageHeader from '@/components/page-header';
+import PageLayout from '@/components/page-layout';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
@@ -198,31 +199,33 @@ export default function ResearchPage() {
 
   return (
     <>
-      <PageHeader />
-      <ContentWraper className='pt-4'>
-        <div className='px-4'>
-          <ResearchContent
-            isResearcher={isResearcher}
-            researcherLoading={researcherLoading}
-            researcherStudies={researcherStudies}
-            isLoading={isLoading}
-            progress={progress}
-            studies={studies}
-            activeStudyId={activeStudyId ?? ''}
-            activeStudy={activeStudy}
-            titleMap={titleMap}
-            titlesPending={titlesPending}
-            fhirId={fhirId}
-            practitionerId={practitionerId}
-            waiting={waiting}
-            consentedStudyIds={consentedStudyIds}
-            onSlideChange={handleSlideChange}
-            onResearcherStudyClick={handleResearcherStudyClick}
-            onStudyClick={handleStudyClick}
-            onQuestionnaireClick={handleQuestionnaireClick}
-          />
-        </div>
-      </ContentWraper>
+      <PageLayout variant='wide'>
+        <PageHeader />
+        <ContentWraper className='pt-4'>
+          <div className='px-4'>
+            <ResearchContent
+              isResearcher={isResearcher}
+              researcherLoading={researcherLoading}
+              researcherStudies={researcherStudies}
+              isLoading={isLoading}
+              progress={progress}
+              studies={studies}
+              activeStudyId={activeStudyId ?? ''}
+              activeStudy={activeStudy}
+              titleMap={titleMap}
+              titlesPending={titlesPending}
+              fhirId={fhirId}
+              practitionerId={practitionerId}
+              waiting={waiting}
+              consentedStudyIds={consentedStudyIds}
+              onSlideChange={handleSlideChange}
+              onResearcherStudyClick={handleResearcherStudyClick}
+              onStudyClick={handleStudyClick}
+              onQuestionnaireClick={handleQuestionnaireClick}
+            />
+          </div>
+        </ContentWraper>
+      </PageLayout>
       <StudyDetailView
         progress={detailStudy}
         overlapMap={overlapMap}

@@ -85,26 +85,32 @@ export default function ResearchContent({
   return (
     <>
       <ReferralNotice />
-      <SectionHeader number={1} label={t('section.study')} />
-      <ResearchCarousel
-        studies={studies}
-        activeId={activeStudyId}
-        onSlideChange={onSlideChange}
-        onStudyClick={onStudyClick}
-        onQuestionnaireClick={onQuestionnaireClick}
-        isPatient={Boolean(fhirId)}
-        fhirId={fhirId}
-        titleMap={titleMap}
-        isTitlesLoading={titlesPending}
-        waiting={waiting}
-        consentedStudyIds={consentedStudyIds}
-      />
-      <SectionHeader number={2} label={t('section.contribution')} />
-      <ContributionDashboard
-        progress={progress}
-        activeStudy={activeStudy}
-        questionnaireInfo={titleMap}
-      />
+      <div className='lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-6'>
+        <div>
+          <SectionHeader number={1} label={t('section.study')} />
+          <ResearchCarousel
+            studies={studies}
+            activeId={activeStudyId}
+            onSlideChange={onSlideChange}
+            onStudyClick={onStudyClick}
+            onQuestionnaireClick={onQuestionnaireClick}
+            isPatient={Boolean(fhirId)}
+            fhirId={fhirId}
+            titleMap={titleMap}
+            isTitlesLoading={titlesPending}
+            waiting={waiting}
+            consentedStudyIds={consentedStudyIds}
+          />
+        </div>
+        <div className='lg:sticky lg:top-4'>
+          <SectionHeader number={2} label={t('section.contribution')} />
+          <ContributionDashboard
+            progress={progress}
+            activeStudy={activeStudy}
+            questionnaireInfo={titleMap}
+          />
+        </div>
+      </div>
     </>
   );
 }

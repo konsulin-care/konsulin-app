@@ -157,6 +157,46 @@ describe('ResearchContent wiring', () => {
     ).toBeTruthy();
   });
 
+  it('lays out study and contribution as lg grid columns with a sticky contribution column', () => {
+    const progress = makeProgress();
+    render(
+      <ResearchContent
+        isResearcher={false}
+        researcherLoading={false}
+        researcherStudies={[]}
+        isLoading={false}
+        progress={progress}
+        studies={progress.studies}
+        activeStudyId='research'
+        activeStudy={progress.studies[0]}
+        titleMap={new Map()}
+        titlesPending={false}
+        fhirId='patient-1'
+        onSlideChange={vi.fn()}
+        onResearcherStudyClick={vi.fn()}
+        onStudyClick={vi.fn()}
+        onQuestionnaireClick={vi.fn()}
+      />,
+      { wrapper }
+    );
+    const leftColumn = screen.getByTestId('section-header-1').parentElement;
+    const grid = leftColumn?.parentElement;
+    const rightColumn = screen.getByTestId('section-header-2').parentElement;
+    expect(grid).toHaveClass(
+      'lg:grid',
+      'lg:grid-cols-[minmax(0,1fr)_360px]',
+      'lg:gap-6',
+      'lg:items-start'
+    );
+    expect(rightColumn).toHaveClass('lg:sticky', 'lg:top-4');
+    expect(leftColumn).toContainElement(
+      screen.getByTestId('research-carousel')
+    );
+    expect(rightColumn).toContainElement(
+      screen.getByTestId('contribution-dashboard')
+    );
+  });
+
   it('forwards waiting and consentedStudyIds to ResearchCarousel unchanged', () => {
     const progress = makeProgress();
     const waiting = [
