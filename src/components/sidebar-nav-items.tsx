@@ -42,7 +42,9 @@ function normalizePath(pathname: string | null | undefined): string {
  * True when `href` is the active destination for the current pathname.
  *
  * The research page is the home destination, so Home stays current on
- * `/research` and its nested paths as well as on `/`.
+ * `/research` and its nested paths as well as on `/`. The studies catalogue
+ * and the single study page share the Browse studies pill, so `/study` and its
+ * nested paths keep that item current too.
  */
 function isActivePath(href: string, pathname: string): boolean {
   if (href === '/') {
@@ -52,8 +54,22 @@ function isActivePath(href: string, pathname: string): boolean {
       pathname.startsWith('/research/')
     );
   }
+  if (href === '/studies') {
+    return (
+      pathname === '/studies' ||
+      pathname.startsWith('/studies/') ||
+      pathname === '/study' ||
+      pathname.startsWith('/study/')
+    );
+  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
+
+/** Guest pills that stay plain links instead of routing through auth. */
+const GUEST_LINK_HREFS: ReadonlySet<string> = new Set([
+  '/assessments',
+  '/studies'
+]);
 
 /** Builds the class list for a nav item, including its active styling. */
 function navItemClass(active: boolean): string {
@@ -156,7 +172,7 @@ export function SidebarNavItems({
               </>
             );
             const useButton =
-              href === undefined || (isGuest && href !== '/assessments');
+              href === undefined || (isGuest && !GUEST_LINK_HREFS.has(href));
             const trigger = useButton ? (
               <button
                 type='button'

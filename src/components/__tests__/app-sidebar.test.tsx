@@ -101,7 +101,8 @@ describe('AppSidebar', () => {
       'Home',
       'Self Checkup',
       'Write Journal',
-      'View Schedule'
+      'View Schedule',
+      'Browse studies'
     ]);
     expect(
       within(nav).queryByRole('button', { name: 'Get Recommendation' })
@@ -227,6 +228,37 @@ describe('AppSidebar', () => {
 
     fireEvent.click(journalButton);
     expect(mockPush).toHaveBeenCalledWith('/auth');
+  });
+
+  it('marks Browse studies current on /studies and keeps Home inactive', () => {
+    renderSidebar('Patient', '/studies');
+    const nav = getNav();
+
+    expect(
+      within(nav).getByRole('link', { name: 'Browse studies' })
+    ).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: 'Home' })).not.toHaveAttribute(
+      'aria-current'
+    );
+  });
+
+  it('marks Browse studies current on /study with a query string', () => {
+    renderSidebar('Patient', '/study?id=study-1');
+    const nav = getNav();
+
+    expect(
+      within(nav).getByRole('link', { name: 'Browse studies' })
+    ).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: 'Home' })).not.toHaveAttribute(
+      'aria-current'
+    );
+  });
+
+  it('keeps the guest browse studies pill as a plain link', () => {
+    renderSidebar('Guest');
+    expect(
+      screen.getByRole('link', { name: 'Browse studies' })
+    ).toHaveAttribute('href', '/studies');
   });
 
   it('keeps the guest assessments pill as a plain link', () => {
