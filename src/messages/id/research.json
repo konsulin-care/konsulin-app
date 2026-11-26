@@ -193,6 +193,21 @@
     "message": "Studi ini tidak sedang dibuka. Studi mungkin sudah ditutup, atau tautannya tidak lengkap.",
     "link": "Lihat studi yang dibuka"
   },
+  "studies": {
+    "title": "Semua studi",
+    "count": "{shown} dari {total} studi. Studi Konsulin ditampilkan lebih dulu, lalu yang paling cepat ditutup.",
+    "search_placeholder": "Cari berdasarkan judul, pertanyaan, atau kelompok",
+    "run_by": "Penyelenggara",
+    "kind": "Jenis",
+    "run_by_all": "Semua",
+    "run_by_konsulin": "Konsulin",
+    "run_by_other": "Kelompok lain",
+    "kind_all": "Semua",
+    "kind_one_time": "Sekali isi",
+    "kind_repeated": "Berulang",
+    "no_match": "Tidak ada studi yang cocok. Coba kata kunci yang lebih pendek atau hapus filter.",
+    "show_more": "Tampilkan lebih banyak"
+  },
   "preview": {
     "heading": "Yang akan dilihat peserta",
     "title_placeholder": "Judul studi Anda",

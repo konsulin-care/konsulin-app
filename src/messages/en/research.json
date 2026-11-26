@@ -193,6 +193,21 @@
     "message": "This study is not open. It may have closed, or the link may be incomplete.",
     "link": "See open studies"
   },
+  "studies": {
+    "title": "All studies",
+    "count": "{shown} of {total} studies. Konsulin studies come first, then the ones closing soonest.",
+    "search_placeholder": "Search by title, question or group",
+    "run_by": "Run by",
+    "kind": "Kind",
+    "run_by_all": "All",
+    "run_by_konsulin": "Konsulin",
+    "run_by_other": "Other groups",
+    "kind_all": "All",
+    "kind_one_time": "One-time",
+    "kind_repeated": "Repeated",
+    "no_match": "No study matches. Try a shorter search or clear a filter.",
+    "show_more": "Show more"
+  },
   "preview": {
     "heading": "What people will see",
     "title_placeholder": "Your study title",
