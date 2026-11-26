@@ -152,6 +152,17 @@
     "status_shared": "Batch ini selesai",
     "status_closed": "Sudah ditutup"
   },
+  "side_facts": {
+    "run_by": "Diselenggarakan oleh",
+    "lead": "Peneliti utama",
+    "ethics": "Status etik",
+    "ethics_applying": "Persetujuan etik sedang dalam proses pengajuan",
+    "ethics_approved": "Disetujui oleh komite etik",
+    "ethics_exempt": "Dikecualikan dari telaah etik",
+    "ethics_not_stated": "Tidak dinyatakan",
+    "run_by_fallback": "Konsulin",
+    "platform": "Dijalankan di Konsulin. Jawaban Anda disimpan dengan ID acak, bukan nama Anda."
+  },
   "target_participants_label": "Target peserta",
   "target_participants_placeholder": "mis. 100",
   "target_required": "Isi target minimal 1 peserta"

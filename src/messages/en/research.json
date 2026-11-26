@@ -152,6 +152,17 @@
     "status_shared": "Shared this batch",
     "status_closed": "Closed"
   },
+  "side_facts": {
+    "run_by": "Run by",
+    "lead": "Lead researcher",
+    "ethics": "Ethics status",
+    "ethics_applying": "Approval is being applied for",
+    "ethics_approved": "Approved by an ethics committee",
+    "ethics_exempt": "Exempt from review",
+    "ethics_not_stated": "Not stated",
+    "run_by_fallback": "Konsulin",
+    "platform": "Hosted on Konsulin. Answers travel under a random ID, never your name."
+  },
   "target_participants_label": "Target participants",
   "target_participants_placeholder": "e.g. 100",
   "target_required": "Enter a target of at least 1 participant"
