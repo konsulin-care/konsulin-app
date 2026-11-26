@@ -97,12 +97,13 @@ describe('CollectiveGoal', () => {
     expect(screen.queryByTestId('collective-goal')).toBeNull();
   });
 
-  it('shows only the just-started line below the floor', () => {
+  it('shows only the early-state line below the floor', () => {
     renderGoal({ data: 3, isError: false });
 
     expect(screen.getByTestId('collective-goal')).toHaveTextContent(
-      'This study has just started. Be one of the first.'
+      'You are among the first to join'
     );
+    expect(screen.queryByText(/This study has just started/)).toBeNull();
     expect(
       screen.getByTestId('collective-goal').querySelector('button')
     ).toBeNull();
@@ -113,7 +114,7 @@ describe('CollectiveGoal', () => {
     renderGoal({ data: 5, isError: false }, { isConsented: true });
 
     expect(screen.getByTestId('collective-goal')).toHaveTextContent(
-      'This study has just started. Be one of the first.'
+      'You are among the first to join'
     );
     expect(screen.queryByText(/You and/)).toBeNull();
   });

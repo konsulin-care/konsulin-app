@@ -53,7 +53,7 @@ export function CollectiveGoal({
       className='text-muted-foreground flex flex-col gap-1 text-xs'
     >
       {belowFloor ? (
-        <span>{t('goal.just_started')}</span>
+        <span>{t('goal.early_state')}</span>
       ) : (
         <>
           <div className='flex items-center gap-1'>

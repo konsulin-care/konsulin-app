@@ -126,6 +126,7 @@
     "joined_with_you": "You and {others} others have joined.",
     "joined": "{count} people have joined.",
     "remaining": "Together, we need {remaining} more.",
+    "early_state": "You are among the first to join. We hide the count until enough people have joined to protect everyone's privacy.",
     "just_started": "This study has just started. Be one of the first.",
     "progress": "{count} of {target}",
     "bar_label": "Participant goal"
