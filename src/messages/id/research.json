@@ -120,6 +120,12 @@
   "contribution": {
     "batch_count": "{completed}/{total} kuesioner"
   },
+  "given": {
+    "title": "Yang telah Anda berikan",
+    "questionnaires": "kuesioner dibagikan",
+    "minutes": "menit waktu Anda",
+    "studies": "studi yang terbantu"
+  },
   "researcher_slide": {
     "batches_one": "{count} batch",
     "batches_other": "{count} batch",

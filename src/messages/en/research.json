@@ -120,6 +120,12 @@
   "contribution": {
     "batch_count": "{completed}/{total} questionnaires"
   },
+  "given": {
+    "title": "What you have given",
+    "questionnaires": "questionnaires shared",
+    "minutes": "minutes of your time",
+    "studies": "studies it counts toward"
+  },
   "researcher_slide": {
     "batches_one": "{count} batch",
     "batches_other": "{count} batches",
