@@ -163,6 +163,16 @@
     "run_by_fallback": "Konsulin",
     "platform": "Hosted on Konsulin. Answers travel under a random ID, never your name."
   },
+  "take_part": {
+    "button": "Take part",
+    "helper": "You will read what taking part means before anything is shared.",
+    "continue": "Continue, about {minutes} min",
+    "start": "Start",
+    "batch_done": "Shared for this batch. Thank you.",
+    "after_repeated": "The next batch will show up on your home page when it opens.",
+    "after_one_time": "This was a one-time study. Findings will appear on your home page.",
+    "see_report": "See your report"
+  },
   "target_participants_label": "Target participants",
   "target_participants_placeholder": "e.g. 100",
   "target_required": "Enter a target of at least 1 participant"

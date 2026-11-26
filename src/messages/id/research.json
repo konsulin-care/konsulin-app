@@ -163,6 +163,16 @@
     "run_by_fallback": "Konsulin",
     "platform": "Dijalankan di Konsulin. Jawaban Anda disimpan dengan ID acak, bukan nama Anda."
   },
+  "take_part": {
+    "button": "Ikut serta",
+    "helper": "Anda akan membaca apa arti ikut serta sebelum ada yang dibagikan.",
+    "continue": "Lanjutkan, sekitar {minutes} menit",
+    "start": "Mulai",
+    "batch_done": "Batch ini sudah selesai. Terima kasih.",
+    "after_repeated": "Batch berikutnya akan muncul di beranda Anda saat dibuka.",
+    "after_one_time": "Ini studi sekali isi. Temuan akan muncul di beranda Anda.",
+    "see_report": "Lihat laporan Anda"
+  },
   "target_participants_label": "Target peserta",
   "target_participants_placeholder": "mis. 100",
   "target_required": "Isi target minimal 1 peserta"
