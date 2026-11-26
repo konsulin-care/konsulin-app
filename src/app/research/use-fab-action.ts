@@ -30,8 +30,8 @@ const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
  * On research form pages (/research/register, /research/edit), the FAB
  * acts as the page CTA (Next/Submit). The advance action stays icon-only and
  * carries its visible label in `barLabel` for the content action bar. On the
- * research list page, it shows "Register Survey" for researchers or
- * "Participate" for patients.
+ * research list page, only researchers get an action: "Register Survey".
+ * Patients and guests get no action from the home page.
  *
  * @param options - Hook configuration
  * @param options.isResearcher - Whether the current user is a researcher
@@ -43,8 +43,6 @@ const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
  */
 export function useResearchFabAction({
   isResearcher,
-  activeStudy,
-  participate,
   router
 }: {
   isResearcher: boolean;
@@ -76,16 +74,10 @@ export function useResearchFabAction({
   // Stable refs so changing callback identities do not re-run the effect
   const routerRef = useRef(router);
   routerRef.current = router;
-  const participateRef = useRef(participate);
-  participateRef.current = participate;
-  const activeStudyRef = useRef(activeStudy);
-  activeStudyRef.current = activeStudy;
   // Translation lookups are stable enough not to re-run the effect when the
   // identity of t changes between renders.
   const tRef = useRef(t);
   tRef.current = t;
-
-  const firstUncompleted = activeStudy?.firstUncompletedQuestionnaireId;
 
   useEffect(() => {
     // Research form pages: use page-level FAB
@@ -129,22 +121,7 @@ export function useResearchFabAction({
       return () => dispatch({ type: 'SET_ACTION', config: null });
     }
 
-    if (firstUncompleted) {
-      dispatch({
-        type: 'SET_ACTION',
-        config: {
-          label: tRef.current('participate'),
-          icon: FlaskConical,
-          onAction: () => {
-            const study = activeStudyRef.current;
-            if (study) participateRef.current(study);
-          }
-        }
-      });
-    } else {
-      dispatch({ type: 'SET_ACTION', config: null });
-    }
-
+    // Patients and guests get no action from the home page.
     return () => dispatch({ type: 'SET_ACTION', config: null });
   }, [
     dispatch,
@@ -153,7 +130,6 @@ export function useResearchFabAction({
     page,
     canAdvance,
     onAdvance,
-    onSubmit,
-    firstUncompleted
+    onSubmit
   ]);
 }

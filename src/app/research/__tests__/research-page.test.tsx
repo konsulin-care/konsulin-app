@@ -347,6 +347,21 @@ describe('ResearchPage', () => {
     expect(screen.getByText('No ongoing research')).toBeTruthy();
   });
 
+  it('dispatches no FAB action for a patient home', () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+
+    expect(
+      dispatchedActions.filter(
+        action => action.type === 'SET_ACTION' && action.config !== null
+      )
+    ).toHaveLength(0);
+  });
+
   it('clears the FAB action when the component unmounts', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
@@ -458,6 +473,22 @@ describe('ResearchPage', () => {
           action.config?.label === 'Register Survey'
       )
     ).toBeDefined();
+  });
+
+  it('clears the researcher FAB action on unmount', () => {
+    setupResearcher();
+    mockUseResearcherDashboard.mockReturnValue({
+      data: { studies: [], totalParticipants: 0 },
+      isLoading: false
+    });
+
+    const { unmount } = render(<ResearchPage />, { wrapper });
+    unmount();
+
+    expect(dispatchedActions.at(-1)).toEqual({
+      type: 'SET_ACTION',
+      config: null
+    });
   });
 
   it('passes researcher study questionnaire IDs to useQuestionnaireTitles', () => {

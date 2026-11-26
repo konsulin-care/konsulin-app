@@ -111,7 +111,7 @@ function ResearcherListHarness({ probe }: { probe: Probe }) {
   return <FabActionProbe probe={probe} />;
 }
 
-describe('useResearchFabAction stability on the research list page', () => {
+describe('useResearchFabAction on the participant home', () => {
   beforeEach(() => {
     vi.mocked(usePathname).mockReturnValue('/research');
   });
@@ -120,48 +120,27 @@ describe('useResearchFabAction stability on the research list page', () => {
     vi.mocked(usePathname).mockReturnValue('/research/register');
   });
 
-  it('does not dispatch again when only the participate identity changes', () => {
-    const probe: Probe = { current: null };
+  it('does not replace the existing action for a patient with an active study', async () => {
+    const researcherProbe: Probe = { current: null };
+    const patientProbe: Probe = { current: null };
     const study = makeStudyProgress();
-    const first = vi.fn();
-    const second = vi.fn();
 
-    const { rerender } = renderWithFab(
-      <ListHarness probe={probe} participate={first} activeStudy={study} />
+    renderWithFab(
+      <>
+        <ResearcherListHarness probe={researcherProbe} />
+        <ListHarness
+          probe={patientProbe}
+          participate={vi.fn()}
+          activeStudy={study}
+        />
+      </>
     );
+    const researcherAction = researcherProbe.current;
+    expect(researcherAction?.label).toBe('Register Survey');
 
-    const dispatched = probe.current;
-    expect(dispatched?.label).toBe('Participate');
-
-    rerender(
-      <FabProvider>
-        <ListHarness probe={probe} participate={second} activeStudy={study} />
-      </FabProvider>
-    );
-
-    expect(probe.current).toBe(dispatched);
-  });
-
-  it('invokes the latest participate callback after a re-render', () => {
-    const probe: Probe = { current: null };
-    const study = makeStudyProgress();
-    const first = vi.fn();
-    const second = vi.fn();
-
-    const { rerender } = renderWithFab(
-      <ListHarness probe={probe} participate={first} activeStudy={study} />
-    );
-
-    rerender(
-      <FabProvider>
-        <ListHarness probe={probe} participate={second} activeStudy={study} />
-      </FabProvider>
-    );
-
-    probe.current?.onAction();
-
-    expect(second).toHaveBeenCalledWith(study);
-    expect(first).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(patientProbe.current).toBe(researcherAction);
+    });
   });
 });
 

@@ -7,9 +7,8 @@ vi.mock('@/i18n', async () => {
 });
 
 import { createQueryClient } from '@/__tests__/test-utils';
-import type { FabAction } from '@/context/fabContext';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
@@ -64,9 +63,6 @@ const {
     mockRouter: { push, replace }
   };
 });
-
-/** Dispatched FAB actions captured by the mock, reset per test. */
-let dispatchedActions: FabAction[] = [];
 
 vi.mock('@/services/api/research', () => ({
   useResearchProgress: mockUseResearchProgress,
@@ -152,37 +148,24 @@ beforeEach(() => {
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();
-  dispatchedActions = [];
-  mockFabDispatch.mockImplementation((action: FabAction) => {
-    dispatchedActions.push(action);
-  });
   mockSearchParams.delete('id');
   mockSearchParams.delete('view');
   mockSearchParams.delete('ref');
 });
 
-/** Latest Participate FAB action, or null. */
-function participateAction(): FabAction | null {
-  return (
-    dispatchedActions.findLast(
-      action =>
-        action.type === 'SET_ACTION' && action.config?.label === 'Participate'
-    ) ?? null
-  );
-}
-
-/** Invokes the latest Participate FAB action, asserting it exists. */
-function invokeParticipate(): void {
-  const action = participateAction();
-  expect(action).toBeTruthy();
-  if (action?.type === 'SET_ACTION' && action.config) {
-    // skipcq: JS-0098 - invoke action in test without awaiting
-    void action.config.onAction();
+/** Opens the consent flow by tapping PHQ-2 on the active slide. */
+function tapQuestionnaire(): void {
+  const activeSlide = screen
+    .getAllByTestId(/research-slide-/)
+    .find(slide => slide.getAttribute('data-active') === 'true');
+  expect(activeSlide).toBeTruthy();
+  if (activeSlide) {
+    fireEvent.click(within(activeSlide).getByRole('button', { name: 'PHQ-2' }));
   }
 }
 
 describe('ResearchPage consent flow', () => {
-  it('opens the consent drawer from the Participate FAB when not consented', async () => {
+  it('opens the consent drawer from a questionnaire tap when not consented', async () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -190,7 +173,7 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    invokeParticipate();
+    tapQuestionnaire();
 
     expect(
       await screen.findByRole('button', { name: 'Agree to Participate' })
@@ -206,13 +189,13 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    invokeParticipate();
+    tapQuestionnaire();
     fireEvent.click(
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
 
     expect(mockPush).toHaveBeenCalledWith(
-      '/assessments?id=big-five-inventory&study=research'
+      '/assessments?id=phq2&study=research'
     );
     expect(window.localStorage.getItem('konsulin_consent_research')).toBe('1');
   });
@@ -229,10 +212,10 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    invokeParticipate();
+    tapQuestionnaire();
 
     expect(mockPush).toHaveBeenCalledWith(
-      '/assessments?id=big-five-inventory&study=research'
+      '/assessments?id=phq2&study=research'
     );
     expect(
       screen.queryByRole('button', { name: 'Agree to Participate' })
@@ -253,14 +236,14 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    invokeParticipate();
+    tapQuestionnaire();
     fireEvent.click(
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
 
     expect(consentMock.mutate).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith(
-      '/assessments?id=big-five-inventory&study=research'
+      '/assessments?id=phq2&study=research'
     );
   });
 
@@ -278,7 +261,7 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    invokeParticipate();
+    tapQuestionnaire();
     fireEvent.click(
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
@@ -309,7 +292,7 @@ describe('ResearchPage consent flow', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
 
     fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
-    invokeParticipate();
+    tapQuestionnaire();
     fireEvent.click(
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
