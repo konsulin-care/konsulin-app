@@ -232,5 +232,13 @@
     "source_no_count": "{study} · {group}",
     "empty": "No findings yet. Studies are still collecting answers. When a batch closes, the research team posts what they learned here in everyday language, with the number of people it is based on.",
     "show_more": "Show more"
+  },
+  "trust_strip": {
+    "heading": "True for every study on Konsulin",
+    "statement_1": "A random ID, not your name. Researchers never see who you are.",
+    "statement_2": "You stay in control. Review your data, withdraw or delete it at any time.",
+    "statement_3": "Never sold. Data is collected for research and nothing else.",
+    "statement_4": "Open platform. The code is public at github.com/konsulin-care",
+    "help_link": "If things feel heavy right now, find help here"
   }
 }

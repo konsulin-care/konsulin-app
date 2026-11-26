@@ -232,5 +232,13 @@
     "source_no_count": "{study} · {group}",
     "empty": "Belum ada temuan. Studi masih mengumpulkan jawaban. Saat sebuah batch ditutup, tim peneliti membagikan apa yang mereka pelajari di sini dalam bahasa sehari-hari, beserta jumlah peserta yang menjadi dasarnya.",
     "show_more": "Tampilkan lebih banyak"
+  },
+  "trust_strip": {
+    "heading": "Berlaku untuk setiap studi di Konsulin",
+    "statement_1": "ID acak, bukan nama Anda. Peneliti tidak pernah melihat identitas Anda.",
+    "statement_2": "Anda memegang kendali. Tinjau data Anda, tarik persetujuan, atau hapus kapan saja.",
+    "statement_3": "Tidak pernah dijual. Data dikumpulkan hanya untuk penelitian.",
+    "statement_4": "Platform terbuka. Kodenya terbuka di github.com/konsulin-care",
+    "help_link": "Jika terasa berat saat ini, temukan bantuan di sini"
   }
 }
