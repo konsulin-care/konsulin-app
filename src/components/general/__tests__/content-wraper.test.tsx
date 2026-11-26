@@ -30,6 +30,17 @@ describe('ContentWraper', () => {
     expect(root).toHaveClass('md:pb-8');
   });
 
+  it('uses overflow-x-clip and not overflow-x-hidden', () => {
+    const { container } = render(
+      <ContentWraper>
+        <p>content</p>
+      </ContentWraper>
+    );
+    const root = container.firstElementChild;
+    expect(root).toHaveClass('overflow-x-clip');
+    expect(root).not.toHaveClass('overflow-x-hidden');
+  });
+
   it('renders its children', () => {
     render(
       <ContentWraper>
