@@ -208,6 +208,12 @@
     "ethics": "Status etik",
     "ethics_reference": "Nomor persetujuan (opsional)"
   },
+  "open_to_join": {
+    "konsulin_heading": "Oleh Konsulin",
+    "others_heading": "Dari kelompok peneliti lain",
+    "view_study": "Lihat studi",
+    "browse_all": "Telusuri semua {count} studi"
+  },
   "up_next": {
     "for_study": "Untuk {study} · {group}",
     "for_studies": "Untuk {count} studi",

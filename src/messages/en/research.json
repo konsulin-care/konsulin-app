@@ -208,6 +208,12 @@
     "ethics": "Ethics status",
     "ethics_reference": "Approval reference (optional)"
   },
+  "open_to_join": {
+    "konsulin_heading": "By Konsulin",
+    "others_heading": "From other research groups",
+    "view_study": "View study",
+    "browse_all": "Browse all {count} studies"
+  },
   "up_next": {
     "for_study": "For {study} · {group}",
     "for_studies": "For {count} studies",
