@@ -59,8 +59,7 @@ function makeQueryClient() {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getAPI).mockResolvedValue({
-    post: vi.fn().mockResolvedValue({ data: EMPTY_BATCH_RESPONSE }),
-    get: vi.fn()
+    get: vi.fn().mockResolvedValue({ data: EMPTY_BATCH_RESPONSE })
   } as unknown as AxiosInstance);
 });
 

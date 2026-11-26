@@ -10,7 +10,6 @@ import {
 } from '@/utils/fhir/research';
 import {
   parseQuestionnaireResponseSearchset,
-  parseStudiesBundle,
   recomputeStudyProgress
 } from '@/utils/fhir/research-bundle';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +19,11 @@ import { useEffect, useRef, useState } from 'react';
 import { ensureAnonymousSession } from '../anonymous-session';
 import { getAPI } from '../api';
 import { submitFhirBundle } from './fhir-bundle';
+import {
+  fetchConsentedStudyIds,
+  fetchStudiesByIds,
+  fetchStudyCatalogue
+} from './research-catalogue';
 import { prefetchCurrentBatchQuestionnaires } from './research-prefetch';
 
 export type { QuestionnaireInfo } from './questionnaire-info';
@@ -33,45 +37,6 @@ export interface ResearchIdentity {
 /** Common search suffix: only completed responses, minimal fields. */
 const QR_SEARCH_SUFFIX =
   '&status=completed&_elements=questionnaire,authored,author&_count=500';
-
-/**
- * Builds a FHIR batch bundle that fetches the active studies (with their
- * batch PlanDefinitions via _include) and, for patients, their
- * ResearchSubjects, in a single round trip.
- *
- * @param identity - Patient or guest identity.
- * @param today - Reference date, yyyy-mm-dd.
- * @returns A FHIR batch bundle of GET search requests.
- */
-export function buildStudiesBundle(
-  identity: ResearchIdentity,
-  today: string
-): Bundle {
-  const entries: NonNullable<Bundle['entry']> = [
-    {
-      request: {
-        method: 'GET',
-        url: `ResearchStudy?date=ge${today}&status=active&_include=ResearchStudy:protocol`
-      }
-    }
-  ];
-
-  // Per-study consent check: only patients have a FHIR identity to query.
-  if (identity.kind === 'patient') {
-    entries.push({
-      request: {
-        method: 'GET',
-        url: `ResearchSubject?patient=Patient/${identity.id}&_elements=study,status&_count=100`
-      }
-    });
-  }
-
-  return {
-    resourceType: 'Bundle',
-    type: 'batch',
-    entry: entries
-  };
-}
 
 /**
  * Builds the QuestionnaireResponse search URL for an identity, optionally
@@ -180,14 +145,15 @@ async function fetchResearchProgress(
   const today = format(new Date(), 'yyyy-MM-dd');
   const API = await getAPI();
 
-  const studiesResponse = await API.post<Bundle>(
-    '/fhir',
-    buildStudiesBundle(identity, today)
-  );
-  const { studyProgress, consentedStudyIds } = parseStudiesBundle(
-    studiesResponse.data,
-    today
-  );
+  const catalogue = await fetchStudyCatalogue(API, today);
+  const consentedStudyIds =
+    identity.kind === 'patient'
+      ? await fetchConsentedStudyIds(API, identity.id)
+      : [];
+  const known = new Set(catalogue.map(study => study.study.id));
+  const missing = consentedStudyIds.filter(id => !known.has(id));
+  const closed = await fetchStudiesByIds(API, missing, today);
+  const studyProgress = [...catalogue, ...closed];
 
   // Nothing to measure without active studies, or structure-only mode:
   // keep batches populated and feed no responses (counts stay zero).
