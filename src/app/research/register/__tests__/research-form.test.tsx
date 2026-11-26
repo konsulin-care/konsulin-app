@@ -1,9 +1,21 @@
 import { renderWithQuery } from '@/__tests__/react-test-utils';
+import {
+  getEthicsStatus,
+  getSharesFindings,
+  getWhoCanJoin
+} from '@/utils/fhir/study-metadata';
 import { screen } from '@testing-library/react';
+import type { ResearchStudy } from 'fhir/r4';
+import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { schema, submitStudy, type FormData } from '../research-form';
-import { Step1, Step2, Step3 } from '../research-form-steps';
+import {
+  Step1,
+  Step2,
+  Step3,
+  TitleStepMetadataProvider
+} from '../research-form-steps';
 
 afterEach(() => {
   localStorage.clear();
@@ -222,6 +234,43 @@ describe('Step3 - Batch Configuration', () => {
   });
 });
 
+describe('Step1 - study metadata', () => {
+  /** Renders Step1 with the metadata provider backed by a live form. */
+  function MetadataHarness() {
+    const { register, control } = useForm<FormData>({
+      defaultValues: {
+        title: '',
+        researchQuestion: '',
+        ethicsStatus: 'applying',
+        sharesFindings: false
+      }
+    });
+    return (
+      <TitleStepMetadataProvider
+        value={{ groupName: 'Klinik Sehat Jiwa', control }}
+      >
+        <Step1 register={register} errors={{}} />
+      </TitleStepMetadataProvider>
+    );
+  }
+
+  it('renders the metadata fields inside the title step', () => {
+    renderWithQuery(<MetadataHarness />);
+
+    expect(screen.getByLabelText('Research group')).toHaveValue(
+      'Klinik Sehat Jiwa'
+    );
+    expect(screen.getByLabelText(/research question/i)).toBeInTheDocument();
+    expect(screen.getByText('Ethics status')).toBeInTheDocument();
+  });
+
+  it('renders no metadata fields outside a metadata provider', () => {
+    renderWithQuery(<Step1 register={mockRegister()} errors={{}} />);
+
+    expect(screen.queryByLabelText('Research group')).not.toBeInTheDocument();
+  });
+});
+
 describe('submitStudy', () => {
   const batches: FormData['batches'] = [
     {
@@ -368,5 +417,114 @@ describe('submitStudy', () => {
         'http://konsulin.care/fhir/StructureDefinition/researchTargetParticipants'
     );
     expect(extension?.valuePositiveInt).toBe(120);
+  });
+
+  it('posts the metadata, lead name and sponsor with its display', async () => {
+    const post = vi.fn<
+      (
+        url: string,
+        body: Record<string, unknown>
+      ) => Promise<{ data: { id: string } }>
+    >(async (url: string) =>
+      url === '/fhir/PlanDefinition'
+        ? { data: { id: 'plan-1' } }
+        : { data: { id: 'study-1' } }
+    );
+    const API = { post } as unknown as Parameters<typeof submitStudy>[0];
+    const router = {
+      push: vi.fn()
+    } as unknown as Parameters<typeof submitStudy>[1]['router'];
+    const data: FormData = {
+      title: 'My Study',
+      description: 'Study description',
+      researchQuestion: 'Does sleep help?',
+      whoCanJoin: 'Adults 18+',
+      ethicsStatus: 'approved',
+      ethicsReference: 'EC-42',
+      sharesFindings: true,
+      batches: [
+        {
+          startDate: '2024-01-01',
+          endDate: '2024-02-01',
+          questionnaireIds: ['q1']
+        }
+      ]
+    };
+
+    await submitStudy(API, {
+      data,
+      userId: 'test-user',
+      storageKey: 'research-form-metadata-test-user',
+      router,
+      tToast: key => key,
+      organizationId: 'org-1',
+      organizationName: 'Klinik Sehat Jiwa',
+      leadName: 'Dr. Lead'
+    });
+
+    const studyPosts = post.mock.calls.filter(
+      ([url]) => url === '/fhir/ResearchStudy'
+    );
+    expect(studyPosts).toHaveLength(1);
+    const body = studyPosts[0][1];
+    const study = body as unknown as ResearchStudy;
+
+    expect(study.objective?.[0]?.name).toBe('Does sleep help?');
+    expect(study.principalInvestigator?.display).toBe('Dr. Lead');
+    expect(study.sponsor).toEqual({
+      reference: 'Organization/org-1',
+      display: 'Klinik Sehat Jiwa'
+    });
+    expect(getEthicsStatus(study)).toEqual({
+      code: 'approved',
+      reference: 'EC-42'
+    });
+    expect(getWhoCanJoin(study)).toBe('Adults 18+');
+    expect(getSharesFindings(study)).toBe(true);
+  });
+
+  it('posts no sponsor when the researcher has no organization', async () => {
+    const post = vi.fn<
+      (
+        url: string,
+        body: Record<string, unknown>
+      ) => Promise<{ data: { id: string } }>
+    >(async (url: string) =>
+      url === '/fhir/PlanDefinition'
+        ? { data: { id: 'plan-1' } }
+        : { data: { id: 'study-1' } }
+    );
+    const API = { post } as unknown as Parameters<typeof submitStudy>[0];
+    const router = {
+      push: vi.fn()
+    } as unknown as Parameters<typeof submitStudy>[1]['router'];
+    const data: FormData = {
+      title: 'My Study',
+      researchQuestion: 'Does sleep help?',
+      ethicsStatus: 'applying',
+      sharesFindings: false,
+      batches: [
+        {
+          startDate: '2024-01-01',
+          endDate: '2024-02-01',
+          questionnaireIds: ['q1']
+        }
+      ]
+    };
+
+    await submitStudy(API, {
+      data,
+      userId: 'test-user',
+      storageKey: 'research-form-no-org-test-user',
+      router,
+      tToast: key => key,
+      leadName: 'Dr. Solo'
+    });
+
+    const studyPosts = post.mock.calls.filter(
+      ([url]) => url === '/fhir/ResearchStudy'
+    );
+    expect(studyPosts).toHaveLength(1);
+    expect(studyPosts[0][1].sponsor).toBeUndefined();
   });
 });

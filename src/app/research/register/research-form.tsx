@@ -4,13 +4,13 @@ import QuestionnaireUploadDrawer from '@/components/shared/questionnaire-upload-
 import { useAuth } from '@/context/auth/authContext';
 import { useTranslations } from '@/i18n';
 import { getAPI } from '@/services/api';
-import { setResearchTarget } from '@/utils/fhir/research-target';
+import { useOrganizationName } from '@/services/api/organization';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import type { Questionnaire, ResearchStudy } from 'fhir/r4';
+import type { Questionnaire } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, type Resolver } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 import { canAdvanceOnTitlePage } from '../can-advance';
@@ -22,8 +22,12 @@ import {
   type QuestionnaireOption
 } from '../shared';
 import { RenderStep } from '../shared-components';
+import { studyMetadataShape } from '../study-metadata-schema';
+import { TitleStepMetadataProvider } from './research-form-steps';
+import { submitStudy } from './submit-study';
 
-export const schema = z.object({
+/** Study fields shared with the edit form. */
+const baseSchema = z.object({
   title: z.string().min(1, 'title_required'),
   description: z.string().optional(),
   targetParticipants: z
@@ -43,6 +47,17 @@ export const schema = z.object({
     .min(1, 'batch_required')
 });
 
+/**
+ * Register schema: the shared study fields plus the study metadata step.
+ * Metadata keys stay optional in the exported schema so the shared edit form
+ * keeps typechecking until it adopts the new step; the register resolver uses
+ * the strict schema where those keys are required.
+ */
+export const schema = baseSchema.extend(studyMetadataShape.partial().shape);
+
+const registerSchema = baseSchema.extend(studyMetadataShape.shape);
+
+/** Form values of the register form. */
 export type FormData = z.infer<typeof schema>;
 
 type Page = 'title' | 'questionnaire' | 'batch';
@@ -54,81 +69,74 @@ const parsePage = (raw: string | null): Page =>
   VALID_PAGES.has(raw as Page) ? (raw as Page) : 'title';
 
 /** Hydrate partial form data from localStorage. */
-const loadFromStorage = (
-  key: string
-): (Partial<FormData> & { page?: string }) | null => {
+const loadFromStorage = (key: string): Partial<FormData> | null => {
   try {
     const stored = localStorage.getItem(key);
-    if (stored)
-      return JSON.parse(stored) as Partial<FormData> & { page?: string };
+    if (stored) return JSON.parse(stored) as Partial<FormData>;
   } catch {
     /* corrupt data */
   }
   return null;
 };
 
-/** POST a new research study to the API. */
-export const submitStudy = async (
-  API: Awaited<ReturnType<typeof getAPI>>,
-  options: {
-    data: FormData;
-    userId: string | undefined;
-    storageKey: string;
-    router: ReturnType<typeof useRouter>;
-    tToast: (key: string) => string;
-  }
-) => {
-  const { data, userId, storageKey, router, tToast } = options;
-  const planIds = await Promise.all(
-    data.batches.map(async (batch, index) => {
-      const res: { data: { id?: string } } = await API.post(
-        '/fhir/PlanDefinition',
-        {
-          resourceType: 'PlanDefinition',
-          title: `Batch ${index + 1}`,
-          status: 'active',
-          effectivePeriod: { start: batch.startDate, end: batch.endDate },
-          action: batch.questionnaireIds.map(qId => ({
-            definitionCanonical: `Questionnaire/${qId}`
-          }))
-        }
-      );
-      return res.data.id;
-    })
-  );
-
-  const starts = data.batches
-    .map(b => b.startDate)
-    .toSorted((a, b) => a.localeCompare(b));
-  const ends = data.batches
-    .map(b => b.endDate)
-    .toSorted((a, b) => a.localeCompare(b));
-
-  const study: ResearchStudy = {
-    resourceType: 'ResearchStudy',
-    title: data.title,
-    description: data.description,
-    status: 'active',
-    principalInvestigator: { reference: `Practitioner/${userId}` },
-    protocol: planIds
-      .filter(id => id !== undefined)
-      .map(id => ({ reference: `PlanDefinition/${id}` })),
-    period: { start: starts[0], end: ends.at(-1) }
-  };
-  const studyWithTarget =
-    data.targetParticipants === undefined
-      ? study
-      : setResearchTarget(study, data.targetParticipants);
-
-  await API.post('/fhir/ResearchStudy', studyWithTarget);
-
-  localStorage.removeItem(storageKey);
-  toast.success(tToast('research_create_success'));
-  router.push('/');
+const EMPTY_FORM: FormData = {
+  title: '',
+  description: '',
+  targetParticipants: undefined,
+  researchQuestion: '',
+  whoCanJoin: '',
+  ethicsStatus: 'applying',
+  ethicsReference: '',
+  sharesFindings: false,
+  batches: [{ startDate: '', endDate: '', questionnaireIds: [] }]
 };
 
+/** Default values for the register form, hydrated from the stored draft. */
+function defaultValuesFrom(stored: Partial<FormData> | null): FormData {
+  return { ...EMPTY_FORM, ...stored };
+}
+
+/** Keep the page query canonical and guard deep links with too little data. */
+function usePageGuards(
+  rawPage: string | null,
+  title: string | undefined,
+  router: ReturnType<typeof useRouter>
+) {
+  const page = parsePage(rawPage);
+  const needsCanonicalize =
+    rawPage === null || !VALID_PAGES.has(rawPage as Page);
+  const shouldRedirect = page !== 'title' && !title;
+  useEffect(() => {
+    if (needsCanonicalize) router.replace('/research/register?page=title');
+  }, [needsCanonicalize, router]);
+  useEffect(() => {
+    if (shouldRedirect) router.replace('/research/register?page=title');
+  }, [shouldRedirect, router]);
+  return { page, effectivePage: shouldRedirect ? 'title' : page };
+}
+
+/** Persist the draft to localStorage after the first render. */
+function useDraftPersistence(storageKey: string, values: FormData, page: Page) {
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return () => {
+        /* noop: skip first render */
+      };
+    }
+    const id = setTimeout(() => {
+      localStorage.setItem(storageKey, JSON.stringify({ ...values, page }));
+    }, 500);
+    return () => {
+      clearTimeout(id);
+    };
+  }, [values, page, storageKey]);
+}
+
 /**
- *
+ * Register a new research study.
+ * @returns the multi-step register form
  */
 export default function ResearchForm() {
   const tToast = useTranslations('toast');
@@ -136,37 +144,20 @@ export default function ResearchForm() {
   const searchParams = useSearchParams();
   const { state: authState } = useAuth();
   const userId = authState?.userInfo?.fhirId;
+  const organizationId = authState?.userInfo?.organizationId;
+  const leadName = authState?.userInfo?.fullname;
+  const { data: organizationName = '' } = useOrganizationName(organizationId);
   const storageKey = `research-form-${userId ?? 'anonymous'}`;
   const storedData = useRef(loadFromStorage(storageKey));
   const [customQuestionnaires, setCustomQuestionnaires] = useState<
     QuestionnaireOption[]
   >([]);
   const [isUploadDrawerOpen, setIsUploadDrawerOpen] = useState(false);
-  const isInitialMount = useRef(true);
-
-  // Derive page from URL params with guard
-  const rawPage = searchParams.get('page');
-  const page: Page = parsePage(rawPage);
-
-  // Canonicalize: redirect to ?page=title when missing or invalid
-  const needsCanonicalize =
-    rawPage === null || !VALID_PAGES.has(rawPage as Page);
-  useEffect(() => {
-    if (needsCanonicalize) {
-      router.replace('/research/register?page=title');
-    }
-  }, [needsCanonicalize, router]);
 
   const form = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      title: storedData.current?.title ?? '',
-      description: storedData.current?.description ?? '',
-      targetParticipants: storedData.current?.targetParticipants,
-      batches: storedData.current?.batches ?? [
-        { startDate: '', endDate: '', questionnaireIds: [] }
-      ]
-    }
+    // @type the strict schema validates metadata keys that FormData keeps optional
+    resolver: zodResolver(registerSchema) as unknown as Resolver<FormData>,
+    defaultValues: defaultValuesFrom(storedData.current)
   });
 
   const {
@@ -185,27 +176,12 @@ export default function ResearchForm() {
     name: 'batches'
   });
 
-  // Deep link guard: if page is ahead of valid data, redirect to title
-  const shouldRedirect = page !== 'title' && !formValues.title;
-  useEffect(() => {
-    if (shouldRedirect) router.replace('/research/register?page=title');
-  }, [shouldRedirect, router]);
-
-  // Persist to localStorage
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return () => {
-        /* noop: skip first render */
-      };
-    }
-    const id = setTimeout(() => {
-      localStorage.setItem(storageKey, JSON.stringify({ ...formValues, page }));
-    }, 500);
-    return () => {
-      clearTimeout(id);
-    };
-  }, [formValues, page, storageKey]);
+  const { page, effectivePage } = usePageGuards(
+    searchParams.get('page'),
+    formValues.title,
+    router
+  );
+  useDraftPersistence(storageKey, formValues, page);
 
   const { data: libraryQs = [] } = useQuery({
     queryKey: ['questionnaire-library'],
@@ -251,9 +227,6 @@ export default function ResearchForm() {
     [handleSelectLibrary, selectedIds]
   );
 
-  // Don't render wrong page while redirecting
-  const effectivePage = shouldRedirect ? 'title' : page;
-
   const onSubmitForm = useCallback(
     async (data: FormData) => {
       try {
@@ -263,13 +236,24 @@ export default function ResearchForm() {
           userId,
           storageKey,
           router,
-          tToast
+          tToast,
+          organizationId,
+          organizationName,
+          leadName
         });
       } catch {
         toast.error(tToast('research_create_failed'));
       }
     },
-    [userId, storageKey, router, tToast]
+    [
+      userId,
+      storageKey,
+      router,
+      tToast,
+      organizationId,
+      organizationName,
+      leadName
+    ]
   );
 
   // Actions for the FAB (memoized to prevent infinite re-render in bridge)
@@ -313,24 +297,28 @@ export default function ResearchForm() {
   return (
     <ResearchFormActionsProvider value={formActions}>
       <ResearchFormFabBridge />
-      {RenderStep({
-        effectivePage,
-        title: 'Register New Research',
-        register,
-        errors,
-        libraryOptions,
-        availableQuestionnaires: allQuestionnaireOptions.filter(q =>
-          selectedIds.includes(q.code)
-        ),
-        selectedIds,
-        handleSelectLibrary,
-        handleOpenUploadDrawer: () => setIsUploadDrawerOpen(true),
-        fields,
-        batches: formValues.batches,
-        setValue,
-        append,
-        remove
-      })}
+      <TitleStepMetadataProvider
+        value={{ groupName: organizationName, control }}
+      >
+        {RenderStep({
+          effectivePage,
+          title: 'Register New Research',
+          register,
+          errors,
+          libraryOptions,
+          availableQuestionnaires: allQuestionnaireOptions.filter(q =>
+            selectedIds.includes(q.code)
+          ),
+          selectedIds,
+          handleSelectLibrary,
+          handleOpenUploadDrawer: () => setIsUploadDrawerOpen(true),
+          fields,
+          batches: formValues.batches,
+          setValue,
+          append,
+          remove
+        })}
+      </TitleStepMetadataProvider>
       <QuestionnaireUploadDrawer
         open={isUploadDrawerOpen}
         onClose={() => setIsUploadDrawerOpen(false)}
@@ -343,3 +331,5 @@ export default function ResearchForm() {
     </ResearchFormActionsProvider>
   );
 }
+
+export { submitStudy } from './submit-study';

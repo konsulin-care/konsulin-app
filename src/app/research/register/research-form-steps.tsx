@@ -6,19 +6,46 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/i18n';
+import { createContext, useContext, type ReactNode } from 'react';
 
 import type {
+  Control,
   FieldErrors,
   UseFieldArrayReturn,
   UseFormReturn
 } from 'react-hook-form';
 import type { QuestionnaireOption } from '../shared';
 import { renderOptionWithMetadata } from '../shared-components';
+import type { StudyMetadataFormValues } from '../study-metadata-schema';
+import { TitleStepMetadataFields } from '../title-step-metadata-fields';
 import { BatchItem } from './batch-item';
 import type { FormData } from './research-form';
 
+interface TitleStepMetadata {
+  groupName: string;
+  control: Control<FormData>;
+}
+
+const TitleStepMetadataContext = createContext<TitleStepMetadata | null>(null);
+
 /**
- * Step 1: Title & Description
+ * Provide the study metadata context to the title step.
+ * @param props - group name and the form control
+ * @returns the provider wrapper
+ */
+export function TitleStepMetadataProvider({
+  value,
+  children
+}: Readonly<{ value: TitleStepMetadata; children: ReactNode }>) {
+  return (
+    <TitleStepMetadataContext.Provider value={value}>
+      {children}
+    </TitleStepMetadataContext.Provider>
+  );
+}
+
+/**
+ * Step 1: Title, Description and study metadata
  */
 export function Step1({
   register,
@@ -28,6 +55,7 @@ export function Step1({
   errors: FieldErrors<FormData>;
 }>) {
   const t = useTranslations('research');
+  const metadata = useContext(TitleStepMetadataContext);
   return (
     <div className='space-y-4'>
       <div className='space-y-2'>
@@ -73,6 +101,20 @@ export function Step1({
           </p>
         )}
       </div>
+      {metadata && (
+        <TitleStepMetadataFields
+          groupName={metadata.groupName}
+          // @type the title step form carries the metadata keys with the study fields
+          register={
+            register as unknown as UseFormReturn<StudyMetadataFormValues>['register']
+          }
+          control={
+            metadata.control as unknown as Control<StudyMetadataFormValues>
+          }
+          // @type field errors of the combined form cover the metadata keys
+          errors={errors}
+        />
+      )}
     </div>
   );
 }
