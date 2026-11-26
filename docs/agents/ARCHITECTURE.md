@@ -57,6 +57,7 @@ Backend API (Go + SuperTokens Go SDK)
 | MUI renderer theme                    | `@docs/ADR/027-mui-renderer-theme.md`                    |
 | Client cache persistence              | `@docs/ADR/028-client-cache-persistence.md`              |
 | BFF shared cache                      | `@docs/ADR/030-bff-shared-cache.md`                      |
+| Read-only batch cache                 | `@docs/ADR/035-read-only-batch-cache.md`                 |
 | Interpretation engine                 | `@docs/ADR/029-interpretation-engine.md`                 |
 | Domain-gated specialty routing        | `@docs/ADR/024-domain-gated-specialty-routing.md`        |
 | Intent-aware recommendation selection | `@docs/ADR/022-intent-aware-recommendation-selection.md` |

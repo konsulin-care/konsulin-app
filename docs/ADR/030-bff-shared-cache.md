@@ -53,7 +53,8 @@ Only these resource types are cached:
 **Invalidation**
 
 - A write through the BFF invalidates the resource type it touched.
-- A Bundle POST invalidates everything.
+- A Bundle POST invalidates everything, unless every entry is a GET.
+  ADR 035 narrows this: a read-only batch POST keeps the cache.
 
 # Impact
 
@@ -66,3 +67,5 @@ Only these resource types are cached:
 - Multiple replicas keep independent caches, so invalidation only affects the
   replica that handled the write. Consistency across replicas waits for the
   backend cache.
+- Read-only batch POSTs no longer clear the cache. See
+  `@docs/ADR/035-read-only-batch-cache.md`.
