@@ -80,6 +80,13 @@ function renderWithFab(ui: React.ReactElement) {
   );
 }
 
+/** Fill title, description and target participants. */
+async function fillStudyBasics(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByLabelText(/title/i), 'My Study');
+  await user.type(screen.getByLabelText(/description/i), 'A description');
+  await user.type(screen.getByLabelText(/target participants/i), '10');
+}
+
 describe('Register page FAB canAdvance', () => {
   it('shows icon-only ChevronRight FAB disabled by default on title page', async () => {
     renderWithFab(<RegisterPage />);
@@ -118,7 +125,7 @@ describe('Register page FAB canAdvance', () => {
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('true');
   });
 
-  it('becomes enabled when title, description and target are filled', async () => {
+  it('remains disabled without a research question', async () => {
     const user = userEvent.setup();
     renderWithFab(<RegisterPage />);
 
@@ -126,9 +133,24 @@ describe('Register page FAB canAdvance', () => {
       expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
     });
 
-    await user.type(screen.getByLabelText(/title/i), 'My Study');
-    await user.type(screen.getByLabelText(/description/i), 'A description');
-    await user.type(screen.getByLabelText(/target participants/i), '10');
+    await fillStudyBasics(user);
+
+    expect(screen.getByTestId('fab-disabled')).toHaveTextContent('true');
+  });
+
+  it('becomes enabled when title, description, target, question and ethics are filled', async () => {
+    const user = userEvent.setup();
+    renderWithFab(<RegisterPage />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('fab-label')).toHaveTextContent('none');
+    });
+
+    await fillStudyBasics(user);
+    await user.type(
+      screen.getByLabelText(/research question/i),
+      'Does it work?'
+    );
 
     expect(screen.getByTestId('fab-disabled')).toHaveTextContent('false');
   });

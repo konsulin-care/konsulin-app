@@ -113,6 +113,8 @@ export default function EditResearchForm({
     control,
     name: 'targetParticipants'
   });
+  const researchQuestion = useWatch({ control, name: 'researchQuestion' });
+  const ethicsStatus = useWatch({ control, name: 'ethicsStatus' });
   const batches = useWatch({ control, name: 'batches' });
 
   // Deep link guard
@@ -200,7 +202,13 @@ export default function EditResearchForm({
     () => ({
       canAdvance:
         effectivePage === 'title'
-          ? canAdvanceOnTitlePage(title, description, targetParticipants)
+          ? canAdvanceOnTitlePage({
+              title,
+              description,
+              target: targetParticipants,
+              question: researchQuestion,
+              ethicsStatus
+            })
           : selectedIds.length > 0,
       onAdvance: () => {
         if (effectivePage === 'title') {
@@ -219,6 +227,8 @@ export default function EditResearchForm({
       title,
       description,
       targetParticipants,
+      researchQuestion,
+      ethicsStatus,
       selectedIds.length,
       trigger,
       router,

@@ -261,11 +261,13 @@ export default function ResearchForm() {
     () => ({
       canAdvance:
         effectivePage === 'title'
-          ? canAdvanceOnTitlePage(
-              formValues.title,
-              formValues.description,
-              formValues.targetParticipants
-            )
+          ? canAdvanceOnTitlePage({
+              title: formValues.title,
+              description: formValues.description,
+              target: formValues.targetParticipants,
+              question: formValues.researchQuestion,
+              ethicsStatus: formValues.ethicsStatus
+            })
           : selectedIds.length > 0,
       onAdvance: async () => {
         if (effectivePage === 'title') {
@@ -286,6 +288,8 @@ export default function ResearchForm() {
       formValues.title,
       formValues.description,
       formValues.targetParticipants,
+      formValues.researchQuestion,
+      formValues.ethicsStatus,
       selectedIds.length,
       trigger,
       router,
