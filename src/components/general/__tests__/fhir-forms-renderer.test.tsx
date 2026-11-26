@@ -13,7 +13,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/i18n', async () => {
   const { createUseTranslationsMock } =
     await import('@/i18n/__tests__/test-messages');
-  return { useTranslations: createUseTranslationsMock() };
+  const factory = createUseTranslationsMock();
+  // Cache the translator per namespace: components list it in effect deps, so
+  // returning a fresh function each render would loop forever.
+  const cache = new Map<string, ReturnType<typeof factory>>();
+  const useTranslations = (namespace?: string) => {
+    const key = namespace ?? '';
+    const cached = cache.get(key);
+    if (cached) return cached;
+    const translator = factory(namespace);
+    cache.set(key, translator);
+    return translator;
+  };
+  return { useTranslations };
 });
 
 vi.mock('next/navigation', () => ({
@@ -401,7 +413,6 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
         ],
         cumulativeResponses: 0,
         questionnaireResponses: [],
-        questionnaireXp: 0,
         completedQuestionnaireIds: ['q-123'],
         consentedStudyIds: []
       }
@@ -419,7 +430,7 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
     await waitFor(() => {
       expect(share).toHaveBeenCalledWith({
         title: 'Study X',
-        text: `Join me as a citizen scientist through Study X in Konsulin.\n${window.location.origin}/research?view=study-x&ref=p_pat-1`,
+        text: `I'm taking part in Study X on Konsulin. Join me:\n${window.location.origin}/research?view=study-x&ref=p_pat-1`,
         url: `${window.location.origin}/research?view=study-x&ref=p_pat-1`
       });
     });

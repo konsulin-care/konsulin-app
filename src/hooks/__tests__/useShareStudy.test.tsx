@@ -1,13 +1,31 @@
+import enResearch from '@/messages/en/research.json';
+import idResearch from '@/messages/id/research.json';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useShareStudy } from '../useShareStudy';
+
+vi.mock('@/i18n', async () => {
+  const { createUseTranslationsMock } =
+    await import('@/i18n/__tests__/test-messages');
+  return { useTranslations: createUseTranslationsMock() };
+});
 
 describe('useShareStudy', () => {
   const ORIGIN = 'https://konsulin.care';
   const TITLE = 'Sleep Cohort';
   const MESSAGE =
-    `Join me as a citizen scientist through ${TITLE} in Konsulin.\n` +
+    `I'm taking part in ${TITLE} on Konsulin. Join me:\n` +
     'https://konsulin.care/research?view=study-x';
+
+  it('uses the exact English and Indonesian share texts', () => {
+    expect(enResearch.share_message).toBe(
+      "I'm taking part in {title} on Konsulin. Join me:"
+    );
+    expect(idResearch.share_message).toBe(
+      'Saya ikut serta dalam {title} di Konsulin. Ikut juga:'
+    );
+    expect(MESSAGE).not.toContain('citizen scientist');
+  });
 
   beforeEach(() => {
     window.localStorage.clear();

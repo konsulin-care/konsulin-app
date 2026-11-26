@@ -1,6 +1,7 @@
 'use client';
 
-import { buildResearchShareMessage, buildShareUrl } from '@/utils/referral';
+import { useTranslations } from '@/i18n';
+import { buildShareUrl } from '@/utils/referral';
 import { useCallback, useEffect, useState } from 'react';
 
 export interface UseShareStudyParams {
@@ -15,10 +16,10 @@ export interface UseShareStudyParams {
  * Study-scoped share handler for the research carousel and completion drawer.
  *
  * Builds `/research?view={studyId}` (plus `ref=p_{fhirId}` for patients) and,
- * when a title is given, a full message
- * `Join me as a citizen scientist through {title} in Konsulin.\n{url}`. Shares
- * via the native Web Share API when it accepts the payload, with a clipboard
- * fallback that copies the full message and flips a "Copied!" state.
+ * when a title is given, the translated `research.share_message` invite
+ * followed by a newline and the URL. Shares via the native Web Share API when
+ * it accepts the payload, with a clipboard fallback that copies the full
+ * message and flips a "Copied!" state.
  *
  * @param params - Study to deep-link, attribution, and the study title.
  * @returns The share URL, the copied flag, and the share handler.
@@ -33,6 +34,7 @@ export function useShareStudy({
   copied: boolean;
   handleShare: () => Promise<void>;
 } {
+  const t = useTranslations('research');
   const [origin, setOrigin] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -42,7 +44,7 @@ export function useShareStudy({
 
   const shareUrl = buildShareUrl({ origin, isPatient, fhirId, studyId });
   const message = title
-    ? `${buildResearchShareMessage(title)}${shareUrl}`
+    ? `${t('share_message', { title })}\n${shareUrl}`
     : shareUrl;
 
   const handleShare = useCallback(async () => {

@@ -33,6 +33,7 @@
   "standalone_research_body": "Your response helps the research move forward.",
   "share_default_label": "Tap to share this survey",
   "share_copied": "Link copied!",
+  "share_message": "I'm taking part in {title} on Konsulin. Join me:",
   "loading_label": "Loading research",
   "skeleton_label": "Loading ongoing research",
   "no_research_title": "No ongoing research",
