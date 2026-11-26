@@ -290,7 +290,7 @@
     "xp_earned": "XP diperoleh",
     "time_invested": "Waktu yang dihabiskan",
     "minutes_invested": "~{minutes} menit",
-    "batch_done": "Batch {index} selesai! +{xp} XP",
+    "batch_done": "Batch {index} selesai. Terima kasih.",
     "level_progress": "{xp} XP menuju {level}",
     "next_batch_opens": "Batch berikutnya dibuka {date}",
     "last_batch": "Ini batch terakhir",

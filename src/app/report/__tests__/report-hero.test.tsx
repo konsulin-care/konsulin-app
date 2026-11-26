@@ -72,7 +72,7 @@ const NO_TIMELINE_OR_NUDGE = [
 ];
 
 describe('ReportHero', () => {
-  it('announces the completed batch with its XP when completed=1', () => {
+  it('announces the completed batch without XP when completed=1', () => {
     render(
       <ReportHero
         {...makeProps({
@@ -91,7 +91,7 @@ describe('ReportHero', () => {
       />
     );
     expect(screen.getByTestId('report-hero-headline')).toHaveTextContent(
-      'Batch 2 done! +115 XP'
+      'Batch 2 done. Thank you.'
     );
     expect(screen.queryByTestId('report-study-title')).toBeNull();
   });
@@ -104,19 +104,16 @@ describe('ReportHero', () => {
     expect(screen.queryByTestId('report-hero-headline')).toBeNull();
   });
 
-  it('shows a patient the level bar with the level label and XP to next', () => {
+  it('renders no level label, XP text or level bar', () => {
     render(<ReportHero {...makeProps({ isPatient: true, totalXp: 45 })} />);
-    expect(screen.getByTestId('report-hero-level')).toBeInTheDocument();
-    expect(screen.getByTestId('report-hero-level-label')).toHaveTextContent(
-      'Trailblazer'
-    );
-    expect(screen.getByTestId('report-hero-level-xp')).toHaveTextContent(
-      '55 XP to Pathfinder'
-    );
-    expect(screen.getByTestId('report-hero-level-bar')).toHaveAttribute(
-      'data-fraction',
-      '0.45'
-    );
+    for (const id of [
+      'report-hero-level',
+      'report-hero-level-label',
+      'report-hero-level-xp',
+      'report-hero-level-bar'
+    ]) {
+      expect(screen.queryByTestId(id)).toBeNull();
+    }
     for (const testId of NO_TIMELINE_OR_NUDGE) {
       expect(screen.queryByTestId(testId)).toBeNull();
     }

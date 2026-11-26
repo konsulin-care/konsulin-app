@@ -1,9 +1,5 @@
 'use client';
 
-import {
-  getResearchLevelFraction,
-  getResearchLevelProgress
-} from '@/constants/research';
 import { useTranslations } from '@/i18n';
 import { sortBatches, type ResearchBatch } from '@/utils/fhir/research';
 import type { QuestionnaireResponse } from 'fhir/r4';
@@ -21,7 +17,8 @@ export interface ReportHeroProps {
   batches: readonly ResearchBatch[];
   buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>;
   durationByQuestionnaire: ReadonlyMap<string, number | null>;
-  totalXp: number;
+  /** @deprecated Unused; removed with the game layer. */
+  totalXp?: number;
   isPatient: boolean;
   latestBatchByQuestionnaire: ReadonlyMap<string, string>;
 }
@@ -43,8 +40,6 @@ export function ReportHero({
   batches,
   buckets,
   durationByQuestionnaire,
-  totalXp,
-  isPatient,
   latestBatchByQuestionnaire
 }: Readonly<ReportHeroProps>) {
   const t = useTranslations('common');
@@ -89,12 +84,9 @@ export function ReportHero({
   const showHeadline = completed && summary !== null;
   const headline = showHeadline
     ? t('report.batch_done', {
-        index: summary.index,
-        xp: summary.xp
+        index: summary.index
       })
     : studyTitle;
-  const level = getResearchLevelProgress(totalXp);
-  const fraction = getResearchLevelFraction(totalXp);
   const baselineKey =
     baselineTotal === 1
       ? 'report.baseline_note_one'
@@ -110,38 +102,6 @@ export function ReportHero({
       >
         {headline}
       </h1>
-
-      {isPatient && (
-        <div className='mt-3' data-testid='report-hero-level'>
-          <div className='flex items-center justify-between text-xs'>
-            <span
-              data-testid='report-hero-level-label'
-              className='text-foreground font-bold'
-            >
-              {level.current.label}
-            </span>
-            <span
-              data-testid='report-hero-level-xp'
-              className='text-muted-foreground'
-            >
-              {t('report.level_progress', {
-                xp: level.toNext,
-                level: level.next?.label ?? level.current.label
-              })}
-            </span>
-          </div>
-          <div
-            data-testid='report-hero-level-bar'
-            data-fraction={fraction}
-            className='bg-muted mt-1 h-2 w-full rounded-full'
-          >
-            <div
-              className='bg-turquoise-deep h-2 rounded-full'
-              style={{ width: `${Math.round(fraction * 100)}%` }}
-            />
-          </div>
-        </div>
-      )}
 
       {baselineTotal > 0 && (
         <p

@@ -290,7 +290,7 @@
     "xp_earned": "XP earned",
     "time_invested": "Time invested",
     "minutes_invested": "~{minutes} min",
-    "batch_done": "Batch {index} done! +{xp} XP",
+    "batch_done": "Batch {index} done. Thank you.",
     "level_progress": "{xp} XP to {level}",
     "next_batch_opens": "Next batch opens {date}",
     "last_batch": "This is the last batch",
