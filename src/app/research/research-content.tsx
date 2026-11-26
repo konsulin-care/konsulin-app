@@ -7,7 +7,6 @@ import type { QuestionnaireInfo } from '@/services/api/questionnaire-info';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import type { StudyProgress } from '@/utils/fhir/research';
 import type { WaitingResponse } from '@/utils/fhir/research-schedule';
-import ContributionDashboard from './contribution-dashboard';
 import ResearchCarousel from './research-carousel';
 import ResearchSkeleton from './research-skeleton';
 import ResearcherContent from './researcher-content';
@@ -43,7 +42,6 @@ export default function ResearchContent({
   progress,
   studies,
   activeStudyId,
-  activeStudy,
   titleMap,
   titlesPending,
   fhirId,
@@ -85,7 +83,7 @@ export default function ResearchContent({
   return (
     <>
       <ReferralNotice />
-      <div className='lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-6'>
+      <div>
         <div>
           <SectionHeader number={1} label={t('section.study')} />
           <ResearchCarousel
@@ -100,14 +98,6 @@ export default function ResearchContent({
             isTitlesLoading={titlesPending}
             waiting={waiting}
             consentedStudyIds={consentedStudyIds}
-          />
-        </div>
-        <div className='lg:sticky lg:top-4'>
-          <SectionHeader number={2} label={t('section.contribution')} />
-          <ContributionDashboard
-            progress={progress}
-            activeStudy={activeStudy}
-            questionnaireInfo={titleMap}
           />
         </div>
       </div>

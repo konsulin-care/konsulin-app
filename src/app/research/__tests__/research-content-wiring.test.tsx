@@ -44,10 +44,6 @@ vi.mock('../research-carousel', () => ({
   )
 }));
 
-vi.mock('../contribution-dashboard', () => ({
-  default: () => <div data-testid='contribution-dashboard' />
-}));
-
 vi.mock('@/components/research/referral-notice', () => ({
   default: () => <div data-testid='referral-notice' />
 }));
@@ -117,7 +113,7 @@ describe('ResearchContent wiring', () => {
     expect(researcherContent).toHaveAttribute('data-active', '');
   });
 
-  it('renders section 01 before the carousel and section 02 before the dashboard', () => {
+  it('renders section 01 before the carousel and no XP panel', () => {
     const progress = makeProgress();
     render(
       <ResearchContent
@@ -140,61 +136,15 @@ describe('ResearchContent wiring', () => {
       { wrapper }
     );
     const studyHeader = screen.getByTestId('section-header-1');
-    const contributionHeader = screen.getByTestId('section-header-2');
     const carousel = screen.getByTestId('research-carousel');
-    const dashboard = screen.getByTestId('contribution-dashboard');
     expect(studyHeader).toHaveTextContent('01');
     expect(studyHeader).toHaveTextContent('Study');
-    expect(contributionHeader).toHaveTextContent('02');
-    expect(contributionHeader).toHaveTextContent('Your contribution');
+    expect(screen.queryByTestId('section-header-2')).toBeNull();
+    expect(screen.queryByTestId('contribution-dashboard')).toBeNull();
     expect(
       studyHeader.compareDocumentPosition(carousel) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
-    expect(
-      contributionHeader.compareDocumentPosition(dashboard) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-  });
-
-  it('lays out study and contribution as lg grid columns with a sticky contribution column', () => {
-    const progress = makeProgress();
-    render(
-      <ResearchContent
-        isResearcher={false}
-        researcherLoading={false}
-        researcherStudies={[]}
-        isLoading={false}
-        progress={progress}
-        studies={progress.studies}
-        activeStudyId='research'
-        activeStudy={progress.studies[0]}
-        titleMap={new Map()}
-        titlesPending={false}
-        fhirId='patient-1'
-        onSlideChange={vi.fn()}
-        onResearcherStudyClick={vi.fn()}
-        onStudyClick={vi.fn()}
-        onQuestionnaireClick={vi.fn()}
-      />,
-      { wrapper }
-    );
-    const leftColumn = screen.getByTestId('section-header-1').parentElement;
-    const grid = leftColumn?.parentElement;
-    const rightColumn = screen.getByTestId('section-header-2').parentElement;
-    expect(grid).toHaveClass(
-      'lg:grid',
-      'lg:grid-cols-[minmax(0,1fr)_360px]',
-      'lg:gap-6',
-      'lg:items-start'
-    );
-    expect(rightColumn).toHaveClass('lg:sticky', 'lg:top-4');
-    expect(leftColumn).toContainElement(
-      screen.getByTestId('research-carousel')
-    );
-    expect(rightColumn).toContainElement(
-      screen.getByTestId('contribution-dashboard')
-    );
   });
 
   it('forwards waiting and consentedStudyIds to ResearchCarousel unchanged', () => {

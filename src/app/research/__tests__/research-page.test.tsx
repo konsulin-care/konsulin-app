@@ -180,7 +180,6 @@ describe('ResearchPage', () => {
     expect(screen.getByTestId('batch-line')).toHaveTextContent(
       `Batch 1 of 1 · Closes ${formatBatchDate(BATCH_1.end, 'id')}`
     );
-    expect(screen.getAllByText('1/2 questionnaires').length).toBeGreaterThan(0);
     expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
   });
 
@@ -604,26 +603,7 @@ describe('ResearchPage', () => {
     expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
   });
 
-  it('drives the contribution dashboard ring from the active study', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(screen.getByTestId('dashboard-batch-count')).toHaveTextContent(
-      '1/2 questionnaires'
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
-
-    expect(screen.getByTestId('dashboard-batch-count')).toHaveTextContent(
-      '0/2 questionnaires'
-    );
-  });
-
-  it('renders the research carousel above the contribution dashboard and drops the circle panel', () => {
+  it('renders no contribution dashboard and drops the circle panel', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -631,12 +611,8 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper });
 
-    const dashboard = screen.getByTestId('contribution-dashboard');
-    const carousel = screen.getByTestId('research-slide-research');
-    expect(
-      carousel.compareDocumentPosition(dashboard) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
+    expect(screen.queryByTestId('contribution-dashboard')).toBeNull();
+    expect(screen.queryByTestId('dashboard-batch-count')).toBeNull();
     expect(screen.queryByTestId('circle-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('circle-upsell')).not.toBeInTheDocument();
   });
