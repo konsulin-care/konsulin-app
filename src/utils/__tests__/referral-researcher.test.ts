@@ -32,9 +32,7 @@ describe('buildShareUrl for researchers', () => {
         fhirId: 'practitioner-123',
         studyId: 'study-abc'
       })
-    ).toBe(
-      'https://konsulin.care/research?view=study-abc&ref=pr_practitioner-123'
-    );
+    ).toBe('https://konsulin.care/study?id=study-abc&ref=pr_practitioner-123');
   });
 
   it('does not add ref when fhirId is absent', () => {
@@ -44,7 +42,7 @@ describe('buildShareUrl for researchers', () => {
         isPatient: false,
         studyId: 'study-abc'
       })
-    ).toBe('https://konsulin.care/research?view=study-abc');
+    ).toBe('https://konsulin.care/study?id=study-abc');
   });
 
   it('prefers patient ref over practitioner ref when isPatient is true', () => {
