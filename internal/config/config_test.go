@@ -50,16 +50,37 @@ func TestLoad_defaultPort(t *testing.T) {
 	}
 }
 
+func TestLoad_konsulinOrganizationID(t *testing.T) {
+	setRequiredEnv(t)
+	setCloudinaryEnv(t, "c", "p")
+	saveEnv(t, "KONSULIN_ORGANIZATION_ID")
+	if err := os.Unsetenv("KONSULIN_ORGANIZATION_ID"); err != nil {
+		t.Fatalf("unset: %v", err)
+	}
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+	if cfg.KonsulinOrganizationID != "" {
+		t.Errorf("expected empty default, got %q", cfg.KonsulinOrganizationID)
+	}
+	t.Setenv("KONSULIN_ORGANIZATION_ID", "org-1")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatalf("Load() error: %v", err)
+	}
+	if cfg.KonsulinOrganizationID != "org-1" {
+		t.Errorf("expected org-1, got %q", cfg.KonsulinOrganizationID)
+	}
+}
+
 func TestLoad_customPort(t *testing.T) {
 	setRequiredEnv(t)
 	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	t.Setenv("PORT", "9090")
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() returned error: %v", err)
-	}
-	if cfg.Port != "9090" {
-		t.Errorf("expected port 9090, got %q", cfg.Port)
+	if err != nil || cfg.Port != "9090" {
+		t.Errorf("expected port 9090, got %v (err %v)", cfg, err)
 	}
 }
 
@@ -84,11 +105,8 @@ func TestLoad_customAppName(t *testing.T) {
 	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	t.Setenv("APP_NAME", "TestApp")
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() returned error: %v", err)
-	}
-	if cfg.AppName != "TestApp" {
-		t.Errorf("expected AppName 'TestApp', got %q", cfg.AppName)
+	if err != nil || cfg.AppName != "TestApp" {
+		t.Errorf("expected AppName 'TestApp', got %v (err %v)", cfg, err)
 	}
 }
 
@@ -113,11 +131,8 @@ func TestLoad_customApiBasePath(t *testing.T) {
 	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	t.Setenv("API_BASE_PATH", "/custom/v2")
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() returned error: %v", err)
-	}
-	if cfg.APIBasePath != "/custom/v2" {
-		t.Errorf("expected APIBasePath '/custom/v2', got %q", cfg.APIBasePath)
+	if err != nil || cfg.APIBasePath != "/custom/v2" {
+		t.Errorf("expected APIBasePath '/custom/v2', got %v (err %v)", cfg, err)
 	}
 }
 
@@ -142,11 +157,8 @@ func TestLoad_customAuthPath(t *testing.T) {
 	setCloudinaryEnv(t, "test-cloud", "test-preset")
 	t.Setenv("AUTH_PATH", "/signin")
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() returned error: %v", err)
-	}
-	if cfg.AuthPath != "/signin" {
-		t.Errorf("expected AuthPath '/signin', got %q", cfg.AuthPath)
+	if err != nil || cfg.AuthPath != "/signin" {
+		t.Errorf("expected AuthPath '/signin', got %v (err %v)", cfg, err)
 	}
 }
 

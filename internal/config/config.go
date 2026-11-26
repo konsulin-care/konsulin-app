@@ -22,6 +22,8 @@ type Config struct {
 	AppURL      string `json:"app_url"`
 	TXURL       string `json:"tx_url"`
 
+	KonsulinOrganizationID string `json:"konsulin_organization_id"`
+
 	AuthCookieName             string `json:"auth_cookie_name"`
 	SessionCookieNameAccess    string `json:"session_cookie_name_access"`
 	SessionCookieNameRefresh   string `json:"session_cookie_name_refresh"`
@@ -110,6 +112,8 @@ func Load() (*Config, error) {
 		AuthPath:    env("AUTH_PATH", "/auth"),
 		AppURL:      appURL,
 		TXURL:       txURL,
+
+		KonsulinOrganizationID: env("KONSULIN_ORGANIZATION_ID", ""),
 
 		AuthCookieName:             env("AUTH_COOKIE_NAME", "auth"),
 		SessionCookieNameAccess:    env("SESSION_COOKIE_NAME_ACCESS", "sAccessToken"),

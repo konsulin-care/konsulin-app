@@ -36,6 +36,15 @@ func newTestConfig(t *testing.T, csrfKey string) *config.Config {
 	return cfg
 }
 
+func mustRoutes(t *testing.T, cfg *config.Config) http.Handler {
+	t.Helper()
+	h, err := routes(cfg)
+	if err != nil {
+		t.Fatalf("routes() failed: %v", err)
+	}
+	return h
+}
+
 func TestRoutes_servesOutDir(t *testing.T) {
 	tmpDir := t.TempDir()
 	outDir := filepath.Join(tmpDir, "out")
@@ -54,11 +63,7 @@ func TestRoutes_servesOutDir(t *testing.T) {
 	cfg := newTestConfig(t, csrfKey)
 	cfg.NextjsURL = "http://localhost:9999"
 
-	handler, err := routes(cfg)
-	if err != nil {
-		t.Fatalf("routes() failed: %v", err)
-	}
-
+	handler := mustRoutes(t, cfg)
 	req := httptest.NewRequest(http.MethodGet, "/test-page.html", http.NoBody)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
@@ -68,6 +73,21 @@ func TestRoutes_servesOutDir(t *testing.T) {
 	}
 	if rec.Body.String() != testContent {
 		t.Errorf("expected body %q, got %q", testContent, rec.Body.String())
+	}
+}
+
+func TestRoutes_apiConfig_returnsOrganizationID(t *testing.T) {
+	t.Chdir(t.TempDir())
+	cfg := newTestConfig(t, "01234567890123456789012345678901")
+	cfg.KonsulinOrganizationID = "org-1"
+	rec := httptest.NewRecorder()
+	mustRoutes(t, cfg).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/config", http.NoBody))
+	var body map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if body["KONSULIN_ORGANIZATION_ID"] != "org-1" {
+		t.Errorf("got %q", body["KONSULIN_ORGANIZATION_ID"])
 	}
 }
 
@@ -89,11 +109,7 @@ func setupAuthTest(t *testing.T, authContent string) http.Handler {
 	cfg.NextjsURL = "http://localhost:9999"
 	cfg.AppURL = "http://test:3000"
 
-	handler, err := routes(cfg)
-	if err != nil {
-		t.Fatalf("routes() failed: %v", err)
-	}
-	return handler
+	return mustRoutes(t, cfg)
 }
 
 func TestRoutes_authHtml_servesForSubRoutes(t *testing.T) {
@@ -145,11 +161,7 @@ func TestRoutes_authVerify_pathRewrite_whenOutMissing(t *testing.T) {
 	cfg.NextjsURL = nextjs.URL
 	cfg.AppURL = "http://test:3000"
 
-	handler, err := routes(cfg)
-	if err != nil {
-		t.Fatalf("routes() failed: %v", err)
-	}
-
+	handler := mustRoutes(t, cfg)
 	req := httptest.NewRequest(http.MethodGet, "/auth/verify?preAuthSessionId=test", http.NoBody)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
@@ -174,10 +186,7 @@ func TestRoutes_authVerify_proxiesWhenOutMissing(t *testing.T) {
 	cfg := newTestConfig(t, "01234567890123456789012345678901")
 	cfg.NextjsURL = "http://127.0.0.1:19999"
 	cfg.AppURL = "http://test:3000"
-	handler, err := routes(cfg)
-	if err != nil {
-		t.Fatalf("routes() failed: %v", err)
-	}
+	handler := mustRoutes(t, cfg)
 	req := httptest.NewRequest(http.MethodGet, "/auth/verify?preAuthSessionId=test", http.NoBody)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
@@ -249,10 +258,7 @@ func TestRoutes_protectedRoutes_acceptHEAD(t *testing.T) {
 	t.Chdir(tmpDir)
 	cfg := newTestConfig(t, "01234567890123456789012345678901")
 	cfg.NextjsURL = "http://localhost:9999"
-	handler, err := routes(cfg)
-	if err != nil {
-		t.Fatalf("routes() failed: %v", err)
-	}
+	handler := mustRoutes(t, cfg)
 	for _, path := range []string{"/record", "/journal", "/profile", "/remove-account"} {
 		t.Run(path, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodHead, path, http.NoBody)
@@ -284,10 +290,7 @@ func TestRoutes_outDirMissing_fallsBackToProxy(t *testing.T) {
 	t.Chdir(tmpDir)
 	cfg := newTestConfig(t, "01234567890123456789012345678901")
 	cfg.NextjsURL = "http://127.0.0.1:19999"
-	handler, err := routes(cfg)
-	if err != nil {
-		t.Fatalf("routes() failed: %v", err)
-	}
+	handler := mustRoutes(t, cfg)
 	req := httptest.NewRequest(http.MethodGet, "/some-page", http.NoBody)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)

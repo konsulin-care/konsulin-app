@@ -21,6 +21,8 @@ func registerAPIRoutes(r chi.Router, cfg *config.Config) {
 		AuthPath:    cfg.AuthPath,
 		AppURL:      cfg.AppURL,
 		TXURL:       cfg.TXURL,
+
+		KonsulinOrganizationID: cfg.KonsulinOrganizationID,
 	}))
 
 	// Superadmin key custody — BFF stores the submitted key in an HttpOnly

@@ -12,6 +12,8 @@ type ClientConfigOptions struct {
 	AuthPath    string
 	AppURL      string
 	TXURL       string
+
+	KonsulinOrganizationID string
 }
 
 type clientConfigResponse struct {
@@ -21,6 +23,8 @@ type clientConfigResponse struct {
 	AuthPath    string `json:"AUTH_PATH"`
 	AppURL      string `json:"APP_URL"`
 	TXURL       string `json:"TX_URL"`
+
+	KonsulinOrganizationID string `json:"KONSULIN_ORGANIZATION_ID"`
 }
 
 // NewClientConfigHandler returns a handler for GET /api/config.
