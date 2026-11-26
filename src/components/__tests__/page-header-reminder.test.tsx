@@ -167,10 +167,13 @@ function makeBundle(startIso: string): Bundle {
   } as unknown as Bundle;
 }
 
+const BATCH_START = format(addDays(new Date(), -10), 'yyyy-MM-dd');
+const BATCH_END = format(addDays(new Date(), 20), 'yyyy-MM-dd');
+
 const BATCH_1 = {
   id: 'batch-1',
-  start: '2026-08-01',
-  end: '2026-08-31',
+  start: BATCH_START,
+  end: BATCH_END,
   questionnaireIds: ['phq2']
 };
 
@@ -193,8 +196,8 @@ const PROGRESS_DATA = {
       history: [
         {
           batchId: 'batch-1',
-          start: '2026-08-01',
-          end: '2026-08-31',
+          start: BATCH_START,
+          end: BATCH_END,
           participated: true
         }
       ]
@@ -202,7 +205,7 @@ const PROGRESS_DATA = {
   ],
   cumulativeResponses: 1,
   completedQuestionnaireIds: [],
-  consentedStudyIds: []
+  consentedStudyIds: ['research']
 };
 
 /** Mocks the auth context for the given role, optionally with a full name. */
