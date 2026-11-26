@@ -177,6 +177,10 @@
     "researcher_note": "This is the page participants see from the study link.",
     "manage_study": "Manage study"
   },
+  "not_found": {
+    "message": "This study is not open. It may have closed, or the link may be incomplete.",
+    "link": "See open studies"
+  },
   "target_participants_label": "Target participants",
   "target_participants_placeholder": "e.g. 100",
   "target_required": "Enter a target of at least 1 participant"

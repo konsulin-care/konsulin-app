@@ -177,6 +177,10 @@
     "researcher_note": "Ini halaman yang dilihat peserta dari tautan studi.",
     "manage_study": "Kelola studi"
   },
+  "not_found": {
+    "message": "Studi ini tidak sedang dibuka. Studi mungkin sudah ditutup, atau tautannya tidak lengkap.",
+    "link": "Lihat studi yang dibuka"
+  },
   "target_participants_label": "Target peserta",
   "target_participants_placeholder": "mis. 100",
   "target_required": "Isi target minimal 1 peserta"
