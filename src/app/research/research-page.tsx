@@ -26,6 +26,7 @@ import { buildOverlapMap } from './study-sections';
 import { useConsent } from './use-consent';
 import { useDetailStudy } from './use-detail-study';
 import { useResearchFabAction } from './use-fab-action';
+import { useParticipate } from './use-participate';
 import { useResearchHandlers } from './use-research-handlers';
 import { useUrlSync } from './use-url-sync';
 
@@ -147,20 +148,11 @@ export default function ResearchPage() {
     router
   });
 
-  const participate = useCallback(
-    (study: StudyProgress | null, questionnaireId?: string) => {
-      if (!study) return;
-      const target = questionnaireId ?? study.firstUncompletedQuestionnaireId;
-      if (isConsented(study.study.id)) {
-        if (target) {
-          router.push(`/assessments?id=${target}&study=${study.study.id}`);
-        }
-        return;
-      }
-      setPendingConsent({ studyId: study.study.id, questionnaireId });
-    },
-    [isConsented, router]
-  );
+  const participate = useParticipate({
+    isConsented,
+    setPendingConsent,
+    router
+  });
 
   useResearchFabAction({ isResearcher, activeStudy, participate, router });
 
