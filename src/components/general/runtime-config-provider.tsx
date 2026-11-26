@@ -15,6 +15,7 @@ type AppInfo = ReturnType<typeof getAppInfo>;
 type RuntimeConfig = {
   appInfo: AppInfo;
   terminologyServer: string;
+  konsulinOrganizationId?: string;
 };
 
 export const RuntimeConfigContext = createContext<RuntimeConfig | null>(null);
@@ -27,7 +28,8 @@ export function RuntimeConfigProvider({
 }: Readonly<{ children: ReactNode }>) {
   const [config, setConfig] = useState<RuntimeConfig>(() => ({
     appInfo: getAppInfo(),
-    terminologyServer: ''
+    terminologyServer: '',
+    konsulinOrganizationId: ''
   }));
 
   useEffect(() => {
@@ -45,14 +47,16 @@ export function RuntimeConfigProvider({
             apiBasePath: String(raw.API_BASE_PATH) + String(raw.AUTH_PATH),
             websiteBasePath: raw.AUTH_PATH
           },
-          terminologyServer: raw.TX_URL ?? ''
+          terminologyServer: raw.TX_URL ?? '',
+          konsulinOrganizationId: raw.KONSULIN_ORGANIZATION_ID ?? ''
         })
       )
       .catch((err: unknown) => {
         console.error('Failed to fetch /api/config, using fallback:', err);
         setConfig({
           appInfo: getAppInfo(),
-          terminologyServer: ''
+          terminologyServer: '',
+          konsulinOrganizationId: ''
         });
       });
   }, []);
