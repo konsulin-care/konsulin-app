@@ -9,15 +9,15 @@ import { useTranslations } from '@/i18n';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { readStudyProfile } from '@/utils/fhir/study-profile';
 import { useRouter } from 'next/navigation';
+import type { ComponentType } from 'react';
 import { useCallback, useState } from 'react';
 import ConsentDrawer from './consent-drawer';
 import type { ConsentStudyProfile } from './consent-drawer-content';
 import { useLegacyStudyRedirect } from './legacy-study-redirect';
-import ResearchContent from './research-content';
+import ResearchContent, { type ResearchContentProps } from './research-content';
 import { useConsent } from './use-consent';
 import { useResearchFabAction } from './use-fab-action';
 import { useParticipate } from './use-participate';
-import { useResearchHandlers } from './use-research-handlers';
 import { useResearchPageData } from './use-research-page-data';
 
 /** Target of the consent drawer: the study and the questionnaire to open next. */
@@ -27,20 +27,20 @@ interface PendingConsent {
 }
 
 /**
- * Placeholder detail id: the home page no longer opens a detail drawer.
- *
- * @returns Always null.
+ * Research content props left once the researcher carousel is gone: the home
+ * no longer needs a focused study id or slide callbacks.
  */
-function noDetailStudy(): string | null {
-  return null;
-}
+type CarouselFreeResearchContentProps = Omit<
+  ResearchContentProps,
+  | 'activeStudyId'
+  | 'practitionerId'
+  | 'onSlideChange'
+  | 'onResearcherStudyClick'
+>;
 
-/**
- * Placeholder detail setter: the home page no longer opens a detail drawer.
- */
-function ignoreDetailStudy(): void {
-  // The detail drawer was replaced by the standalone study page.
-}
+/** Research content viewed without the retired researcher carousel props. */
+const CarouselFreeResearchContent =
+  ResearchContent as ComponentType<CarouselFreeResearchContentProps>;
 
 /**
  * Builds the consent drawer profile of the pending study.
@@ -64,14 +64,13 @@ function consentProfileOf(
 }
 
 /**
- * Research hub: the participant home or the researcher carousel, with the
- * consent drawer that gates participation for patients and guests alike.
+ * Research hub: the participant home or the researcher home, with the consent
+ * drawer that gates participation for patients and guests alike.
  */
 export default function ResearchPage() {
   const router = useRouter();
   const t = useTranslations('research');
   useLegacyStudyRedirect();
-  const [activeStudyId, setActiveStudyId] = useState<string | null>(null);
   const [pendingConsent, setPendingConsent] = useState<PendingConsent | null>(
     null
   );
@@ -81,12 +80,10 @@ export default function ResearchPage() {
     studies,
     researcherStudies,
     researcherLoading,
-    effectiveActiveId,
     fhirId,
     isResearcher,
     consentedStudyIds: progressConsentedIds
-  } = useResearchPageData(activeStudyId);
-  const practitionerId = fhirId;
+  } = useResearchPageData(null);
   const isPatient = Boolean(fhirId);
   useReferralWrite(progress);
 
@@ -114,18 +111,6 @@ export default function ResearchPage() {
     router
   });
 
-  const { handleSlideChange, handleResearcherStudyClick } = useResearchHandlers(
-    {
-      studies,
-      detailStudyId: noDetailStudy(),
-      isConsented,
-      setActiveStudyId,
-      setDetailStudyId: ignoreDetailStudy,
-      setPendingConsent,
-      router
-    }
-  );
-
   const handleStart = useCallback(
     (study: StudyProgress, questionnaireId: string) => {
       participate(study, questionnaireId);
@@ -147,18 +132,14 @@ export default function ResearchPage() {
         <PageHeader />
         <ContentWraper className='pt-4'>
           <div className='px-4'>
-            <ResearchContent
+            <CarouselFreeResearchContent
               isResearcher={isResearcher}
               researcherLoading={researcherLoading}
               researcherStudies={researcherStudies}
               isLoading={isLoading}
-              activeStudyId={effectiveActiveId}
-              practitionerId={practitionerId}
               waiting={waiting}
               consentedStudyIds={consentedStudyIds}
               onStart={handleStart}
-              onSlideChange={handleSlideChange}
-              onResearcherStudyClick={handleResearcherStudyClick}
             />
           </div>
         </ContentWraper>

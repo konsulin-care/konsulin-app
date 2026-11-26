@@ -20,6 +20,11 @@ const fabProbe = vi.hoisted(() => ({
   target: { current: (_action: unknown) => {} }
 }));
 
+/** Props the research page passes to the research content facade. */
+const contentProbe = vi.hoisted(() => ({
+  current: {} as Record<string, unknown>
+}));
+
 vi.mock('@/context/fabContext', async importOriginal => {
   const actual = await importOriginal<typeof import('@/context/fabContext')>();
   /** Stable dispatch wrapper so the effect never sees a new identity. */
@@ -81,7 +86,10 @@ vi.mock('react-toastify', () => ({
 }));
 
 vi.mock('../research-content', () => ({
-  default: () => <div data-testid='research-content' />
+  default: (props: Record<string, unknown>) => {
+    contentProbe.current = props;
+    return <div data-testid='research-content' />;
+  }
 }));
 vi.mock('../consent-drawer', () => ({ default: () => <div /> }));
 vi.mock('@/components/page-header', () => ({ default: () => <div /> }));
@@ -98,9 +106,24 @@ async function flush(): Promise<void> {
 
 beforeEach(() => {
   fabProbe.count = 0;
+  contentProbe.current = {};
 });
 
 describe('ResearchPage researcher FAB loop', () => {
+  it('does not pass retired carousel props to the research content', () => {
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <FabProvider>
+          <ResearchPage />
+        </FabProvider>
+      </QueryClientProvider>
+    );
+
+    expect(contentProbe.current).not.toHaveProperty('activeStudyId');
+    expect(contentProbe.current).not.toHaveProperty('practitionerId');
+    expect(contentProbe.current).not.toHaveProperty('onSlideChange');
+    expect(contentProbe.current).not.toHaveProperty('onResearcherStudyClick');
+  });
   it('stops dispatching FAB actions after mount when progress is undefined', async () => {
     render(
       <QueryClientProvider client={createQueryClient()}>

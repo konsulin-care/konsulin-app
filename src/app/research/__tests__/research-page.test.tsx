@@ -293,12 +293,15 @@ describe('ResearchPage', () => {
     ).toBe(true);
   });
 
-  it('renders researcher carousel for researcher role', () => {
+  it('renders the researcher home for researcher role', () => {
     setupResearcher();
 
     render(<ResearchPage />, { wrapper });
 
+    expect(screen.getByTestId('researcher-home')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
     expect(screen.getByText('Mental Health Survey')).toBeInTheDocument();
+    expect(screen.queryByTestId('research-carousel')).toBeNull();
   });
 
   it('dispatches Register Survey FAB action for researcher', () => {
