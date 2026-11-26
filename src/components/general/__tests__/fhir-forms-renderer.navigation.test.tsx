@@ -210,7 +210,6 @@ function researchProgressWith(
     ],
     cumulativeResponses: 0,
     questionnaireResponses: [],
-    questionnaireXp: 0,
     completedQuestionnaireIds: completed,
     consentedStudyIds: []
   };
@@ -369,7 +368,7 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
     expect(screen.queryByRole('progressbar')).toBeNull();
     expect(screen.getByTestId('share-research-footer')).toBeTruthy();
     expect(screen.getByTestId('share-research-footer')).toHaveTextContent(
-      'Tap to share this survey'
+      'Share this study'
     );
 
     clickCta('See Results');
