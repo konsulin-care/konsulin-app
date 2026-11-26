@@ -276,6 +276,9 @@
     "statement_4": "Open platform. The code is public at github.com/konsulin-care",
     "help_link": "If things feel heavy right now, find help here"
   },
+  "given_back": {
+    "empty": "Nothing posted yet."
+  },
   "finding_composer": {
     "intro": "A finding from {title}. Write it the way you would tell a friend. It appears on participants' home pages.",
     "text_label": "What did you learn, and how sure are you?",
