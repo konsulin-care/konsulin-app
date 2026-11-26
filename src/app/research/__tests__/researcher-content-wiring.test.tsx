@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest';
 import ResearcherContent from '../researcher-content';
 import { makeStudyWithBatches } from './research-fixtures';
 
-// Mock ResearcherCarousel
 vi.mock('@/i18n', async () => {
   const { createUseTranslationsMock } =
     await import('@/i18n/__tests__/test-messages');
@@ -21,40 +20,22 @@ vi.mock('../researcher-carousel', () => ({
   )
 }));
 
-// Mock ResearcherImpactDashboard
 vi.mock('../researcher-impact-dashboard', () => ({
-  default: ({
-    studies,
-    activeStudyId,
-    practitionerId
-  }: {
-    studies: unknown[];
-    activeStudyId: string;
-    practitionerId?: string;
-  }) => (
-    <div
-      data-testid='researcher-impact-dashboard'
-      data-studies={studies.length}
-      data-active={activeStudyId}
-      data-practitioner={practitionerId}
-    />
-  )
+  default: () => <div data-testid='researcher-impact-dashboard' />
 }));
 
-// Mock EmptyState
 vi.mock('@/components/general/empty-state', () => ({
   default: ({ title }: { title: string }) => (
     <div data-testid='empty-state'>{title}</div>
   )
 }));
 
-// Mock ResearchSkeleton
 vi.mock('./research-skeleton', () => ({
   default: () => <div data-testid='research-skeleton' />
 }));
 
 describe('ResearcherContent wiring', () => {
-  it('renders ResearcherImpactDashboard when studies exist', () => {
+  it('renders the carousel and no impact dashboard when studies exist', () => {
     render(
       <ResearcherContent
         isLoading={false}
@@ -62,39 +43,16 @@ describe('ResearcherContent wiring', () => {
         activeId='study-1'
         onSlideChange={vi.fn()}
         onStudyClick={vi.fn()}
-        practitionerId='practitioner-1'
-        activeStudyId='study-1'
       />,
       { wrapper }
     );
+    expect(screen.getByTestId('researcher-carousel')).toBeInTheDocument();
     expect(
-      screen.getByTestId('researcher-impact-dashboard')
-    ).toBeInTheDocument();
+      screen.queryByTestId('researcher-impact-dashboard')
+    ).not.toBeInTheDocument();
   });
 
-  it('passes studies, activeStudyId, and practitionerId to dashboard', () => {
-    render(
-      <ResearcherContent
-        isLoading={false}
-        studies={[
-          makeStudyWithBatches('study-1'),
-          makeStudyWithBatches('study-2')
-        ]}
-        activeId='study-2'
-        onSlideChange={vi.fn()}
-        onStudyClick={vi.fn()}
-        practitionerId='practitioner-1'
-        activeStudyId='study-2'
-      />,
-      { wrapper }
-    );
-    const dashboard = screen.getByTestId('researcher-impact-dashboard');
-    expect(dashboard).toHaveAttribute('data-studies', '2');
-    expect(dashboard).toHaveAttribute('data-active', 'study-2');
-    expect(dashboard).toHaveAttribute('data-practitioner', 'practitioner-1');
-  });
-
-  it('does not render dashboard when loading', () => {
+  it('shows the skeleton when loading', () => {
     render(
       <ResearcherContent
         isLoading
@@ -102,18 +60,13 @@ describe('ResearcherContent wiring', () => {
         activeId=''
         onSlideChange={vi.fn()}
         onStudyClick={vi.fn()}
-        practitionerId='practitioner-1'
-        activeStudyId=''
       />,
       { wrapper }
     );
     expect(screen.getByTestId('research-skeleton')).toBeInTheDocument();
-    expect(
-      screen.queryByTestId('researcher-impact-dashboard')
-    ).not.toBeInTheDocument();
   });
 
-  it('does not render dashboard when no studies', () => {
+  it('shows the empty state when no studies', () => {
     render(
       <ResearcherContent
         isLoading={false}
@@ -121,39 +74,9 @@ describe('ResearcherContent wiring', () => {
         activeId=''
         onSlideChange={vi.fn()}
         onStudyClick={vi.fn()}
-        practitionerId='practitioner-1'
-        activeStudyId=''
       />,
       { wrapper }
     );
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
-    expect(
-      screen.queryByTestId('researcher-impact-dashboard')
-    ).not.toBeInTheDocument();
-  });
-
-  it('renders carousel and dashboard in an lg grid with a sticky dashboard column', () => {
-    render(
-      <ResearcherContent
-        isLoading={false}
-        studies={[makeStudyWithBatches('study-1')]}
-        activeId='study-1'
-        onSlideChange={vi.fn()}
-        onStudyClick={vi.fn()}
-        practitionerId='practitioner-1'
-        activeStudyId='study-1'
-      />,
-      { wrapper }
-    );
-    const carousel = screen.getByTestId('researcher-carousel');
-    const dashboard = screen.getByTestId('researcher-impact-dashboard');
-    const grid = carousel.parentElement?.parentElement;
-    expect(grid).toHaveClass('lg:grid');
-    expect(grid).toHaveClass('lg:grid-cols-[minmax(0,1fr)_360px]');
-    expect(grid?.children).toHaveLength(2);
-    expect(grid?.children[0]).toContainElement(carousel);
-    expect(grid?.children[1]).toContainElement(dashboard);
-    expect(dashboard.parentElement).toHaveClass('lg:sticky');
-    expect(dashboard.parentElement).toHaveClass('lg:top-4');
   });
 });
