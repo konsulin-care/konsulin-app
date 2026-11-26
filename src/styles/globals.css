@@ -88,17 +88,6 @@
   }
 }
 
-/* Stretch carousel slides to the tallest slide so every card is equal
-   height. Swiper sizes slides to their content otherwise. */
-.research-carousel .swiper-slide {
-  height: auto;
-}
-
-/* Same equal-height behavior for the header session/research carousel. */
-.header-carousel .swiper-slide {
-  height: auto;
-}
-
 /* Responsive app shell offset.
    Phones keep 0px (the FAB owns navigation). From md the icon rail reserves
    72px, from lg the sidebar reserves 240px. The `:has` guard means bare
