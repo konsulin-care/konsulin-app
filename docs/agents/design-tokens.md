@@ -59,7 +59,9 @@ Contrast is against `paper`. Text needs 4.5, controls and icons need 3.0.
 
 # Rules
 
-- Solid turquoise fills the FAB and its desktop button. Nothing else.
+- Solid turquoise fills the FAB, its desktop button and the `action` button
+  variant (`<Button variant='action'>`). Nothing else. See
+  `@docs/ADR/034-primary-action-button.md`.
 - Never put white text on turquoise. Never use turquoise for text or thin lines.
 - Tint marks the trail. Always pair it with a second cue: a `turquoise-deep`
   ring or border, a charcoal check icon, or bold weight.

@@ -81,6 +81,10 @@ Backend API (Go + SuperTokens Go SDK)
 | Recommendation shaping                | `@docs/ADR/003-recommendation-shaping.md`                |
 | Backend FHIR compliance               | `@docs/ADR/002-backend-fhir-compliance.md`               |
 
+Primary action buttons live inside their card. See
+`@docs/ADR/034-primary-action-button.md` for the one action-variant button
+per screen rule on the home and study pages.
+
 # Data Flow
 
 1. Browser requests `GET /` → Go BFF serves `out/index.html`
