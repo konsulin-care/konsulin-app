@@ -4,8 +4,14 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearchHeaderWidget from '../research/research-header-widget';
 
-const { mockUseResearchProgress } = vi.hoisted(() => ({
-  mockUseResearchProgress: vi.fn()
+const { mockUseResearchProgress, nav } = vi.hoisted(() => ({
+  mockUseResearchProgress: vi.fn(),
+  nav: { path: '/', query: '' }
+}));
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => nav.path,
+  useSearchParams: () => new URLSearchParams(nav.query)
 }));
 
 vi.mock('@/i18n', async () => {
@@ -98,6 +104,36 @@ function makeProgress(): ResearchProgress {
 }
 
 describe('ResearchHeaderWidget', () => {
+  it('picks the study from the URL', () => {
+    const base = makeProgress();
+    const b = {
+      ...base.studies[0],
+      study: { ...base.studies[0].study, id: 'B', title: 'Study B' }
+    };
+    mockUseResearchProgress.mockReturnValue({
+      data: { ...base, studies: [base.studies[0], b] },
+      isLoading: false
+    });
+    nav.path = '/report';
+    nav.query = 'id=B';
+    const { unmount } = render(<ResearchHeaderWidget />, {
+      wrapper: createWrapper()
+    });
+    expect(screen.getByText('Study B')).toBeTruthy();
+    unmount();
+    nav.path = '/assessments';
+    nav.query = 'study=B';
+    const second = render(<ResearchHeaderWidget />, {
+      wrapper: createWrapper()
+    });
+    expect(screen.getByText('Study B')).toBeTruthy();
+    second.unmount();
+    nav.path = '/';
+    nav.query = '';
+    render(<ResearchHeaderWidget />, { wrapper: createWrapper() });
+    expect(screen.getByText('Konsulin Mental Health Survey')).toBeTruthy();
+  });
+
   it('renders study title, batch of n, closing date, questionnaire count, and disclaimer, linking to /research', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),

@@ -6,6 +6,7 @@ import { useResearchProgress } from '@/services/api/research';
 import { formatBatchDate } from '@/utils/format-batch-date';
 import { FlaskConical } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 /**
  * Header widget showing the user's research participation: the primary
@@ -19,10 +20,18 @@ export default function ResearchHeaderWidget() {
   const t = useTranslations('research');
   const locale = useLocale();
   const { data: progress, isLoading } = useResearchProgress();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  let studyId: string | null = null;
+  if (pathname?.startsWith('/report'))
+    studyId = searchParams?.get('id') ?? null;
+  else if (pathname?.startsWith('/assessments'))
+    studyId = searchParams?.get('study') ?? null;
 
   if (isLoading || !progress || progress.studies.length === 0) return null;
 
-  const primary = progress.studies[0];
+  const primary =
+    progress.studies.find(s => s.study.id === studyId) ?? progress.studies[0];
   const batch = primary.currentBatch;
   if (!batch) return null;
 
