@@ -208,6 +208,13 @@
     "no_match": "No study matches. Try a shorter search or clear a filter.",
     "show_more": "Show more"
   },
+  "researcher_card": {
+    "count": "{count} of {target} participants",
+    "study_link": "Study link",
+    "see_study_page": "See the study page",
+    "manage_study": "Manage study",
+    "post_finding": "Post a finding"
+  },
   "preview": {
     "heading": "What people will see",
     "title_placeholder": "Your study title",

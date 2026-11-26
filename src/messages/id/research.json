@@ -208,6 +208,13 @@
     "no_match": "Tidak ada studi yang cocok. Coba kata kunci yang lebih pendek atau hapus filter.",
     "show_more": "Tampilkan lebih banyak"
   },
+  "researcher_card": {
+    "count": "{count} dari {target} peserta",
+    "study_link": "Tautan studi",
+    "see_study_page": "Lihat halaman studi",
+    "manage_study": "Kelola studi",
+    "post_finding": "Bagikan temuan"
+  },
   "preview": {
     "heading": "Yang akan dilihat peserta",
     "title_placeholder": "Judul studi Anda",
