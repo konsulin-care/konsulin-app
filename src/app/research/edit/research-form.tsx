@@ -2,18 +2,20 @@
 
 import QuestionnaireUploadDrawer from '@/components/shared/questionnaire-upload-drawer';
 import { useAuth } from '@/context/auth/authContext';
-import { extractQuestionnaireId } from '@/utils/fhir/research';
-import { getResearchTarget } from '@/utils/fhir/research-target';
+import { useOrganizationName } from '@/services/api/organization';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
 import type { PlanDefinition, Questionnaire, ResearchStudy } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useFieldArray, useForm, useWatch } from 'react-hook-form';
-import { z } from 'zod';
+import {
+  useFieldArray,
+  useForm,
+  useWatch,
+  type Resolver
+} from 'react-hook-form';
 import { canAdvanceOnTitlePage } from '../can-advance';
-import { schema } from '../register/research-form';
+import { TitleStepMetadataProvider } from '../register/research-form-steps';
 import { ResearchFormActionsProvider } from '../research-form-actions-context';
 import { ResearchFormFabBridge } from '../research-form-fab-bridge';
 import {
@@ -23,9 +25,14 @@ import {
 } from '../shared';
 import { RenderStep } from '../shared-components';
 import { buildEditUrl } from './build-edit-url';
+import {
+  computeLockedBatchIndices,
+  editSchema,
+  mapToFormData,
+  mapToPlanIds,
+  type FormData
+} from './form-defaults';
 import { submitEditStudy } from './submit-helpers';
-
-export type FormData = z.infer<typeof schema>;
 
 type Page = 'title' | 'questionnaire' | 'batch';
 
@@ -35,60 +42,6 @@ interface EditResearchFormProps {
   study: ResearchStudy;
   planDefinitions: PlanDefinition[];
 }
-
-/** Extract the last path segment from a FHIR reference string. */
-const extractIdFromReference = (ref?: string): string | null => {
-  if (!ref) return null;
-  const parts = ref.split('/').filter(Boolean);
-  return parts.at(-1) ?? null;
-};
-
-/** Convert a ResearchStudy into form-ready defaults. */
-const mapToFormData = (
-  study: ResearchStudy,
-  planDefinitions: PlanDefinition[]
-): FormData => ({
-  title: study.title ?? '',
-  description: study.description ?? '',
-  targetParticipants: getResearchTarget(study) ?? undefined,
-  batches: planDefinitions
-    .toSorted((a, b) =>
-      (a.effectivePeriod?.start ?? '').localeCompare(
-        b.effectivePeriod?.start ?? ''
-      )
-    )
-    .map(plan => ({
-      startDate: plan.effectivePeriod?.start ?? '',
-      endDate: plan.effectivePeriod?.end ?? '',
-      questionnaireIds: (plan.action ?? [])
-        .map(a => extractQuestionnaireId(a.definitionCanonical))
-        .filter((id): id is string => id !== null)
-    }))
-});
-
-/** Map study protocol references to matching plan definition IDs. */
-const mapToPlanIds = (
-  study: ResearchStudy,
-  planDefinitions: PlanDefinition[]
-): string[] => {
-  const planIdMap = new Map(planDefinitions.map(p => [p.id, p.id]));
-  return (study.protocol ?? [])
-    .map(ref => extractIdFromReference(ref.reference))
-    .filter((id): id is string => id !== null && planIdMap.has(id));
-};
-
-/** Return indices of batches whose start date is in the past. */
-const computeLockedBatchIndices = (batches: FormData['batches']): number[] => {
-  const today = format(new Date(), 'yyyy-MM-dd');
-  return batches
-    .map((batch, i) => ({ batch, i }))
-    .filter(
-      ({ batch }) =>
-        batch.endDate < today ||
-        (batch.startDate <= today && batch.endDate >= today)
-    )
-    .map(({ i }) => i);
-};
 
 /**
  * Edit form for an existing research study.
@@ -103,6 +56,8 @@ export default function EditResearchForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { state: authState } = useAuth();
+  const organizationId = authState?.userInfo?.organizationId;
+  const { data: organizationName = '' } = useOrganizationName(organizationId);
   const initialData = useMemo(
     () => mapToFormData(study, planDefinitions),
     [study, planDefinitions]
@@ -133,7 +88,8 @@ export default function EditResearchForm({
   const [isUploadDrawerOpen, setIsUploadDrawerOpen] = useState(false);
 
   const form = useForm<FormData>({
-    resolver: zodResolver(schema),
+    // @type the strict edit schema validates metadata keys FormData keeps optional
+    resolver: zodResolver(editSchema) as unknown as Resolver<FormData>,
     defaultValues: initialData
   });
 
@@ -275,25 +231,29 @@ export default function EditResearchForm({
   return (
     <ResearchFormActionsProvider value={formActions}>
       <ResearchFormFabBridge />
-      {RenderStep({
-        effectivePage,
-        title: 'Edit Research',
-        register,
-        errors,
-        libraryOptions,
-        availableQuestionnaires: allQuestionnaireOptions.filter(q =>
-          selectedIds.includes(q.code)
-        ),
-        selectedIds,
-        handleSelectLibrary,
-        handleOpenUploadDrawer,
-        fields,
-        batches,
-        setValue,
-        append,
-        remove,
-        lockedBatchIndices
-      })}
+      <TitleStepMetadataProvider
+        value={{ groupName: organizationName, control }}
+      >
+        {RenderStep({
+          effectivePage,
+          title: 'Edit Research',
+          register,
+          errors,
+          libraryOptions,
+          availableQuestionnaires: allQuestionnaireOptions.filter(q =>
+            selectedIds.includes(q.code)
+          ),
+          selectedIds,
+          handleSelectLibrary,
+          handleOpenUploadDrawer,
+          fields,
+          batches,
+          setValue,
+          append,
+          remove,
+          lockedBatchIndices
+        })}
+      </TitleStepMetadataProvider>
       <QuestionnaireUploadDrawer
         open={isUploadDrawerOpen}
         onClose={() => {
@@ -311,3 +271,5 @@ export default function EditResearchForm({
     </ResearchFormActionsProvider>
   );
 }
+
+export { type FormData } from './form-defaults';
