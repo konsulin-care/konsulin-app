@@ -233,6 +233,10 @@
     "empty": "Belum ada temuan. Studi masih mengumpulkan jawaban. Saat sebuah batch ditutup, tim peneliti membagikan apa yang mereka pelajari di sini dalam bahasa sehari-hari, beserta jumlah peserta yang menjadi dasarnya.",
     "show_more": "Tampilkan lebih banyak"
   },
+  "guest_save": {
+    "body": "Laporan Anda dapat disimpan dalam 24 jam. Setelah itu, jawaban Anda tetap dihitung untuk studi, tetapi tidak lagi dapat ditautkan ke Anda.",
+    "cta": "Simpan laporan"
+  },
   "trust_strip": {
     "heading": "Berlaku untuk setiap studi di Konsulin",
     "statement_1": "ID acak, bukan nama Anda. Peneliti tidak pernah melihat identitas Anda.",

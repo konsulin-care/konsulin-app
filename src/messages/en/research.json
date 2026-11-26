@@ -233,6 +233,10 @@
     "empty": "No findings yet. Studies are still collecting answers. When a batch closes, the research team posts what they learned here in everyday language, with the number of people it is based on.",
     "show_more": "Show more"
   },
+  "guest_save": {
+    "body": "Your report can be saved for 24 hours. After that, your answers still count toward the study but can no longer be linked to you.",
+    "cta": "Save report"
+  },
   "trust_strip": {
     "heading": "True for every study on Konsulin",
     "statement_1": "A random ID, not your name. Researchers never see who you are.",
