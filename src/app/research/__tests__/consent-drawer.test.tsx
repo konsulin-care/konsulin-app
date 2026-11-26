@@ -27,6 +27,37 @@ describe('ConsentDrawer', () => {
     ).toBeTruthy();
   });
 
+  it('names the study and picks the batch line', () => {
+    const profile = {
+      title: 'Sleep',
+      groupName: 'Lab A',
+      leadName: 'Dr. Sari',
+      batchCount: 3
+    };
+    const { rerender } = render(
+      <ConsentDrawer
+        open
+        onClose={vi.fn()}
+        onAgree={vi.fn()}
+        profile={profile}
+      />
+    );
+    expect(
+      screen.getByText('Sleep is run by Lab A and led by Dr. Sari.')
+    ).toBeTruthy();
+    expect(screen.getByText(/This study has 3 batches/)).toBeTruthy();
+    expect(screen.queryByText(/fixed period/)).toBeNull();
+    rerender(
+      <ConsentDrawer
+        open
+        onClose={vi.fn()}
+        onAgree={vi.fn()}
+        profile={{ ...profile, batchCount: 1 }}
+      />
+    );
+    expect(screen.getByText(/one-time study/)).toBeTruthy();
+  });
+
   it('fires onAgree when the CTA is clicked', () => {
     const onAgree = vi.fn();
     render(<ConsentDrawer open onClose={vi.fn()} onAgree={onAgree} />);

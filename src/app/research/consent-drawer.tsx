@@ -2,12 +2,14 @@
 
 import AppDrawer from '@/components/ui/app-drawer';
 import { useTranslations } from '@/i18n';
+import type { ConsentStudyProfile } from './consent-drawer-content';
 import ConsentDrawerContent from './consent-drawer-content';
 
 interface ConsentDrawerProps {
   readonly open: boolean;
   readonly onClose: () => void;
   readonly onAgree: () => void;
+  readonly profile?: ConsentStudyProfile;
 }
 
 /**
@@ -17,7 +19,8 @@ interface ConsentDrawerProps {
 export default function ConsentDrawer({
   open,
   onClose,
-  onAgree
+  onAgree,
+  profile
 }: ConsentDrawerProps) {
   const t = useTranslations('research');
   return (
@@ -29,7 +32,7 @@ export default function ConsentDrawer({
       ctaLabel={t('consent_cta')}
       onCtaClick={onAgree}
     >
-      <ConsentDrawerContent />
+      <ConsentDrawerContent profile={profile} />
     </AppDrawer>
   );
 }
