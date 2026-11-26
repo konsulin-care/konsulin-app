@@ -1,11 +1,10 @@
 'use client';
 
 import { useFab } from '@/context/fabContext';
+import { useClaimReport } from '@/hooks/useClaimReport';
 import { useTranslations } from '@/i18n';
-import { saveIntent } from '@/utils/redirect-intent';
 import { BookCheck } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 
 interface ClaimReportFabProps {
   /** Post-claim navigation target, e.g. "/report?id=research". */
@@ -32,13 +31,9 @@ export default function ClaimReportFab({
   visible
 }: Readonly<ClaimReportFabProps>) {
   const { dispatch } = useFab();
-  const router = useRouter();
   const t = useTranslations('common');
 
-  const handleClaim = useCallback(() => {
-    saveIntent('assessmentResult', qrId ? { path, qrId } : { path });
-    router.push(`/auth?redirectToPath=${path}`);
-  }, [path, qrId, router]);
+  const handleClaim = useClaimReport({ path, qrId });
 
   useEffect(() => {
     if (visible) {
