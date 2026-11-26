@@ -359,6 +359,9 @@
     "submit": "Kirim",
     "success_alt": "Berhasil"
   },
+  "renderer": {
+    "clear": "Hapus"
+  },
   "media": {
     "offline_alt": "offline"
   }

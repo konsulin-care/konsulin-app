@@ -35,6 +35,7 @@ import {
 } from 'react';
 import { toast } from 'react-toastify';
 
+import { buildRendererStrings } from '@/components/general/renderer-strings';
 import { useRuntimeConfig } from '@/components/general/runtime-config-provider';
 
 /**
@@ -104,9 +105,10 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
         fieldBreakpoints: { xs: 12, md: 12 },
         columnGapPixels: 24,
         rowGapPixels: 4
-      }
+      },
+      rendererStrings: buildRendererStrings(key => qd(key))
     }),
-    []
+    [qd]
   );
 
   const isBuilding = useBuildForm({

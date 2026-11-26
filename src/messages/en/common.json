@@ -359,6 +359,9 @@
     "submit": "Submit",
     "success_alt": "Success"
   },
+  "renderer": {
+    "clear": "Clear"
+  },
   "media": {
     "offline_alt": "offline"
   }
