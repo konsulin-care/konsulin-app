@@ -196,5 +196,18 @@
     "findings": "I will share the findings with participants in everyday language",
     "ethics": "Ethics status",
     "ethics_reference": "Approval reference (optional)"
+  },
+  "up_next": {
+    "for_study": "For {study} · {group}",
+    "for_studies": "For {count} studies",
+    "shared_note": "Answer once. It counts toward {count} studies: {titles}.",
+    "start_minutes": "Start, about {minutes} min",
+    "start": "Start",
+    "reassurance": "Stop whenever you like. A screening, not a diagnosis.",
+    "then": "Then",
+    "up_to_date": "You are up to date. Thank you. Nothing is waiting for you. Studies with more batches will show up here when the next batch opens.",
+    "nothing_joined": "You have not joined a study yet. Pick one below. Most take a few minutes, and you see your own result as soon as you finish.",
+    "closes": "closes {date}",
+    "browse": "Browse studies"
   }
 }

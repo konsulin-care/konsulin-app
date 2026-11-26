@@ -196,5 +196,18 @@
     "findings": "Saya akan membagikan temuan kepada peserta dalam bahasa sehari-hari",
     "ethics": "Status etik",
     "ethics_reference": "Nomor persetujuan (opsional)"
+  },
+  "up_next": {
+    "for_study": "Untuk {study} · {group}",
+    "for_studies": "Untuk {count} studi",
+    "shared_note": "Cukup isi sekali. Jawaban Anda dihitung untuk {count} studi: {titles}.",
+    "start_minutes": "Mulai, sekitar {minutes} menit",
+    "start": "Mulai",
+    "reassurance": "Anda boleh berhenti kapan saja. Ini skrining, bukan diagnosis.",
+    "then": "Setelah itu",
+    "up_to_date": "Semua sudah terisi. Terima kasih. Tidak ada yang menunggu Anda. Studi yang masih memiliki batch berikutnya akan muncul di sini saat batch itu dibuka.",
+    "nothing_joined": "Anda belum mengikuti studi apa pun. Pilih salah satu di bawah. Sebagian besar hanya butuh beberapa menit, dan Anda langsung melihat hasil Anda begitu selesai.",
+    "closes": "tutup {date}",
+    "browse": "Telusuri studi"
   }
 }
