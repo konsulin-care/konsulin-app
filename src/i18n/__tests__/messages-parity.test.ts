@@ -35,7 +35,32 @@ function collectKeys(value: Record<string, unknown>): string[] {
 
 const RETIRED_RESEARCH_KEYS = [
   'researcher_mission.enroll_zero',
-  'batch_progress.participants'
+  'batch_progress.participants',
+  'share_impact_label',
+  'researcher_reward',
+  'researcher_mission',
+  'section.contribution',
+  'goal.just_started',
+  'contribution.xp_to_next',
+  'contribution.top_level',
+  'contribution.joined_via_link',
+  'contribution.invite_to_start',
+  'contribution.no_active_batch',
+  'contribution.rewards_title',
+  'contribution.xp_bar_label',
+  'level_chip',
+  'level',
+  'level_reward',
+  'mission',
+  'researcher_dashboard'
+];
+
+const RETIRED_COMMON_KEYS = [
+  'report.streak',
+  'report.batches_count',
+  'report.xp_earned',
+  'report.level_progress',
+  'report.save_xp'
 ];
 
 describe('message parity between en and id', () => {
@@ -85,6 +110,31 @@ describe('message parity between en and id', () => {
       `Retired research keys must stay removed: ${present.join(', ')}`
     ).toEqual([]);
   });
+
+  it.each([
+    ['en', EN_DIR],
+    ['id', ID_DIR]
+  ])('does not define retired common keys in %s', (_locale, dir) => {
+    const keys = flattenKeys(readMessages(dir, 'common'));
+    const present = RETIRED_COMMON_KEYS.filter(key => keys.has(key));
+
+    expect(present).toEqual([]);
+  });
+
+  it.each([
+    ['en', EN_DIR],
+    ['id', ID_DIR]
+  ])(
+    'has no XP, level or streak wording in %s research and common',
+    (_l, dir) => {
+      const values = JSON.stringify([
+        readMessages(dir, 'research'),
+        readMessages(dir, 'common')
+      ]);
+
+      expect(values).not.toMatch(/\bXP\b|\blevel\b|\bstreak\b/i);
+    }
+  );
 
   it.each([
     ['en', EN_DIR],

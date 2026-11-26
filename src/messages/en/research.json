@@ -35,19 +35,6 @@
   "share_copied": "Link copied!",
   "loading_label": "Loading research",
   "skeleton_label": "Loading ongoing research",
-  "share_impact_label": "Share this study to grow your impact",
-  "researcher_reward": {
-    "trailblazer": "Share studies to grow your research impact",
-    "pathfinder": "Enhanced analytics for your studies",
-    "torchbearer": "Early access to batch results + cohort insights",
-    "vanguard": "Featured study badge + priority listing",
-    "pioneer": "Co-design research questions + first access to new studies"
-  },
-  "researcher_mission": {
-    "enroll_gap": "Enroll {gap} participants to hit the next milestone.",
-    "enroll_gap_singular": "Enroll {gap} participant to hit the next milestone.",
-    "all_milestones": "All milestones reached. Thank you for leading this study."
-  },
   "no_research_title": "No ongoing research",
   "no_research_subtitle": "There are currently no research studies available.",
   "no_studies_title": "No research studies yet",
@@ -103,8 +90,7 @@
     "cached_disclaimer": "This is a cached count, updated every 30 minutes to reduce server load."
   },
   "section": {
-    "study": "Study",
-    "contribution": "Your contribution"
+    "study": "Study"
   },
   "batch_line": {
     "current": "Batch {index} of {total} · Closes {date}",
@@ -126,53 +112,11 @@
     "joined": "{count} people have joined.",
     "remaining": "Together, we need {remaining} more.",
     "early_state": "You are among the first to join. We show how many people have joined once the group is large enough that no one can be singled out.",
-    "just_started": "This study has just started. Be one of the first.",
     "progress": "{count} of {target}",
     "bar_label": "Participant goal"
   },
   "contribution": {
-    "xp_to_next": "{xp} XP to {level}",
-    "top_level": "Highest level reached",
-    "joined_via_link": "{count} joined via your link",
-    "invite_to_start": "Invite friends to start",
-    "batch_count": "{completed}/{total} questionnaires",
-    "no_active_batch": "No active batch",
-    "rewards_title": "As a {level}, you will receive:",
-    "xp_bar_label": "Level progress"
-  },
-  "level_chip": "Lv {level}",
-  "level": {
-    "participant": "Participant",
-    "trailblazer": "Trailblazer",
-    "pathfinder": "Pathfinder",
-    "torchbearer": "Torchbearer",
-    "vanguard": "Vanguard",
-    "pioneer": "Pioneer"
-  },
-  "level_reward": {
-    "trailblazer": "Personal result brief for every questionnaire",
-    "pathfinder": "Personalized summary report + in-app title badge",
-    "torchbearer": "Early access to batch results + anonymized cohort insights",
-    "vanguard": "Vote on future research topics",
-    "pioneer": "Co-design research questions (anonymously) + first access to new studies"
-  },
-  "mission": {
-    "goal_level": "reach {level}",
-    "goal_level_up": "level up",
-    "top_level": "You reached {level}, the highest title. Keep contributing!",
-    "top_level_guest": "You reached the highest level. Keep contributing!",
-    "single": "Complete {title} (+{xp} XP) to {goal}",
-    "subset": "Complete {count} questionnaires to {goal}",
-    "whole_batch": "Complete this batch (+{xp} XP), then share the study to {goal}",
-    "complete_remaining": "Complete the remaining questionnaires to {goal}",
-    "next_batch": "The next batch opens {date}. Check back then.",
-    "invite": "Invite friends to join this study."
-  },
-  "researcher_dashboard": {
-    "total_participants": "{count} total participants",
-    "impact_points": "{count} impact points",
-    "next_milestones": "Next Milestones",
-    "milestone": "{count} participants"
+    "batch_count": "{completed}/{total} questionnaires"
   },
   "researcher_slide": {
     "batches_one": "{count} batch",
