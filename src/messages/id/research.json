@@ -181,6 +181,11 @@
     "message": "Studi ini tidak sedang dibuka. Studi mungkin sudah ditutup, atau tautannya tidak lengkap.",
     "link": "Lihat studi yang dibuka"
   },
+  "preview": {
+    "heading": "Yang akan dilihat peserta",
+    "title_placeholder": "Judul studi Anda",
+    "question_placeholder": "Pertanyaan penelitian Anda muncul di sini."
+  },
   "target_participants_label": "Target peserta",
   "target_participants_placeholder": "mis. 100",
   "target_required": "Isi target minimal 1 peserta",

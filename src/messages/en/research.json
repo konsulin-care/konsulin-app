@@ -181,6 +181,11 @@
     "message": "This study is not open. It may have closed, or the link may be incomplete.",
     "link": "See open studies"
   },
+  "preview": {
+    "heading": "What people will see",
+    "title_placeholder": "Your study title",
+    "question_placeholder": "Your research question appears here."
+  },
   "target_participants_label": "Target participants",
   "target_participants_placeholder": "e.g. 100",
   "target_required": "Enter a target of at least 1 participant",
