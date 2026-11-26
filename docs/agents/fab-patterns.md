@@ -2,7 +2,7 @@
 title: FAB Transformation Patterns
 description: Floating Action Button — modes, action/selection state wiring, cleanup rules
 status: updated
-date: 2026-07-20
+date: 2026-11-24
 ---
 
 # Architecture
@@ -26,6 +26,16 @@ The speed-dial toggle label comes from `page-header.open_menu` /
 `page-header.close_menu`. From 768px the action, selection and menu modes render
 in the rail/sidebar instead (see ADR 031), except the page primary action, which
 renders in `ContentActionBar` inside `<main>` from md (see ADR 032).
+
+# Pages Without an Action
+
+The participant home (`/research`, also the patient and guest root `/`) and
+the study page (`/study?id=X`) dispatch no `SET_ACTION`. Their primary action
+is a button inside the card, so the FAB stays idle there.
+
+The all-studies page (`/studies`) also dispatches nothing. Only the researcher
+home keeps a page action ("Register Survey", icon FlaskConical) and the
+research form pages dispatch Next/Submit through `use-fab-action.ts`.
 
 # Wiring Action State
 
@@ -62,32 +72,9 @@ The research form advance action uses this (`use-fab-action.ts`).
 # Ref Pattern for onAction Closures
 
 `onAction` is captured when `SET_ACTION` fires. Store the handler in a ref
-(see `use-booking-form.ts`) to avoid stale closures:
-
-```tsx
-const ref = useRef(handleSubmit);
-ref.current = handleSubmit;
-useEffect(() => {
-  if (isFormValid) {
-    dispatch({
-      type: 'SET_ACTION',
-      config: { label: 'Book Now', onAction: () => ref.current() }
-    });
-  } else {
-    dispatch({ type: 'SET_ACTION', config: null });
-  }
-  return () => dispatch({ type: 'SET_ACTION', config: null });
-}, [isFormValid, dispatch]);
-```
-
-# Examples in Codebase
-
-| Page                      | Label          | Action              | File                        |
-| ------------------------- | -------------- | ------------------- | --------------------------- |
-| Practitioner Availability | "Book Now"     | Submit booking form | `use-fab-action-sync.ts`    |
-| Role Management Shell     | "Save Changes" | Save permissions    | `role-management-shell.tsx` |
-| Record Detail (own note)  | "Edit"         | Open editor         | `record-detail.tsx`         |
-| Record Detail (paid QR)   | "Get Report"   | Open payment drawer | `record-detail.tsx`         |
+(see `use-booking-form.ts`) and call `ref.current()` inside `onAction` to
+avoid stale closures. Re-dispatch `config: null` when the action is no
+longer valid, and always return the cleanup.
 
 # Wiring Selection State
 

@@ -1,6 +1,6 @@
 ---
 title: Report FAB States
-description: The four contextual FAB states on /report, priority order, and the SET_ACTION cleanup rule
+description: The four contextual FAB states on /report, the guest save card, back route and SET_ACTION cleanup
 status: updated
 date: 2026-11-24
 ---
@@ -10,7 +10,7 @@ date: 2026-11-24
 `ReportFab` (`src/app/report/report-fab.tsx`) drives the contextual FAB on
 `/report`. It dispatches `SET_ACTION` configs through `useFab()` from
 `@/context/fabContext`; guests are handled by the shared `ClaimReportFab`
-component instead.
+component instead. The guest save card lives in the page body.
 
 # States in Priority Order
 
@@ -28,14 +28,30 @@ Details:
 
 - **Simpan Laporan** — `ReportFab` renders `ClaimReportFab`, which saves an
   `assessmentResult` redirect intent and dispatches its own primary
-  `SET_ACTION` (BookCheck icon). This state still routes to `/auth` until the
-  in-place save sheet described in `PROPOSAL.md` ships.
+  `SET_ACTION` (BookCheck icon).
 - **Lanjutkan** — ClipboardList icon; pushes
   `/assessments?id=<firstUncompletedQuestionnaireId>&study=<studyId>`.
   Every label in this table is localized through the `common` namespace.
 - **Ingatkan Saya** — CalendarPlus icon; `addToCalendar()` with the next
   batch start date as `startDate`.
 - **Ajak Teman** — Share2 icon; `handleShare` from `useShareStudy`.
+
+# Guest Save Card
+
+Guests with a report also get `ReportSaveCard`
+(`src/app/report/report-save-card.tsx`) below the result. The card explains
+why saving matters and renders one full-width button, `report.fab_claim`
+("Save report"), that runs the shared `useClaimReport` action with
+`/report?id=<studyId>` as the post-claim path. The headline comes from
+`report.save_headline_next` when another batch follows and
+`report.save_headline_last` otherwise. The card is the in-page save button;
+the guest FAB state above still routes to `/auth`.
+
+# Back Route
+
+The page header back button on `/report?id=X` targets `/study?id=X`, falling
+back to `/studies` when the id is missing. From the study page the back
+button targets `/studies`; from `/studies` it targets `/`.
 
 # Cleanup Reset Rule
 

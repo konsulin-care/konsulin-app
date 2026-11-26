@@ -1,8 +1,8 @@
 ---
 title: System Architecture
-description: Go BFF with Next.js static frontend for healthcare scheduling PWA
+description: Go BFF with Next.js static frontend for research and healthcare PWA
 status: updated
-date: 2026-06-03
+date: 2026-11-24
 ---
 
 # Overview
@@ -46,45 +46,39 @@ Backend API (Go + SuperTokens Go SDK)
 └── Session verification
 ```
 
+# Research Routes
+
+The research home is `/research`; the root `/` renders it for patients,
+guests, researchers and unauthenticated visitors, while practitioners and
+clinic admins keep the dashboard home.
+
+- `/study?id=X` shows one study: metadata facts, take-part panel and the
+  report link. It dispatches no `SET_ACTION`.
+- `/studies` lists the whole active catalogue, Konsulin-first.
+- `/report?id=X` shows the participation report; findings published by the
+  research team render on the home findings section.
+- `/research/register` and `/research/edit` are the researcher forms.
+- Legacy `/?id=X`, `/?view=X`, `/research?id=X` and `/research?view=X`
+  links redirect to `/study?id=X`, keeping `ref`.
+
 # Key Decisions
 
-| Decision                              | ADR                                                      |
-| ------------------------------------- | -------------------------------------------------------- |
-| Responsive app shell                  | `@docs/ADR/031-responsive-app-shell.md`                  |
-| Research home + action bar            | `@docs/ADR/032-research-home-shell.md`                   |
-| Study metadata mapping                | `@docs/ADR/033-study-metadata.md`                        |
-| Design token system                   | `@docs/ADR/026-design-token-system.md`                   |
-| MUI renderer theme                    | `@docs/ADR/027-mui-renderer-theme.md`                    |
-| Client cache persistence              | `@docs/ADR/028-client-cache-persistence.md`              |
-| BFF shared cache                      | `@docs/ADR/030-bff-shared-cache.md`                      |
-| Read-only batch cache                 | `@docs/ADR/035-read-only-batch-cache.md`                 |
-| Interpretation engine                 | `@docs/ADR/029-interpretation-engine.md`                 |
-| Domain-gated specialty routing        | `@docs/ADR/024-domain-gated-specialty-routing.md`        |
-| Intent-aware recommendation selection | `@docs/ADR/022-intent-aware-recommendation-selection.md` |
-| BFF API path families                 | `@docs/ADR/021-bff-api-path-families.md`                 |
-| Batch slot enrichment                 | `@docs/ADR/020-batch-slot-enrichment.md`                 |
-| Rate-limit retry policy               | `@docs/ADR/019-rate-limit-retry.md`                      |
-| AppDrawer standardization             | `@docs/ADR/018-app-drawer-standard.md`                   |
-| Combobox sheet suspends host drawer   | `@docs/ADR/025-combobox-sheet-suspends-host-drawer.md`   |
-| Client-side free interval computation | `@docs/ADR/017-client-side-free-interval-computation.md` |
-| Anonymous session consolidation       | `@docs/ADR/016-anon-session-consolidation.md`            |
-| Go BFF + Next.js static frontend      | `@docs/ADR/015-go-bff-static-nextjs.md`                  |
-| SSR upcoming session                  | `@docs/ADR/014-ssr-upcoming-session.md`                  |
-| Client-side data layer                | `@docs/ADR/013-client-side-data-layer.md`                |
-| Runtime configuration (env vars)      | `@docs/ADR/012-runtime-configuration.md`                 |
-| Timeline-based PHR rendering          | `@docs/ADR/011-timeline-based-phr-rendering.md`          |
-| Offline assessment (AEHRC SPA)        | `@docs/ADR/010-offline-assessment-support.md`            |
-| Clinic context selection              | `@docs/ADR/009-clinic-context-selection.md`              |
-| Role context switching                | `@docs/ADR/008-role-context-switching.md`                |
-| Pricing model                         | `@docs/ADR/007-pricing-model.md`                         |
-| Recommendation-first patient UX       | `@docs/ADR/006-recommendation-first-ux.md`               |
-| Unified practitioner calendar         | `@docs/ADR/005-unified-practitioner-calendar.md`         |
-| Recommendation shaping                | `@docs/ADR/003-recommendation-shaping.md`                |
-| Backend FHIR compliance               | `@docs/ADR/002-backend-fhir-compliance.md`               |
-
-Primary action buttons live inside their card. See
-`@docs/ADR/034-primary-action-button.md` for the one action-variant button
-per screen rule on the home and study pages.
+| Decision                         | ADR                                           |
+| -------------------------------- | --------------------------------------------- |
+| Responsive app shell             | `@docs/ADR/031-responsive-app-shell.md`       |
+| Research home + action bar       | `@docs/ADR/032-research-home-shell.md`        |
+| Study metadata mapping           | `@docs/ADR/033-study-metadata.md`             |
+| Primary action button per screen | `@docs/ADR/034-primary-action-button.md`      |
+| Design token system              | `@docs/ADR/026-design-token-system.md`        |
+| Client cache persistence         | `@docs/ADR/028-client-cache-persistence.md`   |
+| BFF shared cache                 | `@docs/ADR/030-bff-shared-cache.md`           |
+| Read-only batch cache            | `@docs/ADR/035-read-only-batch-cache.md`      |
+| Interpretation engine            | `@docs/ADR/029-interpretation-engine.md`      |
+| Client-side data layer           | `@docs/ADR/013-client-side-data-layer.md`     |
+| Runtime configuration (env vars) | `@docs/ADR/012-runtime-configuration.md`      |
+| Anonymous session consolidation  | `@docs/ADR/016-anon-session-consolidation.md` |
+| Go BFF + Next.js static frontend | `@docs/ADR/015-go-bff-static-nextjs.md`       |
+| Role context switching           | `@docs/ADR/008-role-context-switching.md`     |
 
 # Data Flow
 
@@ -99,12 +93,3 @@ per screen rule on the home and study pages.
    renders UI
 6. All FHIR timestamps are ISO 8601 strings — React formats them
    client-side via `Intl.DateTimeFormat`
-
-# Superseded Decisions
-
-| Decision                          | Superseded By       |
-| --------------------------------- | ------------------- |
-| Go SSR + Chi + templ + HTMX       | ADR-015             |
-| Three Islands client-side layer   | ADR-014 (→ ADR-015) |
-| SSR upcoming session              | ADR-015             |
-| Backend-side interval computation | ADR-017             |

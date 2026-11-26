@@ -1,72 +1,94 @@
 ---
 title: Project Structure
-description: Go SSR target directory layout (Next.js migration target)
-date: 2026-05-26
+description: Go BFF plus Next.js static frontend directory layout
+status: updated
+date: 2026-11-24
 ---
 
 # Overview
 
-Flat Go project layout following standard Go conventions. The frontend
-SSR server lives in `cmd/konsulin-app/` with shared libraries in `internal/`.
-This is the target structure — the current codebase is still Next.js.
+The frontend is a Next.js static React application. The Go BFF serves the
+static export and proxies FHIR requests. This map covers the frontend source
+tree; the Go server lives outside `src/`.
 
 # Directory Map
 
 ```
-.
-├── cmd/
-│   └── konsulin-app/         Main frontend server entrypoint
-│       ├── main.go           Server startup, config init, router setup
-│       ├── routes.go         Chi router definition
-│       └── middleware.go     Auth guard, logging, CSRF
-├── internal/
-│   ├── handler/              HTTP handlers (one per route group)
-│   │   ├── clinic.go
-│   │   ├── schedule.go
-│   │   ├── assessment.go     Proxies to React SPA shell
-│   │   ├── profile.go
-│   │   ├── record.go
-│   │   └── auth.go           Login redirect, cookie handling
-│   ├── service/              Business logic, FHIR aggregation
-│   │   ├── recommendation.go Availability + ranking computation
-│   │   └── pricing.go        Fee composition logic
-│   ├── fhir/                 FHIR resource types as Go structs
-│   │   ├── types.go          PractitionerRole, Appointment, etc.
-│   │   └── client.go         FHIR HTTP client with auth
-│   ├── config/               Runtime config (env vars)
-│   │   └── config.go         Config struct + loader
-│   └── session/              Cookie-based session helpers
-│       └── session.go
-├── web/
-│   ├── template/             templ components
-│   │   ├── layout/           Base layout, nav, footer
-│   │   ├── pages/            Page-level components
-│   │   ├── partials/         HTMX partials (reusable fragments)
-│   │   └── components/       Shared UI components (button, card, etc.)
-│   ├── static/               Served at /static/
-│   │   ├── css/              Tailwind output
-│   │   ├── js/               Alpine.js, HTMX, service worker, fhir-client.js
-│   │   └── images/           Static images
-│   └── assessment-spa/       React SPA bundle for AEHRC
-├── Dockerfile                Multi-stage Go build
-├── go.mod
-├── mise.toml                 Tool versions + task definitions
-└── scripts/                  Helper scripts for mise tasks
+src/
+├── app/                        Next.js App Router routes
+│   ├── page.tsx                Root home (role dispatch)
+│   ├── research/               Research hub
+│   │   ├── page.tsx            /research route
+│   │   ├── research-page.tsx   Participant or researcher home
+│   │   ├── home/               Participant home sections
+│   │   │   ├── home-intro.tsx
+│   │   │   ├── up-next-section.tsx
+│   │   │   ├── joined-study-card.tsx
+│   │   │   ├── open-to-join.tsx
+│   │   │   ├── findings-section.tsx
+│   │   │   ├── guest-save-banner.tsx
+│   │   │   ├── given-panel.tsx
+│   │   │   ├── trust-strip.tsx
+│   │   │   └── use-participant-home.ts
+│   │   ├── researcher/         Researcher home sections
+│   │   │   ├── researcher-intro.tsx
+│   │   │   ├── next-step-card.tsx
+│   │   │   ├── researcher-study-card.tsx
+│   │   │   ├── given-back-list.tsx
+│   │   │   └── finding-composer.tsx
+│   │   ├── register/           Study creation form
+│   │   └── edit/               Study edit form
+│   ├── study/                  /study?id=X one study
+│   │   ├── page.tsx
+│   │   ├── study-view.tsx
+│   │   ├── study-overview.tsx
+│   │   ├── study-side-facts.tsx
+│   │   ├── take-part-panel.tsx
+│   │   ├── study-not-found.tsx
+│   │   └── study-facts.ts
+│   ├── studies/                /studies catalogue
+│   │   ├── page.tsx
+│   │   └── studies-view.tsx
+│   ├── report/                 /report?id=X participation report
+│   │   ├── report-fab.tsx
+│   │   ├── report-save-card.tsx
+│   │   └── report-view.tsx
+│   └── ...                     auth, schedule, record, journal, profile
+├── components/                 Shared UI, page header, FAB, drawers
+├── context/                    Auth, FAB and runtime providers
+├── hooks/                      Shared hooks (claim, share, records)
+├── i18n/                       Translation lookup
+├── messages/                   en/ and id/ JSON with identical keys
+├── services/api/               React Query hooks and FHIR fetchers
+│   ├── research.tsx
+│   ├── research-study.ts
+│   ├── research-catalogue.ts
+│   ├── research-findings.ts
+│   └── researcher.tsx
+└── utils/                      Pure helpers
+    └── fhir/                   FHIR parsing and research extensions
+        ├── research.ts
+        ├── research-bundle.ts
+        ├── research-schedule.ts
+        ├── research-status.ts
+        ├── research-catalogue-order.ts
+        ├── findings-feed.ts
+        └── study-profile.ts
 ```
 
 # Key Files
 
-| Path                            | Purpose                         |
-| ------------------------------- | ------------------------------- |
-| `@/AGENTS.md`                   | Root agent instructions         |
-| `@/docs/agents/ARCHITECTURE.md` | System architecture reference   |
-| `@/docs/ADR/*.md`               | Architecture decision records   |
-| `@/docs/wiki/*.md`              | Current architecture assessment |
+| Path                            | Purpose                       |
+| ------------------------------- | ----------------------------- |
+| `@/AGENTS.md`                   | Root agent instructions       |
+| `@/docs/agents/ARCHITECTURE.md` | System architecture reference |
+| `@/docs/ADR/*.md`               | Architecture decision records |
+| `@/docs/wiki/*.md`              | Current architecture notes    |
 
 # Conventions
 
-- No circular imports between `internal/` packages
-- `handler/` depends on `service/`, never the reverse
-- `service/` depends on `fhir/` and `config/`
-- One file per handler group, one struct per file in `fhir/`
-- `web/template/pages/` mirrors route structure
+- Route files stay thin; page logic lives in `*-view.tsx` or hooks
+- Research data reads go through `services/api/`, parsing through `utils/fhir/`
+- Components stay under 300 lines; split into folders when they grow
+- `messages/en` and `messages/id` keep identical key sets, no dotted keys
+- One `h1` per page; filters are buttons with `aria-pressed`
