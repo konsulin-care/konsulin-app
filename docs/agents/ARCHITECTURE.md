@@ -52,6 +52,7 @@ Backend API (Go + SuperTokens Go SDK)
 | ------------------------------------- | -------------------------------------------------------- |
 | Responsive app shell                  | `@docs/ADR/031-responsive-app-shell.md`                  |
 | Research home + action bar            | `@docs/ADR/032-research-home-shell.md`                   |
+| Study metadata mapping                | `@docs/ADR/033-study-metadata.md`                        |
 | Design token system                   | `@docs/ADR/026-design-token-system.md`                   |
 | MUI renderer theme                    | `@docs/ADR/027-mui-renderer-theme.md`                    |
 | Client cache persistence              | `@docs/ADR/028-client-cache-persistence.md`              |
