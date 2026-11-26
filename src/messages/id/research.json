@@ -276,6 +276,14 @@
     "statement_4": "Platform terbuka. Kodenya terbuka di github.com/konsulin-care",
     "help_link": "Jika terasa berat saat ini, temukan bantuan di sini"
   },
+  "finding_composer": {
+    "intro": "Temuan dari {title}. Tulis seperti bercerita kepada teman. Temuan ini muncul di beranda peserta.",
+    "text_label": "Apa yang Anda pelajari, dan seberapa yakin Anda?",
+    "count_label": "Berdasarkan berapa peserta?",
+    "submit": "Bagikan kepada peserta",
+    "posted": "Temuan telah dibagikan.",
+    "conflict": "Studi ini berubah saat Anda menulis. Muat ulang lalu coba lagi."
+  },
   "next_step_card": {
     "share": "Bagikan temuan Anda dari batch {index} {title}. Batch sudah ditutup. Peserta menunggu kabar tentang apa yang ditunjukkan jawaban mereka.",
     "open": "Batch {index} dari {title} tutup {date}. Setelah ditutup, bagikan temuan Anda kepada peserta. Sampai saat itu, tidak ada yang perlu Anda lakukan.",
