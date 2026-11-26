@@ -268,6 +268,12 @@
     "heading_open_to_join": "Open to join",
     "heading_learning": "What we are learning"
   },
+  "researcher_intro": {
+    "title": "Your studies. People give you their answers. This page keeps track of what you owe them back.",
+    "heading_next_step": "Your next step",
+    "heading_your_studies": "Your studies · {count}",
+    "heading_given_back": "What you have given back"
+  },
   "trust_strip": {
     "heading": "True for every study on Konsulin",
     "statement_1": "A random ID, not your name. Researchers never see who you are.",
