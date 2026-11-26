@@ -48,6 +48,13 @@ export const patientPills: Pill[] = [
     icon: Calendar,
     delay: 100,
     action: 'navigate'
+  },
+  {
+    label: 'pill_browse_studies',
+    href: '/studies',
+    icon: FlaskConical,
+    delay: 150,
+    action: 'navigate'
   }
 ];
 

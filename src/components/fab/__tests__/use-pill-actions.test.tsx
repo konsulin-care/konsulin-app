@@ -3,7 +3,7 @@ import { act, render, renderHook } from '@testing-library/react';
 import { Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { patientPills, practitionerPills } from '../pills';
+import { patientPills, practitionerPills, researcherPills } from '../pills';
 import type { Pill } from '../types';
 import { usePillActions } from '../use-pill-actions';
 
@@ -78,6 +78,57 @@ describe('usePillActions', () => {
     expect(result.current.pills.map(pill => pill.label)).toEqual(
       practitionerPills.map(pill => pill.label)
     );
+  });
+
+  it('keeps researcherPills unchanged for the Researcher role', () => {
+    authState.roleName = 'Researcher';
+    const { result } = setup();
+    expect(result.current.pills.map(pill => pill.label)).toEqual(
+      researcherPills.map(pill => pill.label)
+    );
+    expect(result.current.pills.some(pill => pill.href === '/studies')).toBe(
+      false
+    );
+  });
+
+  it('includes a Browse studies pill linking to /studies for patients', () => {
+    const { result } = setup();
+    expect(result.current.pills).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'pill_browse_studies',
+          href: '/studies'
+        })
+      ])
+    );
+  });
+
+  it('includes a Browse studies pill linking to /studies for guests', () => {
+    authState.roleName = 'Guest';
+    const { result } = setup();
+    expect(result.current.pills).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'pill_browse_studies',
+          href: '/studies'
+        })
+      ])
+    );
+  });
+
+  it('navigates a guest to /studies from Browse studies without an auth redirect', () => {
+    authState.roleName = 'Guest';
+    const { result } = setup();
+    const studiesPill = patientPills.find(pill => pill.href === '/studies');
+    expect(studiesPill).toBeDefined();
+
+    act(() => {
+      if (studiesPill) result.current.onPillClick(studiesPill);
+    });
+
+    expect(readRedirectIntent()).toBeUndefined();
+    expect(mockPush).toHaveBeenCalledWith('/studies');
+    expect(mockPush).not.toHaveBeenCalledWith('/auth');
   });
 
   it('returns patientPills for the Guest role', () => {

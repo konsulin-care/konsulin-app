@@ -31,7 +31,13 @@ function getRolePills(roleName: string | undefined): Pill[] {
 
 /** Redirect guest users to auth with intent cookie. */
 function redirectGuestIfNeeded(pill: Pill, isGuest: boolean): boolean {
-  if (!isGuest || !pill.href || pill.href === '/assessments') return false;
+  if (
+    !isGuest ||
+    !pill.href ||
+    pill.href === '/assessments' ||
+    pill.href === '/studies'
+  )
+    return false;
   document.cookie = `redirect_intent=${encodeURIComponent(pill.href)}; Path=/; Max-Age=300; SameSite=Lax`;
   return true;
 }
