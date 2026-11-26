@@ -226,5 +226,11 @@
     "nothing_joined": "Anda belum mengikuti studi apa pun. Pilih salah satu di bawah. Sebagian besar hanya butuh beberapa menit, dan Anda langsung melihat hasil Anda begitu selesai.",
     "closes": "tutup {date}",
     "browse": "Telusuri studi"
+  },
+  "findings": {
+    "source": "{study} · {group} · berdasarkan {count} peserta",
+    "source_no_count": "{study} · {group}",
+    "empty": "Belum ada temuan. Studi masih mengumpulkan jawaban. Saat sebuah batch ditutup, tim peneliti membagikan apa yang mereka pelajari di sini dalam bahasa sehari-hari, beserta jumlah peserta yang menjadi dasarnya.",
+    "show_more": "Tampilkan lebih banyak"
   }
 }

@@ -226,5 +226,11 @@
     "nothing_joined": "You have not joined a study yet. Pick one below. Most take a few minutes, and you see your own result as soon as you finish.",
     "closes": "closes {date}",
     "browse": "Browse studies"
+  },
+  "findings": {
+    "source": "{study} · {group} · based on {count} participants",
+    "source_no_count": "{study} · {group}",
+    "empty": "No findings yet. Studies are still collecting answers. When a batch closes, the research team posts what they learned here in everyday language, with the number of people it is based on.",
+    "show_more": "Show more"
   }
 }
