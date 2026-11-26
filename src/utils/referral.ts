@@ -24,12 +24,27 @@ export type ReferralRef =
   | { kind: 'practitioner'; fhirId: string };
 
 /**
- * Builds the shareable research URL for a user.
+ * Builds a referral ref from the sharer identity, or null when absent.
  *
- * When a studyId is given, the URL deep-links to that study on the research
- * page (`/research?view={studyId}`), which opens the study drawer and focuses
- * its card; patients additionally carry the referral ref. Absent studyId, the
- * plain research page URL is built, keeping existing callers valid.
+ * @param opts - Sharer identity flags and fhirId.
+ * @returns The ref query value, or null when there is no fhirId.
+ */
+function referralRef(opts: {
+  isPatient: boolean;
+  fhirId?: string;
+}): string | null {
+  if (!opts.fhirId) return null;
+  const prefix = opts.isPatient ? PATIENT_REF_PREFIX : PRACTITIONER_REF_PREFIX;
+  return `${prefix}${opts.fhirId}`;
+}
+
+/**
+ * Builds the shareable study or research URL for a user.
+ *
+ * When a studyId is given, the URL deep-links to that study page
+ * (`/study?id={studyId}`); patients additionally carry the referral ref.
+ * Absent studyId, the plain research home URL is built, keeping existing
+ * callers valid.
  *
  * @param opts - Origin, whether the user is a patient, the patient fhirId, and
  * optionally the study to deep-link.
@@ -41,16 +56,13 @@ export function buildShareUrl(opts: {
   fhirId?: string;
   studyId?: string;
 }): string {
-  const base = `${opts.origin}/research`;
-  const params = new URLSearchParams();
-  if (opts.studyId) params.set('view', opts.studyId);
-  if (opts.isPatient && opts.fhirId) {
-    params.set('ref', `${PATIENT_REF_PREFIX}${opts.fhirId}`);
-  } else if (opts.fhirId) {
-    params.set('ref', `${PRACTITIONER_REF_PREFIX}${opts.fhirId}`);
+  const ref = referralRef(opts);
+  if (opts.studyId) {
+    const params = new URLSearchParams({ id: opts.studyId });
+    if (ref) params.set('ref', ref);
+    return `${opts.origin}/study?${params.toString()}`;
   }
-  const query = params.toString();
-  return query ? `${base}?${query}` : base;
+  return ref ? `${opts.origin}/research?ref=${ref}` : `${opts.origin}/research`;
 }
 
 /**
@@ -72,19 +84,6 @@ export function parseReferralRef(ref?: string | null): ReferralRef | null {
     return { kind: 'patient', fhirId };
   }
   return null;
-}
-
-/**
- * English prefilled message for the research share flow.
- *
- * Invites the recipient to join the study as a citizen scientist, ending
- * with a newline so the shared URL starts on its own line.
- *
- * @param title - Research study title to interpolate.
- * @returns The share message text.
- */
-export function buildResearchShareMessage(title: string): string {
-  return `Join me as a citizen scientist through ${title} in Konsulin.\n`;
 }
 
 /**

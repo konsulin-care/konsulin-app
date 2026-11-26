@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildResearchShareMessage,
   buildShareUrl,
   captureReferralRef,
   clearReferralLocalState,
@@ -33,7 +32,7 @@ describe('buildShareUrl', () => {
     );
   });
 
-  it('builds a study-scoped patient link carrying view and ref', () => {
+  it('builds a study-scoped patient link carrying id and ref', () => {
     expect(
       buildShareUrl({
         origin: ORIGIN,
@@ -41,18 +40,16 @@ describe('buildShareUrl', () => {
         fhirId: 'DG3F3STPYZ6HX25A',
         studyId: 'study-x'
       })
-    ).toBe(
-      'https://konsulin.care/research?view=study-x&ref=p_DG3F3STPYZ6HX25A'
-    );
+    ).toBe('https://konsulin.care/study?id=study-x&ref=p_DG3F3STPYZ6HX25A');
   });
 
   it('builds a study-scoped plain link for guests without a ref', () => {
     expect(
       buildShareUrl({ origin: ORIGIN, isPatient: false, studyId: 'study-x' })
-    ).toBe('https://konsulin.care/research?view=study-x');
+    ).toBe('https://konsulin.care/study?id=study-x');
     expect(
       buildShareUrl({ origin: ORIGIN, isPatient: true, studyId: 'study-x' })
-    ).toBe('https://konsulin.care/research?view=study-x');
+    ).toBe('https://konsulin.care/study?id=study-x');
   });
 });
 
@@ -71,20 +68,6 @@ describe('parseReferralRef', () => {
     expect(parseReferralRef('DG3F3STPYZ6HX25A')).toBeNull();
     expect(parseReferralRef('g_DG3F3STPYZ6HX25A')).toBeNull();
     expect(parseReferralRef('p_')).toBeNull();
-  });
-});
-
-describe('buildResearchShareMessage', () => {
-  it('builds the English citizen-scientist invite with a trailing newline', () => {
-    expect(buildResearchShareMessage('PHQ-9 Study')).toBe(
-      'Join me as a citizen scientist through PHQ-9 Study in Konsulin.\n'
-    );
-  });
-
-  it('interpolates any study title', () => {
-    expect(buildResearchShareMessage('Sleep Cohort 2026')).toBe(
-      'Join me as a citizen scientist through Sleep Cohort 2026 in Konsulin.\n'
-    );
   });
 });
 

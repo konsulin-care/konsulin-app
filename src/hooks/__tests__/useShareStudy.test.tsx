@@ -15,7 +15,7 @@ describe('useShareStudy', () => {
   const TITLE = 'Sleep Cohort';
   const MESSAGE =
     `I'm taking part in ${TITLE} on Konsulin. Join me:\n` +
-    'https://konsulin.care/research?view=study-x';
+    'https://konsulin.care/study?id=study-x';
 
   it('uses the exact English and Indonesian share texts', () => {
     expect(enResearch.share_message).toBe(
@@ -49,7 +49,7 @@ describe('useShareStudy', () => {
     );
 
     expect(result.current.shareUrl).toBe(
-      'https://konsulin.care/research?view=study-x&ref=p_DG3F3STPYZ6HX25A'
+      'https://konsulin.care/study?id=study-x&ref=p_DG3F3STPYZ6HX25A'
     );
   });
 
@@ -59,7 +59,7 @@ describe('useShareStudy', () => {
     );
 
     expect(result.current.shareUrl).toBe(
-      'https://konsulin.care/research?view=study-x'
+      'https://konsulin.care/study?id=study-x'
     );
   });
 
@@ -78,7 +78,7 @@ describe('useShareStudy', () => {
     expect(shareMock).toHaveBeenCalledWith({
       title: TITLE,
       text: MESSAGE,
-      url: 'https://konsulin.care/research?view=study-x'
+      url: 'https://konsulin.care/study?id=study-x'
     });
     expect(result.current.copied).toBe(false);
   });

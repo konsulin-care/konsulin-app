@@ -430,8 +430,8 @@ describe('FhirFormsRenderer - Kirim removal and FAB dirty state', () => {
     await waitFor(() => {
       expect(share).toHaveBeenCalledWith({
         title: 'Study X',
-        text: `I'm taking part in Study X on Konsulin. Join me:\n${window.location.origin}/research?view=study-x&ref=p_pat-1`,
-        url: `${window.location.origin}/research?view=study-x&ref=p_pat-1`
+        text: `I'm taking part in Study X on Konsulin. Join me:\n${window.location.origin}/study?id=study-x&ref=p_pat-1`,
+        url: `${window.location.origin}/study?id=study-x&ref=p_pat-1`
       });
     });
   });
