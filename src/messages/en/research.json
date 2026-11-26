@@ -183,5 +183,13 @@
   },
   "target_participants_label": "Target participants",
   "target_participants_placeholder": "e.g. 100",
-  "target_required": "Enter a target of at least 1 participant"
+  "target_required": "Enter a target of at least 1 participant",
+  "metadata": {
+    "group": "Research group",
+    "question": "Research question. One sentence, in everyday words.",
+    "who": "Who can join (optional). For example: adults aged 18 and over",
+    "findings": "I will share the findings with participants in everyday language",
+    "ethics": "Ethics status",
+    "ethics_reference": "Approval reference (optional)"
+  }
 }

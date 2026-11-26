@@ -183,5 +183,13 @@
   },
   "target_participants_label": "Target peserta",
   "target_participants_placeholder": "mis. 100",
-  "target_required": "Isi target minimal 1 peserta"
+  "target_required": "Isi target minimal 1 peserta",
+  "metadata": {
+    "group": "Kelompok peneliti",
+    "question": "Pertanyaan penelitian. Satu kalimat, dengan bahasa sehari-hari.",
+    "who": "Siapa yang bisa ikut (opsional). Contoh: dewasa 18 tahun ke atas",
+    "findings": "Saya akan membagikan temuan kepada peserta dalam bahasa sehari-hari",
+    "ethics": "Status etik",
+    "ethics_reference": "Nomor persetujuan (opsional)"
+  }
 }
