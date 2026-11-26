@@ -5,7 +5,7 @@
   },
   "mid_batch_2": {
     "title": "Ritme yang bagus!",
-    "body": "{completed} dari {total} selesai. Setiap asesmen membawa kita lebih dekat ke dukungan kesehatan publik yang lebih baik."
+    "body": "{completed} dari {total} selesai. Setiap asesmen membawa studi ini lebih dekat ke jawabannya."
   },
   "mid_batch_3": {
     "title": "Momentum yang baik!",
@@ -13,11 +13,11 @@
   },
   "mid_batch_4": {
     "title": "Teruslah maju!",
-    "body": "{completed} dari {total} selesai dalam batch ini. Setiap jawaban membantu membentuk perawatan yang lebih baik untuk semua."
+    "body": "{completed} dari {total} selesai dalam batch ini. Setiap jawaban menambah apa yang dapat dipelajari studi ini."
   },
   "mid_batch_5": {
     "title": "Satu langkah lagi!",
-    "body": "{completed} dari {total} selesai. Terima kasih sudah mengikuti penelitian ini, kita hampir sampai."
+    "body": "{completed} dari {total} selesai. Terima kasih sudah bertahan sejauh ini. Anda hampir sampai."
   },
   "almost_there": "Hampir selesai!",
   "almost_there_body": "Tinggal satu asesmen lagi dalam batch ini. Anda bisa!",
@@ -26,11 +26,11 @@
     "body": "Setiap respons berkontribusi untuk penelitian, jadi teruslah maju."
   },
   "batch_complete": "Anda telah menyelesaikan batch ini!",
-  "batch_complete_body": "Semua asesmen dalam batch ini telah selesai. Terima kasih telah berpartisipasi, respons Anda membantu meningkatkan kesehatan publik untuk semua.",
+  "batch_complete_body": "Semua asesmen dalam batch ini telah selesai. Terima kasih telah berpartisipasi. Respons Anda membantu penelitian ini melangkah maju.",
   "standalone": "Anda telah menyelesaikan tes!",
   "standalone_body": "Hasil Anda akan memberikan wawasan berharga tentang kesehatan Anda.",
   "standalone_research": "Terima kasih telah menyelesaikan asesmen ini!",
-  "standalone_research_body": "Respons Anda membantu meningkatkan kesehatan publik untuk semua.",
+  "standalone_research_body": "Respons Anda membantu penelitian ini melangkah maju.",
   "share_default_label": "Ketuk untuk membagikan survei ini",
   "share_copied": "Tautan disalin!",
   "loading_label": "Memuat penelitian",

@@ -5,7 +5,7 @@
   },
   "mid_batch_2": {
     "title": "You're on a roll!",
-    "body": "{completed} of {total} done. Each assessment brings us closer to better mental health support."
+    "body": "{completed} of {total} done. Each assessment brings the study closer to an answer."
   },
   "mid_batch_3": {
     "title": "Nice momentum!",
@@ -13,11 +13,11 @@
   },
   "mid_batch_4": {
     "title": "Keep it up!",
-    "body": "{completed} of {total} done in this batch. Every answer helps shape better care for everyone."
+    "body": "{completed} of {total} done in this batch. Every answer adds to what the study can learn."
   },
   "mid_batch_5": {
     "title": "One step closer!",
-    "body": "{completed} of {total} complete. Thank you for sticking with the research, so we're nearly there."
+    "body": "{completed} of {total} complete. Thank you for sticking with it. You're nearly there."
   },
   "almost_there": "Almost there!",
   "almost_there_body": "Just one assessment left in this batch. You've got this!",
@@ -26,11 +26,11 @@
     "body": "Every response counts toward the research, so keep going."
   },
   "batch_complete": "You've completed this batch!",
-  "batch_complete_body": "That's every assessment in this batch. Thank you for participating, your responses help improve public health care.",
+  "batch_complete_body": "That's every assessment in this batch. Thank you for participating. Your responses help the research move forward.",
   "standalone": "You've completed the test!",
   "standalone_body": "Your results will give you valuable insight into your mental health.",
   "standalone_research": "Thank you for completing this assessment!",
-  "standalone_research_body": "Your response helps improve public health care.",
+  "standalone_research_body": "Your response helps the research move forward.",
   "share_default_label": "Tap to share this survey",
   "share_copied": "Link copied!",
   "loading_label": "Loading research",

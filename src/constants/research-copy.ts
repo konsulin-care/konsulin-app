@@ -26,7 +26,7 @@ export const MID_BATCH_MESSAGES: readonly DrawerCopy[] = [
   },
   {
     title: "You're on a roll!",
-    body: '{completed} of {total} done. Each assessment brings us closer to better mental health support.'
+    body: '{completed} of {total} done. Each assessment brings the study closer to an answer.'
   },
   {
     title: 'Nice momentum!',
@@ -34,11 +34,11 @@ export const MID_BATCH_MESSAGES: readonly DrawerCopy[] = [
   },
   {
     title: 'Keep it up!',
-    body: '{completed} of {total} done in this batch. Every answer helps shape better care for everyone.'
+    body: '{completed} of {total} done in this batch. Every answer adds to what the study can learn.'
   },
   {
     title: 'One step closer!',
-    body: "{completed} of {total} complete. Thank you for sticking with the research, so we're nearly there."
+    body: "{completed} of {total} complete. Thank you for sticking with it. You're nearly there."
   }
 ];
 
@@ -57,7 +57,7 @@ export const MID_BATCH_FALLBACK_MESSAGE: DrawerCopy = {
 /** Confirmation shown when the whole batch is complete. */
 export const FINAL_BATCH_MESSAGE: DrawerCopy = {
   title: "You've completed this batch!",
-  body: "That's every assessment in this batch. Thank you for participating, your responses help improve mental health care for everyone."
+  body: "That's every assessment in this batch. Thank you for participating. Your responses help the research move forward."
 };
 
 /** Completion message for a standalone (non-research) test. */
@@ -69,7 +69,7 @@ export const STANDALONE_MESSAGE: DrawerCopy = {
 /** Completion message for a research questionnaire outside a batch. */
 export const STANDALONE_RESEARCH_MESSAGE: DrawerCopy = {
   title: 'Thank you for completing this assessment!',
-  body: 'Your response helps improve mental health care for everyone.'
+  body: 'Your response helps the research move forward.'
 };
 
 /**
