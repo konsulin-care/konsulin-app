@@ -1,6 +1,7 @@
 package proxycache
 
 import (
+	"encoding/json"
 	"net/url"
 	"sort"
 	"strings"
@@ -119,6 +120,40 @@ func InvalidationType(method, path string) (string, bool) {
 		return "*", true
 	}
 	return "", false
+}
+
+// readOnlyBundleBody is the subset of a FHIR Bundle needed to decide whether a
+// POST body only performs reads.
+type readOnlyBundleBody struct {
+	ResourceType string `json:"resourceType"`
+	Type         string `json:"type"`
+	Entry        []struct {
+		Request *struct {
+			Method string `json:"method"`
+		} `json:"request"`
+	} `json:"entry"`
+}
+
+// IsReadOnlyBatch reports whether body is a FHIR batch Bundle whose entries are
+// all GET requests, meaning nothing is written and the response may be cached.
+// Malformed, empty, non-batch and non-GET bodies report false.
+func IsReadOnlyBatch(body []byte) bool {
+	if len(body) == 0 {
+		return false
+	}
+	var bundle readOnlyBundleBody
+	if err := json.Unmarshal(body, &bundle); err != nil {
+		return false
+	}
+	if bundle.ResourceType != "Bundle" || bundle.Type != "batch" || len(bundle.Entry) == 0 {
+		return false
+	}
+	for _, entry := range bundle.Entry {
+		if entry.Request == nil || !strings.EqualFold(entry.Request.Method, "GET") {
+			return false
+		}
+	}
+	return true
 }
 
 // parseFHIRPath splits a backend path into the resource type and optional id,

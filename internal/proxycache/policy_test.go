@@ -89,6 +89,57 @@ func TestCacheable(t *testing.T) {
 	}
 }
 
+func TestIsReadOnlyBatch(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want bool
+	}{
+		{
+			name: "batch of get entries",
+			body: `{"resourceType":"Bundle","type":"batch","entry":[{"request":{"method":"GET","url":"Questionnaire/1"}},{"request":{"method":"GET","url":"ResearchStudy/2"}}]}`,
+			want: true,
+		},
+		{
+			name: "transaction bundle",
+			body: `{"resourceType":"Bundle","type":"transaction","entry":[{"request":{"method":"GET","url":"Questionnaire/1"}}]}`,
+			want: false,
+		},
+		{
+			name: "batch with post entry",
+			body: `{"resourceType":"Bundle","type":"batch","entry":[{"request":{"method":"GET","url":"Questionnaire/1"}},{"request":{"method":"POST","url":"Questionnaire"}}]}`,
+			want: false,
+		},
+		{
+			name: "batch with entry missing request",
+			body: `{"resourceType":"Bundle","type":"batch","entry":[{"resource":{"resourceType":"Questionnaire"}}]}`,
+			want: false,
+		},
+		{
+			name: "empty entries",
+			body: `{"resourceType":"Bundle","type":"batch","entry":[]}`,
+			want: false,
+		},
+		{
+			name: "malformed json",
+			body: `{"resourceType":`,
+			want: false,
+		},
+		{
+			name: "empty body",
+			body: ``,
+			want: false,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := IsReadOnlyBatch([]byte(tc.body)); got != tc.want {
+				t.Fatalf("IsReadOnlyBatch(%q) = %v, want %v", tc.body, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestInvalidationType(t *testing.T) {
 	tests := []struct {
 		name     string
