@@ -9,7 +9,6 @@ import { latestResponsesByQuestionnaire } from '@/utils/fhir/report';
 import { getNextBatch } from '@/utils/fhir/research-schedule';
 import { ClipboardList, FileQuestion } from 'lucide-react';
 
-import { completedBatchSummary } from './batch-meta';
 import { ReportFab } from './report-fab';
 import { ReportHero } from './report-hero';
 import { ReportResult, type ReportResultItem } from './report-result';
@@ -113,16 +112,6 @@ export default function ReportView() {
   const hasCompletedBatches = [...buckets.values()].some(
     batchResponses => batchResponses.length > 0
   );
-  const participatedIds = sortedBatches
-    .filter(batch => (buckets.get(batch.id)?.length ?? 0) > 0)
-    .map(batch => batch.id);
-  const summary = completedBatchSummary(
-    sortedBatches,
-    participatedIds,
-    buckets,
-    durationMap,
-    today
-  );
   const nextBatch = getNextBatch(sortedBatches, today);
   const resultItems: ReportResultItem[] = [
     ...latestResponsesByQuestionnaire(responses)
@@ -160,6 +149,12 @@ export default function ReportView() {
           latestBatchByQuestionnaire={latestBatchByQuestionnaire}
         />
 
+        {isGuest && (
+          <div className='mt-4'>
+            <ReportSaveCard studyId={studyId} nextBatch={nextBatch} />
+          </div>
+        )}
+
         <ReportResult items={resultItems} />
 
         <footer
@@ -168,12 +163,6 @@ export default function ReportView() {
         >
           {t('report.disclaimer')}
         </footer>
-
-        {isGuest && (
-          <div className='mt-4'>
-            <ReportSaveCard xp={summary?.xp ?? 0} nextBatch={nextBatch} />
-          </div>
-        )}
 
         <section data-testid='report-collective' className='mt-4'>
           <p className='text-foreground mb-2 text-sm font-semibold'>
