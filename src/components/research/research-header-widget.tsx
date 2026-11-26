@@ -3,10 +3,49 @@
 import { useTranslations } from '@/i18n';
 import { useLocale } from '@/lib/locale';
 import { useResearchProgress } from '@/services/api/research';
+import { readConsentFlag } from '@/utils/consent';
+import type { ResearchProgress } from '@/utils/fhir/research';
+import { buildUpNextQueue } from '@/utils/fhir/research-queue';
 import { formatBatchDate } from '@/utils/format-batch-date';
+import { format } from 'date-fns';
 import { FlaskConical } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+
+/**
+ * Returns joined study ids: progress joins plus guest consent flags.
+ *
+ * @param progress - Research progress.
+ * @returns Joined study ids.
+ */
+function joinedIdsOf(progress: ResearchProgress): string[] {
+  const ids = new Set(progress.consentedStudyIds);
+  if (typeof window !== 'undefined') {
+    for (const s of progress.studies) {
+      const id = s.study.id;
+      if (id && readConsentFlag(window.localStorage, id)) ids.add(id);
+    }
+  }
+  return [...ids];
+}
+
+/**
+ * Picks the study to show: URL study first, else the first up-next lead.
+ *
+ * @param progress - Research progress.
+ * @param studyId - Study id from the URL, if any.
+ * @returns The study progress or undefined.
+ */
+function pickStudy(progress: ResearchProgress, studyId: string | null) {
+  const fromUrl = progress.studies.find(s => s.study.id === studyId);
+  if (fromUrl) return fromUrl;
+  return buildUpNextQueue({
+    studies: progress.studies,
+    joinedIds: joinedIdsOf(progress),
+    waitingIds: [],
+    today: format(new Date(), 'yyyy-MM-dd')
+  })[0]?.leadStudy;
+}
 
 /**
  * Header widget showing the user's research participation: the primary
@@ -30,8 +69,8 @@ export default function ResearchHeaderWidget() {
 
   if (isLoading || !progress || progress.studies.length === 0) return null;
 
-  const primary =
-    progress.studies.find(s => s.study.id === studyId) ?? progress.studies[0];
+  const primary = pickStudy(progress, studyId);
+  if (!primary) return null;
   const batch = primary.currentBatch;
   if (!batch) return null;
 

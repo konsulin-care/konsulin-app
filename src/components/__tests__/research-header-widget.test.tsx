@@ -1,7 +1,7 @@
 import type { ResearchProgress, StudyProgress } from '@/utils/fhir/research';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchHeaderWidget from '../research/research-header-widget';
 
 const { mockUseResearchProgress, nav } = vi.hoisted(() => ({
@@ -22,6 +22,17 @@ vi.mock('@/i18n', async () => {
 vi.mock('@/services/api/research', () => ({
   useResearchProgress: mockUseResearchProgress
 }));
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-08-15T12:00:00'));
+  nav.path = '/';
+  nav.query = '';
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -91,15 +102,13 @@ function makeProgress(): ResearchProgress {
       }
     ],
     consecutiveBatches: 2
-  };
+  } as StudyProgress;
 
   return {
     studies: [study],
     cumulativeResponses: 1,
-    questionnaireResponses: ['phq2'],
-    questionnaireXp: 8,
     completedQuestionnaireIds: ['phq2'],
-    consentedStudyIds: []
+    consentedStudyIds: ['research']
   };
 }
 
