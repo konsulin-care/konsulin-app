@@ -289,6 +289,31 @@ export function computeStudyProgress(
 }
 
 /**
+ * Zeroes progress for studies the participant has not joined.
+ *
+ * @param studies - Computed per-study progress.
+ * @param joinedIds - Study ids the participant has consented to.
+ * @returns Progress with unjoined studies reset to no completions.
+ */
+export function scopeProgressToJoined(
+  studies: StudyProgress[],
+  joinedIds: readonly string[]
+): StudyProgress[] {
+  const joined = new Set(joinedIds);
+  return studies.map(progress => {
+    if (joined.has(progress.study.id ?? '')) return progress;
+    return {
+      ...progress,
+      completedCount: 0,
+      completedQuestionnaireIds: [],
+      isComplete: false,
+      firstUncompletedQuestionnaireId:
+        progress.currentBatch?.questionnaireIds[0] ?? null
+    };
+  });
+}
+
+/**
  * Resolves the study that deploys a questionnaire in its current batch,
  * falling back to the first study. Used to scope share links to the study a
  * completed questionnaire belongs to.

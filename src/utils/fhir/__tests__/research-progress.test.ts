@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   computeResearchProgress,
   computeStudyProgress,
+  scopeProgressToJoined,
   type ResearchBatch,
   type ResearchResponse
 } from '../research';
@@ -47,6 +48,34 @@ describe('computeStudyProgress', () => {
     );
     expect(progress).not.toHaveProperty('consecutiveBatches');
     expect(progress.history[0].participated).toBe(true);
+  });
+});
+
+describe('scopeProgressToJoined', () => {
+  const response = makeResponse(
+    'r1',
+    'Questionnaire/phq2',
+    '2026-08-10T00:00:00Z'
+  );
+  const progress = computeStudyProgress(
+    makeStudy('a'),
+    [makeBatch()],
+    [response],
+    TODAY
+  );
+
+  it('zeroes an unjoined study', () => {
+    const [scoped] = scopeProgressToJoined([progress], []);
+    expect(scoped.completedCount).toBe(0);
+    expect(scoped.completedQuestionnaireIds).toEqual([]);
+    expect(scoped.isComplete).toBe(false);
+    expect(scoped.firstUncompletedQuestionnaireId).toBe('phq2');
+  });
+
+  it('keeps a joined study', () => {
+    const [scoped] = scopeProgressToJoined([progress], ['a']);
+    expect(scoped.completedQuestionnaireIds).toEqual(['phq2']);
+    expect(scoped.completedCount).toBe(1);
   });
 });
 
