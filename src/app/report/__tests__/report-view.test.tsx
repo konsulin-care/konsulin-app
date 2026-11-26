@@ -249,7 +249,6 @@ function makeStudy(overrides: Partial<StudyProgress> = {}): StudyProgress {
         participated: true
       }
     ],
-    consecutiveBatches: 2,
     ...overrides
   };
 }
@@ -265,8 +264,6 @@ function seedDefaultMocks() {
     data: {
       studies: [makeStudy()],
       cumulativeResponses: 3,
-      questionnaireResponses: [],
-      questionnaireXp: 0,
       completedQuestionnaireIds: [],
       consentedStudyIds: []
     },
@@ -329,8 +326,6 @@ describe('ReportView', () => {
       data: {
         studies: [],
         cumulativeResponses: 0,
-        questionnaireResponses: [],
-        questionnaireXp: 0,
         completedQuestionnaireIds: [],
         consentedStudyIds: []
       },
@@ -377,9 +372,9 @@ describe('ReportView', () => {
     await screen.findAllByTestId('report-progress');
     const sequence = [
       screen.getByTestId('report-hero'),
+      screen.getByTestId('report-save-card'),
       screen.getByTestId('report-result-block'),
       screen.getByTestId('report-disclaimer'),
-      screen.getByTestId('report-save-card'),
       screen.getByTestId('report-collective'),
       screen.getByTestId('report-trail'),
       screen.getAllByTestId('report-batch-section')[0]
@@ -606,8 +601,6 @@ describe('ReportView', () => {
           })
         ],
         cumulativeResponses: 2,
-        questionnaireResponses: [],
-        questionnaireXp: 0,
         completedQuestionnaireIds: [],
         consentedStudyIds: []
       },
@@ -719,8 +712,6 @@ describe('ReportView', () => {
           })
         ],
         cumulativeResponses: 3,
-        questionnaireResponses: [],
-        questionnaireXp: 0,
         completedQuestionnaireIds: [],
         consentedStudyIds: []
       },
@@ -856,8 +847,6 @@ describe('ReportView', () => {
       data: {
         studies: [makeStudy({ batches: fourBatches })],
         cumulativeResponses: 2,
-        questionnaireResponses: [],
-        questionnaireXp: 0,
         completedQuestionnaireIds: [],
         consentedStudyIds: []
       },

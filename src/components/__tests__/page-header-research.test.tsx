@@ -106,13 +106,10 @@ const PROGRESS_DATA: ResearchProgress = {
           end: '2026-08-31',
           participated: true
         }
-      ],
-      consecutiveBatches: 1
+      ]
     }
   ],
   cumulativeResponses: 1,
-  questionnaireResponses: ['phq2'],
-  questionnaireXp: 8,
   completedQuestionnaireIds: ['phq2'],
   consentedStudyIds: []
 };

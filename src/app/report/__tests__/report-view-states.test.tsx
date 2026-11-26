@@ -103,15 +103,12 @@ const STUDY: StudyProgress = {
       end: '2026-08-31',
       participated: false
     }
-  ],
-  consecutiveBatches: 0
+  ]
 };
 
 const EMPTY_PROGRESS: ResearchProgress = {
   studies: [],
   cumulativeResponses: 0,
-  questionnaireResponses: [],
-  questionnaireXp: 0,
   completedQuestionnaireIds: [],
   consentedStudyIds: []
 };

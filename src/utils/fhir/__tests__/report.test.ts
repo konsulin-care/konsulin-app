@@ -285,8 +285,7 @@ describe('computeParticipationStats', () => {
       start: batch.start,
       end: batch.end,
       participated: false
-    })),
-    consecutiveBatches: 0
+    }))
   };
 
   it('derives completion, streak, and time invested from de-duplicated buckets', () => {

@@ -79,7 +79,6 @@ function makeStudy(overrides: Partial<StudyProgress> = {}): StudyProgress {
     firstUncompletedQuestionnaireId: null,
     completedQuestionnaireIds: [],
     history: [],
-    consecutiveBatches: 0,
     ...overrides
   };
 }
@@ -139,7 +138,7 @@ describe('ReportFab patient actions', () => {
     // The FAB renders nothing visible itself; it only dispatches.
     expect(container).toBeEmptyDOMElement();
     const action = dispatchedAction();
-    expect(action.label).toBe('Lanjutkan');
+    expect(action.label).toBe(enCommon.report.fab_continue);
     expect(action.icon).toBe(ClipboardList);
     await action.onAction();
     expect(mockPush).toHaveBeenCalledWith(
