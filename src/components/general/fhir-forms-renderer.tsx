@@ -68,6 +68,7 @@ interface FhirFormsRendererProps {
 function FhirFormsRenderer(props: FhirFormsRendererProps) {
   const t = useTranslations('toast');
   const rd = useTranslations('research');
+  const qd = useTranslations('common');
   const {
     questionnaire,
     isAuthenticated,
@@ -359,8 +360,8 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
 
   const ctaLabel =
     isResearchFlow && continuation?.nextQuestionnaireId
-      ? 'Continue'
-      : 'See Results';
+      ? qd('questionnaire_drawer.continue')
+      : qd('questionnaire_drawer.see_results');
 
   /** Submits and navigates to the next questionnaire, or the result page.
    * The destination mirrors the CTA label: only research flows continue. */
@@ -382,7 +383,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
           handleSubmitQuestionnaire('result').catch(console.error);
         }}
       >
-        See Results
+        {qd('questionnaire_drawer.see_results')}
       </button>
     );
   } else if (isBatchComplete) {
@@ -403,7 +404,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
       dispatch({
         type: 'SET_ACTION',
         config: {
-          label: 'Submit',
+          label: qd('questionnaire_drawer.submit'),
           icon: BookCheck,
           onAction: handleValidation,
           isSaving: isSubmitting,
@@ -423,7 +424,8 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
     patientId,
     isSubmitting,
     handleValidation,
-    dispatch
+    dispatch,
+    qd
   ]);
 
   // Clean up action state on unmount
@@ -479,7 +481,7 @@ function FhirFormsRenderer(props: FhirFormsRendererProps) {
               height={0}
               width={200}
               style={{ width: '200', height: 'auto' }}
-              alt='success'
+              alt={qd('questionnaire_drawer.success_alt')}
             />
           </div>
         )}

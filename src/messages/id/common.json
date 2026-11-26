@@ -353,6 +353,12 @@
     "reload_page": "Muat ulang halaman"
   },
   "no_data_found": "Data Tidak Ditemukan",
+  "questionnaire_drawer": {
+    "continue": "Lanjutkan",
+    "see_results": "Lihat hasil",
+    "submit": "Kirim",
+    "success_alt": "Berhasil"
+  },
   "media": {
     "offline_alt": "offline"
   }

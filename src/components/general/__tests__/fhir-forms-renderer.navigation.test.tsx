@@ -253,13 +253,13 @@ describe('FhirFormsRenderer - navigation (router.replace vs push)', () => {
   const clickCta = (label: string) => {
     const button = screen
       .getAllByTestId('mock-button')
-      .find(btn => btn.textContent === label);
+      .find(btn => btn.textContent?.toLowerCase() === label.toLowerCase());
     if (!button) throw new Error(`${label} CTA not found`);
     fireEvent.click(button);
   };
 
   const clickFooterSeeResults = () => {
-    const link = screen.getByText('See Results');
+    const link = screen.getByText('See results');
     fireEvent.click(link);
   };
 

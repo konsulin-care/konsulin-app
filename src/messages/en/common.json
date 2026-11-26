@@ -353,6 +353,12 @@
     "reload_page": "Reload page"
   },
   "no_data_found": "No Data Found",
+  "questionnaire_drawer": {
+    "continue": "Continue",
+    "see_results": "See results",
+    "submit": "Submit",
+    "success_alt": "Success"
+  },
   "media": {
     "offline_alt": "offline"
   }

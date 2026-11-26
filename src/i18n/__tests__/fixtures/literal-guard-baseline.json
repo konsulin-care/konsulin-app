@@ -5,7 +5,6 @@
   "src/app/record/report-payment-drawer.tsx|attribute|ctaLabel='Pay Now'",
   "src/components/general/avatar.tsx|attribute|alt='practitioner'",
   "src/components/general/empty-state.tsx|attribute|alt='no-data'",
-  "src/components/general/fhir-forms-renderer.tsx|attribute|alt='success'",
   "src/components/general/input.tsx|attribute|alt='prefix-icon'",
   "src/components/general/input.tsx|attribute|alt='suffix-icon'",
   "src/components/login/input.tsx|attribute|alt='prefix-icon'",
