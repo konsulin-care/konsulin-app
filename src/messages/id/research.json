@@ -116,7 +116,7 @@
     "status": {
       "done": "Selesai",
       "current": "Berjalan",
-      "missed": "Terlewat",
+      "missed": "Tidak diikuti",
       "upcoming": "Akan datang",
       "syncing": "Menunggu sinkron"
     }

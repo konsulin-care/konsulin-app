@@ -117,7 +117,7 @@ describe('BatchTrail', () => {
     ).toHaveTextContent('Done');
     expect(
       screen.getByTestId('batch-chip-batch-2').parentElement
-    ).toHaveTextContent('Missed');
+    ).toHaveTextContent('Not joined');
     expect(
       screen.getByTestId('batch-chip-batch-3').parentElement
     ).toHaveTextContent('Current');
@@ -127,7 +127,7 @@ describe('BatchTrail', () => {
 
     expect(screen.getByRole('list')).toHaveAttribute(
       'aria-label',
-      'Batch trail: Batch 1: Done, Batch 2: Missed, Batch 3: Current, Batch 4: Upcoming'
+      'Batch trail: Batch 1: Done, Batch 2: Not joined, Batch 3: Current, Batch 4: Upcoming'
     );
   });
 });

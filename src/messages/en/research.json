@@ -116,7 +116,7 @@
     "status": {
       "done": "Done",
       "current": "Current",
-      "missed": "Missed",
+      "missed": "Not joined",
       "upcoming": "Upcoming",
       "syncing": "Waiting to sync"
     }
