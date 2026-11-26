@@ -1,6 +1,6 @@
 'use client';
 
-import { useResearchXp } from '@/hooks/useResearchXp';
+import { useAuth } from '@/context/auth/authContext';
 import {
   EMPTY_QUESTIONNAIRE_INFO_MAP,
   useQuestionnaireTitles,
@@ -18,23 +18,12 @@ import {
   extractQuestionnaireId,
   sortBatches,
   type ResearchBatch,
-  type ResearchProgress,
   type StudyProgress
 } from '@/utils/fhir/research';
 import { format } from 'date-fns';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-
-/** Progress placeholder before the query resolves; keeps useResearchXp total. */
-const EMPTY_PROGRESS: ResearchProgress = {
-  studies: [],
-  cumulativeResponses: 0,
-  questionnaireResponses: [],
-  questionnaireXp: 0,
-  completedQuestionnaireIds: [],
-  consentedStudyIds: []
-};
 
 /** Data and derived aggregates backing the research report for one study. */
 export interface ReportData {
@@ -58,8 +47,6 @@ export interface ReportData {
   responses: QuestionnaireResponse[] | undefined;
   /** Questionnaire id to estimated duration in minutes. */
   durationMap: Map<string, number | null>;
-  /** Questionnaire XP plus converted referral XP. */
-  totalXp: number;
   /** Whether the signed-in user has a FHIR id (guests do not). */
   isPatient: boolean;
   /** Current local date, yyyy-mm-dd. */
@@ -121,15 +108,7 @@ export function useReportData(): ReportData {
   );
   // Titles cover the study's batch questionnaires plus every questionnaire
   // the progress payload awarded XP for, so the hero's XP math resolves.
-  const titleIds = useMemo(
-    () => [
-      ...new Set([
-        ...questionnaireIds,
-        ...(progress?.questionnaireResponses ?? [])
-      ])
-    ],
-    [questionnaireIds, progress]
-  );
+  const titleIds = questionnaireIds;
   // Earliest batch start bounds the response search so pre-study responses
   // authored under the same identity are excluded from the payload.
   const since = useMemo(
@@ -165,10 +144,8 @@ export function useReportData(): ReportData {
       new Map([...titleMap].map(([id, info]) => [id, info.durationMinutes])),
     [titleMap]
   );
-  const { totalXp, isPatient } = useResearchXp(
-    progress ?? EMPTY_PROGRESS,
-    titleMap
-  );
+  const { state: authState } = useAuth();
+  const isPatient = Boolean(authState.userInfo?.fhirId);
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const buckets = useMemo(
@@ -223,7 +200,6 @@ export function useReportData(): ReportData {
     titleMap,
     responses,
     durationMap,
-    totalXp,
     isPatient,
     today,
     buckets,

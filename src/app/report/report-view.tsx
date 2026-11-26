@@ -42,7 +42,6 @@ export default function ReportView() {
     titleMap,
     responses,
     durationMap,
-    totalXp,
     isPatient,
     today,
     buckets,
@@ -157,7 +156,6 @@ export default function ReportView() {
           batches={study.batches}
           buckets={buckets}
           durationByQuestionnaire={durationMap}
-          totalXp={totalXp}
           isPatient={isPatient}
           latestBatchByQuestionnaire={latestBatchByQuestionnaire}
         />

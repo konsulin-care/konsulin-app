@@ -17,7 +17,7 @@ export interface ReportHeroProps {
   batches: readonly ResearchBatch[];
   buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>;
   durationByQuestionnaire: ReadonlyMap<string, number | null>;
-  /** @deprecated Unused; removed with the game layer. */
+  /** @deprecated Unused; kept until hero test fixtures drop it. */
   totalXp?: number;
   isPatient: boolean;
   latestBatchByQuestionnaire: ReadonlyMap<string, string>;

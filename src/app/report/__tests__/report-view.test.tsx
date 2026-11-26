@@ -340,6 +340,16 @@ describe('ReportView', () => {
     expect(screen.getByText('Report not found')).toBeInTheDocument();
   });
 
+  it('renders the hero for guests without any XP data', async () => {
+    mockUseAuth.mockReturnValue({
+      state: { isAuthenticated: false, userInfo: {} },
+      isLoading: false
+    });
+    render(<ReportView />);
+    await screen.findAllByTestId('report-progress');
+    expect(screen.getByTestId('report-hero')).toBeInTheDocument();
+  });
+
   it('renders the study title without a status badge', async () => {
     render(<ReportView />);
     await screen.findAllByTestId('report-progress');
