@@ -1,6 +1,7 @@
 import type { ResearchProgress } from '@/utils/fhir/research';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
+import { addDays, format } from 'date-fns';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import PageHeader from '../page-header';
 
@@ -76,10 +77,13 @@ function createWrapper() {
   };
 }
 
+const BATCH_START = format(addDays(new Date(), -10), 'yyyy-MM-dd');
+const BATCH_END = format(addDays(new Date(), 20), 'yyyy-MM-dd');
+
 const BATCH_1 = {
   id: 'batch-1',
-  start: '2026-08-01',
-  end: '2026-08-31',
+  start: BATCH_START,
+  end: BATCH_END,
   questionnaireIds: ['phq2', 'big-five-inventory']
 };
 
@@ -102,8 +106,8 @@ const PROGRESS_DATA: ResearchProgress = {
       history: [
         {
           batchId: 'batch-1',
-          start: '2026-08-01',
-          end: '2026-08-31',
+          start: BATCH_START,
+          end: BATCH_END,
           participated: true
         }
       ]
@@ -111,7 +115,7 @@ const PROGRESS_DATA: ResearchProgress = {
   ],
   cumulativeResponses: 1,
   completedQuestionnaireIds: ['phq2'],
-  consentedStudyIds: []
+  consentedStudyIds: ['research']
 };
 
 /** The widget must be hidden by role gating, not by a missing data source. */
