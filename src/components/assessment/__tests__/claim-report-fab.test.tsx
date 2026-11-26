@@ -40,7 +40,7 @@ function findClaimAction(
     const fabAction = action as FabAction;
     return (
       fabAction.type === 'SET_ACTION' &&
-      fabAction.config?.label === 'Simpan Laporan'
+      fabAction.config?.label === 'Save report'
     );
   })?.[0] as Extract<FabAction, { type: 'SET_ACTION' }> | undefined;
 }
@@ -54,12 +54,12 @@ describe('ClaimReportFab', () => {
     });
   });
 
-  it('dispatches a primary BookCheck action labelled "Simpan Laporan" when visible', () => {
+  it('dispatches a primary BookCheck action labelled "Save report" when visible', () => {
     render(<ClaimReportFab path='/report?id=research' visible />);
 
     const action = findClaimAction(mockDispatch.mock.calls);
     expect(action).toBeDefined();
-    expect(action?.config.label).toBe('Simpan Laporan');
+    expect(action?.config.label).toBe('Save report');
     expect(action?.config.variant).toBe('primary');
     expect(action?.config.icon).toBeDefined();
     expect(typeof action?.config.onAction).toBe('function');

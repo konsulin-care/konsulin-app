@@ -113,13 +113,13 @@ function sampleDraft(qrId = 'test-qr-id') {
 
 type SetAction = Extract<FabAction, { type: 'SET_ACTION' }>;
 
-/** Find the 'Simpan Laporan' SET_ACTION call from the dispatched FAB actions. */
+/** Find the 'Save report' SET_ACTION call from the dispatched FAB actions. */
 function findClaimAction(calls: readonly unknown[][]): SetAction | undefined {
   return calls.find(([action]) => {
     const fabAction = action as FabAction;
     return (
       fabAction.type === 'SET_ACTION' &&
-      fabAction.config?.label === 'Simpan Laporan'
+      fabAction.config?.label === 'Save report'
     );
   })?.[0] as SetAction | undefined;
 }
@@ -271,7 +271,7 @@ describe('ResultView', () => {
       expect(findClaimAction(mockDispatch.mock.calls)).toBeDefined();
     });
     const claimAction = findClaimAction(mockDispatch.mock.calls);
-    expect(claimAction?.config.label).toBe('Simpan Laporan');
+    expect(claimAction?.config.label).toBe('Save report');
     expect(claimAction?.config.variant).toBe('primary');
     expect(typeof claimAction?.config.onAction).toBe('function');
   });
@@ -329,8 +329,10 @@ describe('ResultView', () => {
     render(<ResultView />);
 
     await screen.findByTestId('score-display');
+    await waitFor(() => {
+      expect(findClaimAction(mockDispatch.mock.calls)).toBeDefined();
+    });
     const claimAction = findClaimAction(mockDispatch.mock.calls);
-    expect(claimAction).toBeDefined();
     // skipcq: JS-0098 - invoke claim action in test without awaiting
     void claimAction?.config.onAction();
 

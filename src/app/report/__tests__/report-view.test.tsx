@@ -295,7 +295,7 @@ function findActionByLabel(
 function findClaimAction(
   calls: readonly unknown[][]
 ): Extract<FabAction, { type: 'SET_ACTION' }> | undefined {
-  return findActionByLabel(calls, 'Simpan Laporan');
+  return findActionByLabel(calls, 'Save report');
 }
 
 describe('ReportView', () => {
@@ -695,11 +695,11 @@ describe('ReportView', () => {
     // visible set from the loaded responses.
     const claimAction = findClaimAction(mockFabDispatch.mock.calls);
     expect(claimAction).toBeDefined();
-    expect(claimAction?.config.label).toBe('Simpan Laporan');
+    expect(claimAction?.config.label).toBe('Save report');
     expect(claimAction?.config.variant).toBe('primary');
   });
 
-  it("offers patients the 'Lanjutkan' action for an open incomplete batch", async () => {
+  it("offers patients the 'Continue' action for an open incomplete batch", async () => {
     mockUseResearchProgress.mockReturnValue({
       data: {
         studies: [
@@ -720,9 +720,9 @@ describe('ReportView', () => {
     await screen.findAllByTestId('report-progress');
     // Only ReportFab's priority machine dispatches a patient action; the
     // superseded direct ClaimReportFab dispatched null for authenticated users.
-    const action = findActionByLabel(mockFabDispatch.mock.calls, 'Lanjutkan');
+    const action = findActionByLabel(mockFabDispatch.mock.calls, 'Continue');
     expect(action).toBeDefined();
-    expect(action?.config.label).toBe('Lanjutkan');
+    expect(action?.config.label).toBe('Continue');
     expect(findClaimAction(mockFabDispatch.mock.calls)).toBeUndefined();
   });
 
