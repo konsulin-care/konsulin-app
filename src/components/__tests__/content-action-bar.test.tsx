@@ -85,6 +85,10 @@ describe('ContentActionBar', () => {
     const button = screen.getByRole('button', { name: /Submit/ });
     expect(button.hasAttribute('disabled')).toBe(false);
     expect(screen.queryByTestId('content-action-spinner')).toBeNull();
+    expect(button.className).toContain('bg-secondary');
+    expect(button.className).toContain('text-secondary-foreground');
+    expect(button.className).toContain('border-turquoise-deep');
+    expect(button.className).toContain('font-semibold');
   });
 
   it('keeps the saving action mounted, disabled, with a spinner beside the label', () => {

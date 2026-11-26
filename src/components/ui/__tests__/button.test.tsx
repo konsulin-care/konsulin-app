@@ -23,6 +23,17 @@ describe('Button', () => {
     expect(button.className).not.toContain('bg-secondary');
   });
 
+  it('renders the action variant with the action-bar tokens', () => {
+    render(<Button variant='action'>Action</Button>);
+    const button = screen.getByRole('button');
+    expect(button.className).toContain('bg-secondary');
+    expect(button.className).toContain('text-secondary-foreground');
+    expect(button.className).toContain('border-turquoise-deep');
+    expect(button.className).toContain('min-h-11');
+    expect(button.className).toContain('rounded-lg');
+    expect(button.className).toContain('font-semibold');
+  });
+
   it('renders link with the turquoise deep text', () => {
     render(<Button variant='link'>Link</Button>);
     expect(screen.getByRole('button').className).toContain(

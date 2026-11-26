@@ -5,12 +5,10 @@ import { useTranslations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { Trash2 } from 'lucide-react';
 import type { ActionConfig, MenuAction, SelectionConfig } from './fab/types';
+import { Button } from './ui/button';
 
 const BAR_CLASS =
   'hidden md:flex sticky bottom-0 z-20 mt-auto justify-end gap-2 border-t border-border bg-background/80 px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-150';
-
-const ACTION_BUTTON_CLASS =
-  'bg-secondary text-secondary-foreground border-turquoise-deep flex min-h-11 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors';
 
 const OUTLINE_BUTTON_CLASS =
   'border-border bg-card text-foreground hover:bg-muted flex min-h-11 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors';
@@ -38,12 +36,12 @@ function ActionButton({ config }: Readonly<{ config: ActionConfig }>) {
   const label = config.barLabel ?? config.label;
 
   return (
-    <button
+    <Button
       type='button'
+      variant='action'
       onClick={() => runGuarded(config)}
       disabled={isDisabled || isSaving}
       className={cn(
-        ACTION_BUTTON_CLASS,
         isDisabled && 'bg-muted text-charcoal-700 cursor-not-allowed'
       )}
     >
@@ -56,7 +54,7 @@ function ActionButton({ config }: Readonly<{ config: ActionConfig }>) {
           className='h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent'
         />
       )}
-    </button>
+    </Button>
   );
 }
 

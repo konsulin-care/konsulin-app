@@ -16,6 +16,8 @@ const buttonVariants = cva(
         secondary:
           'border border-border bg-card text-foreground hover:bg-muted',
         ghost: 'hover:bg-muted hover:text-foreground',
+        action:
+          'flex min-h-11 items-center justify-center gap-2 rounded-lg border border-turquoise-deep bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground transition-colors',
         link: 'text-turquoise-deep underline-offset-4 hover:underline'
       },
       size: {
