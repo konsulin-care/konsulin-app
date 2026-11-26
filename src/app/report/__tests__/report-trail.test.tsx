@@ -29,8 +29,6 @@ const STATS: ParticipationStats = {
   assessmentsCompleted: 3,
   batchesCompleted: 2,
   totalBatches: 2,
-  consecutiveBatches: 2,
-  xp: 80,
   timeInvestedMinutes: 24
 };
 

@@ -1,9 +1,6 @@
 import { trendForQuestionnaire } from '@/utils/fhir/report';
 import type { ResearchBatch } from '@/utils/fhir/research';
-import {
-  computeQuestionnaireXp,
-  extractQuestionnaireId
-} from '@/utils/fhir/research';
+import { extractQuestionnaireId } from '@/utils/fhir/research';
 import { localDateOf } from '@/utils/local-date';
 import { format, parseISO } from 'date-fns';
 import type { QuestionnaireResponse } from 'fhir/r4';
@@ -77,32 +74,31 @@ export function sharedAuthoredDate(
     : null;
 }
 
-/** The batch announced by the completion headline, its position, and XP. */
+/** The batch announced by the completion headline, its position, position. */
 export interface CompletedBatchSummary {
   batch: ResearchBatch;
   /** 1-based position of the batch in the chronological order. */
   index: number;
-  /** XP earned by the batch's distinct questionnaires. */
-  xp: number;
+  /** Never set; kept optional only until report-hero.test.tsx drops its xp assertion. */
+  xp?: number;
 }
 
 /**
  * Picks the batch announced by the completion headline: the participated
- * batch containing today, else the latest participated batch. XP is the
- * distinct questionnaires of that batch at their estimated durations.
+ * batch containing today, else the latest participated batch.
  *
  * @param sorted - Batches sorted by start ascending.
  * @param participatedIds - Batch ids with at least one response.
- * @param buckets - Responses already bucketed per batch.
- * @param durationByQuestionnaire - Questionnaire id to estimated minutes.
+ * @param _buckets - Unused; kept for call-site compatibility.
+ * @param _durationByQuestionnaire - Unused; kept for call-site compatibility.
  * @param today - Reference date, yyyy-mm-dd.
  * @returns The summary, or null when nothing was completed.
  */
 export function completedBatchSummary(
   sorted: readonly ResearchBatch[],
   participatedIds: readonly string[],
-  buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>,
-  durationByQuestionnaire: ReadonlyMap<string, number | null>,
+  _buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>,
+  _durationByQuestionnaire: ReadonlyMap<string, number | null>,
   today: string
 ): CompletedBatchSummary | null {
   const participated = sorted.filter(batch =>
@@ -113,15 +109,9 @@ export function completedBatchSummary(
     participated.at(-1);
   if (!batch) return null;
 
-  const ids = new Set<string>();
-  for (const response of buckets.get(batch.id) ?? []) {
-    const questionnaireId = extractQuestionnaireId(response.questionnaire);
-    if (questionnaireId) ids.add(questionnaireId);
-  }
   return {
     batch,
-    index: sorted.findIndex(item => item.id === batch.id) + 1,
-    xp: computeQuestionnaireXp([...ids], durationByQuestionnaire)
+    index: sorted.findIndex(item => item.id === batch.id) + 1
   };
 }
 

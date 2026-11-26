@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ResearchBatch } from '@/utils/fhir/research';
 
-import { batchTitle, formatDay } from '../batch-meta';
+import { batchTitle, completedBatchSummary, formatDay } from '../batch-meta';
 
 const B1: ResearchBatch = {
   id: 'b1',
@@ -16,6 +16,19 @@ const B2: ResearchBatch = {
   end: '2026-09-30',
   questionnaireIds: ['phq2']
 };
+
+describe('completedBatchSummary', () => {
+  it('returns the batch and its position without xp', () => {
+    const summary = completedBatchSummary(
+      [B1, B2],
+      ['b2'],
+      new Map(),
+      new Map(),
+      '2026-09-10'
+    );
+    expect(summary).toEqual({ batch: B2, index: 2 });
+  });
+});
 
 describe('formatDay', () => {
   it('formats a UTC date-time in the requested time zone', () => {

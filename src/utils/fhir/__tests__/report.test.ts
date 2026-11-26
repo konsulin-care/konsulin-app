@@ -310,11 +310,8 @@ describe('computeParticipationStats', () => {
     // Every history entry says participated=false; the buckets say b1, b2.
     expect(stats.batchesCompleted).toBe(2);
     expect(stats.totalBatches).toBe(3);
-    // Streak from buckets (b1, b2), not study.consecutiveBatches (0).
-    expect(stats.consecutiveBatches).toBe(2);
-    // Distinct questionnaire per batch: phq2+ocean (b1), phq2 (b2)
-    // XP = duration × 5 → (8+15+8) × 5
-    expect(stats.xp).toBe(155);
+    expect(stats).not.toHaveProperty('xp');
+    expect(stats).not.toHaveProperty('consecutiveBatches');
     // Durations over de-duplicated responses: 8 + 15 + 8, not 39.
     expect(stats.timeInvestedMinutes).toBe(31);
   });
@@ -333,16 +330,12 @@ describe('computeParticipationStats', () => {
       ])
     );
     expect(stats.batchesCompleted).toBe(2);
-    // b1 and b3 participated but b2 did not: run at the newest batch is 1.
-    expect(stats.consecutiveBatches).toBe(1);
   });
 
   it('returns zeroed stats for no responses', () => {
     const stats = computeParticipationStats(study, [], new Map());
     expect(stats.assessmentsCompleted).toBe(0);
     expect(stats.batchesCompleted).toBe(0);
-    expect(stats.consecutiveBatches).toBe(0);
-    expect(stats.xp).toBe(0);
     expect(stats.timeInvestedMinutes).toBe(0);
   });
 });

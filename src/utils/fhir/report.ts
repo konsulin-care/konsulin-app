@@ -2,8 +2,6 @@ import { localDateOf } from '@/utils/local-date';
 import { format, parseISO } from 'date-fns';
 import type { QuestionnaireResponse } from 'fhir/r4';
 import {
-  computeConsecutiveBatches,
-  computeQuestionnaireXp,
   extractQuestionnaireId,
   isDateInRange,
   sortBatches,
@@ -228,9 +226,6 @@ export interface ParticipationStats {
   /** Batches with at least one completed response. */
   batchesCompleted: number;
   totalBatches: number;
-  consecutiveBatches: number;
-  /** XP from distinct questionnaire completions per batch (duration × 5). */
-  xp: number;
   /** Sum of estimated durations across all completions. */
   timeInvestedMinutes: number;
 }
@@ -267,7 +262,6 @@ export function computeParticipationStats(
     participated: (deduped.get(batch.id)?.length ?? 0) > 0
   }));
 
-  const scopedIds: string[] = [];
   let assessmentsCompleted = 0;
   let timeInvested = 0;
 
@@ -276,7 +270,6 @@ export function computeParticipationStats(
     for (const response of batchResponses) {
       const questionnaireId = extractQuestionnaireId(response.questionnaire);
       if (!questionnaireId) continue;
-      scopedIds.push(questionnaireId);
       const duration = durationByQuestionnaire.get(questionnaireId);
       if (duration) timeInvested += duration;
     }
@@ -286,8 +279,6 @@ export function computeParticipationStats(
     assessmentsCompleted,
     batchesCompleted: bucketHistory.filter(entry => entry.participated).length,
     totalBatches: study.batches.length,
-    consecutiveBatches: computeConsecutiveBatches(bucketHistory),
-    xp: computeQuestionnaireXp(scopedIds, durationByQuestionnaire),
     timeInvestedMinutes: timeInvested
   };
 }
