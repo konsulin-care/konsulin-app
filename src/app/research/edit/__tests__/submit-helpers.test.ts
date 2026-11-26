@@ -294,6 +294,114 @@ describe('buildStudyEntry', () => {
     });
   });
 
+  it('preserves note[], sponsor and objective from the loaded study', () => {
+    const study = makeStudy({
+      sponsor: {
+        reference: 'Organization/org-1',
+        display: 'Group One'
+      },
+      objective: [{ name: 'Original question' }],
+      note: [{ text: 'First finding', authorString: 'Dr A' }],
+      extension: [
+        {
+          url: 'https://example.org/fhir/StructureDefinition/cohort',
+          valueString: 'cohort-a'
+        }
+      ]
+    });
+    const data: FormData = {
+      title: 'Study',
+      description: 'Desc',
+      researchQuestion: 'Edited question',
+      batches: [makeBatch()]
+    };
+
+    const entry = buildStudyEntry(study, ['plan-1'], new Map(), data);
+
+    expect(entry.resource.note).toEqual([
+      { text: 'First finding', authorString: 'Dr A' }
+    ]);
+    expect(entry.resource.sponsor).toEqual({
+      reference: 'Organization/org-1',
+      display: 'Group One'
+    });
+    expect(entry.resource.objective?.[0]).toEqual({ name: 'Edited question' });
+    expect(entry.resource.extension).toContainEqual({
+      url: 'https://example.org/fhir/StructureDefinition/cohort',
+      valueString: 'cohort-a'
+    });
+  });
+
+  it('carries the edited question and ethics status', () => {
+    const study = makeStudy({
+      objective: [{ name: 'Original question' }],
+      extension: [
+        {
+          url: 'http://konsulin.care/fhir/StructureDefinition/researchEthicsStatus',
+          extension: [{ url: 'code', valueCode: 'applying' }]
+        }
+      ]
+    });
+    const data: FormData = {
+      title: 'Study',
+      description: 'Desc',
+      researchQuestion: 'Edited question',
+      ethicsStatus: 'approved',
+      ethicsReference: 'approval-1',
+      batches: [makeBatch()]
+    };
+
+    const entry = buildStudyEntry(study, ['plan-1'], new Map(), data);
+    const ethics = (entry.resource.extension ?? []).find(
+      ext =>
+        ext.url ===
+        'http://konsulin.care/fhir/StructureDefinition/researchEthicsStatus'
+    );
+
+    expect(entry.resource.objective?.[0]?.name).toBe('Edited question');
+    expect(ethics?.extension).toContainEqual({
+      url: 'code',
+      valueCode: 'approved'
+    });
+    expect(ethics?.extension).toContainEqual({
+      url: 'reference',
+      valueString: 'approval-1'
+    });
+  });
+
+  it('sets ifMatch from meta.versionId when present', () => {
+    const study = makeStudy({ meta: { versionId: '3' } });
+    const data: FormData = {
+      title: 'Study',
+      description: 'Desc',
+      batches: [makeBatch()]
+    };
+
+    const entry = buildStudyEntry(study, ['plan-1'], new Map(), data);
+
+    expect(entry.request).toEqual({
+      method: 'PUT',
+      url: 'ResearchStudy/study-1',
+      ifMatch: 'W/"3"'
+    });
+  });
+
+  it('omits ifMatch when the study has no versionId', () => {
+    const study = makeStudy();
+    const data: FormData = {
+      title: 'Study',
+      description: 'Desc',
+      batches: [makeBatch()]
+    };
+
+    const entry = buildStudyEntry(study, ['plan-1'], new Map(), data);
+
+    expect(entry.request).toEqual({
+      method: 'PUT',
+      url: 'ResearchStudy/study-1'
+    });
+  });
+
   it('derives period from all batch dates', () => {
     const study = makeStudy();
     const data: FormData = {
