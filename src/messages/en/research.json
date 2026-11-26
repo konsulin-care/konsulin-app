@@ -132,6 +132,26 @@
     "open_study": "Open study {title}",
     "go_to_slide": "Go to slide {index}"
   },
+  "overview": {
+    "kicker": "{group} · led by {name}",
+    "fact_time": "Time needed",
+    "fact_kind": "Kind of study",
+    "fact_open_until": "Open until",
+    "fact_who": "Who can join",
+    "time_value": "About {minutes} minutes",
+    "kind_one_time": "One-time study",
+    "kind_batch": "Batch {index} of {total}",
+    "answer_heading": "What you will answer",
+    "shared": "Shared",
+    "get_back_heading": "What you get back",
+    "get_back_personal": "Your own result right after each questionnaire",
+    "get_back_comparison": "A comparison of your scores across batches",
+    "get_back_findings": "The study's findings, in everyday language",
+    "status_open": "Open to join",
+    "status_needs_you": "Needs you",
+    "status_shared": "Shared this batch",
+    "status_closed": "Closed"
+  },
   "target_participants_label": "Target participants",
   "target_participants_placeholder": "e.g. 100",
   "target_required": "Enter a target of at least 1 participant"

@@ -132,6 +132,26 @@
     "open_study": "Buka studi {title}",
     "go_to_slide": "Ke slide {index}"
   },
+  "overview": {
+    "kicker": "{group} · dipimpin {name}",
+    "fact_time": "Waktu yang dibutuhkan",
+    "fact_kind": "Jenis studi",
+    "fact_open_until": "Dibuka sampai",
+    "fact_who": "Siapa yang bisa ikut",
+    "time_value": "Sekitar {minutes} menit",
+    "kind_one_time": "Studi sekali isi",
+    "kind_batch": "Batch {index} dari {total}",
+    "answer_heading": "Yang akan Anda isi",
+    "shared": "Sudah dibagikan",
+    "get_back_heading": "Yang Anda dapatkan",
+    "get_back_personal": "Hasil Anda sendiri, langsung setelah setiap kuesioner",
+    "get_back_comparison": "Perbandingan skor Anda antar-batch",
+    "get_back_findings": "Temuan studi dalam bahasa sehari-hari",
+    "status_open": "Terbuka",
+    "status_needs_you": "Menunggu Anda",
+    "status_shared": "Batch ini selesai",
+    "status_closed": "Sudah ditutup"
+  },
   "target_participants_label": "Target peserta",
   "target_participants_placeholder": "mis. 100",
   "target_required": "Isi target minimal 1 peserta"
