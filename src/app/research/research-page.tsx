@@ -5,9 +5,13 @@ import PageHeader from '@/components/page-header';
 import PageLayout from '@/components/page-layout';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
 import { useWaitingSubmissions } from '@/hooks/useWaitingSubmissions';
+import { useTranslations } from '@/i18n';
+import type { StudyProgress } from '@/utils/fhir/research';
+import { readStudyProfile } from '@/utils/fhir/study-profile';
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import ConsentDrawer from './consent-drawer';
+import type { ConsentStudyProfile } from './consent-drawer-content';
 import { useLegacyStudyRedirect } from './legacy-study-redirect';
 import ResearchContent from './research-content';
 import { useConsent } from './use-consent';
@@ -39,11 +43,33 @@ function ignoreDetailStudy(): void {
 }
 
 /**
- * Research hub: study carousel, contribution dashboard, and consent drawer.
- * Participation is consent-gated for patients and guests alike.
+ * Builds the consent drawer profile of the pending study.
+ *
+ * @param study - Progress of the study awaiting consent, when found.
+ * @param fallbackGroup - Group name used when the study has no sponsor.
+ * @returns The drawer profile, or undefined when no study is pending.
+ */
+function consentProfileOf(
+  study: StudyProgress | undefined,
+  fallbackGroup: string
+): ConsentStudyProfile | undefined {
+  if (!study) return undefined;
+  const profile = readStudyProfile(study.study, '');
+  return {
+    title: study.study.title ?? '',
+    groupName: profile.groupName ?? fallbackGroup,
+    leadName: profile.leadName ?? '',
+    batchCount: study.batches.length
+  };
+}
+
+/**
+ * Research hub: the participant home or the researcher carousel, with the
+ * consent drawer that gates participation for patients and guests alike.
  */
 export default function ResearchPage() {
   const router = useRouter();
+  const t = useTranslations('research');
   useLegacyStudyRedirect();
   const [activeStudyId, setActiveStudyId] = useState<string | null>(null);
   const [pendingConsent, setPendingConsent] = useState<PendingConsent | null>(
@@ -55,8 +81,6 @@ export default function ResearchPage() {
     studies,
     researcherStudies,
     researcherLoading,
-    titleMap,
-    titlesPending,
     effectiveActiveId,
     fhirId,
     isResearcher,
@@ -67,8 +91,6 @@ export default function ResearchPage() {
   useReferralWrite(progress);
 
   const waiting = useWaitingSubmissions();
-
-  const activeStudy = studies.find(s => s.study.id === effectiveActiveId);
 
   const { consentedStudyIds, isConsented, handleAgree } = useConsent({
     isPatient,
@@ -87,13 +109,13 @@ export default function ResearchPage() {
 
   useResearchFabAction({
     isResearcher,
-    activeStudy: activeStudy ?? null,
+    activeStudy: null,
     participate,
     router
   });
 
-  const { handleSlideChange, handleResearcherStudyClick, handleStudyClick } =
-    useResearchHandlers({
+  const { handleSlideChange, handleResearcherStudyClick } = useResearchHandlers(
+    {
       studies,
       detailStudyId: noDetailStudy(),
       isConsented,
@@ -101,14 +123,22 @@ export default function ResearchPage() {
       setDetailStudyId: ignoreDetailStudy,
       setPendingConsent,
       router
-    });
+    }
+  );
 
-  const handleQuestionnaireClick = useCallback(
-    (studyId: string, questionnaireId: string) => {
-      const study = studies.find(entry => entry.study.id === studyId);
-      participate(study ?? null, questionnaireId);
+  const handleStart = useCallback(
+    (study: StudyProgress, questionnaireId: string) => {
+      participate(study, questionnaireId);
     },
-    [participate, studies]
+    [participate]
+  );
+
+  const pendingStudy = pendingConsent
+    ? studies.find(entry => entry.study.id === pendingConsent.studyId)
+    : undefined;
+  const consentProfile = consentProfileOf(
+    pendingStudy,
+    t('side_facts.run_by_fallback')
   );
 
   return (
@@ -122,20 +152,13 @@ export default function ResearchPage() {
               researcherLoading={researcherLoading}
               researcherStudies={researcherStudies}
               isLoading={isLoading}
-              progress={progress}
-              studies={studies}
               activeStudyId={effectiveActiveId}
-              activeStudy={activeStudy ?? null}
-              titleMap={titleMap}
-              titlesPending={titlesPending}
-              fhirId={fhirId}
               practitionerId={practitionerId}
               waiting={waiting}
               consentedStudyIds={consentedStudyIds}
+              onStart={handleStart}
               onSlideChange={handleSlideChange}
               onResearcherStudyClick={handleResearcherStudyClick}
-              onStudyClick={handleStudyClick}
-              onQuestionnaireClick={handleQuestionnaireClick}
             />
           </div>
         </ContentWraper>
@@ -144,6 +167,7 @@ export default function ResearchPage() {
         open={pendingConsent !== null}
         onClose={() => setPendingConsent(null)}
         onAgree={handleAgree}
+        profile={consentProfile}
       />
     </>
   );

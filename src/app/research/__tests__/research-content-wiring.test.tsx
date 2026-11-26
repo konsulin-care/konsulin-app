@@ -1,186 +1,160 @@
 import { wrapper } from '@/__tests__/react-test-utils';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import type { ParticipantHomeData } from '@/app/research/home/use-participant-home';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchContent from '../research-content';
-import { makeProgress } from './research-fixtures';
+import { makeStudyProgress, TITLE_MAP } from './research-fixtures';
 
-// Mock ResearcherContent
 vi.mock('@/i18n', async () => {
   const { createUseTranslationsMock } =
     await import('@/i18n/__tests__/test-messages');
   return { useTranslations: createUseTranslationsMock() };
 });
 
-vi.mock('../researcher-content', () => ({
-  default: ({
-    practitionerId,
-    activeStudyId
-  }: {
-    practitionerId?: string;
-    activeStudyId: string;
-  }) => (
-    <div
-      data-testid='researcher-content'
-      data-practitioner={practitionerId}
-      data-active={activeStudyId}
-    />
-  )
+const homeState = vi.hoisted(() => ({ current: {} as unknown }));
+
+vi.mock('../home/use-participant-home', () => ({
+  useParticipantHome: () => homeState.current
 }));
 
-// Mock other dependencies
-vi.mock('../research-carousel', () => ({
-  default: ({
-    waiting,
-    consentedStudyIds
-  }: {
-    waiting?: readonly { questionnaire?: string }[];
-    consentedStudyIds?: ReadonlySet<string>;
-  }) => (
-    <div
-      data-testid='research-carousel'
-      data-waiting={waiting?.map(w => w.questionnaire).join(',')}
-      data-consented={[...(consentedStudyIds ?? [])].join(',')}
-    />
-  )
-}));
+const STUDY = makeStudyProgress();
 
-vi.mock('@/components/research/referral-notice', () => ({
-  default: () => <div data-testid='referral-notice' />
-}));
+/**
+ * Builds the participant home data returned by the mocked hook.
+ *
+ * @param overrides - Home data overrides.
+ * @returns The home data fixture.
+ */
+function makeHome(
+  overrides: Partial<ParticipantHomeData> = {}
+): ParticipantHomeData {
+  const study = makeStudyProgress();
+  return {
+    scopedStudies: [study],
+    joinedIds: [study.study.id ?? ''],
+    catalogue: [study],
+    shelves: { konsulin: [], others: [], total: 0 },
+    queue: [
+      {
+        questionnaireId: 'phq2',
+        studies: [study],
+        leadStudy: study,
+        closesOn: '2026-08-31'
+      }
+    ],
+    totals: { questionnairesShared: 1, minutes: 8, studies: 1 },
+    statuses: new Map([['research', { status: 'needs-you' }]]),
+    findings: [],
+    guestBanner: null,
+    titleMap: TITLE_MAP,
+    isLoading: false,
+    titlesPending: false,
+    isError: false,
+    isGuest: false,
+    konsulinOrganizationId: '',
+    today: '2026-08-15',
+    ...overrides
+  };
+}
 
-vi.mock('@/components/general/empty-state', () => ({
-  default: ({ title }: { title: string }) => (
-    <div data-testid='empty-state'>{title}</div>
-  )
-}));
+/**
+ * Renders the participant content with the given home data.
+ *
+ * @param home - Home data fixture.
+ * @param onStart - Start callback.
+ * @returns The render result.
+ */
+function renderParticipant(
+  home: ParticipantHomeData,
+  onStart = vi.fn()
+): ReturnType<typeof render> {
+  homeState.current = home;
+  return render(
+    <ResearchContent
+      isResearcher={false}
+      researcherLoading={false}
+      researcherStudies={[]}
+      isLoading={false}
+      activeStudyId=''
+      onStart={onStart}
+      onSlideChange={vi.fn()}
+      onResearcherStudyClick={vi.fn()}
+    />,
+    { wrapper }
+  );
+}
 
-vi.mock('./research-skeleton', () => ({
-  default: () => <div data-testid='research-skeleton' />
-}));
+beforeEach(() => {
+  homeState.current = makeHome();
+});
 
-describe('ResearchContent wiring', () => {
-  it('passes practitionerId and activeStudyId to ResearcherContent', () => {
-    render(
-      <ResearchContent
-        isResearcher
-        researcherLoading={false}
-        researcherStudies={[]}
-        isLoading={false}
-        progress={undefined}
-        studies={[]}
-        activeStudyId='study-1'
-        activeStudy={null}
-        titleMap={new Map()}
-        titlesPending={false}
-        practitionerId='practitioner-1'
-        onSlideChange={vi.fn()}
-        onResearcherStudyClick={vi.fn()}
-        onStudyClick={vi.fn()}
-        onQuestionnaireClick={vi.fn()}
-      />,
-      { wrapper }
-    );
-    const researcherContent = screen.getByTestId('researcher-content');
-    expect(researcherContent).toHaveAttribute(
-      'data-practitioner',
-      'practitioner-1'
-    );
-    expect(researcherContent).toHaveAttribute('data-active', 'study-1');
+describe('ResearchContent participant home', () => {
+  it('renders one h1 and the section headings in order', () => {
+    renderParticipant(makeHome());
+
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    const headers = screen.getAllByTestId(/section-header-/);
+    expect(headers.map(header => header.getAttribute('data-testid'))).toEqual([
+      'section-header-1',
+      'section-header-2',
+      'section-header-3',
+      'section-header-4'
+    ]);
   });
 
-  it('passes empty string for activeStudyId when not provided', () => {
-    render(
-      <ResearchContent
-        isResearcher
-        researcherLoading={false}
-        researcherStudies={[]}
-        isLoading={false}
-        progress={undefined}
-        studies={[]}
-        activeStudyId=''
-        activeStudy={null}
-        titleMap={new Map()}
-        titlesPending={false}
-        practitionerId='practitioner-1'
-        onSlideChange={vi.fn()}
-        onResearcherStudyClick={vi.fn()}
-        onStudyClick={vi.fn()}
-        onQuestionnaireClick={vi.fn()}
-      />,
-      { wrapper }
-    );
-    const researcherContent = screen.getByTestId('researcher-content');
-    expect(researcherContent).toHaveAttribute('data-active', '');
-  });
+  it('renders Your studies only when the participant has joined a study', () => {
+    renderParticipant(makeHome());
+    expect(screen.getByTestId('your-studies')).toBeInTheDocument();
 
-  it('renders section 01 before the carousel and no XP panel', () => {
-    const progress = makeProgress();
-    render(
-      <ResearchContent
-        isResearcher={false}
-        researcherLoading={false}
-        researcherStudies={[]}
-        isLoading={false}
-        progress={progress}
-        studies={progress.studies}
-        activeStudyId='research'
-        activeStudy={progress.studies[0]}
-        titleMap={new Map()}
-        titlesPending={false}
-        fhirId='patient-1'
-        onSlideChange={vi.fn()}
-        onResearcherStudyClick={vi.fn()}
-        onStudyClick={vi.fn()}
-        onQuestionnaireClick={vi.fn()}
-      />,
-      { wrapper }
+    cleanup();
+    renderParticipant(
+      makeHome({
+        scopedStudies: [],
+        joinedIds: [],
+        queue: [],
+        statuses: new Map()
+      })
     );
-    const studyHeader = screen.getByTestId('section-header-1');
-    const carousel = screen.getByTestId('research-carousel');
-    expect(studyHeader).toHaveTextContent('01');
-    expect(studyHeader).toHaveTextContent('Study');
+
+    expect(screen.queryByTestId('your-studies')).toBeNull();
     expect(screen.queryByTestId('section-header-2')).toBeNull();
-    expect(screen.queryByTestId('contribution-dashboard')).toBeNull();
-    expect(
-      studyHeader.compareDocumentPosition(carousel) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
   });
 
-  it('forwards waiting and consentedStudyIds to ResearchCarousel unchanged', () => {
-    const progress = makeProgress();
-    const waiting = [
-      { questionnaire: 'questionnaire-1' },
-      { questionnaire: 'questionnaire-2' }
-    ];
-    const consentedStudyIds = new Set(['study-a', 'study-b']);
+  it('starts the lead study of the up-next item', () => {
+    const onStart = vi.fn();
+    renderParticipant(makeHome(), onStart);
+
+    fireEvent.click(screen.getByTestId('up-next-start-phq2'));
+
+    expect(onStart).toHaveBeenCalledWith(STUDY, 'phq2');
+  });
+
+  it('renders no carousel element', () => {
+    renderParticipant(makeHome());
+
+    expect(screen.queryByTestId('research-carousel')).toBeNull();
+    expect(screen.queryAllByTestId(/research-slide-/)).toHaveLength(0);
+  });
+});
+
+describe('ResearchContent researcher branch', () => {
+  it('renders the researcher content instead of the participant home', () => {
+    homeState.current = makeHome();
+    const study = STUDY;
     render(
       <ResearchContent
-        isResearcher={false}
+        isResearcher
         researcherLoading={false}
         researcherStudies={[]}
         isLoading={false}
-        progress={progress}
-        studies={progress.studies}
-        activeStudyId='research'
-        activeStudy={progress.studies[0]}
-        titleMap={new Map()}
-        titlesPending={false}
-        fhirId='patient-1'
-        waiting={waiting}
-        consentedStudyIds={consentedStudyIds}
+        activeStudyId={study.study.id ?? ''}
+        practitionerId='practitioner-1'
+        onStart={vi.fn()}
         onSlideChange={vi.fn()}
         onResearcherStudyClick={vi.fn()}
-        onStudyClick={vi.fn()}
-        onQuestionnaireClick={vi.fn()}
-      />,
-      { wrapper }
+      />
     );
-    const carousel = screen.getByTestId('research-carousel');
-    expect(carousel).toHaveAttribute(
-      'data-waiting',
-      'questionnaire-1,questionnaire-2'
-    );
-    expect(carousel).toHaveAttribute('data-consented', 'study-a,study-b');
+
+    expect(screen.queryByTestId('participant-home')).toBeNull();
   });
 });

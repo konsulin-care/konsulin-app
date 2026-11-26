@@ -7,16 +7,14 @@ vi.mock('@/i18n', async () => {
 });
 
 import { wrapper } from '@/__tests__/react-test-utils';
+import type { ParticipantHomeData } from '@/app/research/home/use-participant-home';
 import type { FabAction } from '@/context/fabContext';
-import { formatBatchDate } from '@/utils/format-batch-date';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 import {
-  BATCH_1,
   makeProgress,
   makeResearcherDashboardData,
-  makeStudyB,
   makeStudyProgress,
   TITLE_MAP
 } from './research-fixtures';
@@ -27,15 +25,18 @@ interface AuthState {
   isLoading: boolean;
 }
 
+const homeState = vi.hoisted(() => ({ current: {} as unknown }));
+
+vi.mock('../home/use-participant-home', () => ({
+  useParticipantHome: () => homeState.current
+}));
+
 const {
   mockUseAuth,
   mockUseResearchProgress,
   mockUseConsentToStudy,
   mockUseQuestionnaireTitles,
-  mockUseCircleStats,
-  mockUsePerQuestionnaireCounts,
   mockUseResearcherDashboard,
-  mockUseStudyParticipantCount,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -49,10 +50,7 @@ const {
     mockUseResearchProgress: vi.fn(),
     mockUseConsentToStudy: vi.fn(),
     mockUseQuestionnaireTitles: vi.fn(),
-    mockUseCircleStats: vi.fn(),
-    mockUsePerQuestionnaireCounts: vi.fn(),
     mockUseResearcherDashboard: vi.fn(),
-    mockUseStudyParticipantCount: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -82,17 +80,12 @@ vi.mock('@/services/api/questionnaire-info', () => ({
   useQuestionnaireTitles: mockUseQuestionnaireTitles
 }));
 
-vi.mock('@/services/api/circle', () => ({
-  useCircleStats: mockUseCircleStats
-}));
-
 vi.mock('@/services/api/research-counts', async importOriginal => {
   const actual =
     await importOriginal<typeof import('@/services/api/research-counts')>();
   return {
     ...actual,
-    usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
-    useStudyParticipantCount: mockUseStudyParticipantCount
+    useStudyParticipantCount: () => ({ data: undefined })
   };
 });
 
@@ -113,8 +106,48 @@ vi.mock('react-toastify', () => ({
   toast: { error: vi.fn(), success: vi.fn() }
 }));
 
+const STUDY = makeStudyProgress();
+
+/**
+ * Builds the participant home data returned by the mocked hook.
+ *
+ * @param overrides - Home data overrides.
+ * @returns The home data fixture.
+ */
+function makeHome(
+  overrides: Partial<ParticipantHomeData> = {}
+): ParticipantHomeData {
+  return {
+    scopedStudies: [STUDY],
+    joinedIds: ['research'],
+    catalogue: [STUDY],
+    shelves: { konsulin: [], others: [], total: 0 },
+    queue: [
+      {
+        questionnaireId: 'phq2',
+        studies: [STUDY],
+        leadStudy: STUDY,
+        closesOn: '2026-08-31'
+      }
+    ],
+    totals: { questionnairesShared: 1, minutes: 8, studies: 1 },
+    statuses: new Map([['research', { status: 'needs-you' }]]),
+    findings: [],
+    guestBanner: null,
+    titleMap: TITLE_MAP,
+    isLoading: false,
+    titlesPending: false,
+    isError: false,
+    isGuest: false,
+    konsulinOrganizationId: '',
+    today: '2026-08-15',
+    ...overrides
+  };
+}
+
 beforeEach(() => {
   window.localStorage.clear();
+  homeState.current = makeHome();
   mockUseAuth.mockReset();
   mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
   mockUseConsentToStudy.mockReset();
@@ -124,12 +157,6 @@ beforeEach(() => {
     data: TITLE_MAP,
     isPending: false
   });
-  mockUseCircleStats.mockReset();
-  mockUseCircleStats.mockReturnValue({ data: { converted: 0, joined: 0 } });
-  mockUsePerQuestionnaireCounts.mockReset();
-  mockUsePerQuestionnaireCounts.mockReturnValue({ data: new Map() });
-  mockUseStudyParticipantCount.mockReset();
-  mockUseStudyParticipantCount.mockReturnValue({ data: undefined });
   mockUseResearcherDashboard.mockReset();
   mockUseResearcherDashboard.mockReturnValue({
     data: undefined,
@@ -164,21 +191,21 @@ function setupResearcher(questionnaireIds: string[] = ['phq2']): void {
 }
 
 describe('ResearchPage', () => {
-  it('shows a skeleton instead of the empty state while the progress query is pending', () => {
+  it('shows a skeleton instead of the home while progress is pending', () => {
     mockUseResearchProgress.mockReturnValue({
       data: undefined,
       isLoading: true
     });
     render(<ResearchPage />, { wrapper });
 
-    expect(screen.queryByText('No ongoing research')).toBeNull();
     expect(screen.getByTestId('research-skeleton')).toBeTruthy();
     expect(screen.getByRole('status')).toBe(
       screen.getByTestId('research-skeleton')
     );
+    expect(screen.queryByTestId('participant-home')).toBeNull();
   });
 
-  it('renders the carousel with study data and batch progress', () => {
+  it('renders the participant home with one h1', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -186,18 +213,34 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper });
 
-    expect(
-      screen.getAllByText('Konsulin Mental Health Survey').length
-    ).toBeGreaterThan(0);
-    expect(screen.getByTestId('batch-line')).toHaveTextContent(
-      `Batch 1 of 1 · Closes ${formatBatchDate(BATCH_1.end, 'id')}`
+    expect(screen.getByTestId('participant-home')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByTestId('your-studies')).toBeInTheDocument();
+    expect(screen.queryByTestId('research-carousel')).toBeNull();
+  });
+
+  it('starts the up-next lead study through participate', () => {
+    mockUseAuth.mockReturnValue({
+      state: { userInfo: { fhirId: 'patient-123', role_name: 'Patient' } },
+      isLoading: false
+    });
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ consentedStudyIds: ['research'] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper });
+    fireEvent.click(screen.getByTestId('up-next-start-phq2'));
+
+    expect(mockPush).toHaveBeenCalledWith(
+      '/assessments?id=phq2&study=research'
     );
   });
 
   it('redirects a legacy id URL to the study page', () => {
     mockSearchParams.set('id', 'study-b');
     mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      data: makeProgress(),
       isLoading: false
     });
 
@@ -210,141 +253,13 @@ describe('ResearchPage', () => {
     mockSearchParams.set('view', 'study-b');
     mockSearchParams.set('ref', 'p_ABC123');
     mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      data: makeProgress(),
       isLoading: false
     });
 
     render(<ResearchPage />, { wrapper });
 
     expect(mockReplace).toHaveBeenCalledWith('/study?id=study-b&ref=p_ABC123');
-  });
-
-  it('writes the view param to the URL when a card is tapped', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Open study Konsulin Mental Health Survey'
-      })
-    );
-
-    expect(mockReplace).toHaveBeenCalledWith('/research?view=research');
-  });
-
-  it('redirects to the report when a completed study card is tapped', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({
-        studies: [
-          makeStudyProgress({
-            completedCount: 2,
-            isComplete: true,
-            firstUncompletedQuestionnaireId: null,
-            completedQuestionnaireIds: ['phq2', 'big-five-inventory']
-          })
-        ]
-      }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Open study Konsulin Mental Health Survey'
-      })
-    );
-
-    expect(mockPush).toHaveBeenCalledWith('/report?id=research');
-    expect(mockReplace).not.toHaveBeenCalled();
-  });
-
-  it('replaces the URL with the study id when the slide changes', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
-
-    expect(mockReplace).toHaveBeenCalledWith('/research?id=study-b');
-  });
-
-  it('preserves the referral ref when the slide changes', () => {
-    mockSearchParams.set('ref', 'p_ABC123');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
-
-    expect(mockReplace).toHaveBeenCalledWith(
-      '/research?id=study-b&ref=p_ABC123'
-    );
-  });
-
-  it('targets the active slide study when sharing via the share bar', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(screen.getByTestId('research-slide-research')).toHaveAttribute(
-      'data-active',
-      'true'
-    );
-    fireEvent.click(screen.getByTestId('research-share-research'));
-    expect(mockPush).not.toHaveBeenCalled();
-  });
-
-  it('renders a completion state instead of a stale CTA when the batch is done', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({
-        studies: [
-          makeStudyProgress({
-            completedCount: 2,
-            isComplete: true,
-            firstUncompletedQuestionnaireId: null,
-            completedQuestionnaireIds: ['phq2', 'big-five-inventory']
-          })
-        ]
-      }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(screen.getByTestId('batch-line')).toHaveTextContent(
-      `Batch 1 of 1 completed · Closes ${formatBatchDate(BATCH_1.end, 'id')}`
-    );
-    expect(
-      dispatchedActions.findLast(
-        action =>
-          action.type === 'SET_ACTION' && action.config?.label === 'Participate'
-      )
-    ).toBeUndefined();
-  });
-
-  it('shows an empty state when there are no active studies', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(screen.getByText('No ongoing research')).toBeTruthy();
   });
 
   it('dispatches no FAB action for a patient home', () => {
@@ -376,77 +291,6 @@ describe('ResearchPage', () => {
         action => action.type === 'SET_ACTION' && action.config === null
       )
     ).toBe(true);
-  });
-
-  it('renders no study detail drawer when a card is tapped', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Open study Konsulin Mental Health Survey'
-      })
-    );
-
-    expect(screen.queryByRole('button', { name: 'Participate' })).toBeNull();
-    expect(document.querySelector('[data-vaul-drawer]')).toBeNull();
-  });
-
-  it('renders no contribution dashboard and drops the circle panel', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(screen.queryByTestId('contribution-dashboard')).toBeNull();
-    expect(screen.queryByTestId('circle-panel')).not.toBeInTheDocument();
-  });
-
-  it('hides overlap hints across studies in the carousel', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({
-        studies: [
-          makeStudyProgress(),
-          makeStudyB({
-            study: {
-              resourceType: 'ResearchStudy',
-              id: 'study-b',
-              status: 'active',
-              title: 'Sleep Quality Study'
-            }
-          })
-        ]
-      }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(screen.getAllByText('PHQ-2').length).toBeGreaterThan(0);
-    expect(screen.queryByText(/Also counts toward/)).toBeNull();
-  });
-
-  it('renders the collective goal instead of a total participants line for patients', () => {
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { fhirId: 'patient-123', role_name: 'Patient' } },
-      isLoading: false
-    });
-    mockUseStudyParticipantCount.mockReturnValue({ data: 10 });
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(screen.getByText('10 people have joined.')).toBeInTheDocument();
-    expect(screen.queryByText(/Total participants:/)).toBeNull();
   });
 
   it('renders researcher carousel for researcher role', () => {
@@ -489,17 +333,5 @@ describe('ResearchPage', () => {
       type: 'SET_ACTION',
       config: null
     });
-  });
-
-  it('passes researcher study questionnaire IDs to useQuestionnaireTitles', () => {
-    setupResearcher(['phq2', 'big-five-inventory']);
-
-    render(<ResearchPage />, { wrapper });
-
-    const lastCall = mockUseQuestionnaireTitles.mock.calls.at(
-      -1
-    )?.[0] as string;
-    expect(lastCall).toContain('phq2');
-    expect(lastCall).toContain('big-five-inventory');
   });
 });

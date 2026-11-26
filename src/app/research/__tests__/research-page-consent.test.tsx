@@ -7,17 +7,23 @@ vi.mock('@/i18n', async () => {
 });
 
 import { createQueryClient } from '@/__tests__/test-utils';
+import type { ParticipantHomeData } from '@/app/research/home/use-participant-home';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 import {
   makeProgress,
-  makeStudyB,
   makeStudyProgress,
   TITLE_MAP
 } from './research-fixtures';
+
+const homeState = vi.hoisted(() => ({ current: {} as unknown }));
+
+vi.mock('../home/use-participant-home', () => ({
+  useParticipantHome: () => homeState.current
+}));
 
 function createWrapper() {
   return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -34,8 +40,6 @@ const {
   mockUseResearchProgress,
   mockUseConsentToStudy,
   mockUseQuestionnaireTitles,
-  mockUsePerQuestionnaireCounts,
-  mockUseStudyParticipantCount,
   mockPush,
   mockReplace,
   mockFabDispatch,
@@ -54,8 +58,6 @@ const {
     mockUseResearchProgress: vi.fn(),
     mockUseConsentToStudy: vi.fn(),
     mockUseQuestionnaireTitles: vi.fn(),
-    mockUsePerQuestionnaireCounts: vi.fn(),
-    mockUseStudyParticipantCount: vi.fn(),
     mockPush: push,
     mockReplace: replace,
     mockFabDispatch: vi.fn(),
@@ -101,16 +103,57 @@ vi.mock('@/services/api/research-counts', async importOriginal => {
     await importOriginal<typeof import('@/services/api/research-counts')>();
   return {
     ...actual,
-    usePerQuestionnaireCounts: mockUsePerQuestionnaireCounts,
-    useStudyParticipantCount: mockUseStudyParticipantCount,
-    withKAnonymityFloor: (total: number) => (total >= 5 ? total : null)
+    useStudyParticipantCount: () => ({ data: undefined })
   };
 });
+
+const STUDY = makeStudyProgress({
+  study: {
+    resourceType: 'ResearchStudy',
+    id: 'research',
+    status: 'active',
+    title: 'Konsulin Mental Health Survey',
+    sponsor: { display: 'Konsulin Research Lab' },
+    principalInvestigator: { display: 'Dr. Ada' }
+  }
+});
+
+/**
+ * Builds the participant home data returned by the mocked hook.
+ *
+ * @returns The home data fixture.
+ */
+function makeHome(): ParticipantHomeData {
+  return {
+    scopedStudies: [STUDY],
+    joinedIds: ['research'],
+    catalogue: [STUDY],
+    shelves: { konsulin: [], others: [], total: 0 },
+    queue: [
+      {
+        questionnaireId: 'phq2',
+        studies: [STUDY],
+        leadStudy: STUDY,
+        closesOn: '2026-08-31'
+      }
+    ],
+    totals: { questionnairesShared: 1, minutes: 8, studies: 1 },
+    statuses: new Map([['research', { status: 'needs-you' }]]),
+    findings: [],
+    guestBanner: null,
+    titleMap: TITLE_MAP,
+    isLoading: false,
+    titlesPending: false,
+    isError: false,
+    isGuest: true,
+    konsulinOrganizationId: '',
+    today: '2026-08-15'
+  };
+}
 
 /** Mutation mock whose mutate resolves with the given outcome. */
 function consentMutationMock(
   opts: {
-    onSuccess?: () => void;
     onError?: () => void;
   } = {}
 ) {
@@ -132,6 +175,7 @@ function consentMutationMock(
 
 beforeEach(() => {
   window.localStorage.clear();
+  homeState.current = makeHome();
   mockUseAuth.mockReset();
   mockUseAuth.mockReturnValue({ state: { userInfo: {} }, isLoading: false });
   mockUseConsentToStudy.mockReset();
@@ -141,10 +185,6 @@ beforeEach(() => {
     data: TITLE_MAP,
     isPending: false
   });
-  mockUsePerQuestionnaireCounts.mockReset();
-  mockUsePerQuestionnaireCounts.mockReturnValue({ data: new Map() });
-  mockUseStudyParticipantCount.mockReset();
-  mockUseStudyParticipantCount.mockReturnValue({ data: undefined });
   mockPush.mockReset();
   mockReplace.mockReset();
   mockFabDispatch.mockReset();
@@ -153,19 +193,13 @@ beforeEach(() => {
   mockSearchParams.delete('ref');
 });
 
-/** Opens the consent flow by tapping PHQ-2 on the active slide. */
-function tapQuestionnaire(): void {
-  const activeSlide = screen
-    .getAllByTestId(/research-slide-/)
-    .find(slide => slide.getAttribute('data-active') === 'true');
-  expect(activeSlide).toBeTruthy();
-  if (activeSlide) {
-    fireEvent.click(within(activeSlide).getByRole('button', { name: 'PHQ-2' }));
-  }
+/** Opens the consent drawer by clicking Start on the up-next item. */
+function tapStart(): void {
+  fireEvent.click(screen.getByTestId('up-next-start-phq2'));
 }
 
 describe('ResearchPage consent flow', () => {
-  it('opens the consent drawer from a questionnaire tap when not consented', async () => {
+  it('opens the consent drawer from Start when not consented', async () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -173,12 +207,28 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    tapQuestionnaire();
+    tapStart();
 
     expect(
       await screen.findByRole('button', { name: 'Agree to Participate' })
     ).toBeTruthy();
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('passes the pending study profile to the consent drawer', async () => {
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [STUDY] }),
+      isLoading: false
+    });
+
+    render(<ResearchPage />, { wrapper: createWrapper() });
+    tapStart();
+
+    expect(
+      await screen.findByText(
+        'Konsulin Mental Health Survey is run by Konsulin Research Lab and led by Dr. Ada.'
+      )
+    ).toBeInTheDocument();
   });
 
   it('records guest consent in localStorage and navigates on agree', async () => {
@@ -189,7 +239,7 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    tapQuestionnaire();
+    tapStart();
     fireEvent.click(
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
@@ -212,7 +262,7 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    tapQuestionnaire();
+    tapStart();
 
     expect(mockPush).toHaveBeenCalledWith(
       '/assessments?id=phq2&study=research'
@@ -236,7 +286,7 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    tapQuestionnaire();
+    tapStart();
     fireEvent.click(
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
@@ -261,7 +311,7 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    tapQuestionnaire();
+    tapStart();
     fireEvent.click(
       await screen.findByRole('button', { name: 'Agree to Participate' })
     );
@@ -274,80 +324,12 @@ describe('ResearchPage consent flow', () => {
     mockSearchParams.set('id', 'study-b');
     mockSearchParams.set('ref', 'p_ABC123');
     mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
+      data: makeProgress(),
       isLoading: false
     });
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
     expect(mockReplace).toHaveBeenCalledWith('/study?id=study-b&ref=p_ABC123');
-  });
-
-  it('retargets the consent drawer to the newly active slide', async () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper: createWrapper() });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
-    tapQuestionnaire();
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Agree to Participate' })
-    );
-
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2&study=study-b');
-  });
-
-  it('routes questionnaire clicks through the consent drawer when not consented', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper: createWrapper() });
-
-    fireEvent.click(screen.getByRole('button', { name: 'PHQ-2' }));
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Agree to Participate' })
-    );
-
-    expect(mockPush).toHaveBeenCalledWith(
-      '/assessments?id=phq2&study=research'
-    );
-  });
-
-  it('navigates directly from questionnaire clicks when consented', () => {
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { fhirId: 'PAT-1' } },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ consentedStudyIds: ['research'] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper: createWrapper() });
-
-    fireEvent.click(screen.getByRole('button', { name: 'PHQ-2' }));
-
-    expect(mockPush).toHaveBeenCalledWith(
-      '/assessments?id=phq2&study=research'
-    );
-    expect(
-      screen.queryByRole('button', { name: 'Agree to Participate' })
-    ).toBeNull();
-  });
-
-  it('does not render the how-it-works explainer anymore', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper: createWrapper() });
-
-    expect(screen.queryByText('How it works')).toBeNull();
   });
 });
