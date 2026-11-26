@@ -1,7 +1,11 @@
 import type { AxiosInstance } from 'axios';
 import type { Bundle } from 'fhir/r4';
 import { describe, expect, it, vi } from 'vitest';
-import { fetchStudiesByIds, fetchStudyCatalogue } from '../research-catalogue';
+import {
+  fetchConsentedStudyIds,
+  fetchStudiesByIds,
+  fetchStudyCatalogue
+} from '../research-catalogue';
 
 const TODAY = '2026-08-15';
 
@@ -41,7 +45,41 @@ function fakeApi(pages: Bundle[]): {
   return { api: { get } as unknown as AxiosInstance, get };
 }
 
+function subjects(items: [string, string][], next?: string): Bundle {
+  return {
+    resourceType: 'Bundle',
+    type: 'searchset',
+    link: next ? [{ relation: 'next', url: next }] : [],
+    entry: items.map(([study, status]) => ({
+      resource: {
+        resourceType: 'ResearchSubject',
+        status,
+        study: { reference: `ResearchStudy/${study}` },
+        individual: { reference: 'Patient/p1' }
+      }
+    }))
+  } as Bundle;
+}
+
 describe('research catalogue', () => {
+  it('reads consents with a separate GET, on-study only, all pages', async () => {
+    const { api, get } = fakeApi([
+      subjects(
+        [
+          ['a', 'on-study'],
+          ['x', 'withdrawn']
+        ],
+        'http://x/fhir/ResearchSubject?_page=2'
+      ),
+      subjects([['b', 'on-study']])
+    ]);
+    const ids = await fetchConsentedStudyIds(api, 'p1');
+    expect(get.mock.calls[0][0]).toBe(
+      '/fhir/ResearchSubject?patient=Patient/p1&_elements=study,status&_count=100'
+    );
+    expect(ids).toEqual(['a', 'b']);
+  });
+
   it('GETs active studies with protocol included', async () => {
     const { api, get } = fakeApi([page('a')]);
     await fetchStudyCatalogue(api, TODAY);
