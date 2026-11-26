@@ -39,7 +39,6 @@ export function ReportHero({
   today,
   batches,
   buckets,
-  durationByQuestionnaire,
   latestBatchByQuestionnaire
 }: Readonly<ReportHeroProps>) {
   const t = useTranslations('common');
@@ -53,15 +52,8 @@ export function ReportHero({
     [sorted, buckets]
   );
   const summary = useMemo(
-    () =>
-      completedBatchSummary(
-        sorted,
-        participatedIds,
-        buckets,
-        durationByQuestionnaire,
-        today
-      ),
-    [sorted, participatedIds, buckets, durationByQuestionnaire, today]
+    () => completedBatchSummary(sorted, participatedIds, today),
+    [sorted, participatedIds, today]
   );
 
   const baselineTotal = useMemo(() => {

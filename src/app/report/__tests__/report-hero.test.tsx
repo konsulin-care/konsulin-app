@@ -162,38 +162,20 @@ describe('ReportHero', () => {
 });
 
 describe('completedBatchSummary', () => {
-  const buckets = new Map<string, QuestionnaireResponse[]>([
-    ['b1', [makeResponse('r1', 'phq2', '2026-08-15T10:00:00Z')]],
-    [
-      'b2',
-      [
-        makeResponse('r2', 'phq2', '2026-09-10T10:00:00Z'),
-        makeResponse('r3', 'phq2', '2026-09-11T10:00:00Z'),
-        makeResponse('r4', 'ocean', '2026-09-12T10:00:00Z')
-      ]
-    ]
-  ]);
-
-  it('picks the participated batch containing today with its index and XP', () => {
+  it('picks the participated batch containing today with its index', () => {
     const summary = completedBatchSummary(
       [AUGUST_BATCH, SEPTEMBER_BATCH],
       ['b1', 'b2'],
-      buckets,
-      DURATIONS,
       '2026-09-15'
     );
     expect(summary?.batch.id).toBe('b2');
     expect(summary?.index).toBe(2);
-    // Distinct questionnaires only: (phq2 8 + ocean 15) x 5 XP/minute.
-    expect(summary?.xp).toBe(115);
   });
 
   it('falls back to the latest participated batch when today is outside', () => {
     const summary = completedBatchSummary(
       [AUGUST_BATCH, SEPTEMBER_BATCH],
       ['b1', 'b2'],
-      buckets,
-      DURATIONS,
       '2026-10-15'
     );
     expect(summary?.batch.id).toBe('b2');
@@ -204,8 +186,6 @@ describe('completedBatchSummary', () => {
     const summary = completedBatchSummary(
       [AUGUST_BATCH, SEPTEMBER_BATCH],
       ['b1'],
-      buckets,
-      DURATIONS,
       '2026-09-15'
     );
     expect(summary?.batch.id).toBe('b1');
@@ -214,13 +194,7 @@ describe('completedBatchSummary', () => {
 
   it('returns null when no batch was participated', () => {
     expect(
-      completedBatchSummary(
-        [AUGUST_BATCH, SEPTEMBER_BATCH],
-        [],
-        buckets,
-        DURATIONS,
-        '2026-09-15'
-      )
+      completedBatchSummary([AUGUST_BATCH, SEPTEMBER_BATCH], [], '2026-09-15')
     ).toBeNull();
   });
 });

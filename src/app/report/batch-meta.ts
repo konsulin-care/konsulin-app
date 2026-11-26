@@ -79,8 +79,6 @@ export interface CompletedBatchSummary {
   batch: ResearchBatch;
   /** 1-based position of the batch in the chronological order. */
   index: number;
-  /** Never set; kept optional only until report-hero.test.tsx drops its xp assertion. */
-  xp?: number;
 }
 
 /**
@@ -89,16 +87,12 @@ export interface CompletedBatchSummary {
  *
  * @param sorted - Batches sorted by start ascending.
  * @param participatedIds - Batch ids with at least one response.
- * @param _buckets - Unused; kept for call-site compatibility.
- * @param _durationByQuestionnaire - Unused; kept for call-site compatibility.
  * @param today - Reference date, yyyy-mm-dd.
  * @returns The summary, or null when nothing was completed.
  */
 export function completedBatchSummary(
   sorted: readonly ResearchBatch[],
   participatedIds: readonly string[],
-  _buckets: ReadonlyMap<string, readonly QuestionnaireResponse[]>,
-  _durationByQuestionnaire: ReadonlyMap<string, number | null>,
   today: string
 ): CompletedBatchSummary | null {
   const participated = sorted.filter(batch =>

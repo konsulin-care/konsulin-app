@@ -19,13 +19,7 @@ const B2: ResearchBatch = {
 
 describe('completedBatchSummary', () => {
   it('returns the batch and its position without xp', () => {
-    const summary = completedBatchSummary(
-      [B1, B2],
-      ['b2'],
-      new Map(),
-      new Map(),
-      '2026-09-10'
-    );
+    const summary = completedBatchSummary([B1, B2], ['b2'], '2026-09-10');
     expect(summary).toEqual({ batch: B2, index: 2 });
   });
 });
