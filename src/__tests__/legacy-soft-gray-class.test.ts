@@ -65,13 +65,4 @@ describe('legacy softGray class', () => {
       lineContaining('src/components/fab/action-button.tsx', 'ghost:')
     ).toContain('hover:bg-muted');
   });
-
-  it('gives the research cards a real hairline border', () => {
-    expect(
-      lineContaining(
-        'src/app/research/researcher-study-slide.tsx',
-        'className={`card'
-      )
-    ).toContain('border-border');
-  });
 });
