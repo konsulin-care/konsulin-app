@@ -8,6 +8,10 @@ export interface TakePartPanelProps {
   batchComplete?: boolean;
   isRepeated?: boolean;
   minutes?: number;
+  /** Formatted date the next batch opens, when none is open. */
+  nextBatchOpens?: string;
+  isClosed?: boolean;
+  isLead?: boolean;
   onTakePart: () => void;
   onContinue?: () => void;
 }
@@ -23,10 +27,54 @@ export function TakePartPanel({
   batchComplete,
   isRepeated,
   minutes,
+  nextBatchOpens,
+  isClosed,
+  isLead,
   onTakePart,
   onContinue
 }: TakePartPanelProps) {
   const t = useTranslations('research');
+  const tc = useTranslations('common');
+
+  if (isLead) {
+    return (
+      <div className='flex flex-col gap-2'>
+        <p className='text-muted-foreground text-sm'>
+          {t('take_part.researcher_note')}
+        </p>
+        <Link
+          href={`/research/edit?id=${studyId}&page=title`}
+          className='inline-flex min-h-11 items-center rounded-lg text-sm font-medium underline'
+        >
+          {t('take_part.manage_study')}
+        </Link>
+      </div>
+    );
+  }
+
+  if (isClosed) {
+    return (
+      <div className='flex flex-col gap-2'>
+        <p className='font-medium'>{t('overview.status_closed')}</p>
+        {isJoined && (
+          <Link
+            href={`/report?id=${studyId}`}
+            className='inline-flex min-h-11 items-center rounded-lg text-sm font-medium underline'
+          >
+            {t('take_part.see_report')}
+          </Link>
+        )}
+      </div>
+    );
+  }
+
+  if (!isJoined && nextBatchOpens) {
+    return (
+      <p className='text-muted-foreground text-sm'>
+        {tc('report.next_batch_opens', { date: nextBatchOpens })}
+      </p>
+    );
+  }
 
   if (!isJoined) {
     return (

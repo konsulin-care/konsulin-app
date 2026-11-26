@@ -34,6 +34,50 @@ describe('TakePartPanel', () => {
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
   });
 
+  it('shows the next batch date when none is open', () => {
+    render(
+      <TakePartPanel
+        studyId='s1'
+        isJoined={false}
+        nextBatchOpens='1 Jun'
+        onTakePart={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Next batch opens 1 Jun')).toBeInTheDocument();
+  });
+
+  it('shows no take-part button when closed', () => {
+    render(
+      <TakePartPanel
+        studyId='s1'
+        isJoined={false}
+        isClosed
+        onTakePart={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Closed')).toBeInTheDocument();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('shows the note and Manage study for the lead', () => {
+    render(
+      <TakePartPanel
+        studyId='s1'
+        isJoined={false}
+        isLead
+        onTakePart={vi.fn()}
+      />
+    );
+    expect(
+      screen.getByText('This is the page participants see from the study link.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Manage study' })).toHaveAttribute(
+      'href',
+      '/research/edit?id=s1&page=title'
+    );
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
   it('shows thanks and the report link when the batch is complete', () => {
     render(
       <TakePartPanel

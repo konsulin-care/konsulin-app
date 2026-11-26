@@ -171,7 +171,9 @@
     "batch_done": "Batch ini sudah selesai. Terima kasih.",
     "after_repeated": "Batch berikutnya akan muncul di beranda Anda saat dibuka.",
     "after_one_time": "Ini studi sekali isi. Temuan akan muncul di beranda Anda.",
-    "see_report": "Lihat laporan Anda"
+    "see_report": "Lihat laporan Anda",
+    "researcher_note": "Ini halaman yang dilihat peserta dari tautan studi.",
+    "manage_study": "Kelola studi"
   },
   "target_participants_label": "Target peserta",
   "target_participants_placeholder": "mis. 100",
