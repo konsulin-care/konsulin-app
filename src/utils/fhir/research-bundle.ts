@@ -94,6 +94,21 @@ export function parseStudiesBundle(
 }
 
 /**
+ * Parses a ResearchStudy searchset (with included PlanDefinitions) into
+ * StudyProgress entries.
+ *
+ * @param bundle - The searchset bundle.
+ * @param today - Reference date, yyyy-mm-dd.
+ * @returns Study progress with batch structure.
+ */
+export function parseStudySearchset(
+  bundle: Bundle,
+  today: string
+): StudyProgress[] {
+  return parseStudiesBundle(bundle, today).studyProgress;
+}
+
+/**
  * Recomputes per-study progress once the user's completed responses are
  * known. parseStudiesBundle builds the batch structure with no responses;
  * this refills the response-derived fields (completed counts, history,

@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parseQuestionnaireResponseSearchset,
   parseStudiesBundle,
+  parseStudySearchset,
   recomputeStudyProgress
 } from '../research-bundle';
 
@@ -137,6 +138,22 @@ describe('parseStudiesBundle', () => {
     );
     expect(studyProgress).toEqual([]);
     expect(consentedStudyIds).toEqual([]);
+  });
+});
+
+describe('parseStudySearchset', () => {
+  it('parses a flat searchset into study progress', () => {
+    const bundle: Bundle = {
+      resourceType: 'Bundle',
+      type: 'searchset',
+      entry: [
+        { resource: makeStudy('study-a', ['PlanDefinition/batch-1']) },
+        { resource: makePlan('batch-1') }
+      ]
+    };
+    const result = parseStudySearchset(bundle, TODAY);
+    expect(result).toHaveLength(1);
+    expect(result[0].batches[0].id).toBe('batch-1');
   });
 });
 
