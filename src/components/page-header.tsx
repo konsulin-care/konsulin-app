@@ -70,7 +70,9 @@ const INDICATOR_KEYS: Record<string, string> = {
   '/assessments': 'assessment_center',
   '/profile': 'user_profile',
   '/recommendation': 'recommended',
-  '/research': 'research'
+  '/research': 'research',
+  '/study': 'study_title',
+  '/studies': 'studies_title'
 };
 
 /** Returns the page title based on current route. */
@@ -116,7 +118,6 @@ function getDefaultBackRoute(
 ): string | undefined {
   if (pathname === '/') return undefined;
 
-  // Research form pages: navigate between pages
   if (pathname === '/research/register' || pathname === '/research/edit') {
     const page = searchParams.get('page');
     if (page === 'batch' || page === 'questionnaire') {
@@ -124,8 +125,14 @@ function getDefaultBackRoute(
       params.set('page', page === 'batch' ? 'questionnaire' : 'title');
       return `${pathname}?${params.toString()}`;
     }
-    // ?page=title or no param → '/'
     return '/';
+  }
+
+  if (pathname === '/study') return '/studies';
+  if (pathname === '/studies') return '/';
+  if (pathname === '/report') {
+    const id = searchParams.get('id');
+    return id ? `/study?id=${encodeURIComponent(id)}` : '/studies';
   }
 
   if (MAIN_ROUTES.has(pathname)) {
@@ -252,7 +259,6 @@ export default function PageHeader({
     authState.isAuthenticated
   );
 
-  /** /research and the research home page render no header reminder cards. */
   const hideSessionCard = shouldHideSessionCard(
     pathname,
     researchHome,
