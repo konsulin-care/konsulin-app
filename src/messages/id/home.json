@@ -34,5 +34,6 @@
   "no_appointments": "Tidak ada janji temu pada tanggal ini",
   "find_another_title": "Cari rekomendasi lain",
   "find_another_hint": "Jawab beberapa pertanyaan untuk hasil yang baru",
-  "find_another_cta": "Mulai lagi"
+  "find_another_cta": "Mulai lagi",
+  "load_research_fail": "Gagal memuat data penelitian. Ketuk untuk mencoba lagi."
 }

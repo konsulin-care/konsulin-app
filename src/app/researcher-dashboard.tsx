@@ -32,7 +32,8 @@ export default function ResearcherDashboard() {
   const { state: authState, isLoading: isAuthLoading } = useAuth();
   const practitionerId = authState?.userInfo?.fhirId;
 
-  const { data, isLoading, isError } = useResearcherDashboard(practitionerId);
+  const { data, isLoading, isError, refetch } =
+    useResearcherDashboard(practitionerId);
 
   const loading = isAuthLoading || isLoading;
 
@@ -74,9 +75,12 @@ export default function ResearcherDashboard() {
         <div className='px-4 pb-4'>
           <button
             type='button'
+            onClick={() => {
+              void refetch();
+            }}
             className='text-turquoise-deep border-border w-full rounded-lg border py-2 text-[12px]'
           >
-            Failed to load research data. Tap to retry.
+            {t('load_research_fail')}
           </button>
         </div>
       )}

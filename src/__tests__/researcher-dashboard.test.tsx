@@ -1,5 +1,5 @@
 import { renderWithQuery } from '@/__tests__/react-test-utils';
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearcherDashboard from '../app/researcher-dashboard';
 
@@ -32,7 +32,13 @@ const mockDashboardData = {
   totalParticipants: 42
 };
 
-let mockReturnValue = {
+const mockRefetch = vi.fn();
+let mockReturnValue: {
+  data: typeof mockDashboardData | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  refetch?: () => void;
+} = {
   data: mockDashboardData,
   isLoading: false,
   isError: false
@@ -101,6 +107,21 @@ describe('ResearcherDashboard', () => {
     expect(
       screen.queryByText('No research studies yet')
     ).not.toBeInTheDocument();
+  });
+
+  it('calls refetch when retry is clicked', () => {
+    mockReturnValue = {
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch: mockRefetch
+    };
+    renderWithQuery(<ResearcherDashboard />);
+
+    fireEvent.click(
+      screen.getByText('Failed to load research data. Tap to retry.')
+    );
+    expect(mockRefetch).toHaveBeenCalled();
   });
 
   it('shows loading skeleton while fetching', () => {
