@@ -47,9 +47,14 @@ func NewBackendProxyHandler(opts BackendProxyOptions) http.HandlerFunc {
 			}
 		}
 
+		readOnlyBatch := false
+		if opts.Cache != nil {
+			r, readOnlyBatch = detectReadOnlyBatch(r, backendPath)
+		}
+
 		status := forwardAndWrite(w, r, targetURL, opts)
-		if opts.Cache != nil && status >= http.StatusOK && status < http.StatusMultipleChoices {
-			if resourceType, ok := proxycache.InvalidationType(r.Method, backendPath); ok {
+		if opts.Cache != nil {
+			if resourceType, ok := cacheInvalidationType(r.Method, backendPath, status, readOnlyBatch); ok {
 				opts.Cache.InvalidateType(resourceType)
 			}
 		}

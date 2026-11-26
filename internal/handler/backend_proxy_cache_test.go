@@ -179,3 +179,87 @@ func TestBackendProxyCache_putInvalidatesType(t *testing.T) {
 		t.Fatalf("expected GET after PUT to reach upstream, total GETs %d", got)
 	}
 }
+
+// doPost sends body to path and returns the upstream response status.
+func doPost(t *testing.T, proxyURL, path, body string) int {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodPost, proxyURL+path, strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/fhir+json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+	return resp.StatusCode
+}
+
+const readOnlyBatchBody = `{"resourceType":"Bundle","type":"batch","entry":[` +
+	`{"request":{"method":"GET","url":"Questionnaire"}}]}`
+
+const transactionBatchBody = `{"resourceType":"Bundle","type":"transaction","entry":[` +
+	`{"request":{"method":"PUT","url":"Questionnaire/q1"}}]}`
+
+func TestBackendProxyCache_readOnlyBatchKeepsCache(t *testing.T) {
+	upstream := newCacheTestUpstream(t)
+	proxyURL := newCachedProxyServer(t, upstream)
+
+	doGet(t, proxyURL, "/proxy/fhir/Questionnaire", "Bearer user-a")
+	if status := doPost(t, proxyURL, "/proxy/fhir", readOnlyBatchBody); status != http.StatusOK {
+		t.Fatalf("expected batch POST 200, got %d", status)
+	}
+
+	_, _ = doGet(t, proxyURL, "/proxy/fhir/Questionnaire", "Bearer user-a")
+
+	if got := upstream.count("/fhir/Questionnaire"); got != 1 {
+		t.Fatalf("expected read-only batch to keep the cache, total GETs %d", got)
+	}
+}
+
+func TestBackendProxyCache_transactionInvalidatesAll(t *testing.T) {
+	upstream := newCacheTestUpstream(t)
+	proxyURL := newCachedProxyServer(t, upstream)
+
+	doGet(t, proxyURL, "/proxy/fhir/Questionnaire", "Bearer user-a")
+	if status := doPost(t, proxyURL, "/proxy/fhir", transactionBatchBody); status != http.StatusOK {
+		t.Fatalf("expected transaction POST 200, got %d", status)
+	}
+
+	doGet(t, proxyURL, "/proxy/fhir/Questionnaire", "Bearer user-a")
+
+	if got := upstream.count("/fhir/Questionnaire"); got != 2 {
+		t.Fatalf("expected transaction POST to clear the cache, total GETs %d", got)
+	}
+}
+
+func TestBackendProxyCache_batchBodyForwarded(t *testing.T) {
+	var received string
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("failed to read upstream body: %v", err)
+		}
+		received = string(body)
+		w.Header().Set("Content-Type", "application/fhir+json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"resourceType":"Bundle","type":"batch-response"}`))
+	}))
+	t.Cleanup(upstream.Close)
+
+	proxy := NewBackendProxyHandler(BackendProxyOptions{
+		BackendBaseURL: upstream.URL,
+		Cache:          proxycache.New(proxycache.Options{MaxEntries: 100}),
+	})
+	srv := httptest.NewServer(proxy)
+	t.Cleanup(srv.Close)
+
+	if status := doPost(t, srv.URL, "/proxy/fhir", readOnlyBatchBody); status != http.StatusOK {
+		t.Fatalf("expected batch POST 200, got %d", status)
+	}
+	if received != readOnlyBatchBody {
+		t.Fatalf("expected upstream to receive the full body, got %q", received)
+	}
+}
