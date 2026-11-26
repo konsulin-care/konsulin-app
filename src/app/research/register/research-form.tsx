@@ -22,6 +22,7 @@ import {
   type QuestionnaireOption
 } from '../shared';
 import { RenderStep } from '../shared-components';
+import StudyFormPreview from '../study-form-preview';
 import { studyMetadataShape } from '../study-metadata-schema';
 import { TitleStepMetadataProvider } from './research-form-steps';
 import { submitStudy } from './submit-study';
@@ -64,19 +65,14 @@ type Page = 'title' | 'questionnaire' | 'batch';
 
 const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
 
-/** Resolve a raw page query value to a known page, defaulting to title. */
-const parsePage = (raw: string | null): Page =>
-  VALID_PAGES.has(raw as Page) ? (raw as Page) : 'title';
-
 /** Hydrate partial form data from localStorage. */
 const loadFromStorage = (key: string): Partial<FormData> | null => {
   try {
-    const stored = localStorage.getItem(key);
-    if (stored) return JSON.parse(stored) as Partial<FormData>;
+    const stored = localStorage.getItem(key) ?? 'null';
+    return JSON.parse(stored) as Partial<FormData> | null;
   } catch {
-    /* corrupt data */
+    return null;
   }
-  return null;
 };
 
 const EMPTY_FORM: FormData = {
@@ -91,27 +87,20 @@ const EMPTY_FORM: FormData = {
   batches: [{ startDate: '', endDate: '', questionnaireIds: [] }]
 };
 
-/** Default values for the register form, hydrated from the stored draft. */
-function defaultValuesFrom(stored: Partial<FormData> | null): FormData {
-  return { ...EMPTY_FORM, ...stored };
-}
-
 /** Keep the page query canonical and guard deep links with too little data. */
 function usePageGuards(
   rawPage: string | null,
   title: string | undefined,
   router: ReturnType<typeof useRouter>
 ) {
-  const page = parsePage(rawPage);
-  const needsCanonicalize =
-    rawPage === null || !VALID_PAGES.has(rawPage as Page);
+  const page = VALID_PAGES.has(rawPage as Page) ? (rawPage as Page) : 'title';
+  const needsCanonicalize = rawPage !== page;
   const shouldRedirect = page !== 'title' && !title;
   useEffect(() => {
-    if (needsCanonicalize) router.replace('/research/register?page=title');
-  }, [needsCanonicalize, router]);
-  useEffect(() => {
-    if (shouldRedirect) router.replace('/research/register?page=title');
-  }, [shouldRedirect, router]);
+    if (needsCanonicalize || shouldRedirect) {
+      router.replace('/research/register?page=title');
+    }
+  }, [needsCanonicalize, shouldRedirect, router]);
   return { page, effectivePage: shouldRedirect ? 'title' : page };
 }
 
@@ -121,16 +110,12 @@ function useDraftPersistence(storageKey: string, values: FormData, page: Page) {
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
-      return () => {
-        /* noop: skip first render */
-      };
+      return () => {};
     }
     const id = setTimeout(() => {
       localStorage.setItem(storageKey, JSON.stringify({ ...values, page }));
     }, 500);
-    return () => {
-      clearTimeout(id);
-    };
+    return () => clearTimeout(id);
   }, [values, page, storageKey]);
 }
 
@@ -157,7 +142,7 @@ export default function ResearchForm() {
   const form = useForm<FormData>({
     // @type the strict schema validates metadata keys that FormData keeps optional
     resolver: zodResolver(registerSchema) as unknown as Resolver<FormData>,
-    defaultValues: defaultValuesFrom(storedData.current)
+    defaultValues: { ...EMPTY_FORM, ...storedData.current }
   });
 
   const {
@@ -188,16 +173,17 @@ export default function ResearchForm() {
     queryFn: fetchLibraryQuestionnaires
   });
 
-  const libraryOptions = useMemo(
-    () => libraryOptionsFromQuery(libraryQs),
-    [libraryQs]
-  );
-
-  // Merge library and custom questionnaires for batch step
-  const allQuestionnaireOptions = useMemo(
-    () => [...libraryOptions, ...customQuestionnaires],
-    [libraryOptions, customQuestionnaires]
-  );
+  const preview = useMemo(() => {
+    const library = libraryOptionsFromQuery(libraryQs);
+    const all = [...library, ...customQuestionnaires];
+    return {
+      library,
+      all,
+      durations: Object.fromEntries(
+        all.map(o => [o.code, o.duration ?? undefined] as const)
+      )
+    };
+  }, [libraryQs, customQuestionnaires]);
 
   const [selectedIds, setSelectedIds] = useState<string[]>(() =>
     formValues.batches.flatMap(b => b.questionnaireIds)
@@ -304,24 +290,39 @@ export default function ResearchForm() {
       <TitleStepMetadataProvider
         value={{ groupName: organizationName, control }}
       >
-        {RenderStep({
-          effectivePage,
-          title: 'Register New Research',
-          register,
-          errors,
-          libraryOptions,
-          availableQuestionnaires: allQuestionnaireOptions.filter(q =>
-            selectedIds.includes(q.code)
-          ),
-          selectedIds,
-          handleSelectLibrary,
-          handleOpenUploadDrawer: () => setIsUploadDrawerOpen(true),
-          fields,
-          batches: formValues.batches,
-          setValue,
-          append,
-          remove
-        })}
+        <div className='grid gap-6 lg:grid-cols-2 lg:items-start'>
+          {RenderStep({
+            effectivePage,
+            title: 'Register New Research',
+            register,
+            errors,
+            libraryOptions: preview.library,
+            availableQuestionnaires: preview.all.filter(q =>
+              selectedIds.includes(q.code)
+            ),
+            selectedIds,
+            handleSelectLibrary,
+            handleOpenUploadDrawer: () => setIsUploadDrawerOpen(true),
+            fields,
+            batches: formValues.batches,
+            setValue,
+            append,
+            remove
+          })}
+          <StudyFormPreview
+            title={formValues.title}
+            question={formValues.researchQuestion ?? ''}
+            description={formValues.description}
+            group={organizationName}
+            lead={leadName ?? ''}
+            whoCanJoin={formValues.whoCanJoin}
+            ethicsStatus={formValues.ethicsStatus ?? 'applying'}
+            ethicsReference={formValues.ethicsReference}
+            sharesFindings={formValues.sharesFindings ?? false}
+            batches={formValues.batches}
+            durations={preview.durations}
+          />
+        </div>
       </TitleStepMetadataProvider>
       <QuestionnaireUploadDrawer
         open={isUploadDrawerOpen}

@@ -24,6 +24,7 @@ import {
   type QuestionnaireOption
 } from '../shared';
 import { RenderStep } from '../shared-components';
+import StudyFormPreview from '../study-form-preview';
 import { buildEditUrl } from './build-edit-url';
 import {
   computeLockedBatchIndices,
@@ -37,6 +38,22 @@ import { submitEditStudy } from './submit-helpers';
 type Page = 'title' | 'questionnaire' | 'batch';
 
 const VALID_PAGES = new Set<Page>(['title', 'questionnaire', 'batch']);
+
+/**
+ * Map questionnaire options to the preview duration lookup.
+ * @param options - questionnaire options with their optional durations
+ * @returns minutes by questionnaire id
+ */
+function durationsFrom(
+  options: QuestionnaireOption[]
+): Record<string, number | undefined> {
+  return Object.fromEntries(
+    options.map((option): [string, number | undefined] => [
+      option.code,
+      option.duration ?? undefined
+    ])
+  );
+}
 
 interface EditResearchFormProps {
   study: ResearchStudy;
@@ -78,7 +95,7 @@ export default function EditResearchForm({
     : 'title';
 
   // Canonicalize: redirect to ?page=title when missing or invalid, preserving id
-  const needsCanonicalize = !rawPage || !VALID_PAGES.has(rawPage as Page);
+  const needsCanonicalize = rawPage !== page;
   useEffect(() => {
     if (needsCanonicalize) {
       router.replace(buildEditUrl(searchParams, 'title'));
@@ -115,6 +132,10 @@ export default function EditResearchForm({
   });
   const researchQuestion = useWatch({ control, name: 'researchQuestion' });
   const ethicsStatus = useWatch({ control, name: 'ethicsStatus' });
+  const [whoCanJoin, ethicsReference, sharesFindings] = useWatch({
+    control,
+    name: ['whoCanJoin', 'ethicsReference', 'sharesFindings']
+  });
   const batches = useWatch({ control, name: 'batches' });
 
   // Deep link guard
@@ -141,6 +162,11 @@ export default function EditResearchForm({
   const allQuestionnaireOptions = useMemo(
     () => [...libraryOptions, ...customQuestionnaires],
     [libraryOptions, customQuestionnaires]
+  );
+
+  const previewDurations = useMemo(
+    () => durationsFrom(allQuestionnaireOptions),
+    [allQuestionnaireOptions]
   );
 
   const [selectedIds, setSelectedIds] = useState<string[]>(() =>
@@ -244,25 +270,40 @@ export default function EditResearchForm({
       <TitleStepMetadataProvider
         value={{ groupName: organizationName, control }}
       >
-        {RenderStep({
-          effectivePage,
-          title: 'Edit Research',
-          register,
-          errors,
-          libraryOptions,
-          availableQuestionnaires: allQuestionnaireOptions.filter(q =>
-            selectedIds.includes(q.code)
-          ),
-          selectedIds,
-          handleSelectLibrary,
-          handleOpenUploadDrawer,
-          fields,
-          batches,
-          setValue,
-          append,
-          remove,
-          lockedBatchIndices
-        })}
+        <div className='grid gap-6 lg:grid-cols-2 lg:items-start'>
+          {RenderStep({
+            effectivePage,
+            title: 'Edit Research',
+            register,
+            errors,
+            libraryOptions,
+            availableQuestionnaires: allQuestionnaireOptions.filter(q =>
+              selectedIds.includes(q.code)
+            ),
+            selectedIds,
+            handleSelectLibrary,
+            handleOpenUploadDrawer,
+            fields,
+            batches,
+            setValue,
+            append,
+            remove,
+            lockedBatchIndices
+          })}
+          <StudyFormPreview
+            title={title ?? ''}
+            question={researchQuestion ?? ''}
+            description={description}
+            group={organizationName}
+            lead={authState?.userInfo?.fullname ?? ''}
+            whoCanJoin={whoCanJoin}
+            ethicsStatus={ethicsStatus ?? 'applying'}
+            ethicsReference={ethicsReference}
+            sharesFindings={sharesFindings ?? false}
+            batches={batches}
+            durations={previewDurations}
+          />
+        </div>
       </TitleStepMetadataProvider>
       <QuestionnaireUploadDrawer
         open={isUploadDrawerOpen}
