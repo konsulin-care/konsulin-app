@@ -268,5 +268,14 @@
     "statement_3": "Tidak pernah dijual. Data dikumpulkan hanya untuk penelitian.",
     "statement_4": "Platform terbuka. Kodenya terbuka di github.com/konsulin-care",
     "help_link": "Jika terasa berat saat ini, temukan bantuan di sini"
+  },
+  "next_step_card": {
+    "share": "Bagikan temuan Anda dari batch {index} {title}. Batch sudah ditutup. Peserta menunggu kabar tentang apa yang ditunjukkan jawaban mereka.",
+    "open": "Batch {index} dari {title} tutup {date}. Setelah ditutup, bagikan temuan Anda kepada peserta. Sampai saat itu, tidak ada yang perlu Anda lakukan.",
+    "register": "Daftarkan studi pertama Anda. Jelaskan sekali saja. Kata-kata yang sama akan menjadi halaman yang dibaca orang sebelum ikut serta.",
+    "upcoming": "Batch {index} dari {title} dibuka {date}. Sampai saat itu, tidak ada yang perlu Anda lakukan.",
+    "all_closed": "Semua batch studi Anda sudah ditutup. Terima kasih telah mengembalikan temuan Anda.",
+    "post_finding": "Bagikan temuan",
+    "register_study": "Daftarkan studi"
   }
 }

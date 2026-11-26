@@ -268,5 +268,14 @@
     "statement_3": "Never sold. Data is collected for research and nothing else.",
     "statement_4": "Open platform. The code is public at github.com/konsulin-care",
     "help_link": "If things feel heavy right now, find help here"
+  },
+  "next_step_card": {
+    "share": "Share what you found in batch {index} of {title}. The batch has closed. Participants are waiting to hear what their answers showed.",
+    "open": "Batch {index} of {title} closes {date}. When it closes, tell participants what you found. Until then, nothing is due from you.",
+    "register": "Register your first study. Describe it once. The same words become the page people read before taking part.",
+    "upcoming": "Batch {index} of {title} opens {date}. Nothing is due from you until then.",
+    "all_closed": "All batches of your studies have closed. Thank you for giving back what you found.",
+    "post_finding": "Post a finding",
+    "register_study": "Register study"
   }
 }
