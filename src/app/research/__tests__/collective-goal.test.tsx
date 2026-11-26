@@ -101,7 +101,7 @@ describe('CollectiveGoal', () => {
     renderGoal({ data: 3, isError: false });
 
     expect(screen.getByTestId('collective-goal')).toHaveTextContent(
-      'You are among the first to join'
+      'You are among the first to join. We show how many people have joined once the group is large enough that no one can be singled out.'
     );
     expect(screen.queryByText(/This study has just started/)).toBeNull();
     expect(

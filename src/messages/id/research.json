@@ -126,7 +126,7 @@
     "joined_with_you": "Anda dan {others} orang lainnya telah bergabung.",
     "joined": "{count} orang telah bergabung.",
     "remaining": "Bersama, kita butuh {remaining} orang lagi.",
-    "early_state": "Anda termasuk yang pertama bergabung. Jumlah peserta disembunyikan sampai cukup banyak orang bergabung demi melindungi privasi semua orang.",
+    "early_state": "Anda termasuk yang pertama bergabung. Jumlah peserta ditampilkan setelah kelompoknya cukup besar sehingga tidak ada yang bisa dikenali.",
     "just_started": "Studi ini baru dimulai. Jadilah salah satu yang pertama.",
     "progress": "{count} dari {target}",
     "bar_label": "Target peserta"
