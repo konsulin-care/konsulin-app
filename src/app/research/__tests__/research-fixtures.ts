@@ -46,7 +46,6 @@ export function makeStudyProgress(
         participated: true
       }
     ],
-    consecutiveBatches: 1,
     ...overrides
   };
 }
@@ -75,8 +74,6 @@ export function makeProgress(
   return {
     studies: [makeStudyProgress()],
     cumulativeResponses: 1,
-    questionnaireResponses: ['phq2'],
-    questionnaireXp: 8,
     completedQuestionnaireIds: ['phq2'],
     consentedStudyIds: [],
     ...overrides

@@ -31,8 +31,7 @@ export function mapResearcherStudyToProgress(
     isComplete: false,
     firstUncompletedQuestionnaireId: null,
     completedQuestionnaireIds: [],
-    history: [],
-    consecutiveBatches: 0
+    history: []
   };
 }
 

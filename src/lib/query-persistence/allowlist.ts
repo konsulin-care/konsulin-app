@@ -4,7 +4,7 @@ import type { Query } from '@tanstack/react-query';
 export const PERSIST_MAX_AGE = 24 * 60 * 60 * 1000;
 
 /** Cache buster string; bumping it discards previously persisted state. */
-export const CACHE_BUSTER = 'v1';
+export const CACHE_BUSTER = 'v2';
 
 /**
  * Query key roots whose successful queries may be persisted.

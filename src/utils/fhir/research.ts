@@ -1,4 +1,3 @@
-import { xpForDuration } from '@/constants/research';
 import { localDateOf } from '@/utils/local-date';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import type { PlanDefinition, ResearchStudy } from 'fhir/r4';
@@ -48,8 +47,8 @@ export interface StudyProgress {
   completedQuestionnaireIds: string[];
   /** Per-batch participation, sorted by start ascending. */
   history: BatchHistoryEntry[];
-  /** Run of participated batches ending at the newest participated batch. */
-  consecutiveBatches: number;
+  /** @deprecated Removed in T21z. */
+  consecutiveBatches?: number;
 }
 
 /** Aggregate progress across all active studies. */
@@ -57,17 +56,10 @@ export interface ResearchProgress {
   studies: StudyProgress[];
   /** Distinct completed responses across all identity queries. */
   cumulativeResponses: number;
-  /**
-   * Questionnaire id per (study batch, questionnaire) pair that counts
-   * toward XP: one award per study that deploys the questionnaire in a
-   * batch containing the response, distinct within each batch.
-   */
-  questionnaireResponses: string[];
-  /**
-   * XP earned from questionnaire submissions: one award per study batch
-   * that deploys the completed questionnaire (minutes, 5 XP fallback).
-   */
-  questionnaireXp: number;
+  /** @deprecated Removed in T21z. */
+  questionnaireResponses?: string[];
+  /** @deprecated Removed in T21z. */
+  questionnaireXp?: number;
   /** Unique questionnaire ids ever completed within a study batch. */
   completedQuestionnaireIds: string[];
   /** Study ids with an active on-study ResearchSubject for this patient. */
@@ -237,27 +229,6 @@ export function sortBatches(batches: ResearchBatch[]): ResearchBatch[] {
 }
 
 /**
- * Counts the run of participated batches ending at the newest participated
- * batch. A gap (non-participated batch) resets the run.
- *
- * @param history - Per-batch participation, newest-last.
- * @returns The consecutive participated batch count.
- */
-export function computeConsecutiveBatches(
-  history: BatchHistoryEntry[]
-): number {
-  let streak = 0;
-  for (const entry of history.toReversed()) {
-    if (!entry.participated) {
-      if (streak > 0) break;
-      continue;
-    }
-    streak += 1;
-  }
-  return streak;
-}
-
-/**
  * Computes batch-level progress for a single study.
  *
  * @param study - FHIR ResearchStudy resource.
@@ -313,8 +284,7 @@ export function computeStudyProgress(
         ) ?? null)
       : null,
     completedQuestionnaireIds,
-    history,
-    consecutiveBatches: computeConsecutiveBatches(history)
+    history
   };
 }
 
@@ -415,27 +385,6 @@ export function nextAssessmentInStudy(
 }
 
 /**
- * Sums questionnaire XP from per-response questionnaire ids.
- *
- * Each response contributes its estimated duration in minutes times
- * XP_PER_MINUTE, falling back to DEFAULT_QUESTIONNAIRE_XP when the duration
- * is unknown or missing.
- *
- * @param questionnaireIds - Bare questionnaire id per completed response.
- * @param durationByQuestionnaire - Map of questionnaire id to minutes (or null).
- * @returns The total questionnaire XP.
- */
-export function computeQuestionnaireXp(
-  questionnaireIds: readonly string[],
-  durationByQuestionnaire: ReadonlyMap<string, number | null> = new Map()
-): number {
-  return questionnaireIds.reduce(
-    (sum, id) => sum + xpForDuration(durationByQuestionnaire.get(id)),
-    0
-  );
-}
-
-/**
  * Aggregates per-study progress into a single ResearchProgress object.
  *
  * XP is scoped to study batches: each questionnaire completed within a batch
@@ -447,14 +396,12 @@ export function computeQuestionnaireXp(
  * @param studies - Computed per-study progress.
  * @param responses - Raw responses across all identity queries.
  * @param consentedStudyIds - Study ids with an active consent.
- * @param durationByQuestionnaire - Map of questionnaire id to minutes (or null).
  * @returns Aggregate progress with questionnaire XP and response set.
  */
 export function computeResearchProgress(
   studies: StudyProgress[],
   responses: ResearchResponse[],
-  consentedStudyIds: string[] = [],
-  durationByQuestionnaire: ReadonlyMap<string, number | null> = new Map()
+  consentedStudyIds: string[] = []
 ): ResearchProgress {
   const merged = mergeResponses(responses);
 
@@ -473,11 +420,6 @@ export function computeResearchProgress(
   return {
     studies,
     cumulativeResponses: merged.length,
-    questionnaireResponses,
-    questionnaireXp: computeQuestionnaireXp(
-      questionnaireResponses,
-      durationByQuestionnaire
-    ),
     completedQuestionnaireIds: [...new Set(questionnaireResponses)],
     consentedStudyIds
   };
