@@ -237,6 +237,14 @@
     "body": "Your report can be saved for 24 hours. After that, your answers still count toward the study but can no longer be linked to you.",
     "cta": "Save report"
   },
+  "home_intro": {
+    "title": "Take part in research. See what it finds.",
+    "platform": "Every study here runs on Konsulin under the same rules: your answers travel under a random ID, never your name, and you can stop at any time.",
+    "heading_up_next": "Up next",
+    "heading_your_studies": "Your studies · {count}",
+    "heading_open_to_join": "Open to join",
+    "heading_learning": "What we are learning"
+  },
   "trust_strip": {
     "heading": "True for every study on Konsulin",
     "statement_1": "A random ID, not your name. Researchers never see who you are.",

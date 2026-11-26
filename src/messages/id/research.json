@@ -237,6 +237,14 @@
     "body": "Laporan Anda dapat disimpan dalam 24 jam. Setelah itu, jawaban Anda tetap dihitung untuk studi, tetapi tidak lagi dapat ditautkan ke Anda.",
     "cta": "Simpan laporan"
   },
+  "home_intro": {
+    "title": "Ikut serta dalam penelitian. Lihat apa yang ditemukan.",
+    "platform": "Setiap studi di sini berjalan di Konsulin dengan aturan yang sama: jawaban Anda disimpan dengan ID acak, bukan nama Anda, dan Anda dapat berhenti kapan saja.",
+    "heading_up_next": "Berikutnya",
+    "heading_your_studies": "Studi Anda · {count}",
+    "heading_open_to_join": "Terbuka untuk diikuti",
+    "heading_learning": "Yang sedang kita pelajari"
+  },
   "trust_strip": {
     "heading": "Berlaku untuk setiap studi di Konsulin",
     "statement_1": "ID acak, bukan nama Anda. Peneliti tidak pernah melihat identitas Anda.",
