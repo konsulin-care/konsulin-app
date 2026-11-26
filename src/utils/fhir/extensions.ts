@@ -21,7 +21,15 @@ export const FhirExtensionUrls = {
     'http://konsulin.care/fhir/StructureDefinition/questionnaireImage', //NOSONAR
   referralBatch: 'http://konsulin.care/fhir/StructureDefinition/referralBatch', //NOSONAR
   researchTargetParticipants:
-    'http://konsulin.care/fhir/StructureDefinition/researchTargetParticipants' //NOSONAR
+    'http://konsulin.care/fhir/StructureDefinition/researchTargetParticipants', //NOSONAR
+  researchWhoCanJoin:
+    'http://konsulin.care/fhir/StructureDefinition/researchWhoCanJoin', //NOSONAR
+  researchEthicsStatus:
+    'http://konsulin.care/fhir/StructureDefinition/researchEthicsStatus', //NOSONAR
+  researchSharesFindings:
+    'http://konsulin.care/fhir/StructureDefinition/researchSharesFindings', //NOSONAR
+  findingParticipantCount:
+    'http://konsulin.care/fhir/StructureDefinition/findingParticipantCount' //NOSONAR
 } as const;
 
 /**
