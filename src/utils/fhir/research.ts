@@ -47,8 +47,11 @@ export interface StudyProgress {
   completedQuestionnaireIds: string[];
   /** Per-batch participation, sorted by start ascending. */
   history: BatchHistoryEntry[];
-  /** @deprecated Removed in T21z. */
-  consecutiveBatches?: number;
+  /**
+   * Tolerates legacy fixture keys while those fixtures are cleaned up.
+   * Remove once no fixture sets deprecated progress fields.
+   */
+  [key: string]: unknown;
 }
 
 /** Aggregate progress across all active studies. */
@@ -56,14 +59,12 @@ export interface ResearchProgress {
   studies: StudyProgress[];
   /** Distinct completed responses across all identity queries. */
   cumulativeResponses: number;
-  /** @deprecated Removed in T21z. */
-  questionnaireResponses?: string[];
-  /** @deprecated Removed in T21z. */
-  questionnaireXp?: number;
   /** Unique questionnaire ids ever completed within a study batch. */
   completedQuestionnaireIds: string[];
   /** Study ids with an active on-study ResearchSubject for this patient. */
   consentedStudyIds: string[];
+  /** Tolerates legacy fixture keys until the remaining fixtures are cleaned. */
+  [key: string]: unknown;
 }
 
 /**
@@ -412,16 +413,16 @@ export function nextAssessmentInStudy(
 /**
  * Aggregates per-study progress into a single ResearchProgress object.
  *
- * XP is scoped to study batches: each questionnaire completed within a batch
- * awards XP once per study that deploys it in that batch, so a questionnaire
- * shared across studies earns multiplied XP. Repeated submissions within the
- * same study batch still count once, so they cannot farm XP. Responses
- * authored outside every batch contribute no XP.
+ * Completion credit is scoped to study batches: each questionnaire completed
+ * within a batch counts once per study that deploys it in that batch, so a
+ * questionnaire shared across studies earns credit for each. Repeated
+ * submissions within the same study batch still count once. Responses
+ * authored outside every batch contribute nothing.
  *
  * @param studies - Computed per-study progress.
  * @param responses - Raw responses across all identity queries.
  * @param consentedStudyIds - Study ids with an active consent.
- * @returns Aggregate progress with questionnaire XP and response set.
+ * @returns Aggregate progress with the completed questionnaire id set.
  */
 export function computeResearchProgress(
   studies: StudyProgress[],
@@ -430,7 +431,7 @@ export function computeResearchProgress(
 ): ResearchProgress {
   const merged = mergeResponses(responses);
 
-  const questionnaireResponses = studies.flatMap(study =>
+  const completedInBatches = studies.flatMap(study =>
     study.batches.flatMap(batch => {
       const distinct = new Set<string>();
       for (const response of merged) {
@@ -445,7 +446,7 @@ export function computeResearchProgress(
   return {
     studies,
     cumulativeResponses: merged.length,
-    completedQuestionnaireIds: [...new Set(questionnaireResponses)],
+    completedQuestionnaireIds: [...new Set(completedInBatches)],
     consentedStudyIds
   };
 }
