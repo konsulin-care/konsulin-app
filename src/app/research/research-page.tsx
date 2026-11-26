@@ -4,19 +4,13 @@ import ContentWraper from '@/components/general/content-wraper';
 import PageHeader from '@/components/page-header';
 import PageLayout from '@/components/page-layout';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
-import type { WaitingResponse } from '@/hooks/useWaitingSubmissions';
 import { useWaitingSubmissions } from '@/hooks/useWaitingSubmissions';
-import type { StudyProgress } from '@/utils/fhir/research';
-import { waitingBatchIds } from '@/utils/fhir/research-schedule';
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import ConsentDrawer from './consent-drawer';
 import { useLegacyStudyRedirect } from './legacy-study-redirect';
 import ResearchContent from './research-content';
-import StudyDetailView from './study-detail-view';
-import { buildOverlapMap } from './study-sections';
 import { useConsent } from './use-consent';
-import { useDetailStudy } from './use-detail-study';
 import { useResearchFabAction } from './use-fab-action';
 import { useParticipate } from './use-participate';
 import { useResearchHandlers } from './use-research-handlers';
@@ -29,34 +23,29 @@ interface PendingConsent {
 }
 
 /**
- * Derives the detail drawer's consent and waiting-batch props.
+ * Placeholder detail id: the home page no longer opens a detail drawer.
  *
- * @param detailStudy Study currently shown in the detail drawer, if any.
- * @param waiting Queued questionnaire responses awaiting synchronization.
- * @param isConsented Consent predicate for a study id.
- * @returns Consent flag and waiting batch ids for the open study.
+ * @returns Always null.
  */
-function buildDetailLinks(
-  detailStudy: StudyProgress | null,
-  waiting: readonly WaitingResponse[],
-  isConsented: (studyId: string) => boolean
-): { isConsented: boolean; waitingBatchIds?: ReadonlySet<string> } {
-  if (!detailStudy) return { isConsented: false };
-  return {
-    isConsented: isConsented(detailStudy.study.id),
-    waitingBatchIds: waitingBatchIds(detailStudy.batches, waiting)
-  };
+function noDetailStudy(): string | null {
+  return null;
 }
 
 /**
- * Research hub: study carousel, contribution dashboard, and detail drawer.
+ * Placeholder detail setter: the home page no longer opens a detail drawer.
+ */
+function ignoreDetailStudy(): void {
+  // The detail drawer was replaced by the standalone study page.
+}
+
+/**
+ * Research hub: study carousel, contribution dashboard, and consent drawer.
  * Participation is consent-gated for patients and guests alike.
  */
 export default function ResearchPage() {
   const router = useRouter();
   useLegacyStudyRedirect();
   const [activeStudyId, setActiveStudyId] = useState<string | null>(null);
-  const [detailStudyId, setDetailStudyId] = useState<string | null>(null);
   const [pendingConsent, setPendingConsent] = useState<PendingConsent | null>(
     null
   );
@@ -70,21 +59,12 @@ export default function ResearchPage() {
     titlesPending,
     effectiveActiveId,
     fhirId,
-    roleName,
     isResearcher,
     consentedStudyIds: progressConsentedIds
   } = useResearchPageData(activeStudyId);
   const practitionerId = fhirId;
   const isPatient = Boolean(fhirId);
   useReferralWrite(progress);
-  const overlapMap = useMemo(() => buildOverlapMap(studies), [studies]);
-
-  const detailStudy = useDetailStudy({
-    isResearcher,
-    detailStudyId,
-    studies,
-    researcherStudies
-  });
 
   const waiting = useWaitingSubmissions();
 
@@ -112,28 +92,16 @@ export default function ResearchPage() {
     router
   });
 
-  const {
-    handleSlideChange,
-    handleResearcherStudyClick,
-    handleStudyClick,
-    handleSeeReport,
-    handleDrawerClose
-  } = useResearchHandlers({
-    studies,
-    detailStudyId,
-    isConsented,
-    setActiveStudyId,
-    setDetailStudyId,
-    setPendingConsent,
-    router
-  });
-
-  const handleManageStudy = useCallback(
-    (studyId: string) => {
-      router.push(`/research/edit?id=${studyId}&page=title`);
-    },
-    [router]
-  );
+  const { handleSlideChange, handleResearcherStudyClick, handleStudyClick } =
+    useResearchHandlers({
+      studies,
+      detailStudyId: noDetailStudy(),
+      isConsented,
+      setActiveStudyId,
+      setDetailStudyId: ignoreDetailStudy,
+      setPendingConsent,
+      router
+    });
 
   const handleQuestionnaireClick = useCallback(
     (studyId: string, questionnaireId: string) => {
@@ -142,8 +110,6 @@ export default function ResearchPage() {
     },
     [participate, studies]
   );
-
-  const detailLinks = buildDetailLinks(detailStudy, waiting, isConsented);
 
   return (
     <>
@@ -174,23 +140,6 @@ export default function ResearchPage() {
           </div>
         </ContentWraper>
       </PageLayout>
-      <StudyDetailView
-        progress={detailStudy}
-        overlapMap={overlapMap}
-        open={detailStudy !== null}
-        onClose={handleDrawerClose}
-        onParticipate={participate}
-        onSeeReport={handleSeeReport}
-        onQuestionnaireClick={handleQuestionnaireClick}
-        onManageStudy={handleManageStudy}
-        isPatient={isPatient}
-        isConsented={detailLinks.isConsented}
-        waitingBatchIds={detailLinks.waitingBatchIds}
-        fhirId={fhirId}
-        titleMap={titleMap}
-        isTitlesLoading={titlesPending}
-        roleName={roleName}
-      />
       <ConsentDrawer
         open={pendingConsent !== null}
         onClose={() => setPendingConsent(null)}

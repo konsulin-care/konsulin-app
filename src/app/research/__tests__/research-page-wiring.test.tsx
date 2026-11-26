@@ -95,19 +95,6 @@ vi.mock('../research-content', () => ({
   )
 }));
 
-vi.mock('../study-detail-view', () => ({
-  default: (props: Record<string, unknown>) => (
-    <div
-      data-testid='study-detail-view'
-      data-consented={String(props.isConsented)}
-      data-waiting={[
-        ...((props.waitingBatchIds as Set<string> | undefined) ?? [])
-      ].join(',')}
-      data-has-completion-counts={String('completionCounts' in props)}
-    />
-  )
-}));
-
 vi.mock('../consent-drawer', () => ({
   default: () => <div data-testid='consent-drawer' />
 }));
@@ -147,13 +134,5 @@ describe('ResearchPage wiring', () => {
     const researchContent = screen.getByTestId('research-content');
     expect(researchContent).toHaveAttribute('data-waiting', '1');
     expect(researchContent).toHaveAttribute('data-consented', 'research');
-  });
-
-  it('passes consent and waiting batch ids to StudyDetailView without completionCounts', () => {
-    render(<ResearchPage />, { wrapper: createWrapper() });
-    const detailView = screen.getByTestId('study-detail-view');
-    expect(detailView).toHaveAttribute('data-consented', 'true');
-    expect(detailView).toHaveAttribute('data-waiting', 'batch-1');
-    expect(detailView).toHaveAttribute('data-has-completion-counts', 'false');
   });
 });

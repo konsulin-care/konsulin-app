@@ -9,7 +9,7 @@ vi.mock('@/i18n', async () => {
 import { createQueryClient } from '@/__tests__/test-utils';
 import type { FabAction } from '@/context/fabContext';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
@@ -169,11 +169,6 @@ function participateAction(): FabAction | null {
         action.type === 'SET_ACTION' && action.config?.label === 'Participate'
     ) ?? null
   );
-}
-
-/** Vaul drawer content nodes in mount order: first detail, then consent. */
-function vaulDrawerNodes(): HTMLElement[] {
-  return [...document.querySelectorAll<HTMLElement>('[data-vaul-drawer]')];
 }
 
 /** Invokes the latest Participate FAB action, asserting it exists. */
@@ -371,61 +366,5 @@ describe('ResearchPage consent flow', () => {
     render(<ResearchPage />, { wrapper: createWrapper() });
 
     expect(screen.queryByText('How it works')).toBeNull();
-  });
-
-  it('closes the detail drawer when the consent drawer opens from Participate', async () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-    render(<ResearchPage />, { wrapper: createWrapper() });
-
-    // Card opens the detail drawer; Participate then spawns the consent drawer.
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Open study Konsulin Mental Health Survey'
-      })
-    );
-    fireEvent.click(await screen.findByRole('button', { name: 'Participate' }));
-
-    // Consent is visible; the detail drawer has been closed and cleaned up.
-    expect(
-      await screen.findByRole('button', { name: 'Agree to Participate' })
-    ).toBeTruthy();
-    await waitFor(() => {
-      const drawers = vaulDrawerNodes();
-      // Only the consent drawer remains — detail drawer portal is unmounted
-      // when AppDrawer's close-others effect fires.
-      expect(drawers.length).toBeGreaterThanOrEqual(1);
-      expect(drawers[drawers.length - 1].dataset.open).toBe('true');
-    });
-  });
-
-  it('does not bring the detail drawer back after the consent drawer is dismissed', async () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-    render(<ResearchPage />, { wrapper: createWrapper() });
-
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Open study Konsulin Mental Health Survey'
-      })
-    );
-    fireEvent.click(await screen.findByRole('button', { name: 'Participate' }));
-    await screen.findByRole('button', { name: 'Agree to Participate' });
-
-    // Dismiss the consent drawer via Escape.
-    fireEvent.keyDown(document, { key: 'Escape' });
-    await waitFor(() => {
-      const drawers = vaulDrawerNodes();
-      // After consent is dismissed, the remaining drawer (if any) should be closed.
-      expect(drawers.every(d => d.dataset.open === 'false')).toBe(true);
-    });
-
-    // Detail stays closed permanently: dismissing consent must not reopen it.
-    const finalDrawers = vaulDrawerNodes();
-    expect(finalDrawers.every(d => d.dataset.open === 'false')).toBe(true);
   });
 });

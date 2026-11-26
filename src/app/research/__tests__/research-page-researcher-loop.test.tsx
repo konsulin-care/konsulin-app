@@ -83,7 +83,6 @@ vi.mock('react-toastify', () => ({
 vi.mock('../research-content', () => ({
   default: () => <div data-testid='research-content' />
 }));
-vi.mock('../study-detail-view', () => ({ default: () => <div /> }));
 vi.mock('../consent-drawer', () => ({ default: () => <div /> }));
 vi.mock('@/components/page-header', () => ({ default: () => <div /> }));
 vi.mock('@/components/general/content-wraper', () => ({

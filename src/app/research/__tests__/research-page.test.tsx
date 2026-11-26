@@ -363,7 +363,7 @@ describe('ResearchPage', () => {
     ).toBe(true);
   });
 
-  it('opens the full study detail view when a card is tapped', () => {
+  it('renders no study detail drawer when a card is tapped', () => {
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress(),
       isLoading: false
@@ -377,7 +377,8 @@ describe('ResearchPage', () => {
       })
     );
 
-    expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Participate' })).toBeNull();
+    expect(document.querySelector('[data-vaul-drawer]')).toBeNull();
   });
 
   it('renders no contribution dashboard and drops the circle panel', () => {
@@ -457,37 +458,6 @@ describe('ResearchPage', () => {
           action.config?.label === 'Register Survey'
       )
     ).toBeDefined();
-  });
-
-  it('opens StudyDetailView when researcher card is clicked', () => {
-    setupResearcher();
-
-    render(<ResearchPage />, { wrapper });
-
-    fireEvent.click(
-      screen.getByRole('button', { name: /open study mental health survey/i })
-    );
-
-    expect(mockReplace).toHaveBeenCalledWith(
-      expect.stringContaining('view=study-1')
-    );
-  });
-
-  it('navigates to /research/edit when Manage Study is clicked', async () => {
-    setupResearcher();
-
-    render(<ResearchPage />, { wrapper });
-
-    fireEvent.click(
-      screen.getByRole('button', { name: /open study mental health survey/i })
-    );
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Manage Study' })
-    );
-
-    expect(mockPush).toHaveBeenCalledWith(
-      '/research/edit?id=study-1&page=title'
-    );
   });
 
   it('passes researcher study questionnaire IDs to useQuestionnaireTitles', () => {
