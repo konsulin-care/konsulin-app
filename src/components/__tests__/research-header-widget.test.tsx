@@ -153,9 +153,10 @@ describe('ResearchHeaderWidget', () => {
     ).toBeTruthy();
 
     const fill = widget.querySelector('.bg-turquoise-deep');
-    const track = widget.querySelector('.bg-muted');
     expect(fill).toBeTruthy();
-    expect(track).toBeTruthy();
+    expect(widget.querySelector('.bg-muted')).toBeNull();
+    expect(widget.querySelector('.bg-charcoal-100')).toBeTruthy();
+    expect(widget.querySelector('.text-turquoise-deep')).toBeNull();
     expect(widget.innerHTML).not.toMatch(/#[0-9a-fA-F]{6}/);
   });
 

@@ -203,6 +203,14 @@ describe('canShowResearchHeader', () => {
     ).toBe(false);
   });
 
+  it('is false on /study and /studies', () => {
+    for (const pathname of ['/study', '/studies']) {
+      expect(
+        canShowResearchHeader({ ...base, isPatient: true, pathname })
+      ).toBe(false);
+    }
+  });
+
   it('is false while auth is loading', () => {
     expect(canShowResearchHeader({ ...base, isLoadingAuth: true })).toBe(false);
   });

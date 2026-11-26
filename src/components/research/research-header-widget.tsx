@@ -50,7 +50,7 @@ export default function ResearchHeaderWidget() {
     >
       <div className='flex items-center'>
         <FlaskConical className='text-foreground mr-[10px] h-5 w-5 shrink-0' />
-        <span className='text-turquoise-deep truncate text-left text-sm font-bold'>
+        <span className='text-foreground truncate text-left text-sm font-bold'>
           {primary.study.title}
         </span>
       </div>
@@ -64,7 +64,7 @@ export default function ResearchHeaderWidget() {
         </span>
       </div>
       <div className='flex items-center gap-2'>
-        <div className='bg-muted h-1 flex-1 overflow-hidden rounded-full'>
+        <div className='bg-charcoal-100 h-1 flex-1 overflow-hidden rounded-full'>
           <div
             className='bg-turquoise-deep h-full rounded-full'
             style={{ width: `${percent}%` }}

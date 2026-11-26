@@ -192,6 +192,8 @@ export function canShowResearchHeader({
     isAdmin ||
     pathname === '/' ||
     pathname === '/research' ||
+    pathname === '/study' ||
+    pathname === '/studies' ||
     (!isPatient && isAuthenticated)
   );
 }
