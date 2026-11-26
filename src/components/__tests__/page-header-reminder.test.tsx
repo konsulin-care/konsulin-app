@@ -197,13 +197,10 @@ const PROGRESS_DATA = {
           end: '2026-08-31',
           participated: true
         }
-      ],
-      consecutiveBatches: 1
+      ]
     }
   ],
   cumulativeResponses: 1,
-  questionnaireResponses: [],
-  questionnaireXp: 8,
   completedQuestionnaireIds: [],
   consentedStudyIds: []
 };

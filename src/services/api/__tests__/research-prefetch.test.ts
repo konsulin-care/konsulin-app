@@ -48,7 +48,6 @@ function makeStudy(
     firstUncompletedQuestionnaireId: null,
     completedQuestionnaireIds: [],
     history: [],
-    consecutiveBatches: 0,
     ...overrides
   };
 }
@@ -58,8 +57,6 @@ function makeProgress(studies: StudyProgress[]): ResearchProgress {
   return {
     studies,
     cumulativeResponses: 0,
-    questionnaireResponses: [],
-    questionnaireXp: 0,
     completedQuestionnaireIds: [],
     consentedStudyIds: []
   };

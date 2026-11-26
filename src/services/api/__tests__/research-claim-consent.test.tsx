@@ -52,8 +52,7 @@ function makeStudyProgress(studyId: string): StudyProgress {
     isComplete: false,
     firstUncompletedQuestionnaireId: null,
     completedQuestionnaireIds: [],
-    history: [],
-    consecutiveBatches: 0
+    history: []
   };
 }
 

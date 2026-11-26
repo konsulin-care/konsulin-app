@@ -97,15 +97,10 @@ function makeProgress(firstUncompleted: string | null): ResearchProgress {
             end: '2026-08-31',
             participated: true
           }
-        ],
-        consecutiveBatches: 1
+        ]
       }
     ],
     cumulativeResponses: 2,
-    questionnaireResponses: firstUncompleted
-      ? ['phq2']
-      : ['phq2', 'big-five-inventory'],
-    questionnaireXp: 8,
     completedQuestionnaireIds: firstUncompleted
       ? ['phq2']
       : ['phq2', 'big-five-inventory'],

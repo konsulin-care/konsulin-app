@@ -41,8 +41,7 @@ function progressWith(isComplete: boolean): ResearchProgress {
         isComplete,
         firstUncompletedQuestionnaireId: isComplete ? null : 'phq2',
         completedQuestionnaireIds: isComplete ? ['phq2'] : [],
-        history: [],
-        consecutiveBatches: 0
+        history: []
       }
     ],
     cumulativeResponses: 1,
