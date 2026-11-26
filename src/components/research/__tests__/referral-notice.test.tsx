@@ -26,7 +26,10 @@ describe('ReferralNotice', () => {
 
     const notice = screen.getByTestId('referral-notice');
     expect(notice).toBeInTheDocument();
-    expect(notice.textContent).toContain('community credit');
+    expect(notice.textContent).toContain(
+      'A friend invited you to this study. Referral patterns are used only to study the structure of the research community.'
+    );
+    expect(notice.textContent).not.toContain('community credit');
     expect(notice.className).toContain('bg-accent');
     expect(notice.className).toContain('border-turquoise-deep/30');
   });
@@ -50,7 +53,7 @@ describe('ReferralNotice', () => {
 
     render(<ReferralNotice />);
 
-    const paragraph = screen.getByText(/community credit/);
+    const paragraph = screen.getByText(/A friend invited you to this study/);
     expect(paragraph.className).toContain('text-charcoal-700');
   });
 

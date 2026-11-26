@@ -12,7 +12,6 @@ export default function ConsentDrawerContent() {
       <ul className='list-disc space-y-1 pl-4'>
         <li>{t('consent_bullet_1')}</li>
         <li>{t('consent_bullet_2')}</li>
-        <li>{t('consent_bullet_3')}</li>
       </ul>
       <p>{t('consent_referral')}</p>
       <p>{t('consent_rights')}</p>

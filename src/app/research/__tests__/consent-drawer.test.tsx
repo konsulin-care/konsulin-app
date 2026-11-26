@@ -18,6 +18,7 @@ describe('ConsentDrawer', () => {
     expect(
       screen.getByText(/Every questionnaire you complete counts/i)
     ).toBeTruthy();
+    expect(screen.queryByText(/participation streak/i)).toBeNull();
     expect(
       screen.getByText(/Indonesia's Personal Data Protection Law \(UU PDP\)/i)
     ).toBeTruthy();
