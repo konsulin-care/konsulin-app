@@ -69,7 +69,7 @@
   "study_title_placeholder": "Enter study title",
   "study_description_placeholder": "Enter study description",
   "title_label": "Title",
-  "description_label": "Description (optional)",
+  "description_label": "Description",
   "questionnaire_selection": "Questionnaire Selection",
   "questionnaire_search_placeholder": "Search questionnaires...",
   "upload_custom": "Upload Custom Questionnaire",

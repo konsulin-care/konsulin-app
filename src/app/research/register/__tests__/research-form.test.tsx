@@ -86,6 +86,13 @@ describe('Step1 - Title & Description', () => {
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
   });
 
+  it('labels the description field without (optional)', () => {
+    renderWithQuery(<Step1 register={mockRegister()} errors={{}} />);
+
+    expect(screen.getByText('Description')).toBeInTheDocument();
+    expect(screen.queryByText(/optional/i)).not.toBeInTheDocument();
+  });
+
   it('has no Back, Next, or Submit buttons', () => {
     renderWithQuery(<Step1 register={mockRegister()} errors={{}} />);
 
