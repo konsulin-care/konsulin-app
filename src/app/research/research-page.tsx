@@ -3,24 +3,16 @@
 import ContentWraper from '@/components/general/content-wraper';
 import PageHeader from '@/components/page-header';
 import PageLayout from '@/components/page-layout';
-import { Roles } from '@/constants/roles';
-import { useAuth } from '@/context/auth/authContext';
 import { useReferralWrite } from '@/hooks/useReferralWrite';
 import type { WaitingResponse } from '@/hooks/useWaitingSubmissions';
 import { useWaitingSubmissions } from '@/hooks/useWaitingSubmissions';
-import {
-  EMPTY_QUESTIONNAIRE_INFO_MAP,
-  useQuestionnaireTitles
-} from '@/services/api/questionnaire-info';
-import { useResearchProgress } from '@/services/api/research';
-import { useResearcherDashboard } from '@/services/api/researcher';
 import type { StudyProgress } from '@/utils/fhir/research';
 import { waitingBatchIds } from '@/utils/fhir/research-schedule';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import ConsentDrawer from './consent-drawer';
+import { useLegacyStudyRedirect } from './legacy-study-redirect';
 import ResearchContent from './research-content';
-import { mapResearcherStudyToProgress } from './researcher-content';
 import StudyDetailView from './study-detail-view';
 import { buildOverlapMap } from './study-sections';
 import { useConsent } from './use-consent';
@@ -28,10 +20,7 @@ import { useDetailStudy } from './use-detail-study';
 import { useResearchFabAction } from './use-fab-action';
 import { useParticipate } from './use-participate';
 import { useResearchHandlers } from './use-research-handlers';
-import { useUrlSync } from './use-url-sync';
-
-/** Stable empty fallback so consent inputs keep a constant identity. */
-const EMPTY_IDS: string[] = [];
+import { useResearchPageData } from './use-research-page-data';
 
 /** Target of the consent drawer: the study and the questionnaire to open next. */
 interface PendingConsent {
@@ -65,31 +54,30 @@ function buildDetailLinks(
  */
 export default function ResearchPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { state: authState } = useAuth();
-  const fhirId = authState?.userInfo?.fhirId;
-  const isPatient = Boolean(fhirId);
-  const { data: progress, isLoading } = useResearchProgress();
-  useReferralWrite(progress);
-
-  const studies = useMemo(() => progress?.studies ?? [], [progress]);
+  useLegacyStudyRedirect();
   const [activeStudyId, setActiveStudyId] = useState<string | null>(null);
   const [detailStudyId, setDetailStudyId] = useState<string | null>(null);
   const [pendingConsent, setPendingConsent] = useState<PendingConsent | null>(
     null
   );
+  const {
+    progress,
+    isLoading,
+    studies,
+    researcherStudies,
+    researcherLoading,
+    titleMap,
+    titlesPending,
+    effectiveActiveId,
+    fhirId,
+    roleName,
+    isResearcher,
+    consentedStudyIds: progressConsentedIds
+  } = useResearchPageData(activeStudyId);
+  const practitionerId = fhirId;
+  const isPatient = Boolean(fhirId);
+  useReferralWrite(progress);
   const overlapMap = useMemo(() => buildOverlapMap(studies), [studies]);
-
-  const roleName = authState?.userInfo?.role_name;
-  const isResearcher = roleName === Roles.Researcher;
-  const practitionerId = authState?.userInfo?.fhirId;
-
-  const { data: researcherData, isLoading: researcherLoading } =
-    useResearcherDashboard(isResearcher ? practitionerId : undefined);
-  const researcherStudies = useMemo(
-    () => researcherData?.studies ?? [],
-    [researcherData]
-  );
 
   const detailStudy = useDetailStudy({
     isResearcher,
@@ -98,51 +86,14 @@ export default function ResearchPage() {
     researcherStudies
   });
 
-  const resolvedStudies = useMemo(() => {
-    if (!isResearcher) return studies;
-    const converted = researcherStudies.map(s =>
-      mapResearcherStudyToProgress(s)
-    );
-    const knownIds = new Set(studies.map(s => s.study.id));
-    return [
-      ...studies,
-      ...converted.filter(
-        (s): s is StudyProgress => s !== null && !knownIds.has(s.study.id)
-      )
-    ];
-  }, [studies, researcherStudies, isResearcher]);
-
-  const questionnaireIds = useMemo(
-    () => [
-      ...new Set([
-        ...resolvedStudies.flatMap(s => s.currentBatch?.questionnaireIds ?? []),
-        ...(progress?.completedQuestionnaireIds ?? [])
-      ])
-    ],
-    [resolvedStudies, progress?.completedQuestionnaireIds]
-  );
-  const {
-    data: titleMap = EMPTY_QUESTIONNAIRE_INFO_MAP,
-    isPending: titlesPending
-  } = useQuestionnaireTitles(questionnaireIds);
-
-  useUrlSync({
-    searchParams,
-    studies: resolvedStudies,
-    activeStudyId,
-    setActiveStudyId,
-    setDetailStudyId,
-    router
-  });
-
   const waiting = useWaitingSubmissions();
 
-  const activeStudy = studies.find(s => s.study.id === activeStudyId) ?? null;
+  const activeStudy = studies.find(s => s.study.id === effectiveActiveId);
 
   const { consentedStudyIds, isConsented, handleAgree } = useConsent({
     isPatient,
     studies,
-    consentedStudyIds: progress?.consentedStudyIds ?? EMPTY_IDS,
+    consentedStudyIds: progressConsentedIds,
     pendingConsent,
     setPendingConsent,
     router
@@ -154,7 +105,12 @@ export default function ResearchPage() {
     router
   });
 
-  useResearchFabAction({ isResearcher, activeStudy, participate, router });
+  useResearchFabAction({
+    isResearcher,
+    activeStudy: activeStudy ?? null,
+    participate,
+    router
+  });
 
   const {
     handleSlideChange,
@@ -202,8 +158,8 @@ export default function ResearchPage() {
               isLoading={isLoading}
               progress={progress}
               studies={studies}
-              activeStudyId={activeStudyId ?? ''}
-              activeStudy={activeStudy}
+              activeStudyId={effectiveActiveId}
+              activeStudy={activeStudy ?? null}
               titleMap={titleMap}
               titlesPending={titlesPending}
               fhirId={fhirId}

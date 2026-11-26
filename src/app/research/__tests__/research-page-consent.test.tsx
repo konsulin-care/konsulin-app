@@ -157,6 +157,7 @@ beforeEach(() => {
     dispatchedActions.push(action);
   });
   mockSearchParams.delete('id');
+  mockSearchParams.delete('view');
   mockSearchParams.delete('ref');
 });
 
@@ -291,8 +292,9 @@ describe('ResearchPage consent flow', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('navigates to the deep-linked study questionnaire after agreeing', async () => {
+  it('redirects a legacy deep link to the study page', () => {
     mockSearchParams.set('id', 'study-b');
+    mockSearchParams.set('ref', 'p_ABC123');
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
       isLoading: false
@@ -300,12 +302,7 @@ describe('ResearchPage consent flow', () => {
 
     render(<ResearchPage />, { wrapper: createWrapper() });
 
-    invokeParticipate();
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Agree to Participate' })
-    );
-
-    expect(mockPush).toHaveBeenCalledWith('/assessments?id=phq2&study=study-b');
+    expect(mockReplace).toHaveBeenCalledWith('/study?id=study-b&ref=p_ABC123');
   });
 
   it('retargets the consent drawer to the newly active slide', async () => {

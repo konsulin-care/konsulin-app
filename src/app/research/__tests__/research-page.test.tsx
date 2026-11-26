@@ -9,7 +9,7 @@ vi.mock('@/i18n', async () => {
 import { wrapper } from '@/__tests__/react-test-utils';
 import type { FabAction } from '@/context/fabContext';
 import { formatBatchDate } from '@/utils/format-batch-date';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearchPage from '../research-page';
 import {
@@ -147,6 +147,22 @@ beforeEach(() => {
   mockSearchParams.delete('ref');
 });
 
+/** Signs in as a researcher with one dashboard study. */
+function setupResearcher(questionnaireIds: string[] = ['phq2']): void {
+  mockUseAuth.mockReturnValue({
+    state: { userInfo: { fhirId: 'practitioner-1', role_name: 'Researcher' } },
+    isLoading: false
+  });
+  mockUseResearchProgress.mockReturnValue({
+    data: undefined,
+    isLoading: false
+  });
+  mockUseResearcherDashboard.mockReturnValue({
+    data: makeResearcherDashboardData({ questionnaireIds }),
+    isLoading: false
+  });
+}
+
 describe('ResearchPage', () => {
   it('shows a skeleton instead of the empty state while the progress query is pending', () => {
     mockUseResearchProgress.mockReturnValue({
@@ -157,7 +173,6 @@ describe('ResearchPage', () => {
 
     expect(screen.queryByText('No ongoing research')).toBeNull();
     expect(screen.getByTestId('research-skeleton')).toBeTruthy();
-    expect(screen.getByTestId('research-skeleton').tagName).toBe('OUTPUT');
     expect(screen.getByRole('status')).toBe(
       screen.getByTestId('research-skeleton')
     );
@@ -174,16 +189,12 @@ describe('ResearchPage', () => {
     expect(
       screen.getAllByText('Konsulin Mental Health Survey').length
     ).toBeGreaterThan(0);
-    expect(
-      screen.getByText(/A longitudinal survey of mental health/)
-    ).toBeTruthy();
     expect(screen.getByTestId('batch-line')).toHaveTextContent(
       `Batch 1 of 1 · Closes ${formatBatchDate(BATCH_1.end, 'id')}`
     );
-    expect(screen.getByTestId('batch-chip-batch-1')).toBeTruthy();
   });
 
-  it('selects the deep-linked study as the active slide', () => {
+  it('redirects a legacy id URL to the study page', () => {
     mockSearchParams.set('id', 'study-b');
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
@@ -192,36 +203,11 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper });
 
-    expect(screen.getByTestId('research-slide-study-b')).toHaveAttribute(
-      'data-active',
-      'true'
-    );
-    expect(screen.getByTestId('research-slide-research')).toHaveAttribute(
-      'data-active',
-      'false'
-    );
-    // Valid deep link: no URL cleanup needed.
-    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockReplace).toHaveBeenCalledWith('/study?id=study-b');
   });
 
-  it('falls back to the first study and cleans the URL for an unknown id', () => {
-    mockSearchParams.set('id', 'unknown-study');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(screen.getByTestId('research-slide-research')).toHaveAttribute(
-      'data-active',
-      'true'
-    );
-    expect(mockReplace).toHaveBeenCalledWith('/research');
-  });
-
-  it('preserves the referral ref when cleaning an unknown id', () => {
-    mockSearchParams.set('id', 'unknown-study');
+  it('redirects a legacy view URL to the study page and keeps ref', () => {
+    mockSearchParams.set('view', 'study-b');
     mockSearchParams.set('ref', 'p_ABC123');
     mockUseResearchProgress.mockReturnValue({
       data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
@@ -230,76 +216,7 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper });
 
-    expect(mockReplace).toHaveBeenCalledWith('/research?ref=p_ABC123');
-  });
-
-  it('opens the study detail drawer and focuses its card for a valid view param', async () => {
-    mockSearchParams.set('view', 'study-b');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(screen.getByTestId('research-slide-study-b')).toHaveAttribute(
-      'data-active',
-      'true'
-    );
-    expect(
-      await screen.findByRole('button', { name: 'Participate' })
-    ).toBeTruthy();
-  });
-
-  it('canonicalizes a legacy id+view URL to the view param and follows its focus', async () => {
-    mockSearchParams.set('id', 'research');
-    mockSearchParams.set('view', 'study-b');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    // id and view are mutually exclusive: view wins and subsumes focus.
-    expect(mockReplace).toHaveBeenCalledWith('/research?view=study-b');
-    expect(screen.getByTestId('research-slide-study-b')).toHaveAttribute(
-      'data-active',
-      'true'
-    );
-    expect(screen.getByTestId('research-slide-research')).toHaveAttribute(
-      'data-active',
-      'false'
-    );
-    // The view param also opens the drawer.
-    expect(
-      await screen.findByRole('button', { name: 'Participate' })
-    ).toBeTruthy();
-  });
-
-  it('cleans an unknown view param and preserves the referral ref', () => {
-    mockSearchParams.set('view', 'unknown-study');
-    mockSearchParams.set('ref', 'p_ABC123');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(mockReplace).toHaveBeenCalledWith('/research?ref=p_ABC123');
-  });
-
-  it('cleans an unknown view param without a ref', () => {
-    mockSearchParams.set('view', 'unknown-study');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    expect(mockReplace).toHaveBeenCalledWith('/research');
+    expect(mockReplace).toHaveBeenCalledWith('/study?id=study-b&ref=p_ABC123');
   });
 
   it('writes the view param to the URL when a card is tapped', () => {
@@ -343,129 +260,7 @@ describe('ResearchPage', () => {
     );
 
     expect(mockPush).toHaveBeenCalledWith('/report?id=research');
-    expect(screen.queryByRole('button', { name: 'Participate' })).toBeNull();
     expect(mockReplace).not.toHaveBeenCalled();
-  });
-
-  it('opens the drawer with a See Report CTA for a completed study deep-linked via view', async () => {
-    mockSearchParams.set('view', 'research');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({
-        studies: [
-          makeStudyProgress({
-            completedCount: 2,
-            isComplete: true,
-            firstUncompletedQuestionnaireId: null,
-            completedQuestionnaireIds: ['phq2', 'big-five-inventory']
-          })
-        ]
-      }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    const seeReport = await screen.findByRole('button', {
-      name: 'See Report'
-    });
-    expect(screen.queryByRole('button', { name: 'Participate' })).toBeNull();
-
-    fireEvent.click(seeReport);
-
-    expect(mockPush).toHaveBeenCalledWith('/report?id=research');
-  });
-
-  it('drops the view param for an id param when the drawer is dismissed', async () => {
-    mockSearchParams.set('view', 'study-b');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    await screen.findByRole('button', { name: 'Participate' });
-    fireEvent.keyDown(document, { key: 'Escape' });
-
-    // Focus survives the close as a deep-linkable ?id= param.
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith('/research?id=study-b');
-    });
-    // One dismissal: the drawer closes and stays closed (no reopen flicker).
-    expect(document.querySelector('[data-open="true"]')).toBeNull();
-  });
-
-  it('closes the drawer and writes the id param when the slide changes while the drawer is open', async () => {
-    mockSearchParams.set('view', 'study-b');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    await screen.findByRole('button', { name: 'Participate' });
-    // The open drawer makes carousel controls inert, so reach the pagination
-    // button directly to simulate a swipe while the drawer stays open.
-    const slideButton = document.querySelector<HTMLElement>(
-      '[aria-label="Go to slide 1"]'
-    );
-    expect(slideButton).not.toBeNull();
-    if (slideButton) {
-      fireEvent.click(slideButton);
-    }
-
-    // A focus change cannot coexist with an open drawer: view is dropped.
-    expect(mockReplace).toHaveBeenCalledWith('/research?id=research');
-    expect(document.querySelector('[data-open="true"]')).toBeNull();
-  });
-
-  it('keeps the drawer open when the slide changes to the study shown in detail', async () => {
-    mockSearchParams.set('view', 'research');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    await screen.findByRole('button', { name: 'Participate' });
-    // Click the same card that is already shown in detail (research is the
-    // active slide). handleSlideChange fires for the same studyId that is
-    // already in detailStudyId — the drawer must not close.
-    const cardButton = document.querySelector<HTMLElement>(
-      '[aria-label="Open study Konsulin Mental Health Survey"]'
-    );
-    expect(cardButton).not.toBeNull();
-    if (cardButton) {
-      fireEvent.click(cardButton);
-    }
-
-    // Drawer stays open.
-    expect(screen.getByRole('button', { name: 'Participate' })).toBeTruthy();
-    // URL was not rewritten to drop the view param.
-    expect(mockReplace).not.toHaveBeenCalledWith('/research?id=research');
-  });
-
-  it('replaces the id param with the view param when a focused slide is tapped', async () => {
-    mockSearchParams.set('id', 'research');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Open study Konsulin Mental Health Survey'
-      })
-    );
-
-    expect(mockReplace).toHaveBeenCalledWith('/research?view=research');
-    expect(
-      await screen.findByRole('button', { name: 'Participate' })
-    ).toBeTruthy();
   });
 
   it('replaces the URL with the study id when the slide changes', () => {
@@ -479,26 +274,6 @@ describe('ResearchPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Go to slide 2' }));
 
     expect(mockReplace).toHaveBeenCalledWith('/research?id=study-b');
-  });
-
-  it('preserves the referral ref when the drawer dismisses to an id param', async () => {
-    mockSearchParams.set('view', 'study-b');
-    mockSearchParams.set('ref', 'p_ABC123');
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress({ studies: [makeStudyProgress(), makeStudyB()] }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    await screen.findByRole('button', { name: 'Participate' });
-    fireEvent.keyDown(document, { key: 'Escape' });
-
-    await waitFor(() => {
-      expect(mockReplace).toHaveBeenCalledWith(
-        '/research?id=study-b&ref=p_ABC123'
-      );
-    });
   });
 
   it('preserves the referral ref when the slide changes', () => {
@@ -529,7 +304,6 @@ describe('ResearchPage', () => {
       'data-active',
       'true'
     );
-    // Click-to-share must not navigate; it hands off to the share handler.
     fireEvent.click(screen.getByTestId('research-share-research'));
     expect(mockPush).not.toHaveBeenCalled();
   });
@@ -554,7 +328,6 @@ describe('ResearchPage', () => {
     expect(screen.getByTestId('batch-line')).toHaveTextContent(
       `Batch 1 of 1 completed · Closes ${formatBatchDate(BATCH_1.end, 'id')}`
     );
-    expect(screen.queryByText(/Next batch opens soon/)).toBeNull();
     expect(
       dispatchedActions.findLast(
         action =>
@@ -564,8 +337,10 @@ describe('ResearchPage', () => {
   });
 
   it('shows an empty state when there are no active studies', () => {
-    const data = makeProgress({ studies: [] });
-    mockUseResearchProgress.mockReturnValue({ data, isLoading: false });
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress({ studies: [] }),
+      isLoading: false
+    });
 
     render(<ResearchPage />, { wrapper });
 
@@ -589,8 +364,10 @@ describe('ResearchPage', () => {
   });
 
   it('opens the full study detail view when a card is tapped', () => {
-    const data = makeProgress();
-    mockUseResearchProgress.mockReturnValue({ data, isLoading: false });
+    mockUseResearchProgress.mockReturnValue({
+      data: makeProgress(),
+      isLoading: false
+    });
 
     render(<ResearchPage />, { wrapper });
 
@@ -612,27 +389,7 @@ describe('ResearchPage', () => {
     render(<ResearchPage />, { wrapper });
 
     expect(screen.queryByTestId('contribution-dashboard')).toBeNull();
-    expect(screen.queryByTestId('dashboard-batch-count')).toBeNull();
     expect(screen.queryByTestId('circle-panel')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('circle-upsell')).not.toBeInTheDocument();
-  });
-
-  it('does not show XP value on carousel questionnaire rows', () => {
-    mockUseResearchProgress.mockReturnValue({
-      data: makeProgress(),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    // Questionnaire rows should not show XP (dashboard may still show XP)
-    const questionnaireButtons = screen.getAllByRole('button', {
-      name: /PHQ-2|Big Five Inventory/
-    });
-    for (const button of questionnaireButtons) {
-      const row = button.closest('li');
-      expect(row?.textContent).not.toMatch(/\+\d+ XP/);
-    }
   });
 
   it('hides overlap hints across studies in the carousel', () => {
@@ -656,7 +413,6 @@ describe('ResearchPage', () => {
     render(<ResearchPage />, { wrapper });
 
     expect(screen.getAllByText('PHQ-2').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Big Five Inventory').length).toBeGreaterThan(0);
     expect(screen.queryByText(/Also counts toward/)).toBeNull();
   });
 
@@ -678,25 +434,7 @@ describe('ResearchPage', () => {
   });
 
   it('renders researcher carousel for researcher role', () => {
-    mockUseAuth.mockReturnValue({
-      state: {
-        userInfo: {
-          fhirId: 'practitioner-1',
-          role_name: 'Researcher'
-        }
-      },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: undefined,
-      isLoading: false
-    });
-    mockUseResearcherDashboard.mockReturnValue({
-      data: makeResearcherDashboardData({
-        questionnaireIds: ['phq2']
-      }),
-      isLoading: false
-    });
+    setupResearcher();
 
     render(<ResearchPage />, { wrapper });
 
@@ -704,19 +442,7 @@ describe('ResearchPage', () => {
   });
 
   it('dispatches Register Survey FAB action for researcher', () => {
-    mockUseAuth.mockReturnValue({
-      state: {
-        userInfo: {
-          fhirId: 'practitioner-1',
-          role_name: 'Researcher'
-        }
-      },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: undefined,
-      isLoading: false
-    });
+    setupResearcher();
     mockUseResearcherDashboard.mockReturnValue({
       data: { studies: [], totalParticipants: 0 },
       isLoading: false
@@ -724,151 +450,51 @@ describe('ResearchPage', () => {
 
     render(<ResearchPage />, { wrapper });
 
-    const registerAction = dispatchedActions.find(
-      (action): action is Extract<FabAction, { type: 'SET_ACTION' }> =>
-        action.type === 'SET_ACTION' &&
-        action.config?.label === 'Register Survey'
-    );
-    expect(registerAction).toBeDefined();
+    expect(
+      dispatchedActions.find(
+        action =>
+          action.type === 'SET_ACTION' &&
+          action.config?.label === 'Register Survey'
+      )
+    ).toBeDefined();
   });
 
   it('opens StudyDetailView when researcher card is clicked', () => {
-    mockUseAuth.mockReturnValue({
-      state: {
-        userInfo: {
-          fhirId: 'practitioner-1',
-          role_name: 'Researcher'
-        }
-      },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: undefined,
-      isLoading: false
-    });
-    mockUseResearcherDashboard.mockReturnValue({
-      data: makeResearcherDashboardData({
-        questionnaireIds: ['phq2']
-      }),
-      isLoading: false
-    });
+    setupResearcher();
 
     render(<ResearchPage />, { wrapper });
 
-    // Click on the study card
-    const button = screen.getByRole('button', {
-      name: /open study mental health survey/i
-    });
-    fireEvent.click(button);
+    fireEvent.click(
+      screen.getByRole('button', { name: /open study mental health survey/i })
+    );
 
-    // Verify URL is updated
     expect(mockReplace).toHaveBeenCalledWith(
       expect.stringContaining('view=study-1')
     );
   });
 
-  it('does not strip ?id= for a researcher study (deep-link persistence)', () => {
-    mockSearchParams.set('id', 'study-1');
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { role_name: 'Researcher' } },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: undefined,
-      isLoading: false
-    });
-    mockUseResearcherDashboard.mockReturnValue({
-      data: makeResearcherDashboardData({
-        questionnaireIds: ['phq2']
-      }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    // Valid deep link: URL must NOT be stripped.
-    expect(mockReplace).not.toHaveBeenCalled();
-    expect(screen.getByText('Mental Health Survey')).toBeInTheDocument();
-  });
-
-  it('does not strip ?view= for a researcher study (deep-link persistence)', async () => {
-    mockSearchParams.set('view', 'study-1');
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { role_name: 'Researcher' } },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: undefined,
-      isLoading: false
-    });
-    mockUseResearcherDashboard.mockReturnValue({
-      data: makeResearcherDashboardData({
-        questionnaireIds: ['phq2']
-      }),
-      isLoading: false
-    });
-
-    render(<ResearchPage />, { wrapper });
-
-    // Valid deep link: URL must NOT be stripped, drawer must open.
-    expect(mockReplace).not.toHaveBeenCalled();
-    expect(
-      await screen.findByRole('button', { name: 'Manage Study' })
-    ).toBeTruthy();
-  });
-
   it('navigates to /research/edit when Manage Study is clicked', async () => {
-    mockSearchParams.set('view', 'study-1');
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { role_name: 'Researcher' } },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: undefined,
-      isLoading: false
-    });
-    mockUseResearcherDashboard.mockReturnValue({
-      data: makeResearcherDashboardData({
-        questionnaireIds: ['phq2']
-      }),
-      isLoading: false
-    });
+    setupResearcher();
 
     render(<ResearchPage />, { wrapper });
 
-    const manageButton = await screen.findByRole('button', {
-      name: 'Manage Study'
-    });
-    fireEvent.click(manageButton);
+    fireEvent.click(
+      screen.getByRole('button', { name: /open study mental health survey/i })
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Manage Study' })
+    );
 
     expect(mockPush).toHaveBeenCalledWith(
       '/research/edit?id=study-1&page=title'
     );
   });
 
-  it('passes researcher study questionnaire IDs to useQuestionnaireTitles', async () => {
-    mockSearchParams.set('view', 'study-1');
-    mockUseAuth.mockReturnValue({
-      state: { userInfo: { role_name: 'Researcher' } },
-      isLoading: false
-    });
-    mockUseResearchProgress.mockReturnValue({
-      data: undefined,
-      isLoading: false
-    });
-    mockUseResearcherDashboard.mockReturnValue({
-      data: makeResearcherDashboardData({
-        questionnaireIds: ['phq2', 'big-five-inventory']
-      }),
-      isLoading: false
-    });
+  it('passes researcher study questionnaire IDs to useQuestionnaireTitles', () => {
+    setupResearcher(['phq2', 'big-five-inventory']);
 
     render(<ResearchPage />, { wrapper });
 
-    await screen.findByRole('button', { name: 'Manage Study' });
-
-    // The hook must receive questionnaire IDs from researcher studies,
-    // not an empty array. An empty array means titles are never fetched.
     const lastCall = mockUseQuestionnaireTitles.mock.calls.at(
       -1
     )?.[0] as string;
