@@ -160,6 +160,11 @@
     "status_shared": "Shared this batch",
     "status_closed": "Closed"
   },
+  "joined_card": {
+    "progress": "{done} of {total} shared in this batch",
+    "open_study": "Open study",
+    "see_report": "See your report"
+  },
   "side_facts": {
     "run_by": "Run by",
     "lead": "Lead researcher",

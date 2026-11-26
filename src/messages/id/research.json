@@ -160,6 +160,11 @@
     "status_shared": "Batch ini selesai",
     "status_closed": "Sudah ditutup"
   },
+  "joined_card": {
+    "progress": "{done} dari {total} dibagikan di batch ini",
+    "open_study": "Buka studi",
+    "see_report": "Lihat laporan Anda"
+  },
   "side_facts": {
     "run_by": "Diselenggarakan oleh",
     "lead": "Peneliti utama",
