@@ -120,7 +120,9 @@ export function useReportResponses(
       const questionnaires = questionnaireFilter(uniqueIds);
       const lowerBound = since ? `&authored=ge${since}` : '';
       const upperBound = until ? `&authored=le${until}` : '';
-      const commonSuffix = `&questionnaire=${questionnaires}&status=completed&_count=500&_elements=id,questionnaire,status,authored,item${lowerBound}${upperBound}`;
+      // author/subject are required: the backend ownership filter drops any
+      // response whose identity references the caller does not carry.
+      const commonSuffix = `&questionnaire=${questionnaires}&status=completed&_count=500&_elements=id,questionnaire,status,authored,author,subject,item${lowerBound}${upperBound}`;
 
       if (isAuthenticated && fhirId) {
         const API = await getAPI();
