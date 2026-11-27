@@ -131,14 +131,17 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 			return
 		}
 
-		fee, err := fetchHealthcareServiceFee(baseURL, req.HealthcareServiceID, authToken)
+		// Resolved once so both backend calls report the same client.
+		ip := clientIP(r)
+
+		fee, err := fetchHealthcareServiceFee(baseURL, req.HealthcareServiceID, authToken, ip)
 		if err != nil {
 			slog.Error("relay/booking: failed to fetch HealthcareService fee", "err", err)
 			sendError(w, http.StatusBadGateway, "failed to fetch service fee")
 			return
 		}
 
-		result, err := relayBundleAndParse(baseURL, req, fee, authToken)
+		result, err := relayBundleAndParse(baseURL, req, fee, authToken, ip)
 		if err != nil {
 			sendUpstreamError(w, err)
 			return
@@ -151,7 +154,7 @@ func NewRelayBookingHandler(opts RelayBookingOptions) http.HandlerFunc {
 
 // relayBundleAndParse marshals the bundle, POSTs it to the FHIR backend,
 // parses the transaction response, and validates completeness.
-func relayBundleAndParse(baseURL string, req relayBookingRequest, fee feeObj, authToken string) (relayResponse, error) {
+func relayBundleAndParse(baseURL string, req relayBookingRequest, fee feeObj, authToken, clientIP string) (relayResponse, error) {
 	bundle := buildRelayBundle(req, fee)
 	bundleBody, err := json.Marshal(bundle)
 	if err != nil {
@@ -159,7 +162,7 @@ func relayBundleAndParse(baseURL string, req relayBookingRequest, fee feeObj, au
 		return relayResponse{}, errors.New("internal error")
 	}
 
-	fhirResp, err := postFHIRBundle(baseURL, bundleBody, authToken)
+	fhirResp, err := postFHIRBundle(baseURL, bundleBody, authToken, clientIP)
 	if err != nil {
 		slog.Error("relay/booking: backend error", "err", err)
 		return relayResponse{}, err

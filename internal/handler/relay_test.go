@@ -246,3 +246,47 @@ func TestRelayBooking_invalidJSON(t *testing.T) {
 		t.Errorf("expected 400, got %d", resp.StatusCode)
 	}
 }
+
+// TestRelayBooking_forwardsClientIP verifies that both backend calls of the
+// relay flow (HealthcareService fee lookup and the FHIR transaction POST)
+// carry the client IP resolved from the inbound request.
+func TestRelayBooking_forwardsClientIP(t *testing.T) {
+	var feeXFF, bundleXFF, bundleRealIP string
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/fhir+json")
+		switch r.Method {
+		case http.MethodGet:
+			feeXFF = r.Header.Get("X-Forwarded-For")
+			_, _ = w.Write([]byte(`{"resourceType":"HealthcareService","name":"Demo",` +
+				`"extension":[{"url":"http://konsulin.care/fhir/StructureDefinition/fee",` +
+				`"valueMoney":{"value":150000,"currency":"IDR"}}]}`))
+		case http.MethodPost:
+			bundleXFF = r.Header.Get("X-Forwarded-For")
+			bundleRealIP = r.Header.Get("X-Real-IP")
+			_, _ = w.Write([]byte(`{"resourceType":"Bundle","type":"transaction-response"}`))
+		}
+	}))
+	t.Cleanup(backend.Close)
+
+	hdl := NewRelayBookingHandler(RelayBookingOptions{BackendBaseURL: backend.URL})
+	body := `{"patientId":"Patient/pat-1","practitionerRoleId":"PractitionerRole/pr-1",` +
+		`"practitionerId":"Practitioner/prac-1","healthcareServiceId":"HealthcareService/hs-456",` +
+		`"scheduleId":"Schedule/sch-1","organizationId":"Organization/org-1",` +
+		`"date":"2026-07-15","startTime":"10:00","endTime":"10:30",` +
+		`"timezone":"+07:00","condition":"anxiety"}`
+	req := httptest.NewRequest(http.MethodPost, "/relay/booking", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Cookie", "sAccessToken="+testAccessToken("user-1"))
+	// Trusted peer (Traefik on the docker network) forwarding a real client.
+	req.RemoteAddr = "172.18.0.5:4000"
+	req.Header.Set("X-Real-Ip", "203.0.113.7")
+
+	hdl.ServeHTTP(httptest.NewRecorder(), req)
+
+	if feeXFF != "203.0.113.7" {
+		t.Errorf("HealthcareService lookup X-Forwarded-For = %q, want 203.0.113.7", feeXFF)
+	}
+	if bundleXFF != "203.0.113.7" || bundleRealIP != "203.0.113.7" {
+		t.Errorf("bundle POST X-Forwarded-For=%q X-Real-IP=%q, want 203.0.113.7", bundleXFF, bundleRealIP)
+	}
+}

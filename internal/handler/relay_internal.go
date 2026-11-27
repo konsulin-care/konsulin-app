@@ -15,6 +15,16 @@ var relayFHIRClient = &http.Client{Timeout: 30 * time.Second}
 // constFeeExtensionURL is the FHIR extension URL for service fee.
 const constFeeExtensionURL = "http://konsulin.care/fhir/StructureDefinition/fee"
 
+// setForwardedClientIP writes an already-resolved client address onto an
+// outgoing backend request. Nothing is written for an empty address.
+func setForwardedClientIP(req *http.Request, clientIP string) {
+	if clientIP == "" {
+		return
+	}
+	req.Header.Set("X-Forwarded-For", clientIP)
+	req.Header.Set("X-Real-IP", clientIP)
+}
+
 // validateFHIRReference checks that ref has the form "expectedType/non-empty-id".
 func validateFHIRReference(ref, expectedType string) bool {
 	prefix := expectedType + "/"
@@ -60,8 +70,9 @@ func validateRelayBooking(req relayBookingRequest) string {
 }
 
 // fetchHealthcareServiceFee fetches the HealthcareService resource and extracts
-// the fee from its extension.
-func fetchHealthcareServiceFee(baseURL, healthcareServiceID, authToken string) (feeObj, error) {
+// the fee from its extension. clientIP, when non-empty, is forwarded so the
+// backend rate limiter keys on the real client instead of the BFF.
+func fetchHealthcareServiceFee(baseURL, healthcareServiceID, authToken, clientIP string) (feeObj, error) {
 	hsURL := baseURL + "/fhir/" + healthcareServiceID
 	req, err := http.NewRequest(http.MethodGet, hsURL, http.NoBody)
 	if err != nil {
@@ -71,6 +82,7 @@ func fetchHealthcareServiceFee(baseURL, healthcareServiceID, authToken string) (
 	if authToken != "" {
 		req.Header.Set("Authorization", authToken)
 	}
+	setForwardedClientIP(req, clientIP)
 
 	resp, err := relayFHIRClient.Do(req)
 	if err != nil {
@@ -117,8 +129,9 @@ func fetchHealthcareServiceFee(baseURL, healthcareServiceID, authToken string) (
 	return feeObj{}, fmt.Errorf("fee extension not found on HealthcareService")
 }
 
-// postFHIRBundle POSTs the bundle body to the backend /fhir endpoint.
-func postFHIRBundle(baseURL string, bundleBody []byte, authToken string) (map[string]any, error) {
+// postFHIRBundle POSTs the bundle body to the backend /fhir endpoint,
+// forwarding clientIP when it is known.
+func postFHIRBundle(baseURL string, bundleBody []byte, authToken, clientIP string) (map[string]any, error) {
 	fhirURL := baseURL + "/fhir"
 	fhirReq, err := http.NewRequest(http.MethodPost, fhirURL, strings.NewReader(string(bundleBody)))
 	if err != nil {
@@ -128,6 +141,7 @@ func postFHIRBundle(baseURL string, bundleBody []byte, authToken string) (map[st
 	if authToken != "" {
 		fhirReq.Header.Set("Authorization", authToken)
 	}
+	setForwardedClientIP(fhirReq, clientIP)
 
 	resp, err := relayFHIRClient.Do(fhirReq)
 	if err != nil {
