@@ -13,6 +13,14 @@ import {
   shouldShowSeeAll,
   useUpcomingSession
 } from '@/components/page-header-sections';
+import {
+  getDefaultBackRoute,
+  getDisplayName,
+  getPageIndicator,
+  isResearchHome,
+  normalizePathname,
+  shouldHideSessionCard
+} from '@/components/page-header-utils';
 import { Roles } from '@/constants/roles';
 import { useAuth } from '@/context/auth/authContext';
 import { useUpcomingEvents } from '@/hooks/useUpcomingEvents';
@@ -31,114 +39,6 @@ interface PageHeaderProps {
   pageIndicator?: string;
   backRoute?: string;
   hideUpcomingSession?: boolean;
-}
-
-const MAIN_ROUTES = new Set([
-  '/clinic',
-  '/record',
-  '/assessments',
-  '/profile',
-  '/recommendation',
-  '/schedule',
-  '/research',
-  '/dashboard'
-]);
-
-/** Roles whose home path '/' renders the research page. */
-const RESEARCH_HOME_ROLES = new Set<string>([
-  Roles.Patient,
-  Roles.Guest,
-  Roles.Researcher
-]);
-
-/**
- * Returns true when the current user sees the research page on '/'.
- * Unauthenticated visitors also land on the research home.
- */
-function isResearchHome(
-  pathname: string,
-  role: string | undefined,
-  isAuthenticated: boolean
-): boolean {
-  if (pathname !== '/') return false;
-  if (!isAuthenticated) return true;
-  return RESEARCH_HOME_ROLES.has(role ?? '');
-}
-
-const INDICATOR_KEYS: Record<string, string> = {
-  '/dashboard': 'dashboard',
-  '/assessments': 'assessment_center',
-  '/profile': 'user_profile',
-  '/recommendation': 'recommended',
-  '/research': 'research',
-  '/study': 'study_title',
-  '/studies': 'studies_title'
-};
-
-/** Returns the page title based on current route. */
-function getPageIndicator(
-  pathname: string,
-  searchParams: URLSearchParams,
-  t: (key: string) => string,
-  researchHome: boolean
-): string | null {
-  if (pathname === '/') return researchHome ? t('research') : t('dashboard');
-  if (pathname === '/clinic') {
-    return searchParams.has('id') ? null : t('book_session');
-  }
-  const key = INDICATOR_KEYS[pathname];
-  return key ? t(key) : '';
-}
-
-/** Resolves the display name, falling back to email for placeholder values. */
-function getDisplayName(
-  userInfo: { fullname?: string; email?: string } | undefined
-): string | undefined {
-  if (!userInfo?.fullname || userInfo.fullname.trim() === '-') {
-    return userInfo?.email;
-  }
-  return userInfo?.fullname;
-}
-
-/** Returns true when the header reminder cards are suppressed for the route. */
-function shouldHideSessionCard(
-  pathname: string,
-  researchHome: boolean,
-  hideUpcomingSession: boolean | undefined
-): boolean {
-  return (
-    (hideUpcomingSession ?? false) || pathname === '/research' || researchHome
-  );
-}
-
-/** Determines the default back navigation route. */
-function getDefaultBackRoute(
-  pathname: string,
-  searchParams: URLSearchParams
-): string | undefined {
-  if (pathname === '/') return undefined;
-
-  if (pathname === '/research/register' || pathname === '/research/edit') {
-    const page = searchParams.get('page');
-    if (page === 'batch' || page === 'questionnaire') {
-      const params = new URLSearchParams(searchParams);
-      params.set('page', page === 'batch' ? 'questionnaire' : 'title');
-      return `${pathname}?${params.toString()}`;
-    }
-    return '/';
-  }
-
-  if (pathname === '/study') return '/studies';
-  if (pathname === '/studies') return '/';
-  if (pathname === '/report') {
-    const id = searchParams.get('id');
-    return id ? `/study?id=${encodeURIComponent(id)}` : '/studies';
-  }
-
-  if (MAIN_ROUTES.has(pathname)) {
-    return searchParams.toString() ? pathname : '/';
-  }
-  return undefined;
 }
 
 const BACK_BUTTON_CLASS =
@@ -185,11 +85,7 @@ export default function PageHeader({
   backRoute: overrideBackRoute,
   hideUpcomingSession
 }: Readonly<PageHeaderProps>) {
-  const rawPathname = usePathname();
-  const pathname =
-    rawPathname.length > 1 && rawPathname.endsWith('/')
-      ? rawPathname.slice(0, -1)
-      : rawPathname;
+  const pathname = normalizePathname(usePathname());
   const searchParams = useSearchParams();
   const router = useRouter();
   const { state: authState, isLoading: isLoadingAuth } = useAuth();
