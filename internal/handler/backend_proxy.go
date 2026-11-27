@@ -146,6 +146,7 @@ func setProxyRequestHeaders(proxyReq, r *http.Request) {
 	if v := r.Header.Get("fdi-version"); v != "" {
 		proxyReq.Header.Set("fdi-version", v)
 	}
+	setClientIPHeaders(proxyReq, r)
 }
 
 func setAuthorizationFromRequest(proxyReq, r *http.Request, targetURL, accessCookieName string) {

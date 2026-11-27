@@ -51,6 +51,7 @@ func forwardQuestionnaire(
 	if contentType := r.Header.Get("Content-Type"); contentType != "" {
 		proxyReq.Header.Set("Content-Type", contentType)
 	}
+	setClientIPHeaders(proxyReq, r)
 	setAuthorizationFromRequest(proxyReq, r, targetURL, accessCookieName)
 	injectSuperadminKeyFromCookie(proxyReq, r, superadminKeyCookieName)
 	proxyReq = proxyReq.WithContext(r.Context())

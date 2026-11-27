@@ -7,10 +7,8 @@ import (
 	"testing"
 )
 
-// TestBackendProxy_forwardsSuperTokensHeaders verifies that the SuperTokens
-// SDK security headers (anti-csrf, st-auth-mode, fdi-version) and an explicit
-// Authorization header are forwarded to the upstream backend on /api/v1/auth/*
-// calls, alongside the pre-existing Content-Type, Cookie and rid headers.
+// TestBackendProxy_forwardsSuperTokensHeaders verifies the SuperTokens SDK
+// headers, Content-Type, Cookie, rid and Authorization reach the backend.
 func TestBackendProxy_forwardsSuperTokensHeaders(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/v1/auth/session/refresh" {
@@ -84,9 +82,7 @@ func TestBackendProxy_forwardsSuperTokensHeaders(t *testing.T) {
 }
 
 // TestBackendProxy_forwardsSuperadminKeyFromCookie verifies that a BFF-held
-// superadmin key cookie (set by POST /api/admin/key) is forwarded to the
-// backend as the X-API-Key header on /proxy/* requests. The key must travel
-// server-side only — the browser never sees the header.
+// superadmin key cookie is forwarded as X-API-Key, server-side only.
 func TestBackendProxy_forwardsSuperadminKeyFromCookie(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{
@@ -161,9 +157,7 @@ func TestBackendProxy_omitsSuperadminKeyWithoutCookie(t *testing.T) {
 }
 
 // TestBackendProxy_stripsCacheHeaders verifies that ETag and Last-Modified are
-// not forwarded to the browser. These headers cause browsers to apply
-// heuristic caching even with Cache-Control: no-store, resulting in stale
-// FHIR resources served from disk cache on subsequent loads.
+// dropped, since they make browsers serve stale FHIR resources from disk cache.
 func TestBackendProxy_stripsCacheHeaders(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("ETag", `W/"9142"`)
@@ -201,9 +195,8 @@ func TestBackendProxy_stripsCacheHeaders(t *testing.T) {
 	}
 }
 
-// TestBackendProxy_overridesUpstreamCacheControl verifies that when the upstream
-// sends its own Cache-Control header (e.g. max-age=0 from HAPI FHIR), the
-// proxy overrides it with 'no-store, private' so the browser never caches.
+// TestBackendProxy_overridesUpstreamCacheControl verifies that an upstream
+// Cache-Control (e.g. max-age=0) is overridden with 'no-store, private'.
 func TestBackendProxy_overridesUpstreamCacheControl(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Cache-Control", "max-age=0")
@@ -235,11 +228,8 @@ func TestBackendProxy_overridesUpstreamCacheControl(t *testing.T) {
 }
 
 // TestBackendProxy_frontTokenPassesThrough verifies that the front-token
-// response header is NOT stripped by the proxy. The SuperTokens frontend SDK
-// reads this header from refresh responses to update its internal session
-// state. Stripping it causes "The 'front-token' header is missing" errors.
-// The header must pass through alongside the sFrontToken cookie set by
-// CookieMappings.
+// response header is not stripped: the SDK reads it on refresh, and dropping
+// it breaks sessions. The sFrontToken cookie must be set from it too.
 func TestBackendProxy_frontTokenPassesThrough(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("front-token", "front-session-payload")
@@ -289,5 +279,22 @@ func TestBackendProxy_frontTokenPassesThrough(t *testing.T) {
 	}
 	if !found {
 		t.Error("sFrontToken cookie must be set from front-token header")
+	}
+}
+
+// TestBackendProxy_forwardsClientIP verifies that the resolved client IP
+// replaces a browser-supplied X-Forwarded-For chain instead of appending to it.
+func TestBackendProxy_forwardsClientIP(t *testing.T) {
+	in := httptest.NewRequest(http.MethodGet, "/proxy/fhir/Patient", http.NoBody)
+	in.RemoteAddr = "172.18.0.5:4000"
+	in.Header.Set("X-Real-Ip", "203.0.113.7")
+	in.Header.Set("X-Forwarded-For", "1.2.3.4, 5.6.7.8")
+
+	out := httptest.NewRequest(http.MethodGet, "/fhir/Patient", http.NoBody)
+	setProxyRequestHeaders(out, in)
+
+	xff, realIP := out.Header.Get("X-Forwarded-For"), out.Header.Get("X-Real-IP")
+	if xff != "203.0.113.7" || realIP != "203.0.113.7" {
+		t.Fatalf("X-Forwarded-For=%q X-Real-IP=%q, want 203.0.113.7", xff, realIP)
 	}
 }

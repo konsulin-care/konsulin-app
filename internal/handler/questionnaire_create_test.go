@@ -162,3 +162,42 @@ func TestQuestionnaireCreateHandler_rejectsNonPostMethod(t *testing.T) {
 		t.Errorf("expected 405, got %d", rec.Code)
 	}
 }
+
+// TestQuestionnaireCreateHandler_forwardsClientIP verifies that the direct
+// FHIR Questionnaire create path forwards the resolved client address, so the
+// backend rate limiter can key on the real client instead of the BFF.
+func TestQuestionnaireCreateHandler_forwardsClientIP(t *testing.T) {
+	var gotXFF, gotRealIP string
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotXFF = r.Header.Get("X-Forwarded-For")
+		gotRealIP = r.Header.Get("X-Real-IP")
+		w.Header().Set("Content-Type", "application/fhir+json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"resourceType":"Questionnaire","id":"q-1","status":"draft"}`))
+	}))
+	t.Cleanup(backend.Close)
+
+	handler := NewQuestionnaireCreateHandler(QuestionnaireCreateOptions{
+		BackendBaseURL: backend.URL,
+	})
+
+	body := `{"resourceType":"Questionnaire","id":"q-1","status":"draft"}`
+	req := httptest.NewRequest(http.MethodPost, "/proxy/fhir/Questionnaire", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/fhir+json")
+	// Trusted peer (Traefik on the docker network) forwarding a real client.
+	req.RemoteAddr = "172.18.0.5:4000"
+	req.Header.Set("X-Real-Ip", "203.0.113.7")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", rec.Code)
+	}
+	if gotXFF != "203.0.113.7" {
+		t.Errorf("X-Forwarded-For = %q, want 203.0.113.7", gotXFF)
+	}
+	if gotRealIP != "203.0.113.7" {
+		t.Errorf("X-Real-IP = %q, want 203.0.113.7", gotRealIP)
+	}
+}
