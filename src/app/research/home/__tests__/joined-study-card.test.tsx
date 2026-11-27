@@ -133,30 +133,107 @@ describe('JoinedStudyCard', () => {
     expect(screen.queryByTestId('joined-card-progress')).toBeNull();
   });
 
-  it('links to the study and only to the report once the batch is complete', () => {
-    renderCard();
-
-    expect(screen.getByRole('link', { name: 'Open study' })).toHaveAttribute(
-      'href',
-      '/study?id=research'
-    );
-    expect(screen.queryByRole('link', { name: 'See your report' })).toBeNull();
-  });
-
-  it('shows the report link and shared status when the current batch is complete', () => {
+  it('renders a single Open Report link for a participated study, open or closed', () => {
     renderCard({
       progress: makeProgress({
-        completedCount: 2,
-        isComplete: true,
-        completedQuestionnaireIds: ['phq2', 'big-five-inventory']
+        history: [
+          {
+            batchId: 'batch-1',
+            start: '2026-06-01',
+            end: '2026-06-30',
+            participated: true
+          }
+        ]
+      })
+    });
+
+    expect(screen.getByRole('link', { name: 'Open Report' })).toHaveAttribute(
+      'href',
+      '/report?id=research'
+    );
+    expect(screen.queryByRole('link', { name: 'Open Study' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'See your report' })).toBeNull();
+
+    renderCard({
+      status: 'closed',
+      progress: makeProgress({
+        study: {
+          resourceType: 'ResearchStudy',
+          id: 'research',
+          status: 'completed',
+          title: 'Konsulin Mental Health Survey'
+        },
+        currentBatch: null,
+        history: [
+          {
+            batchId: 'batch-1',
+            start: '2026-06-01',
+            end: '2026-06-30',
+            participated: true
+          }
+        ]
       })
     });
 
     expect(
-      screen.getByRole('link', { name: 'See your report' })
+      screen.getAllByRole('link', { name: 'Open Report' }).at(-1)
     ).toHaveAttribute('href', '/report?id=research');
-    expect(screen.getByTestId('joined-card-status')).toHaveTextContent(
-      'Shared this batch'
+  });
+
+  it('renders Open Study as a link when open and as a disabled button when closed', () => {
+    renderCard();
+
+    expect(screen.getByRole('link', { name: 'Open Study' })).toHaveAttribute(
+      'href',
+      '/study?id=research'
     );
+    expect(screen.queryByRole('link', { name: 'Open Report' })).toBeNull();
+  });
+
+  it('renders a disabled Open Study button and no link when closed without participation', () => {
+    renderCard({
+      status: 'closed',
+      progress: makeProgress({ currentBatch: null })
+    });
+
+    expect(screen.getByRole('button', { name: 'Open Study' })).toBeDisabled();
+    expect(screen.queryByRole('link', { name: 'Open Study' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Open Report' })).toBeNull();
+  });
+
+  it('shows the participated badge only for a study the participant answered', () => {
+    renderCard({
+      progress: makeProgress({
+        history: [
+          {
+            batchId: 'batch-1',
+            start: '2026-06-01',
+            end: '2026-06-30',
+            participated: true
+          }
+        ]
+      })
+    });
+
+    expect(screen.getByTestId('joined-card-participated')).toHaveTextContent(
+      'Participated'
+    );
+  });
+
+  it('hides the participated badge when no batch was answered', () => {
+    renderCard({
+      progress: makeProgress({
+        history: [
+          {
+            batchId: 'batch-1',
+            start: '2026-06-01',
+            end: '2026-06-30',
+            participated: false
+          }
+        ]
+      })
+    });
+
+    expect(screen.queryByTestId('joined-card-participated')).toBeNull();
   });
 });

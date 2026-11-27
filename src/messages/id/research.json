@@ -163,8 +163,9 @@
   },
   "joined_card": {
     "progress": "{done} dari {total} dibagikan di batch ini",
-    "open_study": "Buka studi",
-    "see_report": "Lihat laporan Anda"
+    "open_study": "Buka Studi",
+    "open_report": "Buka Laporan",
+    "participated": "Sudah ikut"
   },
   "side_facts": {
     "run_by": "Diselenggarakan oleh",

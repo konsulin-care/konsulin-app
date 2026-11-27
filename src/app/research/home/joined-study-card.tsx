@@ -10,6 +10,7 @@ import type { StudyProgress } from '@/utils/fhir/research';
 import { getNextBatch } from '@/utils/fhir/research-schedule';
 import { readStudyProfile } from '@/utils/fhir/study-profile';
 import { formatBatchDate } from '@/utils/format-batch-date';
+import { Check } from 'lucide-react';
 import Link from 'next/link';
 
 /** Props of the joined study card on the participant home. */
@@ -154,8 +155,66 @@ function CardLoading() {
 }
 
 /**
+ * Badge marking a study the participant has already answered.
+ *
+ * @returns The badge element.
+ */
+function ParticipatedBadge() {
+  const t = useTranslations('research');
+  return (
+    <span
+      data-testid='joined-card-participated'
+      className='bg-secondary text-secondary-foreground inline-flex w-fit items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium'
+    >
+      <Check aria-hidden='true' className='h-3 w-3' />
+      {t('joined_card.participated')}
+    </span>
+  );
+}
+
+/**
+ * Single action of the card: the report when the participant has answered any
+ * batch, otherwise the study, disabled once the study is closed.
+ *
+ * @param props - Study id, closed flag and participation flag.
+ * @returns The action element.
+ */
+function CardAction({
+  studyId,
+  isClosed,
+  participated
+}: Readonly<{ studyId: string; isClosed: boolean; participated: boolean }>) {
+  const t = useTranslations('research');
+
+  if (participated) {
+    return (
+      <Button asChild className='min-h-11 rounded-lg'>
+        <Link href={`/report?id=${studyId}`}>
+          {t('joined_card.open_report')}
+        </Link>
+      </Button>
+    );
+  }
+
+  if (isClosed) {
+    return (
+      <Button disabled className='min-h-11 rounded-lg'>
+        {t('joined_card.open_study')}
+      </Button>
+    );
+  }
+
+  return (
+    <Button asChild className='min-h-11 rounded-lg'>
+      <Link href={`/study?id=${studyId}`}>{t('joined_card.open_study')}</Link>
+    </Button>
+  );
+}
+
+/**
  * Participant home card for one joined study: title, group and lead, status,
- * batch summary and the links into the study and the participant report.
+ * batch summary and the single action into the study or the participant
+ * report.
  *
  * @param props - Study progress, reference date, status override and states.
  * @returns The card element.
@@ -188,7 +247,7 @@ export default function JoinedStudyCard({
     t('side_facts.run_by_fallback'),
     t
   );
-  const canSeeReport = Boolean(progress.currentBatch) && progress.isComplete;
+  const participated = progress.history.some(entry => entry.participated);
 
   return (
     <article
@@ -199,22 +258,17 @@ export default function JoinedStudyCard({
       <h3 className='text-foreground text-base font-bold'>
         {progress.study.title ?? ''}
       </h3>
-      <StatusChip status={chipStatus} />
+      <div className='flex flex-wrap items-center gap-2'>
+        <StatusChip status={chipStatus} />
+        {participated ? <ParticipatedBadge /> : null}
+      </div>
       <BatchSummary progress={progress} today={today} />
       <div className='flex flex-wrap items-center gap-3'>
-        <Button variant='action' asChild className='min-h-11 rounded-lg'>
-          <Link href={`/study?id=${studyId}`}>
-            {t('joined_card.open_study')}
-          </Link>
-        </Button>
-        {canSeeReport ? (
-          <Link
-            href={`/report?id=${studyId}`}
-            className='inline-flex min-h-11 items-center rounded-lg text-sm font-medium underline'
-          >
-            {t('joined_card.see_report')}
-          </Link>
-        ) : null}
+        <CardAction
+          studyId={studyId}
+          isClosed={chipStatus === 'closed'}
+          participated={participated}
+        />
       </div>
     </article>
   );

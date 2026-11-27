@@ -163,8 +163,9 @@
   },
   "joined_card": {
     "progress": "{done} of {total} shared in this batch",
-    "open_study": "Open study",
-    "see_report": "See your report"
+    "open_study": "Open Study",
+    "open_report": "Open Report",
+    "participated": "Participated"
   },
   "side_facts": {
     "run_by": "Run by",
