@@ -47,7 +47,9 @@ export function fetchStudyCatalogue(
 }
 
 /**
- * Fetches ids of studies the patient is currently on-study in.
+ * Fetches ids of studies the patient is currently on-study in. The
+ * `individual` element is required: the backend ownership filter drops any
+ * ResearchSubject whose individual reference does not carry the caller.
  *
  * @param API - Axios instance.
  * @param patientId - Patient id.
@@ -59,7 +61,7 @@ export async function fetchConsentedStudyIds(
 ): Promise<string[]> {
   const ids: string[] = [];
   let url: string | undefined =
-    `/fhir/ResearchSubject?patient=Patient/${patientId}&_elements=study,status&_count=100`;
+    `/fhir/ResearchSubject?patient=Patient/${patientId}&_elements=study,status,individual&_count=100`;
   while (url) {
     const { data }: { data: Bundle } = await API.get<Bundle>(url);
     for (const entry of data.entry ?? []) {

@@ -75,7 +75,7 @@ describe('research catalogue', () => {
     ]);
     const ids = await fetchConsentedStudyIds(api, 'p1');
     expect(get.mock.calls[0][0]).toBe(
-      '/fhir/ResearchSubject?patient=Patient/p1&_elements=study,status&_count=100'
+      '/fhir/ResearchSubject?patient=Patient/p1&_elements=study,status,individual&_count=100'
     );
     expect(ids).toEqual(['a', 'b']);
   });
