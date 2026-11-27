@@ -66,6 +66,14 @@ export function useConsent({
       if (target) router.push(`/assessments?id=${target}&study=${studyId}`);
     };
     if (isPatient) {
+      // One Consent + ResearchSubject per patient per study: an already
+      // consented study navigates straight on, and an in-flight post is never
+      // duplicated.
+      if (consentedStudyIds.has(studyId)) {
+        finish();
+        return;
+      }
+      if (consentMutation.isPending) return;
       consentMutation.mutate(undefined, {
         onSuccess: finish,
         onError: () => toast.error(tToast('consent_record_failed'))
@@ -75,6 +83,7 @@ export function useConsent({
     writeConsentFlag(window.localStorage, studyId);
     finish();
   }, [
+    consentedStudyIds,
     isPatient,
     pendingConsent,
     router,
