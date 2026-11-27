@@ -152,6 +152,7 @@ func tryBackendLogout(r *http.Request, backendURL string, allowInsecure bool) {
 		return
 	}
 	req.Header.Set("Cookie", r.Header.Get("Cookie"))
+	setClientIPHeaders(req, r)
 
 	resp, err := logoutClient.Do(req)
 	if err != nil {

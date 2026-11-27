@@ -100,6 +100,7 @@ func setActiveRoleClaim(w http.ResponseWriter, r *http.Request, opts RoleSwitchO
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Cookie", r.Header.Get("Cookie"))
 	req.Header.Set("rid", "anti-csrf")
+	setClientIPHeaders(req, r)
 	resp, err := backendProxyClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("active-role backend call: %w", err)

@@ -231,11 +231,21 @@ func TestTryBackendLogout_httpSkipped(_ *testing.T) {
 	// We verify by checking no server received the request (no server started).
 }
 
+// assertForwardedClientIP checks the client headers a test backend received.
+func assertForwardedClientIP(t *testing.T, r *http.Request, want string) {
+	t.Helper()
+	xff, realIP := r.Header.Get("X-Forwarded-For"), r.Header.Get("X-Real-IP")
+	if xff != want || realIP != want {
+		t.Errorf("X-Forwarded-For=%q X-Real-IP=%q, want %q", xff, realIP, want)
+	}
+}
+
 func TestTryBackendLogout_httpsForwarded(t *testing.T) {
 	// Start a local HTTPS server to receive the forwarded request.
 	received := make(chan struct{}, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/auth/signout" {
+			assertForwardedClientIP(t, r, "203.0.113.7")
 			received <- struct{}{}
 		}
 		w.WriteHeader(http.StatusOK)
@@ -245,6 +255,9 @@ func TestTryBackendLogout_httpsForwarded(t *testing.T) {
 	// The httptest server URL is already http:// — but we use the
 	// "allow insecure" flag to confirm HTTPS skip is bypassed when allowed.
 	req := httptest.NewRequest(http.MethodPost, "/logout", http.NoBody)
+	// Trusted peer (Traefik on the docker network) forwarding a real client.
+	req.RemoteAddr = "172.18.0.5:4000"
+	req.Header.Set("X-Real-Ip", "203.0.113.7")
 	tryBackendLogout(req, server.URL, true)
 
 	select {

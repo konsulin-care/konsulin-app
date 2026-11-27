@@ -87,6 +87,7 @@ func newBackendServer(t *testing.T, expectedRole string, called *bool) *httptest
 		if r.Header.Get("rid") != "anti-csrf" {
 			t.Errorf("expected rid anti-csrf, got %s", r.Header.Get("rid"))
 		}
+		assertForwardedClientIP(t, r, "127.0.0.1")
 		var body struct {
 			Role string `json:"role"`
 		}
