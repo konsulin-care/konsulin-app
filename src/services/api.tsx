@@ -2,6 +2,7 @@
 import { getRetryDelayMs, shouldRetryRequest } from '@/lib/api-retry';
 import { reportRequestOutcome } from '@/lib/connectivity';
 import { clearUserData } from '@/lib/indexeddb';
+import { requestLimiter, type ReleaseSlot } from '@/lib/request-limiter';
 import axios, { AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { Patient, Practitioner } from 'fhir/r4';
 import { toast } from 'react-toastify';
@@ -80,6 +81,7 @@ export function getAPI(options?: {
   // Authorization header injected by Go SSR proxy (reads sAccessToken cookie).
   // SuperTokens SDK global interceptors handle 401 + token refresh automatically.
 
+  setupLimiterInterceptors(instance);
   setupResponseInterceptor(instance);
 
   if (useProxy && !useMultipart) {
@@ -97,6 +99,47 @@ export function getAPI(options?: {
 type RetryableConfig = InternalAxiosRequestConfig & {
   _retryCount?: number;
 };
+
+/** Request config carrying the limiter slot held for the in-flight request. */
+interface LimitedConfig extends InternalAxiosRequestConfig {
+  _releaseSlot?: ReleaseSlot;
+}
+
+/**
+ * Gates every request through the shared limiter so a burst (login, claim,
+ * role-change refetch) cannot exceed the backend's per-client rate limit.
+ * The slot is released by the response interceptor installed here, which runs
+ * before the retry interceptor so backoff happens outside a held slot.
+ *
+ * @param instance - The Axios instance to instrument.
+ */
+function setupLimiterInterceptors(instance: AxiosInstance) {
+  instance.interceptors.request.use(async config => {
+    const limited = config as LimitedConfig;
+    limited._releaseSlot = await requestLimiter.acquire();
+    return limited;
+  });
+
+  /** Frees the slot held by a finished attempt before retry logic runs. */
+  const releaseSlot = (config: unknown): void => {
+    const limited = config as LimitedConfig | undefined;
+    const release = limited?._releaseSlot;
+    if (!limited || !release) return;
+    delete limited._releaseSlot;
+    release();
+  };
+
+  instance.interceptors.response.use(
+    response => {
+      releaseSlot(response.config);
+      return response;
+    },
+    error => {
+      releaseSlot((error as { config?: unknown }).config);
+      return Promise.reject(error);
+    }
+  );
+}
 
 /** Attach the shared response interceptor to an Axios instance. */
 function setupResponseInterceptor(instance: AxiosInstance) {
