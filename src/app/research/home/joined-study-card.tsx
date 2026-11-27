@@ -252,7 +252,7 @@ export default function JoinedStudyCard({
   return (
     <article
       data-testid='joined-study-card'
-      className='border-border bg-card flex flex-col gap-3 rounded-lg border p-4'
+      className='border-border bg-card flex h-full flex-col gap-3 rounded-lg border p-4'
     >
       <p className='text-muted-foreground text-xs'>{groupLead}</p>
       <h3 className='text-foreground text-base font-bold'>
@@ -263,7 +263,7 @@ export default function JoinedStudyCard({
         {participated ? <ParticipatedBadge /> : null}
       </div>
       <BatchSummary progress={progress} today={today} />
-      <div className='flex flex-wrap items-center gap-3'>
+      <div className='mt-auto flex flex-wrap items-center gap-3'>
         <CardAction
           studyId={studyId}
           isClosed={chipStatus === 'closed'}

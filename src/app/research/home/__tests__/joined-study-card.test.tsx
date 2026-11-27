@@ -220,6 +220,21 @@ describe('JoinedStudyCard', () => {
     );
   });
 
+  it('stretches the card to its grid cell and pins the action to the bottom', () => {
+    renderCard();
+
+    const card = screen.getByTestId('joined-study-card');
+    expect(card).toHaveClass('h-full');
+    expect(card.lastElementChild).toHaveClass('mt-auto');
+  });
+
+  it('uses the charcoal action with paper foreground text', () => {
+    renderCard();
+
+    const action = screen.getByRole('link', { name: 'Open Study' });
+    expect(action).toHaveClass('bg-primary', 'text-primary-foreground');
+  });
+
   it('hides the participated badge when no batch was answered', () => {
     renderCard({
       progress: makeProgress({
