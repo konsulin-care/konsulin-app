@@ -303,6 +303,7 @@
   },
   "manage": {
     "back": "Studi Anda",
+    "not_found": "Studi tidak ditemukan.",
     "overview_heading": "Ringkasan",
     "batch_closed": "Ditutup",
     "batch_open": "Terbuka",

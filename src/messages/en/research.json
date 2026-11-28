@@ -303,6 +303,7 @@
   },
   "manage": {
     "back": "Your studies",
+    "not_found": "Study not found.",
     "overview_heading": "Overview",
     "batch_closed": "Closed",
     "batch_open": "Open",
