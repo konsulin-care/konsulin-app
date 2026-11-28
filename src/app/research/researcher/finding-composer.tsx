@@ -18,6 +18,8 @@ import { useEffect, useRef, useState } from 'react';
 export interface FindingComposerProps {
   /** Study the finding belongs to. */
   study: ResearchStudy;
+  /** Renders the submit button as the turquoise action variant. */
+  primary?: boolean;
 }
 
 /**
@@ -75,11 +77,13 @@ function PostFeedback({
  * Researcher finding composer: intro, finding text, participant count prefilled
  * from the current count, and a submit button calling usePostFinding.
  *
- * @param props - The study the finding belongs to.
+ * @param props - The study the finding belongs to and whether the submit
+ * button is the primary action.
  * @returns The finding composer element.
  */
 export default function FindingComposer({
-  study
+  study,
+  primary = false
 }: Readonly<FindingComposerProps>) {
   const t = useTranslations('research');
   const { data: participantCount, isLoading } = useStudyParticipantCount(
@@ -136,7 +140,7 @@ export default function FindingComposer({
       </div>
       <Button
         type='button'
-        variant='action'
+        variant={primary ? 'action' : 'default'}
         className='min-h-11 self-start rounded-lg'
         disabled={text.trim() === '' || postFinding.isPending}
         onClick={handleSubmit}

@@ -103,4 +103,18 @@ describe('FindingComposer', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Finding posted.');
   });
+
+  it('uses the action variant when primary and the default variant otherwise', () => {
+    const { rerender } = render(<FindingComposer study={STUDY} primary />);
+
+    expect(
+      screen.getByRole('button', { name: 'Post to participants' })
+    ).toHaveClass('bg-secondary');
+
+    rerender(<FindingComposer study={STUDY} />);
+
+    expect(
+      screen.getByRole('button', { name: 'Post to participants' })
+    ).toHaveClass('bg-primary');
+  });
 });
