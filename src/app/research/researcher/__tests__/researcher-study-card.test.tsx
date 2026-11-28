@@ -1,7 +1,6 @@
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import { setResearchTarget } from '@/utils/fhir/research-target';
-import { formatBatchDate } from '@/utils/format-batch-date';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResearcherStudyCard from '../researcher-study-card';
 
@@ -63,39 +62,43 @@ describe('ResearcherStudyCard', () => {
     });
   });
 
-  it('shows group, kind, closing date and count against target', () => {
-    const study = makeStudy();
-
-    render(<ResearcherStudyCard study={study} />);
+  it('renders the status chip, one batch segment per batch and the participant progress', () => {
+    render(<ResearcherStudyCard study={makeStudy()} today='2026-02-10' />);
 
     expect(screen.getByText('Sleep Lab')).toBeInTheDocument();
-    expect(screen.getByText('Batch 2 of 2')).toBeInTheDocument();
     expect(
-      screen.getByText(`closes ${formatBatchDate('2026-02-28', 'id')}`)
+      screen.getByRole('heading', { name: 'Sleep and Mood' })
     ).toBeInTheDocument();
+    expect(screen.getByTestId('study-status-chip')).toBeInTheDocument();
+    const segments = screen.getByTestId('batch-segments');
+    expect(segments.querySelectorAll('[data-state]')).toHaveLength(2);
     expect(screen.getByText('12 of 100 participants')).toBeInTheDocument();
   });
 
-  it('shows the study link and links to the study page and Manage study', () => {
-    render(<ResearcherStudyCard study={makeStudy()} />);
-
-    expect(screen.getByText('Study link')).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'See the study page' })
-    ).toHaveAttribute('href', '/study?id=study-1');
-    expect(screen.getByRole('link', { name: 'Manage study' })).toHaveAttribute(
-      'href',
-      '/research/edit?id=study-1&page=title'
+  it('renders exactly one interactive element: a charcoal Manage study link', () => {
+    const { container } = render(
+      <ResearcherStudyCard study={makeStudy()} today='2026-02-10' />
     );
+
+    const interactive = container.querySelectorAll('a, button');
+    expect(interactive).toHaveLength(1);
+    expect(interactive[0]).toHaveTextContent('Manage study');
+
+    const link = screen.getByRole('link', { name: 'Manage study' });
+    expect(link).toHaveAttribute('href', '/research/manage?id=study-1');
+    expect(link).toHaveClass('bg-primary', 'text-primary-foreground');
+    expect(link).toHaveClass('w-full', 'min-h-11');
   });
 
-  it('calls onPostFinding with the study', () => {
-    const study = makeStudy();
-    const onPostFinding = vi.fn();
+  it('does not render the raw study path, the study page link or a finding button', () => {
+    render(<ResearcherStudyCard study={makeStudy()} today='2026-02-10' />);
 
-    render(<ResearcherStudyCard study={study} onPostFinding={onPostFinding} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Post a finding' }));
-    expect(onPostFinding).toHaveBeenCalledWith(study.study);
+    expect(screen.queryByText('/study?id=study-1')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'See the study page' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Post a finding' })
+    ).not.toBeInTheDocument();
   });
 });
