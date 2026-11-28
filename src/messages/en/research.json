@@ -302,6 +302,7 @@
     "conflict": "This study changed while you were writing. Reload and try again."
   },
   "manage": {
+    "back": "Your studies",
     "overview_heading": "Overview",
     "batch_closed": "Closed",
     "batch_open": "Open",

@@ -302,6 +302,7 @@
     "conflict": "Studi ini berubah saat Anda menulis. Muat ulang lalu coba lagi."
   },
   "manage": {
+    "back": "Studi Anda",
     "overview_heading": "Ringkasan",
     "batch_closed": "Ditutup",
     "batch_open": "Terbuka",
