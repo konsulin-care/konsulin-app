@@ -309,7 +309,14 @@
     "share_heading": "Share",
     "copy_link": "Copy link",
     "link_copied": "Link copied.",
-    "copy_failed": "Could not copy. Copy the link above."
+    "copy_failed": "Could not copy. Copy the link above.",
+    "edit_heading": "Edit study",
+    "edit_body": "Title, questionnaires and batches. Batches that have started are locked.",
+    "edit_action": "Edit study",
+    "export_heading": "Export data",
+    "export_body": "Download participant answers, anonymised.",
+    "export_action": "Export data",
+    "export_coming_soon": "Export is coming soon."
   },
   "next_step_card": {
     "share": "Share what you found in batch {index} of {title}. The batch has closed. Participants are waiting to hear what their answers showed.",

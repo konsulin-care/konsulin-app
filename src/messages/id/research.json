@@ -309,7 +309,14 @@
     "share_heading": "Bagikan",
     "copy_link": "Salin tautan",
     "link_copied": "Tautan disalin.",
-    "copy_failed": "Tidak dapat menyalin. Salin tautan di atas."
+    "copy_failed": "Tidak dapat menyalin. Salin tautan di atas.",
+    "edit_heading": "Edit studi",
+    "edit_body": "Judul, kuesioner, dan batch. Batch yang sudah dimulai terkunci.",
+    "edit_action": "Edit studi",
+    "export_heading": "Ekspor data",
+    "export_body": "Unduh jawaban peserta, sudah dianonimkan.",
+    "export_action": "Ekspor data",
+    "export_coming_soon": "Ekspor segera hadir."
   },
   "next_step_card": {
     "share": "Bagikan temuan Anda dari batch {index} {title}. Batch sudah ditutup. Peserta menunggu kabar tentang apa yang ditunjukkan jawaban mereka.",
