@@ -305,7 +305,11 @@
     "overview_heading": "Ringkasan",
     "batch_closed": "Ditutup",
     "batch_open": "Terbuka",
-    "batch_upcoming": "Akan datang"
+    "batch_upcoming": "Akan datang",
+    "share_heading": "Bagikan",
+    "copy_link": "Salin tautan",
+    "link_copied": "Tautan disalin.",
+    "copy_failed": "Tidak dapat menyalin. Salin tautan di atas."
   },
   "next_step_card": {
     "share": "Bagikan temuan Anda dari batch {index} {title}. Batch sudah ditutup. Peserta menunggu kabar tentang apa yang ditunjukkan jawaban mereka.",

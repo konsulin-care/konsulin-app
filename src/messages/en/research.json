@@ -305,7 +305,11 @@
     "overview_heading": "Overview",
     "batch_closed": "Closed",
     "batch_open": "Open",
-    "batch_upcoming": "Upcoming"
+    "batch_upcoming": "Upcoming",
+    "share_heading": "Share",
+    "copy_link": "Copy link",
+    "link_copied": "Link copied.",
+    "copy_failed": "Could not copy. Copy the link above."
   },
   "next_step_card": {
     "share": "Share what you found in batch {index} of {title}. The batch has closed. Participants are waiting to hear what their answers showed.",
