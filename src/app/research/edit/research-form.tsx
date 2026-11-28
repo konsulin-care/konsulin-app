@@ -139,8 +139,16 @@ export default function EditResearchForm({
   });
   // Read batches from the form values like the register form does. A separate
   // useWatch subscription can lag behind the field array and hand Step3 an
-  // undefined row. eslint-disable-next-line react-hooks/incompatible-library
-  const batches = watch('batches');
+  // undefined row.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const watchedBatches = watch('batches');
+  // Keep the batches handed to the steps and the preview aligned with the
+  // field-array rows. A watched entry that lags behind falls back to its row,
+  // so it can never surface an undefined index.
+  const batches = useMemo(
+    () => fields.map((field, index) => watchedBatches[index] ?? field),
+    [fields, watchedBatches]
+  );
 
   // Deep link guard
   const shouldRedirect = page !== 'title' && !title;
