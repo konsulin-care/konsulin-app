@@ -53,7 +53,7 @@ export default function SidebarAccountMenu() {
   );
 
   return (
-    <Dropdown>
+    <Dropdown modal={false}>
       <DropdownTrigger asChild>
         <button
           type='button'

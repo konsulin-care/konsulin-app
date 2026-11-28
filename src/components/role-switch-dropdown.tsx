@@ -118,6 +118,7 @@ export function RoleSwitchDropdown({
 
   return (
     <Dropdown
+      modal={false}
       open={open}
       onOpenChange={isOpen => {
         setOpen(isOpen);

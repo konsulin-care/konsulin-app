@@ -132,6 +132,15 @@ describe('SidebarAccountMenu', () => {
     expect(within(menu).queryByText('Patient')).toBeNull();
   });
 
+  it('does not lock body scroll when the menu opens', async () => {
+    mockUseAuth.mockReturnValue(authenticatedBase);
+
+    render(<SidebarAccountMenu />);
+
+    await openAccountMenu();
+    expect(document.body.hasAttribute('data-scroll-locked')).toBe(false);
+  });
+
   it('renders a sign in link and no trigger when unauthenticated', () => {
     mockUseAuth.mockReturnValue({
       isLoading: false,

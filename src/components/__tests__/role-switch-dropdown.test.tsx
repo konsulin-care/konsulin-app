@@ -100,6 +100,22 @@ describe('RoleSwitchDropdown', () => {
       within(menu).getByRole('link', { name: /log out/i })
     ).toHaveAttribute('href', '/logout');
   });
+
+  it('does not lock body scroll when the menu opens', async () => {
+    render(
+      <RoleSwitchDropdown
+        otherRoles={['Practitioner']}
+        currentAvatar={baseAvatar}
+        onOpenChange={vi.fn()}
+      />
+    );
+
+    fireEvent.pointerDown(screen.getByText('JD'));
+    fireEvent.click(screen.getByText('JD'));
+
+    await screen.findByRole('menu');
+    expect(document.body.hasAttribute('data-scroll-locked')).toBe(false);
+  });
 });
 
 /** Opens the dropdown and clicks the given role's switch item. */
