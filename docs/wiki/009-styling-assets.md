@@ -36,4 +36,13 @@ Content scanner must target `.go` and `.templ` files instead of `.tsx`.
 
 - Custom component styles use CSS variables for theming
 - Phone input styles required for international phone fields
-- Scrollbar hide utility needed for mobile UIs
+- Native scrollbars are hidden globally (`scrollbar-width: none`,
+  `::-webkit-scrollbar { display: none }`); `html { scrollbar-gutter: stable }`
+  is removed, so no layout reserves or loses a gutter
+- A 3px `charcoal-400/50` overlay thumb shows page scroll position while
+  scrolling, fades after 800ms and ignores pointer events
+- Inner scroll containers opt into `useScrollEdges` (`data-scroll-fade`) for
+  edge fades instead of a visible scrollbar
+- Radix `ScrollArea` uses `type='scroll'` with a 3px thumb; avatar menus use
+  `modal={false}` so no scroll lock shifts the layout
+- See `@docs/ADR/037-hidden-scrollbars.md`

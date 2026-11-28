@@ -69,6 +69,7 @@ clinic admins keep the dashboard home.
 | Research home + action bar       | `@docs/ADR/032-research-home-shell.md`        |
 | Study metadata mapping           | `@docs/ADR/033-study-metadata.md`             |
 | Primary action button per screen | `@docs/ADR/034-primary-action-button.md`      |
+| Hidden scrollbars                | `@docs/ADR/037-hidden-scrollbars.md`          |
 | Design token system              | `@docs/ADR/026-design-token-system.md`        |
 | Client cache persistence         | `@docs/ADR/028-client-cache-persistence.md`   |
 | BFF shared cache                 | `@docs/ADR/030-bff-shared-cache.md`           |
