@@ -113,6 +113,7 @@ export default function EditResearchForm({
   const {
     register,
     control,
+    watch,
     setValue,
     trigger,
     handleSubmit,
@@ -136,7 +137,10 @@ export default function EditResearchForm({
     control,
     name: ['whoCanJoin', 'ethicsReference', 'sharesFindings']
   });
-  const batches = useWatch({ control, name: 'batches' });
+  // Read batches from the form values like the register form does. A separate
+  // useWatch subscription can lag behind the field array and hand Step3 an
+  // undefined row. eslint-disable-next-line react-hooks/incompatible-library
+  const batches = watch('batches');
 
   // Deep link guard
   const shouldRedirect = page !== 'title' && !title;

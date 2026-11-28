@@ -241,7 +241,9 @@ export function Step3({
           key={field.id}
           index={index}
           errors={errors}
-          batchValues={batches[index]} // skipcq: JS-0075 - safe numeric field-array index
+          // The field-array row always carries startDate/endDate/questionnaireIds,
+          // so a missing watched index can never throw here.
+          batchValues={batches[index] ?? field}
           setValue={setValue}
           onRemoveBatch={onRemoveBatch}
           isLocked={lockedBatchIndices.includes(index)}
