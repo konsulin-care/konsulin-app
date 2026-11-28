@@ -211,6 +211,7 @@
   },
   "researcher_card": {
     "count": "{count} of {target} participants",
+    "count_no_target": "{count} participants",
     "study_link": "Study link",
     "see_study_page": "See the study page",
     "manage_study": "Manage study",

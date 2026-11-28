@@ -211,6 +211,7 @@
   },
   "researcher_card": {
     "count": "{count} dari {target} peserta",
+    "count_no_target": "{count} peserta",
     "study_link": "Tautan studi",
     "see_study_page": "Lihat halaman studi",
     "manage_study": "Kelola studi",
