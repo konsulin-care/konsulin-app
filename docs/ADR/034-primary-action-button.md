@@ -45,6 +45,10 @@ when the shell re-renders. Other pages keep ADR 032 behaviour unchanged.
 weighted turquoise buttons. Card-level links and secondary actions stay
 outline or ghost buttons; only the one primary step uses the action variant.
 
+**Amendment.** ADR 036 lets secondary card buttons on the researcher manage
+page use the charcoal `default` variant instead of outline or ghost. The
+single turquoise action-variant rule is unchanged.
+
 # Impact
 
 - The home and study pages are self-contained: their action is visible in

@@ -58,6 +58,7 @@ clinic admins keep the dashboard home.
 - `/report?id=X` shows the participation report; findings published by the
   research team render on the home findings section.
 - `/research/register` and `/research/edit` are the researcher forms.
+- `/research/manage?id=X` is the researcher study manage page (ADR 036).
 - Legacy `/?id=X`, `/?view=X`, `/research?id=X` and `/research?view=X`
   links redirect to `/study?id=X`, keeping `ref`.
 
@@ -69,6 +70,7 @@ clinic admins keep the dashboard home.
 | Research home + action bar       | `@docs/ADR/032-research-home-shell.md`        |
 | Study metadata mapping           | `@docs/ADR/033-study-metadata.md`             |
 | Primary action button per screen | `@docs/ADR/034-primary-action-button.md`      |
+| Researcher manage page           | `@docs/ADR/036-researcher-manage-page.md`     |
 | Hidden scrollbars                | `@docs/ADR/037-hidden-scrollbars.md`          |
 | Design token system              | `@docs/ADR/026-design-token-system.md`        |
 | Client cache persistence         | `@docs/ADR/028-client-cache-persistence.md`   |
