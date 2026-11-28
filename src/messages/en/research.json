@@ -275,6 +275,12 @@
     "heading_your_studies": "Your studies · {count}",
     "heading_given_back": "What you have given back"
   },
+  "researcher_status": {
+    "finding_due": "Finding due",
+    "open": "Open · closes {date}",
+    "upcoming": "Opens {date}",
+    "finished": "Finished"
+  },
   "trust_strip": {
     "heading": "True for every study on Konsulin",
     "statement_1": "A random ID, not your name. Researchers never see who you are.",

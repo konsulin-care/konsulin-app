@@ -275,6 +275,12 @@
     "heading_your_studies": "Studi Anda · {count}",
     "heading_given_back": "Yang telah Anda kembalikan"
   },
+  "researcher_status": {
+    "finding_due": "Temuan tertunda",
+    "open": "Terbuka · tutup {date}",
+    "upcoming": "Dibuka {date}",
+    "finished": "Selesai"
+  },
   "trust_strip": {
     "heading": "Berlaku untuk setiap studi di Konsulin",
     "statement_1": "ID acak, bukan nama Anda. Peneliti tidak pernah melihat identitas Anda.",
