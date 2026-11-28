@@ -301,6 +301,12 @@
     "posted": "Temuan telah dibagikan.",
     "conflict": "Studi ini berubah saat Anda menulis. Muat ulang lalu coba lagi."
   },
+  "manage": {
+    "overview_heading": "Ringkasan",
+    "batch_closed": "Ditutup",
+    "batch_open": "Terbuka",
+    "batch_upcoming": "Akan datang"
+  },
   "next_step_card": {
     "share": "Bagikan temuan Anda dari batch {index} {title}. Batch sudah ditutup. Peserta menunggu kabar tentang apa yang ditunjukkan jawaban mereka.",
     "open": "Batch {index} dari {title} tutup {date}. Setelah ditutup, bagikan temuan Anda kepada peserta. Sampai saat itu, tidak ada yang perlu Anda lakukan.",

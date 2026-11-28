@@ -301,6 +301,12 @@
     "posted": "Finding posted.",
     "conflict": "This study changed while you were writing. Reload and try again."
   },
+  "manage": {
+    "overview_heading": "Overview",
+    "batch_closed": "Closed",
+    "batch_open": "Open",
+    "batch_upcoming": "Upcoming"
+  },
   "next_step_card": {
     "share": "Share what you found in batch {index} of {title}. The batch has closed. Participants are waiting to hear what their answers showed.",
     "open": "Batch {index} of {title} closes {date}. When it closes, tell participants what you found. Until then, nothing is due from you.",
