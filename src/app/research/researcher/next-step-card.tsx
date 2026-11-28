@@ -10,7 +10,7 @@ import type {
 import { nextResearcherStep } from '@/utils/fhir/researcher-next-step';
 import { formatBatchDate } from '@/utils/format-batch-date';
 import { localDateOf } from '@/utils/local-date';
-import type { ResearchStudy } from 'fhir/r4';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 /** Props of the researcher home next-step card. */
@@ -21,8 +21,6 @@ export interface NextStepCardProps {
   today?: string;
   /** Precomputed next step; computed from studies and today when omitted. */
   step?: ResearcherNextStep;
-  /** Called with the study and zero-based batch index to post a finding. */
-  onPostFinding?: (study: ResearchStudy, batchIndex: number) => void;
   /** Called when the researcher chooses to register a study. */
   onRegisterStudy?: () => void;
 }
@@ -87,14 +85,13 @@ function RegisterStep({
 }
 
 function ShareStep({
-  step,
-  onPostFinding
+  step
 }: Readonly<{
   step: Extract<ResearcherNextStep, { kind: 'share' }>;
-  onPostFinding?: (study: ResearchStudy, batchIndex: number) => void;
 }>) {
   const t = useTranslations('research');
   const title = step.study.title ?? '';
+  const href = `/research/manage?id=${step.study.id ?? ''}#finding`;
   return (
     <Card>
       <p className='text-charcoal-700 text-sm'>
@@ -103,13 +100,8 @@ function ShareStep({
           title
         })}
       </p>
-      <Button
-        type='button'
-        variant='action'
-        className='self-start'
-        onClick={() => onPostFinding?.(step.study, step.batchIndex)}
-      >
-        {t('next_step_card.post_finding')}
+      <Button asChild variant='action' className='self-start'>
+        <Link href={href}>{t('next_step_card.post_finding')}</Link>
       </Button>
     </Card>
   );
@@ -176,14 +168,13 @@ function AllClosedStep() {
  * Researcher home next-step card: shares a closed batch, shows the open or
  * upcoming closing date, or asks the researcher to register their first study.
  *
- * @param props - Studies, reference date, optional step and action callbacks.
+ * @param props - Studies, reference date, optional step and action callback.
  * @returns The next-step card element.
  */
 export default function NextStepCard({
   studies = [],
   today,
   step,
-  onPostFinding,
   onRegisterStudy
 }: Readonly<NextStepCardProps>) {
   const resolved =
@@ -194,7 +185,7 @@ export default function NextStepCard({
     return <RegisterStep onRegisterStudy={onRegisterStudy} />;
   }
   if (resolved.kind === 'share') {
-    return <ShareStep step={resolved} onPostFinding={onPostFinding} />;
+    return <ShareStep step={resolved} />;
   }
   if (resolved.kind === 'open') {
     return <OpenStep closesOn={resolved.closesOn} studies={studies} />;

@@ -1,6 +1,6 @@
 import { wrapper } from '@/__tests__/react-test-utils';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import ResearcherContent from '../researcher-content';
 
@@ -100,31 +100,25 @@ describe('ResearcherContent', () => {
     expect(screen.getByText('Nothing posted yet.')).toBeInTheDocument();
   });
 
-  it('opens the finding composer for the study whose card was clicked', () => {
-    render(
-      <ResearcherContent
-        isLoading={false}
-        studies={[
-          makeStudy('study-1', 'Sleep and Mood'),
-          makeStudy('study-2', 'Screen Time')
-        ]}
-      />,
-      { wrapper }
-    );
+  it('renders no finding composer and only the given-back list in section 03', () => {
+    const study = makeStudy('study-1', 'Sleep and Mood');
+    study.study.note = [
+      { text: 'Sleep improved for most participants.', time: '2026-01-01' }
+    ];
 
-    const card = screen
-      .getAllByTestId('researcher-study-card')
-      .find(entry => entry.textContent?.includes('Screen Time'));
-    expect(card).toBeDefined();
-    fireEvent.click(
-      within(card as HTMLElement).getByRole('button', {
-        name: 'Post a finding'
-      })
-    );
+    render(<ResearcherContent isLoading={false} studies={[study]} />, {
+      wrapper
+    });
 
-    const composer = within(
-      screen.getByTestId('researcher-given-back')
-    ).getByTestId('finding-composer');
-    expect(composer).toHaveTextContent('A finding from Screen Time.');
+    expect(screen.queryByTestId('finding-composer')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Post a finding' })).toBeNull();
+
+    const givenBack = screen.getByTestId('researcher-given-back');
+    expect(
+      within(givenBack).getByTestId('given-back-list')
+    ).toBeInTheDocument();
+    expect(
+      within(givenBack).getByText('Sleep improved for most participants.')
+    ).toBeInTheDocument();
   });
 });

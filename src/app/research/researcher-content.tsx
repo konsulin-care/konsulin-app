@@ -4,10 +4,7 @@ import EmptyState from '@/components/general/empty-state';
 import { useTranslations } from '@/i18n';
 import type { ResearchStudyWithBatches } from '@/services/api/researcher';
 import type { StudyProgress } from '@/utils/fhir/research';
-import type { ResearchStudy } from 'fhir/r4';
-import { useState } from 'react';
 import ResearchSkeleton from './research-skeleton';
-import FindingComposer from './researcher/finding-composer';
 import GivenBackList from './researcher/given-back-list';
 import NextStepCard from './researcher/next-step-card';
 import ResearcherIntro, {
@@ -38,8 +35,6 @@ export interface ResearcherContentProps {
 interface StudiesSectionProps {
   /** Researcher studies to render as cards. */
   studies: ResearchStudyWithBatches[];
-  /** Called with the study resource when a card asks to post a finding. */
-  onPostFinding: (study: ResearchStudy) => void;
 }
 
 /** Maps researcher study data to the StudyProgress format used by hooks. */
@@ -64,13 +59,10 @@ export function mapResearcherStudyToProgress(
  * Renders the researcher studies as a card grid, or the empty state when the
  * researcher has no studies yet.
  *
- * @param props - Studies and the post-finding callback.
+ * @param props - Studies to render.
  * @returns The grid or the empty state element.
  */
-function StudiesSection({
-  studies,
-  onPostFinding
-}: Readonly<StudiesSectionProps>) {
+function StudiesSection({ studies }: Readonly<StudiesSectionProps>) {
   const t = useTranslations('research');
 
   if (studies.length === 0) {
@@ -87,7 +79,7 @@ function StudiesSection({
     <ul className='grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6'>
       {studies.map((entry, index) => (
         <li key={entry.study.id ?? String(index)}>
-          <ResearcherStudyCard study={entry} onPostFinding={onPostFinding} />
+          <ResearcherStudyCard study={entry} />
         </li>
       ))}
     </ul>
@@ -95,8 +87,8 @@ function StudiesSection({
 }
 
 /**
- * Researcher home: the intro, next step, study cards and the findings the
- * researcher gave back, with an inline composer for a new finding.
+ * Researcher home: the intro, next step, study cards and the read-only list of
+ * findings the researcher gave back.
  *
  * @param props - Loading flag, studies and error flag.
  * @returns The researcher home element or its loading skeleton.
@@ -106,10 +98,6 @@ export default function ResearcherContent({
   studies,
   isError = false
 }: Readonly<ResearcherContentProps>) {
-  const [composerStudy, setComposerStudy] = useState<ResearchStudy | null>(
-    null
-  );
-
   if (isLoading) {
     return <ResearchSkeleton />;
   }
@@ -124,18 +112,17 @@ export default function ResearcherContent({
         className='flex flex-col gap-3'
       >
         <ResearcherSectionHeading kind='next-step' />
-        <NextStepCard studies={studies} onPostFinding={setComposerStudy} />
+        <NextStepCard studies={studies} />
       </section>
       <section data-testid='researcher-studies' className='flex flex-col gap-3'>
         <ResearcherSectionHeading kind='your-studies' count={studies.length} />
-        <StudiesSection studies={studies} onPostFinding={setComposerStudy} />
+        <StudiesSection studies={studies} />
       </section>
       <section
         data-testid='researcher-given-back'
         className='flex flex-col gap-3'
       >
         <ResearcherSectionHeading kind='given-back' />
-        {composerStudy ? <FindingComposer study={composerStudy} /> : null}
         <GivenBackList studies={studyResources} isError={isError} />
       </section>
     </div>

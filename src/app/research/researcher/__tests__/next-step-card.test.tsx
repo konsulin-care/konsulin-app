@@ -1,7 +1,7 @@
 import type { ResearchBatch } from '@/utils/fhir/research';
 import type { ResearcherStudy } from '@/utils/fhir/researcher-next-step';
 import { formatBatchDate } from '@/utils/format-batch-date';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import type { ResearchStudy } from 'fhir/r4';
 import { describe, expect, it, vi } from 'vitest';
 import NextStepCard from '../next-step-card';
@@ -30,6 +30,7 @@ const BATCH: ResearchBatch = {
 function makeStudy(title: string, start: string, end: string): ResearcherStudy {
   const study: ResearchStudy = {
     resourceType: 'ResearchStudy',
+    id: 'study-1',
     status: 'active',
     title
   };
@@ -40,25 +41,19 @@ function makeStudy(title: string, start: string, end: string): ResearcherStudy {
 }
 
 describe('NextStepCard', () => {
-  it('names the closed batch and study and offers Post a finding', () => {
+  it('links the closed batch to the manage page finding composer', () => {
     const closed = makeStudy('Sleep and Mood', '2026-01-01', '2026-01-31');
-    const onPostFinding = vi.fn();
 
-    render(
-      <NextStepCard
-        studies={[closed]}
-        today='2026-02-10'
-        onPostFinding={onPostFinding}
-      />
-    );
+    render(<NextStepCard studies={[closed]} today='2026-02-10' />);
 
     expect(
       screen.getByText(
         'Share what you found in batch 1 of Sleep and Mood. The batch has closed. Participants are waiting to hear what their answers showed.'
       )
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Post a finding' }));
-    expect(onPostFinding).toHaveBeenCalledWith(closed.study, 0);
+    const link = screen.getByRole('link', { name: 'Post a finding' });
+    expect(link).toHaveAttribute('href', '/research/manage?id=study-1#finding');
+    expect(link).toHaveClass('bg-secondary');
   });
 
   it('shows the closing date of the open batch and says nothing is due', () => {
