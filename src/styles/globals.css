@@ -108,10 +108,46 @@
   }
 }
 
-/* Reserve the vertical scrollbar gutter so the centered page column does
-   not jump sideways between routes. No-op for overlay scrollbars. */
-html {
-  scrollbar-gutter: stable;
+/* Non-obstructive edge fades for inner scroll containers. The hooks in the
+   scroll containers flip data-fade-* to 'true' per overflowed edge. */
+[data-scroll-fade] {
+  --fade: 24px;
+  --fade-top: 0px;
+  --fade-bottom: 0px;
+  --fade-left: 0px;
+  --fade-right: 0px;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--fade-top),
+      #000 calc(100% - var(--fade-bottom)),
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--fade-left),
+      #000 calc(100% - var(--fade-right)),
+      transparent 100%
+    );
+  mask-composite: intersect;
+}
+
+[data-fade-top='true'] {
+  --fade-top: var(--fade);
+}
+
+[data-fade-bottom='true'] {
+  --fade-bottom: var(--fade);
+}
+
+[data-fade-left='true'] {
+  --fade-left: var(--fade);
+}
+
+[data-fade-right='true'] {
+  --fade-right: var(--fade);
 }
 
 @layer components {
@@ -132,5 +168,13 @@ html {
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+  /* Native scrollbars are hidden everywhere and replaced by the page overlay
+     thumb plus the edge fades above, so no container reserves a gutter. */
+  * {
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
   }
 }
