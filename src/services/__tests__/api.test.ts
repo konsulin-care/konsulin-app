@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('axios', () => {
   const mockCreate = vi.fn(() => ({
     interceptors: {
+      request: { use: vi.fn() },
       response: { use: vi.fn() }
     }
   }));
@@ -41,7 +42,9 @@ async function getInterceptorErrorHandler(): Promise<
   const instance = createMock.mock.results[0]?.value as unknown as
     InterceptorRegistration | undefined;
   const useMock = instance?.interceptors.response.use;
-  const errorHandler = useMock?.mock.calls[0]?.[1] as
+  // setupLimiterInterceptors registers the release-slot handler first (index 0);
+  // setupResponseInterceptor registers the ApiError mapper second (index 1).
+  const errorHandler = useMock?.mock.calls[1]?.[1] as
     ((error: unknown) => Promise<unknown>) | undefined;
 
   if (!errorHandler) {
