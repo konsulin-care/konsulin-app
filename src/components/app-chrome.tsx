@@ -8,6 +8,7 @@ import ConnectivityIndicator from '@/components/pwa/connectivity-indicator';
 import InstallButton from '@/components/pwa/install-button';
 import PendingSubmissionsBanner from '@/components/pwa/pending-submissions';
 import QuickActionFab from '@/components/quick-action-fab';
+import { ScrollIndicator } from '@/components/scroll-indicator';
 import { FabProvider } from '@/context/fabContext';
 import { RecommendationProvider } from '@/context/recommendationContext';
 import { useTranslations } from '@/i18n';
@@ -120,6 +121,7 @@ export default function AppChrome({
       <ToastContainer {...toastConfig} />
       <ProfileCompletenessModal />
       <SwUpdateDetector />
+      <ScrollIndicator />
       <AppProviders>
         <a href='#main' className={SKIP_LINK_CLASSNAME}>
           {t('skip_to_content')}
