@@ -34,6 +34,44 @@ describe('DrawerHeader', () => {
 });
 
 describe('DrawerContent', () => {
+  it('marks the drawer body as a fade-aware scroll container', () => {
+    render(
+      <Drawer open>
+        <DrawerContent>
+          <DrawerTitle>Fade Title</DrawerTitle>
+          <div style={{ height: 800 }}>Tall content</div>
+        </DrawerContent>
+      </Drawer>
+    );
+
+    const drawerEl = document.querySelector('[data-vaul-drawer]');
+    const body = drawerEl?.lastElementChild;
+    expect(body).toBeInstanceOf(HTMLElement);
+    if (!(body instanceof HTMLElement)) return;
+
+    expect(body).toHaveAttribute('data-scroll-fade', '');
+
+    // Overflow below while scrolled to the top -> bottom fade is on.
+    Object.defineProperty(body, 'scrollTop', {
+      configurable: true,
+      writable: true,
+      value: 0
+    });
+    Object.defineProperty(body, 'clientHeight', {
+      configurable: true,
+      writable: true,
+      value: 200
+    });
+    Object.defineProperty(body, 'scrollHeight', {
+      configurable: true,
+      writable: true,
+      value: 800
+    });
+    fireEvent.scroll(body);
+
+    expect(body).toHaveAttribute('data-fade-bottom', 'true');
+  });
+
   it('renders children within a scrollable container capped at 85dvh', () => {
     render(
       <Drawer open>

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
 
+import { useScrollEdges } from '@/hooks/useScrollEdges';
 import { cn } from '@/lib/utils';
 
 const Drawer = ({
@@ -56,6 +57,8 @@ const DrawerContent = React.forwardRef<
   const [contentNode, setContentNode] = React.useState<HTMLElement | null>(
     null
   );
+  const { ref: bodyRef, attributes: bodyFadeAttributes } =
+    useScrollEdges<HTMLDivElement>();
   /** Compose the forwarded ref with a capture of the content node. */
   const composeRefs = React.useCallback(
     (node: React.ComponentRef<typeof DrawerPrimitive.Content> | null) => {
@@ -80,7 +83,11 @@ const DrawerContent = React.forwardRef<
         {...props}
       >
         <div className='bg-muted mx-auto mt-4 h-2 w-[100px] rounded-full' />
-        <div className='flex-1 overflow-y-auto'>
+        <div
+          ref={bodyRef}
+          className='flex-1 overflow-y-auto'
+          {...bodyFadeAttributes}
+        >
           <DrawerContentContext.Provider value={contentNode}>
             {children}
           </DrawerContentContext.Provider>
